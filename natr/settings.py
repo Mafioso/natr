@@ -164,13 +164,7 @@ LOGGING = {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
-        },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': './wzapp.log',
-            'formatter': 'verbose'
-        },
+        }
     },
     'loggers': {
         'django.request': {
@@ -183,3 +177,21 @@ LOGGING = {
 
 ADMINS = (('Rustem', 'r.kamun@gmail.com'),
           ('Yernar', 'mailubai@gmail.com'),)
+
+
+# celery conf
+BROKER_HOST = os.getenv('BROKER_HOST', '127.0.0.1')
+BROKER_PORT = os.getenv('BROKER_PORT', 5672)
+BROKER_USER_PASSWORD = os.getenv('BROKER_USER_PASSWORD', 'guest:guest')
+BROKER_VHOST = os.getenv('BROKER_VHOST', '/')
+
+BROKER_URL = 'amqp://{user_passwd}@{host}/{vhost}'.format(**{
+    'user_passwd': BROKER_USER_PASSWORD,
+    'host': BROKER_HOST,
+    'port': BROKER_PORT,
+    'vhost': BROKER_VHOST
+})
+
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
