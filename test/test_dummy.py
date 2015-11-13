@@ -19,14 +19,3 @@ class ContactListTest(unittest.TestCase):
 	@classmethod
 	def tearDownClass(cls):
 		pass
-
-
-class DummyApiTestCase(APITestCase):
-
-	def test_feed(self):
-		response = self.client.get('/dummies/feed/')
-		self.assertEqual(response.status_code, status.HTTP_200_OK)
-		content = json.loads(response.content)
-		self.assertTrue(isinstance(content, list))
-		self.assertTrue(content[0].has_key('dummy_1'))
-		self.assertTrue(content[0].has_key('dummy_2'))
