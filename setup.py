@@ -49,41 +49,6 @@ class RunTests(Command):
         pass
 
 
-# class RunTests(Command):
-#     """From django-celery"""
-#     description = "Run the django test suite from the tests dir."
-#     user_options = []
-#     extra_env = {}
-
-#     def run(self):
-#         if self.distribution.install_requires:
-#             self.distribution.fetch_build_eggs(
-#                 self.distribution.install_requires)
-#         if self.distribution.tests_require:
-#             self.distribution.fetch_build_eggs(self.distribution.tests_require)
-
-#         for env_name, env_value in self.extra_env.items():
-#             os.environ[env_name] = str(env_value)
-
-#         this_dir = os.getcwd()
-#         testproj_dir = os.path.join(this_dir, 'synplan')
-#         os.chdir(testproj_dir)
-#         sys.path.append(testproj_dir)
-
-#         os.environ['DJANGO_SETTINGS_MODULE'] = os.environ.get(
-#             'DJANGO_SETTINGS_MODULE', 'synplan.settings')
-#         os.environ['DJANGO_CONFIGURATION'] = os.environ.get(
-#             'DJANGO_CONFIGURATION', 'TestSettings')
-
-#         from configurations.management import execute_from_command_line
-#         execute_from_command_line([__file__, 'test'])
-
-#     def initialize_options(self):
-#         pass
-
-#     def finalize_options(self):
-#         pass
-
 setup(
     name='natr',
     version=__VERSION__,
