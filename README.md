@@ -11,7 +11,7 @@ CONTINIOUS DEPLOYMENT
 6. Mark your task as fixed in youtrack
 
 
-``###Remember``
+###``Remember``
 
 1. Push to master only if:
    * you successfully build the project at your feature branch
