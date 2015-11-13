@@ -130,6 +130,7 @@ LOCALE_PATHS = (
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'natr.rest_framework.authentication.DummyAuthentication',
         'rest_framework.authentication.BasicAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
