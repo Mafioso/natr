@@ -1,0 +1,6 @@
+include setup.py manage.py Vagrantfile gunicorn_config.py .travis.yml db.sqlite3 README.md MANIFEST.in LICENSE AUTHORS CHANGES requirements.txt
+recursive-include docs *
+#recursive-include bin *
+global-exclude *~
+#recursive-include tests *.pem
+recursive-include tests *.py

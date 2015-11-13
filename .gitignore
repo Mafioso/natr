@@ -1,0 +1,21 @@
+*.pyc
+.vagrant
+*.pyc
+*.pyo
+*.so
+*.class
+*.sqlite3
+*.log
+*.egg*
+*.swp*
+media
+*~
+build/
+dist/
+.tox/
+.vagrant
+/.coverage
+# Used in demo apps
+secrets.cfg
+.DS_Store
+.eggs
