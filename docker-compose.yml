@@ -1,0 +1,27 @@
+rabbitmq:
+  image: rabbitmq:3.5.4-management
+  ports:
+    - "15672:15672"
+    - "5672:5672"
+  environment:
+    - RABBITMQ_DEFAULT_VHOST='/'
+    - RABBITMQ_USER_PASSWD=guest:guest
+
+app:
+  image: anguis/natr_app:latest
+  command: python manage.py runserver 0.0.0.0:8000
+  volumes:
+    - .:/natr
+  ports:
+    - "8000:8000"
+  links:
+    - rabbitmq
+
+celery:
+  image: anguis/natr_app:latest
+  working_dir: /natr
+  command: celery -A natr worker -l debug --concurrency=2
+  volumes:
+    - .:/natr
+  links:
+    - rabbitmq

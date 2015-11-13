@@ -180,10 +180,10 @@ ADMINS = (('Rustem', 'r.kamun@gmail.com'),
 
 
 # celery conf
-BROKER_HOST = os.getenv('BROKER_HOST', '127.0.0.1')
-BROKER_PORT = os.getenv('BROKER_PORT', 5672)
-BROKER_USER_PASSWORD = os.getenv('BROKER_USER_PASSWORD', 'guest:guest')
-BROKER_VHOST = os.getenv('BROKER_VHOST', '/')
+BROKER_HOST = os.getenv('RABBITMQ_PORT_5672_TCP_ADDR', '127.0.0.1')
+BROKER_PORT = os.getenv('RABBITMQ_PORT_5672_TCP_PORT', 5672)
+BROKER_USER_PASSWORD = os.getenv('RABBITMQ_ENV_RABBITMQ_USER_PASSWD', 'guest:guest')
+BROKER_VHOST = os.getenv('RABBITMQ_ENV_RABBITMQ_DEFAULT_VHOST', '/')
 
 BROKER_URL = 'amqp://{user_passwd}@{host}/{vhost}'.format(**{
     'user_passwd': BROKER_USER_PASSWORD,
@@ -191,6 +191,7 @@ BROKER_URL = 'amqp://{user_passwd}@{host}/{vhost}'.format(**{
     'port': BROKER_PORT,
     'vhost': BROKER_VHOST
 })
+print BROKER_URL
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
