@@ -27,3 +27,9 @@ Launching Software
 1. Celery: `celery -A natr worker -l debug`
 2. 
 
+
+## Using Docker
+
+1. Run the whole project with `docker-compose up -d`
+2. Check that everything is started ok `docker-compose ps`
+
