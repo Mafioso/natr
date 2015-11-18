@@ -28,8 +28,8 @@ class Project(models.Model):
     fundings = models.TextField(null=True, blank=True)
     own_fundings = models.TextField(null=True, blank=True)
 
-    agreement_id = models.OneToOneField('AgreementDocument', null=True, on_delete=models.SET_NULL)
-    statement_id = models.OneToOneField('StatementDocument', null=True, on_delete=models.SET_NULL)
+    aggreement = models.OneToOneField('AgreementDocument', null=True, on_delete=models.SET_NULL)
+    statement = models.OneToOneField('StatementDocument', null=True, on_delete=models.SET_NULL)
 
     # grantee = models.ForeignKey('Grantee', related_name='projects')
     # user = models.ForeignKey('User', related_name='projects')
