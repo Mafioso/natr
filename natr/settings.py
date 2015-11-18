@@ -41,6 +41,7 @@ APPS = (
     'dummy',
     'projects',
     'documents',
+    'grantee',
 )
 
 INSTALLED_APPS = (
@@ -92,7 +93,7 @@ WSGI_APPLICATION = 'natr.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': rel('../..', 'natr_dev.sqlite3'),
+        'NAME': rel('natr_dev.sqlite3'),
     }
 }
 

@@ -52,6 +52,7 @@ class DocumentDMLManager(models.Manager):
         
 class Document(models.Model):
     ## identifier in (DA 'Document automation' = СЭД 'система электронного документооборота')
+    project = models.ForeignKey('projects.Project', null=True, blank=True)
     external_id = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=255)
     status = models.IntegerField(null=True)

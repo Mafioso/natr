@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+
+__author__ = 'xepa4ep'
+
+
 from django.db import models
 from djmoney.models.fields import MoneyField
 
@@ -10,6 +14,7 @@ class Project(models.Model):
     description = models.CharField(max_length=1024, null=True, blank=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
+    total_month = models.IntegerField(u'Срок реализации проекта (месяцы)', default=24)
     status = models.IntegerField(null=True)
     funding_type = models.ForeignKey(
         'FundingType', null=True, on_delete=models.SET_NULL)
@@ -26,6 +31,8 @@ class Project(models.Model):
     statement = models.OneToOneField(
         'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
 
+    grantee_organization = models.OneToOneField(
+        'grantee.Organization', null=True, on_delete=models.SET_NULL)
     # grantee = models.ForeignKey('Grantee', related_name='projects')
     # user = models.ForeignKey('User', related_name='projects')
 
