@@ -22,6 +22,20 @@ class Document(DjangoModelFactory):
         return random.choice(types)
 
 
+class DocumentWithAttachments(Document):
+    
+    @factory.post_generation
+    def attachments(self, create, count, **kwargs):
+        if count is None:
+            count = 2
+
+        make_attachment = getattr(Attachment, 'create' if create else 'build')
+        attachments = [make_attachment(document=self) for i in xrange(count)]
+        if not create:
+            # Fiddle with django internals so self.product_set.all() works with build()
+            self._prefetched_objects_cache = {'attachments': attachments}
+
+
 class StatementDocument(DjangoModelFactory):
 
     class Meta:
@@ -66,5 +80,20 @@ class CalendarPlanItem(DjangoModelFactory):
     deadline = factory.LazyAttribute(lambda x: random.randint(1, 12))
     reporting = factory.Faker('word')
     fundings = factory.LazyAttribute(lambda x: utils.fake_money())
+
+
+class Attachment(DjangoModelFactory):
+
+    class Meta:
+        model = models.Attachment
+        strategy = BUILD_STRATEGY
+
+
+    document = factory.SubFactory('documents.factories.Document')
+    url = factory.LazyAttribute(lambda x: utils.fake_url())
+    file_path = factory.LazyAttribute(lambda x: utils.fake_path())
+    name = factory.Faker('word')
+    ext = factory.Faker('word')
+
 
 

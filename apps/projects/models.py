@@ -112,18 +112,6 @@ class Milestone(models.Model):
 
 
 
-class Attachment(models.Model):
-    # max windows 260, linux 255, url 2083
-    file_path = models.CharField(max_length=270, null=True, blank=True)
-    url = models.CharField(max_length=3000, null=True, blank=True)
-    name = models.CharField(max_length=255, null=True, blank=True)
-    mime_type = models.CharField(max_length=255, null=True, blank=True)
-    ext = models.CharField(max_length=255, null=True, blank=True)
-
-    class Meta:
-        ## will stored in other Class fields as serialized json-data
-        abstract = True
-
 
 ## It will stored in NoSQL DataBase
 # class Activity(models.Model):

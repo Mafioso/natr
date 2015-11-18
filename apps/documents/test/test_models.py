@@ -72,3 +72,10 @@ class DocumentTestCase(TestCase):
 		self.test_create_calendar_plan()
 		res = self.Document.dml.filter_doc_(models.CalendarPlanDocument)
 		self.assertTrue(res.count() > 0)
+
+
+	def test_document_with_atatchments(self):
+		doc = factories.DocumentWithAttachments()
+		self.assertTrue(len(doc.attachments.all()) > 0)
+		for attachment in doc.attachments.all():
+			self.assertTrue(attachment.__class__, models.Attachment)

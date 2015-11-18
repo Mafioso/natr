@@ -58,7 +58,6 @@ class Document(models.Model):
     status = models.IntegerField(null=True)
     date_created = models.DateTimeField(auto_now_add=True)
     date_sign = models.DateTimeField(null=True)
-    attachments = models.TextField(null=True, blank=True)
 
     # project_documents_entry = models.ForeignKey(ProjectDocumentsEntry, related_name='documents')
 
@@ -108,3 +107,13 @@ class CalendarPlanItem(models.Model):
 class CostItem(models.Model):
     type = models.IntegerField(null=True)
     budgeting_document = models.ForeignKey(BudgetingDocument, related_name='costs')
+
+
+class Attachment(models.Model):
+    file_path = models.CharField(max_length=270, null=True, blank=True)
+    url = models.CharField(max_length=3000, null=True, blank=True)
+    name = models.CharField(max_length=255, null=True, blank=True)
+    ext = models.CharField(max_length=255, null=True, blank=True)
+
+    document = models.ForeignKey('Document', null=True, related_name='attachments')
+
