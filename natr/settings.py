@@ -39,6 +39,7 @@ ALLOWED_HOSTS = []
 APPS = (
     'natr',
     'dummy',
+    'projects',
 )
 
 INSTALLED_APPS = (
