@@ -40,6 +40,7 @@ APPS = (
     'natr',
     'dummy',
     'projects',
+    'documents',
 )
 
 INSTALLED_APPS = (
@@ -49,7 +50,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'rest_framework'
+    'rest_framework',
+    'django_extensions',
 ) + APPS
 
 MIDDLEWARE_CLASSES = (
@@ -91,11 +93,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': rel('../..', 'natr_dev.sqlite3'),
-    },
-    'test': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': rel('../..', 'test_natr_dev.sqlite3'),
-    },
+    }
 }
 
 
@@ -192,8 +190,16 @@ BROKER_URL = 'amqp://{user_passwd}@{host}/{vhost}'.format(**{
     'port': BROKER_PORT,
     'vhost': BROKER_VHOST
 })
-print BROKER_URL
+
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
+
+SHELL_PLUS_PRE_IMPORTS = (
+    'projects.factories',
+    'documents.factories',
+    ('faker', '*')
+)
+
+CURRENCIES = ('KZT', 'USD')

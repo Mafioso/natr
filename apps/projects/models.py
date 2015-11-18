@@ -1,9 +1,40 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from django.db import models
+from djmoney.models.fields import MoneyField
+
 
 
 class Project(models.Model):
+    name = models.CharField(max_length=1024, null=True, blank=True)
+    description = models.CharField(max_length=1024, null=True, blank=True)
+    date_start = models.DateTimeField(null=True)
+    date_end = models.DateTimeField(null=True)
+    status = models.IntegerField(null=True)
+    funding_type = models.ForeignKey(
+        'FundingType', null=True, on_delete=models.SET_NULL)
+
+    fundings = MoneyField(
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    own_fundings = MoneyField(
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+
+    aggreement = models.OneToOneField(
+        'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)
+    statement = models.OneToOneField(
+        'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
+
+    # grantee = models.ForeignKey('Grantee', related_name='projects')
+    # user = models.ForeignKey('User', related_name='projects')
+
+    def __unicode__(self):
+        return self.name
+
+
+
+class FundingType(models.Model):
     GRANT_TYPES = (
         u'Приобретение технологий',
         u'Проведение промышленных исследований',
@@ -16,23 +47,10 @@ class Project(models.Model):
         u'Внедрение управленческих и производственных технологий',
     )
     GRANT_TYPES_OPTIONS = zip(range(len(GRANT_TYPES)), GRANT_TYPES)
+    name = models.CharField(max_length=255, null=True, blank=True, choices=GRANT_TYPES_OPTIONS)
 
-    name = models.CharField(max_length=255, null=True, blank=True)
-    description = models.CharField(max_length=1024, null=True, blank=True)
-    date_start = models.DateTimeField(null=True)
-    date_end = models.DateTimeField(null=True)
-    status = models.IntegerField(null=True)
-    funding_type_id = models.IntegerField(null=True, choices=GRANT_TYPES_OPTIONS)
-    # fields below will store as json-data
-    # {current: ‘KZT’, value: 123}
-    fundings = models.TextField(null=True, blank=True)
-    own_fundings = models.TextField(null=True, blank=True)
-
-    aggreement = models.OneToOneField('AgreementDocument', null=True, on_delete=models.SET_NULL)
-    statement = models.OneToOneField('StatementDocument', null=True, on_delete=models.SET_NULL)
-
-    # grantee = models.ForeignKey('Grantee', related_name='projects')
-    # user = models.ForeignKey('User', related_name='projects')
+    def __unicode__(self):
+        return self.name
 
 
 class Report(models.Model):
@@ -46,7 +64,7 @@ class Report(models.Model):
     # max 2 reports for one milestone
     milestone = models.ForeignKey('Milestone', null=False, related_name='reports')
     corollary = models.OneToOneField('Corollary', null=True, on_delete=models.CASCADE)
-    project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
+    # project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
     # additional links, without strong needs:
     project = models.ForeignKey(Project, related_name='reports')
 
@@ -62,59 +80,18 @@ class Corollary(models.Model):
     spent_fundings = models.TextField(null=True, blank=True)
     remaining_fundings = models.TextField(null=True, blank=True)
 
-    project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
+    # project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
     # additional links, without strong needs:
     project = models.ForeignKey(Project, related_name='corollaries')
 
 
-class ProjectDocumentsEntry(models.Model):
-    # see Corollary and Report
-    # report = models.OneToOneField(Report, null=True, on_delete=models.CASCADE)
-    # corollary = models.OneToOneField(Corollary, null=True, on_delete=models.CASCADE)
+# class ProjectDocumentsEntry(models.Model):
+#     # see Corollary and Report
+#     # report = models.OneToOneField(Report, null=True, on_delete=models.CASCADE)
+#     # corollary = models.OneToOneField(Corollary, null=True, on_delete=models.CASCADE)
 
-    # additional links, without strong needs:
-    project = models.ForeignKey(Project, related_name='project_documents_entries')
-
-
-class Document(models.Model):
-    ## identifier in (DA 'Document automation' = СЭД 'система электронного документооборота')
-    external_id = models.CharField(max_length=255, null=True, blank=True)
-    type = models.IntegerField(null=True)
-    status = models.IntegerField(null=True)
-    date_created = models.DateTimeField(null=True)
-    date_sign = models.DateTimeField(null=True)
-    attachments = models.TextField(null=True, blank=True)
-
-    project_documents_entry = models.ForeignKey(ProjectDocumentsEntry, related_name='documents')
-
-class AgreementDocument(models.Model):
-    document = models.OneToOneField(Document, related_name='agreement', on_delete=models.CASCADE)
-
-class StatementDocument(models.Model):
-    document = models.OneToOneField(Document, related_name='statement', on_delete=models.CASCADE)
-
-class CalendarPlanDocument(models.Model):
-    document = models.OneToOneField(Document, related_name='calendar_plan', on_delete=models.CASCADE)
-
-class BudgetingDocument(models.Model):
-    document = models.OneToOneField(Document, related_name='budgeting_document', on_delete=models.CASCADE)
-
-
-class CalendarPlanItem(models.Model):
-    number = models.IntegerField(u'Номер этапа', null=True)
-    description = models.TextField(u'Наименование работ по этапу', null=True, blank=True)
-    reporting = models.TextField(u'Форма завершения', null=True, blank=True)
-    date_end = models.DateTimeField(u'Срок выполнения', null=True)
-    # field below will store as json-data
-    # {current: ‘KZT’, value: 123}
-    fundings = models.TextField(null=True, blank=True)
-
-    calendar_plan = models.ForeignKey(CalendarPlanDocument, related_name='items')
-    milestone = models.OneToOneField('Milestone', null=True, related_name='calendar_plan_item', on_delete=models.CASCADE)
-
-class CostItem(models.Model):
-    type = models.IntegerField(null=True)
-    budgeting_document = models.ForeignKey(BudgetingDocument, related_name='costs')
+#     # additional links, without strong needs:
+#     project = models.ForeignKey(Project, related_name='project_documents_entries')
 
 
 class Milestone(models.Model):
