@@ -25,6 +25,7 @@ class Project(models.Model):
     own_fundings = MoneyField(
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
+    number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
 
     aggreement = models.OneToOneField(
         'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)

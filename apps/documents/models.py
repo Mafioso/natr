@@ -69,6 +69,8 @@ class AgreementDocument(models.Model):
 
     document = models.OneToOneField(Document, related_name='agreement', on_delete=models.CASCADE)
     number = models.IntegerField(unique=True)
+    name = models.CharField(u'Название договора', max_length=1024, default='')
+    subject = models.TextField(u'Предмет договора', default='')
 
 
 class StatementDocument(models.Model):

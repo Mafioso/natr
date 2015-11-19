@@ -21,15 +21,18 @@ class Organization(models.Model):
 
 
 class ShareHolder(models.Model):
-	organization = models.ForeignKey('Organization', on_delete=models.CASCADE)
+	organization = models.ForeignKey(
+		'Organization', on_delete=models.CASCADE, null=True,
+		related_name='share_holders')
 	fio = models.CharField(u'ФИО', max_length=512)
 	iin = models.CharField(u'ИИН', max_length=255)
 	share_percentage = models.IntegerField(u'Процент доли', default=0)
 
 
 class ContactDetails(models.Model):
-	address_1 = models.CharField(u'Фактический адрес', max_length=1024)
+	organization = models.OneToOneField(
+		'Organization', null=True, on_delete=models.SET_NULL,
+		related_name='contact_details')
+
 	phone_number = models.CharField(u'Телефон', max_length=255)
 	email = models.EmailField(u'Почтовый адрес')
-
-	organization = models.OneToOneField('Organization', null=True, on_delete=models.SET_NULL)

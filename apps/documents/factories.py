@@ -45,6 +45,7 @@ class StatementDocument(DjangoModelFactory):
 
     document = factory.SubFactory('documents.factories.Document')
     number = random.randint(1, 10000)
+    name = factory.Faker('sentence')
 
 
 class CalendarPlanDocument(DjangoModelFactory):

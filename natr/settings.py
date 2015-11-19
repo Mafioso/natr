@@ -42,6 +42,7 @@ APPS = (
     'projects',
     'documents',
     'grantee',
+    'resources'
 )
 
 INSTALLED_APPS = (
@@ -200,7 +201,12 @@ CELERY_RESULT_SERIALIZER = 'json'
 SHELL_PLUS_PRE_IMPORTS = (
     'projects.factories',
     'documents.factories',
-    ('faker', '*')
+    ('faker', '*'),
+    ('resources.project', '*'),
+    ('resources.serializers', '*'),
+    ('documents.serializers', '*'),
+    ('grantee.serializers', '*'),
+       
 )
 
 CURRENCIES = ('KZT', 'USD')
