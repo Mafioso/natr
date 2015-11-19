@@ -14,7 +14,7 @@ class ProjectBasedModel(models.Model):
 	class Meta:
 		abstract = True
 
-	project = models.ForeignKey('projects.Project', related_name='reports')
+	project = models.ForeignKey('projects.Project', null=True)
 
 	objects = ProjectQuerySet.as_manager()
 

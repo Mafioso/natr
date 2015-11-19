@@ -15,6 +15,10 @@ class Organization(models.Model):
 	address_2 = models.CharField(u'Фактический адрес', max_length=1024)
 	first_head_fio = models.CharField(u'ФИО первого руководителя', max_length=512)
 
+	project = models.OneToOneField(
+        'projects.Project', null=True, on_delete=models.CASCADE,
+        related_name='organization_details')
+
 
 class ShareHolder(models.Model):
 	organization = models.ForeignKey('Organization', on_delete=models.CASCADE)
