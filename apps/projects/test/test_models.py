@@ -22,7 +22,12 @@ class ProjectTestCase(TestCase):
 		self.Project.objects.filter(fundings__gte=Money(1, KZT))
 		self.Project.objects.filter(fundings__gte=Money(0, USD))
 
+
 	def test_funding_type(self):
 		for _ in xrange(self.cnt):
 			p = self.ProjectFactory()
 			self.assertTrue(p.funding_type.name in models.FundingType.GRANT_TYPES)
+
+
+	def test_filter_by_project(self):
+		p = self.ProjectFactory.create()

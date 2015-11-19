@@ -137,7 +137,7 @@ class UseOfBudgetDocumentItem(models.Model):
     spent_fundings = MoneyField(
         u'Израсходованная сумма (тенге)',
         max_digits=20, decimal_places=2, default_currency='KZT')
-    spent_fundings = MoneyField(
+    remain_fundings = MoneyField(
         u'Остаток средств (тенге)',
         max_digits=20, decimal_places=2, default_currency='KZT')
     name_of_documents = models.CharField(

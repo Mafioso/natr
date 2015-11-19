@@ -82,6 +82,43 @@ class CalendarPlanItem(DjangoModelFactory):
     fundings = factory.LazyAttribute(lambda x: utils.fake_money())
 
 
+class UseOfBudgetDocument(DjangoModelFactory):
+
+    class Meta:
+        model = models.UseOfBudgetDocument
+        strategy = BUILD_STRATEGY
+
+    
+    document = factory.SubFactory('documents.factories.Document')
+
+    @factory.post_generation
+    def items(self, create, count, **kwargs):
+        if count is None:
+            count = 5
+
+        make_item = getattr(UseOfBudgetDocumentItem, 'create' if create else 'build')
+        items = [make_item(use_of_budget_doc=self) for i in xrange(count)]
+        if not create:
+            # Fiddle with django internals so self.product_set.all() works with build()
+            self._prefetched_objects_cache = {'items': items}
+
+
+class UseOfBudgetDocumentItem(DjangoModelFactory):
+
+    class Meta:
+        model = models.UseOfBudgetDocumentItem
+        strategy = BUILD_STRATEGY
+
+
+    use_of_budget_doc = factory.SubFactory('documents.factories.UseOfBudgetDocument')
+    number = factory.LazyAttribute(lambda x: random.randint(1, 1000))
+    planned_fundings = factory.LazyAttribute(lambda x: utils.fake_money())
+    spent_fundings = factory.LazyAttribute(lambda x: utils.fake_money())
+    remain_fundings = factory.LazyAttribute(lambda x: utils.fake_money())
+    name_of_documents = factory.Faker('text')
+    notes = factory.Faker('text')
+
+
 class Attachment(DjangoModelFactory):
 
     class Meta:

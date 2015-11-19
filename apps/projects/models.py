@@ -6,7 +6,7 @@ __author__ = 'xepa4ep'
 
 from django.db import models
 from djmoney.models.fields import MoneyField
-
+from .mixins import ProjectBasedModel
 
 
 class Project(models.Model):
@@ -60,11 +60,11 @@ class FundingType(models.Model):
         return self.name
 
 
-class Report(models.Model):
+class Report(ProjectBasedModel):
     type = models.IntegerField(null=True)
     date = models.DateTimeField(u'Дата отчета', null=True)
     
-    period = models.IntegerField(null=True)
+    period = models.CharField(null=True, max_length=255)
     status = models.IntegerField(null=True)
 
     # max 2 reports for one milestone
@@ -77,11 +77,10 @@ class Report(models.Model):
         'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
         verbose_name=u'Отчет об использовании целевых бюджетных средств')
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
-    corollary = models.OneToOneField('Corollary', null=True, on_delete=models.CASCADE)
-    
+    corollary = models.OneToOneField('Corollary', null=True)
     
 
-class Corollary(models.Model):
+class Corollary(ProjectBasedModel):
     type = models.IntegerField(null=True)
     domestication_period = models.IntegerField(null=True)
     impl_period = models.IntegerField(null=True)
@@ -106,7 +105,7 @@ class Corollary(models.Model):
 #     project = models.ForeignKey(Project, related_name='project_documents_entries')
 
 
-class Milestone(models.Model):
+class Milestone(ProjectBasedModel):
     number = models.IntegerField(null=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
