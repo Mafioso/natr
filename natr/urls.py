@@ -18,13 +18,17 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 from dummy import urls as dummy_urls
+from resources import urls as resources_urls
 
 
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
+    url(r'^docs/', include('rest_framework_swagger.urls')),
 ]
 
-urlpatterns += dummy_urls.urlpatterns
+
+# urlpatterns += dummy_urls.urlpatterns
+urlpatterns += resources_urls.urlpatterns
 
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

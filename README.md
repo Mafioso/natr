@@ -25,7 +25,7 @@ Launching Software
 ## Component-by-Component
 
 1. Celery: `celery -A natr worker -l debug`
-2. 
+
 
 
 ## Using Docker
@@ -33,3 +33,7 @@ Launching Software
 1. Run the whole project with `docker-compose up -d`
 2. Check that everything is started ok `docker-compose ps`
 
+API
+---
+
+API is constantly updated and documented by `http://127.0.0.1:8000/docs` address

@@ -71,7 +71,7 @@ class AgreementDocument(models.Model):
     number = models.IntegerField(unique=True)
     name = models.CharField(u'Название договора', max_length=1024, default='')
     subject = models.TextField(u'Предмет договора', default='')
-
+    
 
 class StatementDocument(models.Model):
     tp = 'statement'

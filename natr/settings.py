@@ -42,7 +42,8 @@ APPS = (
     'projects',
     'documents',
     'grantee',
-    'resources'
+    'resources',
+    'rest_framework_swagger'
 )
 
 INSTALLED_APPS = (
