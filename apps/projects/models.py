@@ -6,7 +6,7 @@ __author__ = 'xepa4ep'
 
 from django.db import models
 from djmoney.models.fields import MoneyField
-from .mixins import ProjectBasedModel
+from natr.mixins import ProjectBasedModel
 
 
 class Project(models.Model):
@@ -70,8 +70,7 @@ class Report(ProjectBasedModel):
     # max 2 reports for one milestone
     milestone = models.ForeignKey('Milestone', null=False, related_name='reports')
     # project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
-    # additional links, without strong needs:
-    project = models.ForeignKey(Project, related_name='reports')
+    # additional links, without strong needs
 
     use_of_budget_doc = models.OneToOneField(
         'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
@@ -79,16 +78,14 @@ class Report(ProjectBasedModel):
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
     
     
-
 class Corollary(ProjectBasedModel):
     # todo: wait @ainagul
     type = models.IntegerField(null=True)
     domestication_period = models.CharField(u'Срок освоения', max_length=255, null=True)
     impl_period = models.CharField(u'Срок реализации', max_length=255, null=True)
-    number_of_milestones = models.IntegerField(u'Количество этапов', )
+    number_of_milestones = models.IntegerField(u'Количество этапов', default=1)
     report_delivery_date = models.DateTimeField(null=True)  # from report 
-    
-    project = models.ForeignKey(Project, related_name='corollaries')
+   
     report = models.OneToOneField('Report', null=True)
 
 
@@ -98,6 +95,4 @@ class Milestone(ProjectBasedModel):
     date_end = models.DateTimeField(null=True)
     period = models.IntegerField(null=True)
     status = models.IntegerField(null=True)
-
-    project = models.ForeignKey(Project, related_name='milestones')
 

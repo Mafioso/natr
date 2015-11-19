@@ -7,7 +7,7 @@ __author__ = 'xepa4ep'
 from djmoney.models.fields import MoneyField
 from django.db import models
 from projects import models as project_models
-
+from natr.mixins import ProjectBasedModel
 
 
 class DocumentDMLManager(models.Manager):
@@ -50,9 +50,8 @@ class DocumentDMLManager(models.Manager):
         return self.filter(type=doc_class.tp)
         
         
-class Document(models.Model):
+class Document(ProjectBasedModel):
     ## identifier in (DA 'Document automation' = СЭД 'система электронного документооборота')
-    project = models.ForeignKey('projects.Project', null=True, blank=True)
     external_id = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=255)
     status = models.IntegerField(null=True)
