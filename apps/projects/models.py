@@ -77,32 +77,19 @@ class Report(ProjectBasedModel):
         'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
         verbose_name=u'Отчет об использовании целевых бюджетных средств')
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
-    corollary = models.OneToOneField('Corollary', null=True)
+    
     
 
 class Corollary(ProjectBasedModel):
+    # todo: wait @ainagul
     type = models.IntegerField(null=True)
-    domestication_period = models.IntegerField(null=True)
-    impl_period = models.IntegerField(null=True)
-    date_delivery = models.DateTimeField(null=True)
-    description = models.TextField(null=True, blank=True)
-    # fields below will store as json-data
-    # {current: ‘KZT’, value: 123}
-    spent_fundings = models.TextField(null=True, blank=True)
-    remaining_fundings = models.TextField(null=True, blank=True)
-
-    # project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
-    # additional links, without strong needs:
+    domestication_period = models.CharField(u'Срок освоения', max_length=255, null=True)
+    impl_period = models.CharField(u'Срок реализации', max_length=255, null=True)
+    number_of_milestones = models.IntegerField(u'Количество этапов', )
+    report_delivery_date = models.DateTimeField(null=True)  # from report 
+    
     project = models.ForeignKey(Project, related_name='corollaries')
-
-
-# class ProjectDocumentsEntry(models.Model):
-#     # see Corollary and Report
-#     # report = models.OneToOneField(Report, null=True, on_delete=models.CASCADE)
-#     # corollary = models.OneToOneField(Corollary, null=True, on_delete=models.CASCADE)
-
-#     # additional links, without strong needs:
-#     project = models.ForeignKey(Project, related_name='project_documents_entries')
+    report = models.OneToOneField('Report', null=True)
 
 
 class Milestone(ProjectBasedModel):
@@ -114,30 +101,3 @@ class Milestone(ProjectBasedModel):
 
     project = models.ForeignKey(Project, related_name='milestones')
 
-
-
-
-## It will stored in NoSQL DataBase
-# class Activity(models.Model):
-#     ## DA = 'Document automation' = СЭД 'система электронного документооборота'
-#     CHANNELS = (CHAT, EMAIL, DA, CALL) = (1, 2, 3, 4)
-#     CHANNELS_OPTIONS = (
-#         (CHAT, u'Чат'),
-#         (EMAIL, 'Email'),
-#         (DA, u'СЭД'),
-#         (CALL, u'Звонки'),
-#     )
-#
-#     channel = models.IntegerField(null=True, choices=CHANNELS_OPTIONS)
-#     type = models.IntegerField(null=True)
-#     question = models.TextField(null=True, blank=True)
-#     result = models.TextField(null=True, blank=True)
-#     date_created = models.DateTimeField(null=True, auto_now_add=True)
-#     attachments = models.TextField(null=True, blank=True)
-#
-#     # grantee = models.ForeignKey('Grantee', related_name='activities')
-#     # user = models.ForeignKey('User', related_name='activities')
-#
-#     milestone = models.ForeignKey(Milestone, related_name='activities')
-#     ## additional links, without strong needs:
-#     project = models.ForeignKey(Project, related_name='activities')
