@@ -62,19 +62,24 @@ class FundingType(models.Model):
 
 class Report(models.Model):
     type = models.IntegerField(null=True)
-    date_start = models.DateTimeField(null=True)
-    date_end = models.DateTimeField(null=True)
-    description = models.TextField(null=True, blank=True)
+    date = models.DateTimeField(u'Дата отчета', null=True)
+    
     period = models.IntegerField(null=True)
     status = models.IntegerField(null=True)
 
     # max 2 reports for one milestone
     milestone = models.ForeignKey('Milestone', null=False, related_name='reports')
-    corollary = models.OneToOneField('Corollary', null=True, on_delete=models.CASCADE)
     # project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
     # additional links, without strong needs:
     project = models.ForeignKey(Project, related_name='reports')
 
+    use_of_budget_doc = models.OneToOneField(
+        'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
+        verbose_name=u'Отчет об использовании целевых бюджетных средств')
+    description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
+    corollary = models.OneToOneField('Corollary', null=True, on_delete=models.CASCADE)
+    
+    
 
 class Corollary(models.Model):
     type = models.IntegerField(null=True)

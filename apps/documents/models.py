@@ -106,7 +106,8 @@ class CalendarPlanItem(models.Model):
 
 class CostItem(models.Model):
     type = models.IntegerField(null=True)
-    budgeting_document = models.ForeignKey(BudgetingDocument, related_name='costs')
+    budgeting_document = models.ForeignKey(
+        BudgetingDocument, related_name='costs', on_delete=models.CASCADE)
 
 
 class Attachment(models.Model):
@@ -116,4 +117,34 @@ class Attachment(models.Model):
     ext = models.CharField(max_length=255, null=True, blank=True)
 
     document = models.ForeignKey('Document', null=True, related_name='attachments')
+
+
+class UseOfBudgetDocument(models.Model):
+    tp = 'useofbudget'
+    document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
+
+
+class UseOfBudgetDocumentItem(models.Model):
+
+    use_of_budget_doc = models.ForeignKey(UseOfBudgetDocument, related_name='items', on_delete=models.CASCADE)
+
+    number = models.IntegerField(u'Номер')
+    costs_description = models.CharField(
+        u'Наименование статей затрат', max_length=1024)
+    planned_fundings = MoneyField(
+        u'Сумма бюджетных средств по смете (тенге)',
+        max_digits=20, decimal_places=2, default_currency='KZT')
+    spent_fundings = MoneyField(
+        u'Израсходованная сумма (тенге)',
+        max_digits=20, decimal_places=2, default_currency='KZT')
+    spent_fundings = MoneyField(
+        u'Остаток средств (тенге)',
+        max_digits=20, decimal_places=2, default_currency='KZT')
+    name_of_documents = models.CharField(
+        u'Наименования подтверждающих документов',
+        max_length=1024, null=True, blank=True)
+    notes = models.CharField(
+        u'Примечания',
+        max_length=1024, null=True, blank=True)
+
 
