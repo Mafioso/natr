@@ -105,5 +105,4 @@ class ProjectSerializerTestCase(TestCase):
 		assertRelated(prj, 'aggreement')
 		assertRelated(prj.statement, 'document', initial=data['statement'])
 		assertRelated(prj.aggreement, 'document', initial=data['aggreement'])
-		
 
