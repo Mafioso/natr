@@ -31,37 +31,33 @@ class ProjectSerializer(serializers.ModelSerializer):
 	statement = StatementDocumentSerializer(required=False)
 	organization_details = OrganizationSerializer(required=False)
 
-
-	def validate_funding_type(self, value):
-		if value:
-			try:
-				value = FundingType.objects.get(
-					pk=data['funding_type']['id'])
-			except FundingType.DoesNotExist:
-				raise serializers.ValidationError('funding')
-		return value
-
-
 	def create(self, validated_data):
-		funding_type = validated_data.pop('funding_type', None)
+		organization_details = validated_data.pop('organization_details', None)
+		funding_type_data = validated_data.pop('funding_type', None)
 		statement_data = validated_data.pop('statement', None)
 		aggrement_data = validated_data.pop('aggreement', None)
 
-		prj = Project.create(**validated_data)
-		if funding_type:
-			prj.funding_type = funding_type
-			
+		prj = Project.objects.create(**validated_data)
+		
+		if organization_details:
+			organization_details = OrganizationSerializer(data=organization_details)
+			organization_details.is_valid(raise_exception=True)
+			prj.organization_details = organization_details.save()
+
+		if funding_type_data:
+			funding_type_ser = FundingTypeSerializer(data=funding_type_data)
+			funding_type_ser.is_valid(raise_exception=True)
+			prj.funding_type = funding_type_ser.save()
+
 		if statement_data:
 			statement_ser = StatementDocumentSerializer(data=statement_data)
 			statement_ser.is_valid(raise_exception=True)
-			statement_ser.save()
-			prj.statement = agr
+			prj.statement = statement_ser.save()
 
 		if aggrement_data:
 			agr_ser = AgreementDocumentSerializer(data=aggrement_data)
 			agr_ser.is_valid(raise_exception=True)
-			agr.save()
-			prj.aggreement = agr
+			prj.aggreement = agr_ser.save()
 
 		prj.save()
 		return prj

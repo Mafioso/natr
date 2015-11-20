@@ -15,7 +15,18 @@ class DocumentSerializer(serializers.ModelSerializer):
 		model = models.Document
 
 
-class AgreementDocumentSerializer(serializers.ModelSerializer):
+class DocumentCompositionSerializer(serializers.ModelSerializer):
+
+	def to_internal_value(self, data):
+		if 'document' in data and not 'type' in data['document']:
+			if not hasattr(self.Meta.model, 'tp'):
+				raise serializers.ValidationError("Document should has tp field.")
+			data['document']['type'] = self.Meta.model.tp
+		return super(DocumentCompositionSerializer, self).to_internal_value(data)
+
+
+class AgreementDocumentSerializer(DocumentCompositionSerializer):
+
 
 	class Meta:
 		model = models.AgreementDocument
@@ -23,14 +34,12 @@ class AgreementDocumentSerializer(serializers.ModelSerializer):
 	document = DocumentSerializer(required=True)
 
 	def create(self, validated_data):
-		doc = Document.create(**validated_data.pop('document'))
+		doc = models.Document.dml.create_agreement(**validated_data)
 		doc.save()
-		agr_doc = StatementDocument(document=doc)
-		agr_doc.save()
-		return agr_doc
+		return doc
 
 
-class StatementDocumentSerializer(serializers.ModelSerializer):
+class StatementDocumentSerializer(DocumentCompositionSerializer):
 
 	class Meta:
 		model = models.StatementDocument
@@ -38,8 +47,6 @@ class StatementDocumentSerializer(serializers.ModelSerializer):
 	document = DocumentSerializer(required=True)
 
 	def create(self, validated_data):
-		doc = Document.create(**validated_data.pop('document'))
+		doc = models.Document.dml.create_statement(**validated_data)
 		doc.save()
-		statement_doc = StatementDocument(document=doc)
-		statement_doc.save()
-		return statement_doc
+		return doc

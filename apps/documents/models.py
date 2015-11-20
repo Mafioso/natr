@@ -18,12 +18,7 @@ class DocumentDMLManager(models.Manager):
         return doc
 
     def create_agreement(self, **kwargs):
-        assert 'number' in kwargs, "number is required"
-        number = kwargs.pop('number')
-        doc = self.create_doc_(AgreementDocument, **kwargs)
-        doc.number = number
-        doc.save()
-        return doc
+        return self.create_doc_(AgreementDocument, **kwargs)
 
     def create_calendar_plan(self, **kwargs):
         items = kwargs.pop('items', [])
@@ -40,10 +35,15 @@ class DocumentDMLManager(models.Manager):
 
     def create_doc_(self, doc_class, **kwargs):
         assert hasattr(doc_class, 'tp'), 'Document %s must have \'tp\' attribute'
-        d = Document(**kwargs)
+        d = Document(**kwargs.pop('document'))
         d.type = doc_class.tp
         d.save()
-        return doc_class(document=d)
+
+        doc = doc_class(document=d)
+        for k, v in kwargs.iteritems():
+            setattr(doc, k, v)
+        doc.save()
+        return doc
 
     def filter_doc_(self, doc_class):
         assert hasattr(doc_class, 'tp'), 'Document %s must have \'tp\' attribute'
