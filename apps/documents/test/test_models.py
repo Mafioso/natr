@@ -17,7 +17,7 @@ class DocumentTestCase(TestCase):
 	def test_create_agreement(self):
 		test_doc = self.DocumentFactory()
 		doc = self.Document.dml.create_agreement(
-			external_id=test_doc.external_id,
+			document={'external_id': test_doc.external_id},
 			number=123)
 
 		self.assertTrue(doc.__class__ == models.AgreementDocument)
@@ -27,7 +27,7 @@ class DocumentTestCase(TestCase):
 	def test_create_statement(self):
 		test_doc = self.DocumentFactory()
 		doc = self.Document.dml.create_statement(
-			external_id=test_doc.external_id,)
+			document={'external_id': test_doc.external_id})
 		self.assertTrue(doc.__class__ == models.StatementDocument)
 		self.assertTrue(doc.document.external_id == test_doc.external_id)
 

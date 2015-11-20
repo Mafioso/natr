@@ -35,7 +35,7 @@ class DocumentDMLManager(models.Manager):
 
     def create_doc_(self, doc_class, **kwargs):
         assert hasattr(doc_class, 'tp'), 'Document %s must have \'tp\' attribute'
-        d = Document(**kwargs.pop('document'))
+        d = Document(**kwargs.pop('document', {}))
         d.type = doc_class.tp
         d.save()
 
