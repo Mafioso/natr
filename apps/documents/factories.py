@@ -126,12 +126,24 @@ class Attachment(DjangoModelFactory):
         model = models.Attachment
         strategy = BUILD_STRATEGY
 
-
     document = factory.SubFactory('documents.factories.Document')
     url = factory.LazyAttribute(lambda x: utils.fake_url())
     file_path = factory.LazyAttribute(lambda x: utils.fake_path())
     name = factory.Faker('word')
     ext = factory.Faker('word')
+
+
+class AttachmentNoDocument(DjangoModelFactory):
+
+    class Meta:
+        model = models.Attachment
+        strategy = BUILD_STRATEGY
+
+    url = factory.LazyAttribute(lambda x: utils.fake_url())
+    file_path = factory.LazyAttribute(lambda x: utils.fake_path())
+    name = factory.Faker('word')
+    ext = factory.Faker('word')
+
 
 
 
