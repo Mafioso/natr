@@ -1,11 +1,13 @@
 from rest_framework import serializers
 import documents.models as models
-
+from natr.rest_framework.fields import SerializerMoneyField
 
 __all__ = (
 	'DocumentSerializer',
 	'AgreementDocumentSerializer',
 	'StatementDocumentSerializer',
+	'CalendarPlanDocumentSerializer',
+	'CalendarPlanItemSerializer',
 	'AttachmentSerializer'
 )
 
@@ -46,7 +48,6 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
 
 	def create(self, validated_data):
 		doc = models.Document.dml.create_agreement(**validated_data)
-		doc.save()
 		return doc
 
 
@@ -59,7 +60,6 @@ class StatementDocumentSerializer(DocumentCompositionSerializer):
 
 	def create(self, validated_data):
 		doc = models.Document.dml.create_statement(**validated_data)
-		doc.save()
 		return doc
 
 
@@ -70,8 +70,13 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
 
 	document = DocumentSerializer(required=True)
 
-	milestones = serializers.PrimaryKeyRelatedField(
+	items = serializers.PrimaryKeyRelatedField(
 		queryset=models.CalendarPlanItem.objects.all(), many=True, required=False)
+
+
+	def create(self, validated_data):
+		doc = models.Document.dml.create_calendar_plan(**validated_data)
+		return doc
 
 
 class CalendarPlanItemSerializer(serializers.ModelSerializer):
@@ -79,8 +84,16 @@ class CalendarPlanItemSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.CalendarPlanItem
 
+	fundings = SerializerMoneyField(required=False)
 	calendar_plan = serializers.PrimaryKeyRelatedField(
 		queryset=models.CalendarPlanDocument.objects.all(), required=True)
+
+
+	def create(self, validated_data):
+		calendar_plan = validated_data.pop('calendar_plan')
+		plan_item = models.CalendarPlanItem.objects.create(
+			calendar_plan=calendar_plan, **validated_data)
+		return plan_item
 
 
 class AttachmentSerializer(serializers.ModelSerializer):

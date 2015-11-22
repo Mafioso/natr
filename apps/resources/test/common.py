@@ -3,6 +3,7 @@
 import json
 import urllib
 from urlparse import urlparse
+from rest_framework import status
 from rest_framework.reverse import reverse
 
 
@@ -25,3 +26,12 @@ class CommonTestMixin(object):
             if k in exclude:
                 continue
             self.assertEqual(created[k], v)
+
+    def chk_ok(self, response):
+        try:
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        except AssertionError:
+            self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def chk_bad_request(self, response):
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

@@ -106,6 +106,4 @@ class ProjectSerializerTestCase(TestCase):
 		assertRelated(prj.statement, 'document', initial=self.data['statement'])
 		assertRelated(prj.aggreement, 'document', initial=self.data['aggreement'])
 
-	def test_project_create_with_attachments(self):
-		pass
 

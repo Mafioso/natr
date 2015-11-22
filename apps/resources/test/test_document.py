@@ -55,6 +55,44 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
         self.assertIn('attachments', response_data)
 
 
+    def test_create_calendar_plan_document(self):
+        data = {
+          "document": {
+            "attachments": [],
+            "external_id": "123",
+            "status": 0,
+          },
+          "items": []
+        }
+
+        url, parsed = self.prepare_urls('calendarplan-list')
+        response = self.client.post(url, data, format='json')
+        response_data = self.load_response(response)
+        self.chk_ok(response)
+        self.assertIn('id', response_data)
+        self.assertIn('document', response_data)
+        self.assertEqual(response_data['document']['type'], models.CalendarPlanDocument.tp)
+        self.assertResponse(data['document'], response_data['document'])
+        self.assertTrue(response_data['items'] == [])
+        return response_data
+
+    def test_add_calendar_plan_item_to_document(self):
+        cpdoc = self.test_create_calendar_plan_document()
+        data = {
+          "number": 1,
+          "description": u"Проведение маркетинговых исследований для выхода на рынок СНГ; Подготовка технической стороны...",
+          "deadline": 8,
+          "reporting": u"Промежуточный отчет. Платежные документы ...",
+          "fundings": {
+            "currency": "KZT",
+            "amount": 74998400
+          }
+        }
+        url, parsed = self.prepare_urls('calendarplan-add-item', kwargs={'pk': cpdoc['id']})
+        response = self.client.post(url, data, format='json')
+        response_data = self.load_response(response)
+        self.chk_ok(response)
+        self.assertIn('id', response_data)
 
     # data = {
         
