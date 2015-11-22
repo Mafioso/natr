@@ -41,22 +41,18 @@ class ProjectSerializer(serializers.ModelSerializer):
 		
 		if organization_details:
 			organization_details = OrganizationSerializer(data=organization_details)
-			organization_details.is_valid(raise_exception=True)
 			prj.organization_details = organization_details.save()
 
 		if funding_type_data:
 			funding_type_ser = FundingTypeSerializer(data=funding_type_data)
-			funding_type_ser.is_valid(raise_exception=True)
 			prj.funding_type = funding_type_ser.save()
 
 		if statement_data:
 			statement_ser = StatementDocumentSerializer(data=statement_data)
-			statement_ser.is_valid(raise_exception=True)
 			prj.statement = statement_ser.save()
 
 		if aggrement_data:
 			agr_ser = AgreementDocumentSerializer(data=aggrement_data)
-			agr_ser.is_valid(raise_exception=True)
 			prj.aggreement = agr_ser.save()
 
 		prj.save()
