@@ -63,6 +63,26 @@ class StatementDocumentSerializer(DocumentCompositionSerializer):
 		return doc
 
 
+class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
+
+	class Meta:
+		model = models.CalendarPlanDocument
+
+	document = DocumentSerializer(required=True)
+
+	milestones = serializers.PrimaryKeyRelatedField(
+		queryset=models.CalendarPlanItem.objects.all(), many=True, required=False)
+
+
+class CalendarPlanItemSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = models.CalendarPlanItem
+
+	calendar_plan = serializers.PrimaryKeyRelatedField(
+		queryset=models.CalendarPlanDocument.objects.all(), required=True)
+
+
 class AttachmentSerializer(serializers.ModelSerializer):
 
 	class Meta:

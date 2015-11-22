@@ -1,21 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-import urllib
-from urlparse import urlparse
 from rest_framework.test import APITestCase
-from rest_framework.reverse import reverse
 from rest_framework import status
+from .common import CommonTestMixin
 
 
-class ProjectsApiTestCase(APITestCase):
-
-  def prepare_urls(self, path_name, query={}, *args, **kwargs):
-      url = reverse(path_name, *args, **kwargs)
-      if query:
-        url += '?' + urllib.urlencode(query)
-      parsed = urlparse(url)
-      return url, parsed
+class ProjectsApiTestCase(CommonTestMixin, APITestCase):
 
   def test_create_project(self):
     data = {
