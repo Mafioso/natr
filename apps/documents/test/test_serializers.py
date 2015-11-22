@@ -76,3 +76,4 @@ class DocumentSerializerTestCase(TestCase):
         test_(doc_obj, attach_ids[1:])
         test_(doc_obj, [attach_ids[2]])
 
+

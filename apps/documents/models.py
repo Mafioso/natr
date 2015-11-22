@@ -13,12 +13,12 @@ from natr.mixins import ProjectBasedModel
 class DocumentDMLManager(models.Manager):
 
     def create_statement(self, **kwargs):
-        doc = self.create_doc_(StatementDocument, **kwargs)
+        doc = self.create_doc_with_relations(StatementDocument, **kwargs)
         doc.save()
         return doc
 
     def create_agreement(self, **kwargs):
-        return self.create_doc_(AgreementDocument, **kwargs)
+        return self.create_doc_with_relations(AgreementDocument, **kwargs)
 
     def create_calendar_plan(self, **kwargs):
         items = kwargs.pop('items', [])
@@ -27,23 +27,49 @@ class DocumentDMLManager(models.Manager):
             assert isinstance(items[0], dict) or isinstance(items[0], CalendarPlanItem), 'items should be either dict or instance of CalendarPlanItem'
             if isinstance(items[0], dict):
                 items = [CalendarPlanItem(**item) for item in items]
-        doc = self.create_doc_(CalendarPlanDocument, **kwargs)
+        doc = self.create_doc_with_relations(CalendarPlanDocument, **kwargs)
         doc.save()
         for item in items:
             doc.items.add(item)
         return doc
 
-    def create_doc_(self, doc_class, **kwargs):
-        assert hasattr(doc_class, 'tp'), 'Document %s must have \'tp\' attribute'
-        d = Document(**kwargs.pop('document', {}))
-        d.type = doc_class.tp
-        d.save()
+    def create_doc_with_relations(self, doc_class, **kwargs):
+        ddata = kwargs.pop('document', {})
+        ddata['type'] = doc_class.tp
+        doc = self.create_doc_(**ddata)
 
-        doc = doc_class(document=d)
+        spec_doc = doc_class(document=doc)
         for k, v in kwargs.iteritems():
-            setattr(doc, k, v)
-        doc.save()
-        return doc
+            setattr(spec_doc, k, v)
+        spec_doc.save()
+        return spec_doc
+
+    def create_doc_(self, **kwargs):
+        assert 'type' in kwargs, "document type must be provided"
+        attachments = kwargs.pop('attachments', [])
+        d = Document.objects.create(**kwargs)
+        if attachments:  # set relations to attachment
+            for attachment in attachments:
+                attachment.document = d
+                attachment.save()
+        return d
+
+    def update_doc_(self, instance, **kwargs):
+        incoming_attachments = kwargs.pop('attachments', [])
+        for k, v in kwargs.iteritems():
+            setattr(instance, k, v)
+        instance.save()
+
+        if not incoming_attachments:
+            return instance
+
+        for attachment in instance.attachments.all():
+            if attachment not in incoming_attachments:
+                attachment.delete()
+        for attachment in incoming_attachments:
+            attachment.document = instance
+            attachment.save()
+        return instance
 
     def filter_doc_(self, doc_class):
         assert hasattr(doc_class, 'tp'), 'Document %s must have \'tp\' attribute'

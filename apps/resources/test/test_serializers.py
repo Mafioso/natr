@@ -12,9 +12,7 @@ class ProjectSerializerTestCase(TestCase):
 
 	def setUp(self):
 		self.cnt = 5
-
-	def test_project_create(self):
-		data = {
+		self.data = {
 	      "fundings": {
 	        "currency": "KZT",
 	        "amount": 300000000
@@ -73,7 +71,9 @@ class ProjectSerializerTestCase(TestCase):
 	      "status": 1,
 	      "number_of_milestones": 7
 	    }
-		prj_ser = ProjectSerializer(data=data)
+
+	def test_project_create(self):
+		prj_ser = ProjectSerializer(data=self.data)
 		prj_ser.is_valid(raise_exception=False)
 		errors = prj_ser.errors
 		utils.pretty(errors)
@@ -90,7 +90,7 @@ class ProjectSerializerTestCase(TestCase):
 
 
 		def assertRelated(obj, rel_name, initial=None):
-			initial = initial if initial is not None else data
+			initial = initial if initial is not None else self.data
 			self.assertTrue(hasattr(obj, rel_name))
 			rel_val = getattr(obj, rel_name)
 			for k, v in initial[rel_name].iteritems():
@@ -103,6 +103,9 @@ class ProjectSerializerTestCase(TestCase):
 		assertRelated(prj, 'organization_details')
 		assertRelated(prj, 'statement')
 		assertRelated(prj, 'aggreement')
-		assertRelated(prj.statement, 'document', initial=data['statement'])
-		assertRelated(prj.aggreement, 'document', initial=data['aggreement'])
+		assertRelated(prj.statement, 'document', initial=self.data['statement'])
+		assertRelated(prj.aggreement, 'document', initial=self.data['aggreement'])
+
+	def test_project_create_with_attachments(self):
+		pass
 

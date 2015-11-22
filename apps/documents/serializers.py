@@ -17,35 +17,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 		exclude = ('project',)
 
 	attachments = serializers.PrimaryKeyRelatedField(
-		queryset=models.Attachment.objects.all(), many=True)
+		queryset=models.Attachment.objects.all(), many=True, required=False)
 	
 	def create(self, validated_data):
-		attachments = validated_data.pop('attachments', [])
-		doc = models.Document.objects.create(**validated_data)
-		if attachments:
-			for attachment in attachments:
-				attachment.document = doc
-				attachment.save()
-		return doc
+		return models.Document.dml.create_doc_(**validated_data)
 
 	def update(self, instance, validated_data):
-		incoming_attachments = validated_data.pop('attachments', [])
-		for k, v in validated_data.iteritems():
-			setattr(instance, k, v)
-		instance.save()
-
-		if not incoming_attachments:
-			return instance
-
-		for attachment in instance.attachments.all():
-			if attachment not in incoming_attachments:
-				attachment.delete()
-
-		if incoming_attachments:
-			for attachment in incoming_attachments:
-				attachment.document = instance
-				attachment.save()
-		return instance
+		return models.Document.dml.update_doc_(instance, **validated_data)
 
 
 class DocumentCompositionSerializer(serializers.ModelSerializer):
