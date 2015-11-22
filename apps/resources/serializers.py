@@ -1,8 +1,9 @@
 from rest_framework import serializers
+from natr.rest_framework.fields import SerializerMoneyField
 from grantee.serializers import *
 from documents.serializers import *
 from projects.models import FundingType, Project
-from .base import SerializerMoneyField
+
 
 __all__ = (
 	'FundingTypeSerializer',
