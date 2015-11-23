@@ -171,13 +171,13 @@ class UseOfBudgetDocumentItem(models.Model):
         u'Наименование статей затрат', max_length=1024)
     planned_fundings = MoneyField(
         u'Сумма бюджетных средств по смете (тенге)',
-        max_digits=20, decimal_places=2, default_currency='KZT')
+        max_digits=20, null=True, decimal_places=2, default_currency='KZT')
     spent_fundings = MoneyField(
         u'Израсходованная сумма (тенге)',
-        max_digits=20, decimal_places=2, default_currency='KZT')
+        max_digits=20, null=True, decimal_places=2, default_currency='KZT')
     remain_fundings = MoneyField(
         u'Остаток средств (тенге)',
-        max_digits=20, decimal_places=2, default_currency='KZT')
+        max_digits=20, null=True, decimal_places=2, default_currency='KZT')
     name_of_documents = models.CharField(
         u'Наименования подтверждающих документов',
         max_length=1024, null=True, blank=True)
