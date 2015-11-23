@@ -154,7 +154,7 @@ MEDIA_ROOT = rel('media')
 
 STATICFILES_DIRS = (
     rel('static'),
-       # rel(os.path.expanduser('~/.natr/static'))
+    rel(os.path.expanduser('~/.natr/static'))
 )
 
 LOCALE_PATHS = (
