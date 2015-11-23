@@ -14,6 +14,7 @@ class Document(DjangoModelFactory):
 
 
     external_id = factory.Faker('uuid4')
+    project = factory.SubFactory('projects.factories.Project')
 
     @factory.lazy_attribute
     def type(self):
@@ -44,7 +45,17 @@ class StatementDocument(DjangoModelFactory):
 
 
     document = factory.SubFactory('documents.factories.Document')
-    number = random.randint(1, 10000)
+
+
+class AgreementDocument(DjangoModelFactory):
+
+    class Meta:
+        model = models.AgreementDocument
+        strategy = BUILD_STRATEGY
+
+
+    document = factory.SubFactory('documents.factories.Document')
+    number = factory.LazyAttribute(lambda x: random.randint(1, 100000000))
     name = factory.Faker('sentence')
 
 
