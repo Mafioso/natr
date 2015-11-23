@@ -3,6 +3,7 @@ from django.test import TestCase
 from moneyed import Money, KZT, USD
 from .. import factories
 from projects import models
+from documents.factories import CalendarPlanDocument
 # Create your tests here.
 
 
@@ -43,7 +44,7 @@ class ProjectTestCase(TestCase):
 		self.assertEqual(created_ids, returned_ids)
 
 
-	def test_statuses(self):
+	def test_milestone_statuses(self):
 		project = factories.ProjectWithMilestones.create()
 		milestones = project.milestone_set.all()
 		self.assertTrue(len(milestones) > 0)
@@ -66,3 +67,19 @@ class ProjectTestCase(TestCase):
 
 		second_m.set_start()
 
+
+	def test_milestone_build_from_calendar_plan(self):
+		cp = CalendarPlanDocument.create()
+		self.assertTrue(len(cp.items.all()) > 0)
+		cp_items = cp.items.all()
+		created_milestones = models.Milestone.build_from_calendar_plan(cp)
+		self.assertTrue(len(cp_items) > 0)
+		self.assertEqual(len(cp_items), len(created_milestones))
+		for mstone in created_milestones:
+			self.assertTrue(mstone.not_started())
+			self.assertTrue(mstone.project == cp.document.project)
+
+		with self.assertRaises(models.Milestone.AlreadyExists):
+			models.Milestone.build_from_calendar_plan(cp)
+
+		models.Milestone.build_from_calendar_plan(cp, force=True)

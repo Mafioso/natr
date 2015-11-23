@@ -87,7 +87,7 @@ class CalendarPlanItem(DjangoModelFactory):
         strategy = BUILD_STRATEGY
 
     calendar_plan = factory.SubFactory('documents.factories.CalendarPlanDocument')
-    number = factory.LazyAttribute(lambda x: random.randint(1, 1000))
+    number = factory.LazyAttribute(lambda x: random.randint(1, 100000))
     description = factory.Faker('text')
     deadline = factory.LazyAttribute(lambda x: random.randint(1, 12))
     reporting = factory.Faker('word')

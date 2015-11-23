@@ -89,6 +89,10 @@ class Corollary(ProjectBasedModel):
 
 
 class Milestone(ProjectBasedModel):
+    
+    class AlreadyExists(Exception):
+        pass
+
     STATUSES = NOT_START, START, CLOSE = range(3)
     STATUSES_OPTS = zip(STATUSES, STATUSES)
 
@@ -129,11 +133,18 @@ class Milestone(ProjectBasedModel):
         return self.status == Milestone.CLOSE
 
     @classmethod
-    def build_from_calendar_plan(cls, calendar_plan, project=None):
+    def build_from_calendar_plan(cls, calendar_plan, project=None, force=False):
         """Regenerates milestones if not already"""
         #assert calendar_plan.is_approved(), "Calendar plan must be in approved state in order to generate milestones"
         milestones = []
         project = project if project is not None else calendar_plan.document.project
+
+        prev_milestones = project.milestone_set.all()
+        
+        if len(prev_milestones) and not force:
+            raise cls.AlreadyExists("Milestones already generated. Set force=True, if you wish such behaviour but you loose previous one.")
+
+        project.milestone_set.clear()
         for _, item in enumerate(calendar_plan.items.all()):
             milestones.append(cls(
                 number=item.number,

@@ -64,7 +64,6 @@ class Milestone(DjangoModelFactory):
     project = factory.SubFactory('projects.factories.Project')
 
 
-
 class Report(DjangoModelFactory):
 
     class Meta:
