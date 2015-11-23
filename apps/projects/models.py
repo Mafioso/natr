@@ -3,7 +3,7 @@
 
 __author__ = 'xepa4ep'
 
-
+import datetime
 from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
@@ -89,9 +89,55 @@ class Corollary(ProjectBasedModel):
 
 
 class Milestone(ProjectBasedModel):
+    STATUSES = NOT_START, START, CLOSE = range(3)
+    STATUSES_OPTS = zip(STATUSES, STATUSES)
+
     number = models.IntegerField(null=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
-    period = models.IntegerField(null=True)
-    status = models.IntegerField(null=True)
+    period = models.IntegerField(u'Срок выполнения работ (месяцев)', null=True)
+    status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=NOT_START)
 
+    class Meta:
+        ordering = ['number']
+
+    def set_start(self, dt=None):
+        for milestone in self.project.milestone_set.all():
+            if self.pk == milestone.pk:
+                continue
+            assert not milestone.is_started(), "You should finish one milestone before starting new one."
+        dt = dt if dt is not None else datetime.datetime.utcnow()
+        self.date_start = dt
+        self.status = Milestone.START
+        self.save()
+        return self
+
+    def set_close(self, dt=None):
+        dt = dt if dt is not None else datetime.datetime.utcnow()
+        self.date_end = dt
+        self.status = Milestone.CLOSE
+        self.save()
+        return self
+
+    def is_started(self):
+        return self.status == Milestone.START
+
+    def not_started(self):
+        return self.status == Milestone.NOT_START
+
+    def is_closed(self):
+        return self.status == Milestone.CLOSE
+
+    @classmethod
+    def build_from_calendar_plan(cls, calendar_plan, project=None):
+        """Regenerates milestones if not already"""
+        #assert calendar_plan.is_approved(), "Calendar plan must be in approved state in order to generate milestones"
+        milestones = []
+        project = project if project is not None else calendar_plan.document.project
+        for _, item in enumerate(calendar_plan.items.all()):
+            milestones.append(cls(
+                number=item.number,
+                period=item.deadline,
+                project=project
+            ))
+        return Milestone.objects.bulk_create(milestones)

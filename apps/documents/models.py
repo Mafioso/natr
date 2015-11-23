@@ -78,9 +78,11 @@ class DocumentDMLManager(models.Manager):
         
 class Document(ProjectBasedModel):
     ## identifier in (DA 'Document automation' = СЭД 'система электронного документооборота')
+    STATUSES = NEW, APPROVING, APPROVED, NOT_COMPLETE = range(4)
+    STATUSES_OPTS = zip(STATUSES, STATUSES)
     external_id = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=255)
-    status = models.IntegerField(null=True)
+    status = models.IntegerField(default=NEW)
     date_created = models.DateTimeField(auto_now_add=True)
     date_sign = models.DateTimeField(null=True)
 
@@ -89,6 +91,8 @@ class Document(ProjectBasedModel):
 
     dml = DocumentDMLManager()
 
+    def is_approved(self):
+        return self.status == Document.APPROVED
 
 class AgreementDocument(models.Model):
     tp = 'agreement'
@@ -110,17 +114,24 @@ class CalendarPlanDocument(models.Model):
 
     document = models.OneToOneField(Document, related_name='calendar_plan', on_delete=models.CASCADE)
 
+    def is_approved(self):
+        return self.document.is_approved()
+
 
 class BudgetingDocument(models.Model):
     document = models.OneToOneField(Document, related_name='budgeting_document', on_delete=models.CASCADE)
 
 
 class CalendarPlanItem(models.Model):
+
+    class Meta:
+        ordering = ['number']
+
     number = models.IntegerField(u'Номер этапа')
     description = models.TextField(u'Наименование работ по этапу')
     deadline = models.IntegerField(u'Срок выполнения работ (месяцев)')
     reporting = models.TextField(u'Форма и вид отчетности')
-    
+
     # field below will store as json-data
     # {current: ‘KZT’, value: 123}
     fundings = MoneyField(

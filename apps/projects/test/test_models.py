@@ -1,3 +1,4 @@
+import datetime
 from django.test import TestCase
 from moneyed import Money, KZT, USD
 from .. import factories
@@ -40,5 +41,28 @@ class ProjectTestCase(TestCase):
 		
 		returned_ids = set([r.pk for r in models.Report.objects.by_project(p)])
 		self.assertEqual(created_ids, returned_ids)
-		
+
+
+	def test_statuses(self):
+		project = factories.ProjectWithMilestones.create()
+		milestones = project.milestone_set.all()
+		self.assertTrue(len(milestones) > 0)
+		for i, m in enumerate(milestones):
+			self.assertTrue(m.not_started())
+			if i == 0:
+				m.set_start()
+				self.assertTrue(isinstance(m.date_start, datetime.datetime))
+				self.assertTrue(m.is_started())
+		second_m = project.milestone_set.all()[1]
+		with self.assertRaises(AssertionError):
+			second_m.set_start()
+
+		first_m = project.milestone_set.all()[0]
+
+		dt = datetime.datetime.utcnow() - datetime.timedelta(seconds=120)
+		first_m.set_close(dt=dt)
+		self.assertTrue(first_m.is_closed())
+		self.assertEqual(first_m.date_end, dt)
+
+		second_m.set_start()
 
