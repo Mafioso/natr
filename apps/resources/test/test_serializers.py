@@ -4,7 +4,7 @@ import datetime
 from django.test import TestCase
 from natr import utils
 from resources.serializers import *
-
+from projects import factories
 # Create your tests here.
 
 
@@ -106,4 +106,12 @@ class ProjectSerializerTestCase(TestCase):
 		assertRelated(prj.statement, 'document', initial=self.data['statement'])
 		assertRelated(prj.aggreement, 'document', initial=self.data['aggreement'])
 
+	def test_project_basic_info(self):
+		project = factories.ProjectWithMilestones.create()
+		milestones = project.milestone_set.all()
+		milestones[0].set_start()
+		prj_ser = ProjectBasicInfoSerializer(instance=project)
+		data = prj_ser.data
+		self.assertEqual(data['name'], project.name)
+		self.assertIn('current_milestone', data)
 

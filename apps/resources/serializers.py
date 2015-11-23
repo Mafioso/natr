@@ -2,12 +2,13 @@ from rest_framework import serializers
 from natr.rest_framework.fields import SerializerMoneyField
 from grantee.serializers import *
 from documents.serializers import *
-from projects.models import FundingType, Project
+from projects.models import FundingType, Project, Milestone
 
 
 __all__ = (
 	'FundingTypeSerializer',
 	'ProjectSerializer',
+	'ProjectBasicInfoSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -62,5 +63,32 @@ class ProjectSerializer(serializers.ModelSerializer):
 
 		prj.save()
 		return prj
+
+
+class ProjectBasicInfoSerializer(serializers.ModelSerializer):
+	"""Read only serializer for mini detail/list views of the project."""
+
+	class Meta:
+		model = Project
+		_f = ('name', 'status', 'current_milestone')
+		fields = _f
+		read_only_fields = _f
+
+	current_milestone = serializers.SerializerMethodField()
+
+	def get_current_milestone(self, instance):
+		cur_milestone = instance.current_milestone
+		if cur_milestone:
+			return MilestoneSerializer(cur_milestone).data
+		return None
+
+
+class MilestoneSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = Milestone
+
+	project = serializers.PrimaryKeyRelatedField(
+		queryset=Project.objects.all(), required=True)
 
 

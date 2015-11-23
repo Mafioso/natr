@@ -38,6 +38,12 @@ class Project(models.Model):
     def __unicode__(self):
         return self.name
 
+    @property
+    def current_milestone(self):
+        try:
+            return self.milestone_set.get(status=Milestone.START)
+        except Milestone.DoesNotExist:
+            return None
 
 
 class FundingType(models.Model):
@@ -140,7 +146,7 @@ class Milestone(ProjectBasedModel):
         project = project if project is not None else calendar_plan.document.project
 
         prev_milestones = project.milestone_set.all()
-        
+
         if len(prev_milestones) and not force:
             raise cls.AlreadyExists("Milestones already generated. Set force=True, if you wish such behaviour but you loose previous one.")
 
