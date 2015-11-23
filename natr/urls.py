@@ -17,11 +17,14 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
-from dummy import urls as dummy_urls
+from django.views.generic import TemplateView
+# from dummy import urls as dummy_urls
 from resources import urls as resources_urls
 
 
 urlpatterns = [
+    url(r'^$', TemplateView.as_view(template_name='index.html')),
+
     url(r'^admin/', include(admin.site.urls)),
     url(r'^docs/', include('rest_framework_swagger.urls')),
 ]
