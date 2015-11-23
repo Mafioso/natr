@@ -22,9 +22,13 @@ class Command(BaseCommand):
 				factories.Milestone.create(project=prj)
 			doc = doc_factories.Document.create(
 				type=doc_models.StatementDocument.tp, project=prj)
-			doc_factories.StatementDocument.create(document=doc)
+			statement = doc_factories.StatementDocument.create(document=doc)
 
 			doc = doc_factories.Document.create(
 				type=doc_models.AgreementDocument.tp, project=prj)
 			agr_doc = doc_factories.AgreementDocument.create(document=doc)
+
+			prj.aggreement = agr_doc
+			prj.statement = statement
+			prj.save()
 		return rv
