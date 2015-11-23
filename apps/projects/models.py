@@ -45,6 +45,9 @@ class Project(models.Model):
         except Milestone.DoesNotExist:
             return None
 
+    def get_reports(self):
+        return Report.objects.by_project(self)
+
 
 class FundingType(models.Model):
     GRANT_TYPES = (
