@@ -115,3 +115,16 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertEqual(data['name'], project.name)
 		self.assertIn('current_milestone', data)
 
+	def test_report(self):
+		report = factories.Report.create()
+		self.assertTrue(hasattr(report, 'milestone'))
+		self.assertTrue(hasattr(report, 'use_of_budget_doc'))
+		self.assertTrue(len(report.use_of_budget_doc.items.all()) > 0)
+		item_ids = [item.id for item in report.use_of_budget_doc.items.all()]
+
+		report_ser = ReportSerializer(instance=report)
+		report_data = report_ser.data
+
+		self.assertIn('use_of_budget_doc', report_data)
+		for item_id in report_data['use_of_budget_doc']['items']:
+			self.assertIn(item_id, item_ids)

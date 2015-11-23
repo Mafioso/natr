@@ -8,6 +8,8 @@ __all__ = (
 	'StatementDocumentSerializer',
 	'CalendarPlanDocumentSerializer',
 	'CalendarPlanItemSerializer',
+	'UseOfBudgetDocumentSerializer',
+	'UseOfBudgetDocumentItemSerializer',
 	'AttachmentSerializer'
 )
 
@@ -94,6 +96,34 @@ class CalendarPlanItemSerializer(serializers.ModelSerializer):
 		plan_item = models.CalendarPlanItem.objects.create(
 			calendar_plan=calendar_plan, **validated_data)
 		return plan_item
+
+
+class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
+
+	class Meta:
+		model = models.UseOfBudgetDocument
+
+	document = DocumentSerializer(required=True)
+	items = serializers.PrimaryKeyRelatedField(
+		queryset=models.UseOfBudgetDocumentItem.objects.all(), many=True, required=False)
+
+
+class UseOfBudgetDocumentItemSerializer(serializers.ModelSerializer):
+	
+	class Meta:
+		model = models.UseOfBudgetDocumentItem
+
+	planned_fundings = SerializerMoneyField(required=False)
+	spent_fundings = SerializerMoneyField(required=False)
+	remain_fundings = SerializerMoneyField(required=False)
+	use_of_budget_doc = serializers.PrimaryKeyRelatedField(
+		queryset=models.UseOfBudgetDocument.objects.all(), required=True)
+
+	def create(self, validated_data):
+		use_of_budget_doc = validated_data.pop('use_of_budget_doc')
+		use_of_budget_item = models.UseOfBudgetDocumentItem.objects.create(
+			use_of_budget_doc=use_of_budget_doc, **validated_data)
+		return use_of_budget_item
 
 
 class AttachmentSerializer(serializers.ModelSerializer):

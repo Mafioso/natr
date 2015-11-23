@@ -20,3 +20,15 @@ class ProjectViewSet(viewsets.ModelViewSet):
 			return self.get_paginated_response(serializer.data)
 		serializer = self.get_serializer(projects, many=True)
 		return Response(serializer.data)
+
+	@detail_route(method=['get'], url_path='reports')
+	@patch_serializer_class(ReportSerializer)
+	def reports(self, request, *a, **kw):
+		project = self.get_object()
+		report_ser = self.get_serializer(project.get_reports(), many=True)
+		data = report_ser.data
+		project_basic_info = data.pop('project')
+		return Response({
+			'reports': report_ser,
+			'project': project_basic_info
+		})

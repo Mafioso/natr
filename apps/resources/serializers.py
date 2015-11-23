@@ -2,13 +2,14 @@ from rest_framework import serializers
 from natr.rest_framework.fields import SerializerMoneyField
 from grantee.serializers import *
 from documents.serializers import *
-from projects.models import FundingType, Project, Milestone
+from projects.models import FundingType, Project, Milestone, Report
 
 
 __all__ = (
 	'FundingTypeSerializer',
 	'ProjectSerializer',
-	'ProjectBasicInfoSerializer'
+	'ProjectBasicInfoSerializer',
+	'ReportSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -90,5 +91,16 @@ class MilestoneSerializer(serializers.ModelSerializer):
 
 	project = serializers.PrimaryKeyRelatedField(
 		queryset=Project.objects.all(), required=True)
+
+
+class ReportSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = Report
+
+	milestone = serializers.PrimaryKeyRelatedField(
+		queryset=Milestone.objects.all(), required=True)
+	project = ProjectBasicInfoSerializer(required=True)
+	use_of_budget_doc = UseOfBudgetDocumentSerializer(required=False)
 
 

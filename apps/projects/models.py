@@ -66,6 +66,10 @@ class FundingType(models.Model):
 
 
 class Report(ProjectBasedModel):
+    
+    class Meta:
+        ordering = ['milestone__number']
+
     type = models.IntegerField(null=True)
     date = models.DateTimeField(u'Дата отчета', null=True)
     
@@ -73,7 +77,7 @@ class Report(ProjectBasedModel):
     status = models.IntegerField(null=True)
 
     # max 2 reports for one milestone
-    milestone = models.ForeignKey('Milestone', null=False, related_name='reports')
+    milestone = models.ForeignKey('Milestone', related_name='reports')
     # project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
     # additional links, without strong needs
 

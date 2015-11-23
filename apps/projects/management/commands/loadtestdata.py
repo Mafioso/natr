@@ -1,3 +1,4 @@
+import random
 from django.core.management.base import BaseCommand, CommandError
 from projects import factories
 from documents import factories as doc_factories, models as doc_models
@@ -16,7 +17,7 @@ class Command(BaseCommand):
 	def gen_projects(self):
 		rv = []
 		for _ in xrange(5):
-			prj = factories.Project.create()
+			prj = factories.ProjectWithMilestones.create()
 			rv.append(prj)
 			for _ in xrange(3):
 				factories.Milestone.create(project=prj)
@@ -31,4 +32,11 @@ class Command(BaseCommand):
 			prj.aggreement = agr_doc
 			prj.statement = statement
 			prj.save()
+
+			self.gen_reports(prj)
 		return rv
+
+	def gen_reports(self, project):
+		for milestone in project.milestone_set.all():
+			if milestone.is_started():
+				factories.Report.create(milestone=milestone)

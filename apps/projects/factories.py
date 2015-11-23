@@ -76,7 +76,6 @@ class Report(DjangoModelFactory):
 
     use_of_budget_doc = factory.SubFactory('documents.factories.UseOfBudgetDocument')
 
-
     @factory.lazy_attribute
     def project(self):
         return self.milestone.project
