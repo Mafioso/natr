@@ -14,6 +14,36 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 import os
 import sys
 
+
+
+def FileSettings(path):
+    path = os.path.expanduser(path)
+
+    class Holder(object):
+
+        def __init__(self, *args, **kwargs):
+            mod = imp.new_module('natr.local')
+            mod.__file__ = path
+
+            try:
+                execfile(path, mod.__dict__)
+            except IOError, e:
+                print("Notice: Unable to load configuration file %s (%s), "
+                      "using default settings\n\n" % (path, e.strerror))
+
+            for name, value in uppercase_attributes(mod).items():
+                if hasattr(self, name):
+                    original_value = getattr(self, name)
+                    if isinstance(original_value, (tuple, list)):
+                        if value.startswith('+'):
+                            value = tuple(original_value) + tuple(value[1:].split(','))
+                        else:
+                            value = tuple([value])
+                setattr(self, name, value)
+
+    return Holder
+
+
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 def rel(*x):
@@ -124,6 +154,7 @@ MEDIA_ROOT = rel('media')
 
 STATICFILES_DIRS = (
     rel('static'),
+       # rel(os.path.expanduser('~/.natr/static'))
 )
 
 LOCALE_PATHS = (
