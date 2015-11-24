@@ -41,7 +41,9 @@ class Project(models.Model):
     @property
     def current_milestone(self):
         try:
-            return self.milestone_set.get(status=Milestone.START)
+            return self.milestone_set.get(
+                status__gt=Milestone.TRANCHE_PAY,
+                status__lt=Milestone.CLOSE)
         except Milestone.DoesNotExist:
             return None
 
@@ -106,41 +108,71 @@ class Milestone(ProjectBasedModel):
     class AlreadyExists(Exception):
         pass
 
-    STATUSES = NOT_START, START, CLOSE = range(3)
-    STATUSES_OPTS = zip(STATUSES, STATUSES)
+    # STATUSES = NOT_START, START, CLOSE = range(3)
+    STATUSES = TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(7)
+    STATUS_CAPS = (
+        u'оплата транша',
+        u'на реализации',
+        u'формирование отчета ГП',
+        u'отчет на проверке эксперта',
+        u'доработка отчета ГП по замечаниями эксперта',
+        u'на утверждении заключения',
+        u'завершен'
+    )
+    STATUSES_OPTS = zip(STATUSES, STATUS_CAPS)
 
     number = models.IntegerField(null=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     period = models.IntegerField(u'Срок выполнения работ (месяцев)', null=True)
-    status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=NOT_START)
+    status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=TRANCHE_PAY)
+    
+    date_funded = models.DateTimeField(u'Дата оплаты', null=True)
+    fundings = MoneyField(u'Сумма оплаты по факту',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    planned_fundings = MoneyField(u'Сумма оплаты планируемая по календарному плану',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+
 
     class Meta:
         ordering = ['number']
 
-    def set_start(self, dt=None):
+    def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():
             if self.pk == milestone.pk:
                 continue
             assert not milestone.is_started(), "You should finish one milestone before starting new one."
         dt = dt if dt is not None else datetime.datetime.utcnow()
+        self.fundings = fundings
         self.date_start = dt
-        self.status = Milestone.START
+        self.set_status(Milestone.IMPLEMENTING)
         self.save()
+        return self
+
+    def set_status(self, status_code, force_save=False):
+        assert status_code in Milestone.STATUSES, "please ensure that status you want to set to milestone is provided by Milestone."
+        self.status = status_code
+        if force_save:
+            self.save()
         return self
 
     def set_close(self, dt=None):
         dt = dt if dt is not None else datetime.datetime.utcnow()
         self.date_end = dt
-        self.status = Milestone.CLOSE
+        self.set_status(Milestone.CLOSE)
         self.save()
         return self
 
+    def get_status_cap(self):
+        return Milestone.STATUS_CAPS[self.status]
+
     def is_started(self):
-        return self.status == Milestone.START
+        return Milestone.IMPLEMENTING <= self.status <= Milestone.COROLLARY_APROVING
 
     def not_started(self):
-        return self.status == Milestone.NOT_START
+        return self.status == Milestone.TRANCHE_PAY
 
     def is_closed(self):
         return self.status == Milestone.CLOSE
@@ -162,6 +194,7 @@ class Milestone(ProjectBasedModel):
             milestones.append(cls(
                 number=item.number,
                 period=item.deadline,
+                planned_fundings=item.fundings,
                 project=project
             ))
         return Milestone.objects.bulk_create(milestones)

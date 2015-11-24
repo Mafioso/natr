@@ -51,12 +51,13 @@ class ProjectTestCase(TestCase):
 		for i, m in enumerate(milestones):
 			self.assertTrue(m.not_started())
 			if i == 0:
-				m.set_start()
+				m.set_start(Money(1000000, KZT))
 				self.assertTrue(isinstance(m.date_start, datetime.datetime))
+				self.assertTrue(isinstance(m.fundings, Money))
 				self.assertTrue(m.is_started())
 		second_m = project.milestone_set.all()[1]
 		with self.assertRaises(AssertionError):
-			second_m.set_start()
+			second_m.set_start(Money(1000000, KZT))
 
 		first_m = project.milestone_set.all()[0]
 
@@ -64,8 +65,7 @@ class ProjectTestCase(TestCase):
 		first_m.set_close(dt=dt)
 		self.assertTrue(first_m.is_closed())
 		self.assertEqual(first_m.date_end, dt)
-
-		second_m.set_start()
+		second_m.set_start(Money(1000000, KZT))
 
 
 	def test_milestone_build_from_calendar_plan(self):
@@ -75,9 +75,10 @@ class ProjectTestCase(TestCase):
 		created_milestones = models.Milestone.build_from_calendar_plan(cp)
 		self.assertTrue(len(cp_items) > 0)
 		self.assertEqual(len(cp_items), len(created_milestones))
-		for mstone in created_milestones:
+		for mstone, item in zip(created_milestones, cp_items):
 			self.assertTrue(mstone.not_started())
 			self.assertTrue(mstone.project == cp.document.project)
+			self.assertTrue(mstone.planned_fundings == item.fundings)
 
 		with self.assertRaises(models.Milestone.AlreadyExists):
 			models.Milestone.build_from_calendar_plan(cp)

@@ -33,7 +33,7 @@ class ProjectWithMilestones(Project):
             count = 5
 
         make_milestone = getattr(Milestone, 'create' if create else 'build')
-        milestones = [make_milestone(project=self, status=models.Milestone.NOT_START) for i in xrange(count)]
+        milestones = [make_milestone(project=self, status=models.Milestone.TRANCHE_PAY) for i in xrange(count)]
         if not create:
             # Fiddle with django internals so self.product_set.all() works with build()
             self._prefetched_objects_cache = {'milestone_set': milestones}
@@ -59,7 +59,7 @@ class Milestone(DjangoModelFactory):
     date_start = factory.Faker('date_time')
     date_end = factory.Faker('date_time')
     period = factory.LazyAttribute(lambda x: random.randint(1, 12))
-    status = factory.LazyAttribute(lambda x: random.randint(models.Milestone.NOT_START, models.Milestone.CLOSE))
+    status = factory.LazyAttribute(lambda x: random.randint(models.Milestone.TRANCHE_PAY, models.Milestone.CLOSE))
 
     project = factory.SubFactory('projects.factories.Project')
 
