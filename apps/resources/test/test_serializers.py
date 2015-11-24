@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 from django.test import TestCase
+from moneyed import Money, KZT, USD
 from natr import utils
 from resources.serializers import *
 from projects import factories
@@ -109,11 +110,14 @@ class ProjectSerializerTestCase(TestCase):
 	def test_project_basic_info(self):
 		project = factories.ProjectWithMilestones.create()
 		milestones = project.milestone_set.all()
-		milestones[0].set_start()
+		milestones[0].set_start(Money(100000, KZT))
 		prj_ser = ProjectBasicInfoSerializer(instance=project)
 		data = prj_ser.data
 		self.assertEqual(data['name'], project.name)
 		self.assertIn('current_milestone', data)
+		self.assertIn('status_cap', data['current_milestone'])
+		self.assertIn('fundings', data['current_milestone'])
+		self.assertIn('planned_fundings', data['current_milestone'])
 
 	def test_report(self):
 		report = factories.Report.create()

@@ -91,6 +91,9 @@ class MilestoneSerializer(serializers.ModelSerializer):
 
 	project = serializers.PrimaryKeyRelatedField(
 		queryset=Project.objects.all(), required=True)
+	status_cap = serializers.CharField(source='get_status_cap')
+	fundings = SerializerMoneyField(required=False)
+	planned_fundings = SerializerMoneyField(required=True)
 
 
 class ReportSerializer(serializers.ModelSerializer):
