@@ -1,3 +1,10 @@
+media:
+  image: busybox:ubuntu-14.04
+  command: mkdir -p /uploads/{tmp,media} && /bin/true
+  volumes:
+    - /uploads
+    - /db
+
 rabbitmq:
   image: rabbitmq:3.5.4-management
   ports:
@@ -7,22 +14,37 @@ rabbitmq:
     - RABBITMQ_DEFAULT_VHOST='/'
     - RABBITMQ_USER_PASSWD=guest:guest
 
+
 app:
   image: anguis/natr_app:latest
   command: python manage.py runserver 0.0.0.0:8000
   volumes:
     - .:/natr
-    - ~/dockerfiles/natr/python:/usr/local/lib/python2.7
   ports:
     - "8000:8000"
+  volumes_from:
+    - media
   links:
     - rabbitmq
 
-celery:
-  image: anguis/natr_app:latest
-  working_dir: /natr
-  command: celery -A natr worker -l debug --concurrency=2
+nginx:
+  image: anguis/nginx:1.9.4
+  entrypoint: /sbin/entrypoint.sh
+  ports:
+    - "9000:80"
   volumes:
-    - .:/natr
+    - ./conf/nginx:/etc/nginx/sites-enabled
+  volumes_from:
+    - media
+  restart: always
   links:
-    - rabbitmq
+    - app
+
+# celery:
+#   image: anguis/natr_app:latest
+#   working_dir: /natr
+#   command: celery -A natr worker -l debug --concurrency=2
+#   volumes:
+#     - .:/natr
+#   links:
+#     - rabbitmq
