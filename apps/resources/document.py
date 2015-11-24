@@ -67,7 +67,7 @@ class AttachmentViewSet(viewsets.ModelViewSet):
             settings.MEDIA_URL_NO_TRAILING_SLASH,
             full_file_path.split(settings.MEDIA_ROOT + '/')[1])
         attachment_data = {
-            'path': full_file_path,
+            'file_path': full_file_path,
             'name': fname,
             'extension': ext,
             'url': file_url
@@ -77,3 +77,15 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         item_obj = item_ser.save()
         headers = self.get_success_headers(item_ser.data)
         return response.Response(item_ser.data, headers=headers)
+
+    def destroy(self, request, *a, **kw):
+        instance = self.get_object()
+        try:
+            os.remove(instance.file_path or instance.url)
+            print "REMOVE FILE: %s" % instance.file_path
+        except OSError as e:
+            if e.errno == 2:  # not found, delete earlier
+                pass
+            else:
+                raise e
+        return super(AttachmentViewSet, self).destroy(request, *a, **kw)
