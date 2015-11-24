@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='document',
             name='project',
-            field=models.ForeignKey(blank=True, to='projects.Project', null=True),
+            field=models.ForeignKey(to='projects.Project', null=True),
         ),
         migrations.AddField(
             model_name='costitem',
@@ -36,6 +36,11 @@ class Migration(migrations.Migration):
             model_name='budgetingdocument',
             name='document',
             field=models.OneToOneField(related_name='budgeting_document', to='documents.Document'),
+        ),
+        migrations.AddField(
+            model_name='attachment',
+            name='document',
+            field=models.ForeignKey(related_name='attachments', to='documents.Document', null=True),
         ),
         migrations.AddField(
             model_name='agreementdocument',
