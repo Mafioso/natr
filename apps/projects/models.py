@@ -10,12 +10,19 @@ from natr.mixins import ProjectBasedModel
 
 
 class Project(models.Model):
+    STATUSES = MONITOR, FINISH, BREAK = range(3)
+    STATUS_CAPS = (
+        u'на мониторинге',
+        u'завершен',
+        u'расторгнут'
+    )
+    STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     name = models.CharField(max_length=1024, null=True, blank=True)
     description = models.CharField(max_length=1024, null=True, blank=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     total_month = models.IntegerField(u'Срок реализации проекта (месяцы)', default=24)
-    status = models.IntegerField(null=True)
+    status = models.IntegerField(null=True, choices=STATUS_OPTS, default=MONITOR)
     funding_type = models.ForeignKey(
         'FundingType', null=True, on_delete=models.SET_NULL)
 
@@ -41,9 +48,14 @@ class Project(models.Model):
     @property
     def current_milestone(self):
         try:
-            return self.milestone_set.get(status=Milestone.START)
+            return self.milestone_set.get(
+                status__gt=Milestone.TRANCHE_PAY,
+                status__lt=Milestone.CLOSE)
         except Milestone.DoesNotExist:
             return None
+
+    def get_status_cap(self):
+        return Project.STATUS_CAPS[self.status]
 
     def get_reports(self):
         return Report.objects.by_project(self)
@@ -73,11 +85,24 @@ class Report(ProjectBasedModel):
     class Meta:
         ordering = ['milestone__number']
 
+    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
+
+    STATUS_CAPS = (
+        u'неактивен'
+        u'формирование',
+        u'на проверке',
+        u'утверждение',
+        u'утвержден',
+        u'отправлен на доработку',
+        u'завершен')
+
+    STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
+
     type = models.IntegerField(null=True)
     date = models.DateTimeField(u'Дата отчета', null=True)
     
     period = models.CharField(null=True, max_length=255)
-    status = models.IntegerField(null=True)
+    status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
 
     # max 2 reports for one milestone
     milestone = models.ForeignKey('Milestone', related_name='reports')
@@ -88,17 +113,35 @@ class Report(ProjectBasedModel):
         'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
         verbose_name=u'Отчет об использовании целевых бюджетных средств')
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
+
+    def get_status_cap(self):
+        return Report.STATUS_CAPS[self.status]
     
     
 class Corollary(ProjectBasedModel):
+    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
+    STATUS_CAPS = (
+        u'неактивно'
+        u'формирование',
+        u'на проверке',
+        u'утверждение',
+        u'утверждено',
+        u'отправлено на доработку',
+        u'завершено')
+
+    STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul
     type = models.IntegerField(null=True)
     domestication_period = models.CharField(u'Срок освоения', max_length=255, null=True)
     impl_period = models.CharField(u'Срок реализации', max_length=255, null=True)
     number_of_milestones = models.IntegerField(u'Количество этапов', default=1)
     report_delivery_date = models.DateTimeField(null=True)  # from report 
-   
     report = models.OneToOneField('Report', null=True)
+
+    status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
+
+    def get_status_cap(self):
+        return Corollary.STATUS_CAPS[self.status]
 
 
 class Milestone(ProjectBasedModel):
@@ -106,41 +149,71 @@ class Milestone(ProjectBasedModel):
     class AlreadyExists(Exception):
         pass
 
-    STATUSES = NOT_START, START, CLOSE = range(3)
-    STATUSES_OPTS = zip(STATUSES, STATUSES)
+    # STATUSES = NOT_START, START, CLOSE = range(3)
+    STATUSES = TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(7)
+    STATUS_CAPS = (
+        u'оплата транша',
+        u'на реализации',
+        u'формирование отчета ГП',
+        u'отчет на проверке эксперта',
+        u'доработка отчета ГП по замечаниями эксперта',
+        u'на утверждении заключения',
+        u'завершен'
+    )
+    STATUSES_OPTS = zip(STATUSES, STATUS_CAPS)
 
     number = models.IntegerField(null=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     period = models.IntegerField(u'Срок выполнения работ (месяцев)', null=True)
-    status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=NOT_START)
+    status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=TRANCHE_PAY)
+    
+    date_funded = models.DateTimeField(u'Дата оплаты', null=True)
+    fundings = MoneyField(u'Сумма оплаты по факту',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    planned_fundings = MoneyField(u'Сумма оплаты планируемая по календарному плану',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+
 
     class Meta:
         ordering = ['number']
 
-    def set_start(self, dt=None):
+    def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():
             if self.pk == milestone.pk:
                 continue
             assert not milestone.is_started(), "You should finish one milestone before starting new one."
         dt = dt if dt is not None else datetime.datetime.utcnow()
+        self.fundings = fundings
         self.date_start = dt
-        self.status = Milestone.START
+        self.set_status(Milestone.IMPLEMENTING)
         self.save()
+        return self
+
+    def set_status(self, status_code, force_save=False):
+        assert status_code in Milestone.STATUSES, "please ensure that status you want to set to milestone is provided by Milestone."
+        self.status = status_code
+        if force_save:
+            self.save()
         return self
 
     def set_close(self, dt=None):
         dt = dt if dt is not None else datetime.datetime.utcnow()
         self.date_end = dt
-        self.status = Milestone.CLOSE
+        self.set_status(Milestone.CLOSE)
         self.save()
         return self
 
+    def get_status_cap(self):
+        return Milestone.STATUS_CAPS[self.status]
+
     def is_started(self):
-        return self.status == Milestone.START
+        return Milestone.IMPLEMENTING <= self.status <= Milestone.COROLLARY_APROVING
 
     def not_started(self):
-        return self.status == Milestone.NOT_START
+        return self.status == Milestone.TRANCHE_PAY
 
     def is_closed(self):
         return self.status == Milestone.CLOSE
@@ -162,6 +235,7 @@ class Milestone(ProjectBasedModel):
             milestones.append(cls(
                 number=item.number,
                 period=item.deadline,
+                planned_fundings=item.fundings,
                 project=project
             ))
         return Milestone.objects.bulk_create(milestones)

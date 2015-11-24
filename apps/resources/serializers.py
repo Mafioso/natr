@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from natr.rest_framework.fields import SerializerMoneyField
+from natr.rest_framework.mixins import ExcludeCurrencyFields
 from grantee.serializers import *
 from documents.serializers import *
 from projects.models import FundingType, Project, Milestone, Report
@@ -18,7 +19,7 @@ class FundingTypeSerializer(serializers.ModelSerializer):
 		model = FundingType
 
 
-class ProjectSerializer(serializers.ModelSerializer):
+class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
 	class Meta:
 		model = Project
@@ -33,6 +34,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 	aggreement = AgreementDocumentSerializer(required=False)
 	statement = StatementDocumentSerializer(required=False)
 	organization_details = OrganizationSerializer(required=False)
+	status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
 	def create(self, validated_data):
 		organization_details = validated_data.pop('organization_details', None)
@@ -71,11 +73,13 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Project
-		_f = ('name', 'status', 'current_milestone')
+		_f = ('name', 'status', 'current_milestone', 'status_cap')
 		fields = _f
 		read_only_fields = _f
 
+
 	current_milestone = serializers.SerializerMethodField()
+	status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
 	def get_current_milestone(self, instance):
 		cur_milestone = instance.current_milestone
@@ -84,13 +88,17 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 		return None
 
 
-class MilestoneSerializer(serializers.ModelSerializer):
+class MilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
 	class Meta:
 		model = Milestone
+		read_only_fields = ('status_cap',)
 
 	project = serializers.PrimaryKeyRelatedField(
 		queryset=Project.objects.all(), required=True)
+	status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+	fundings = SerializerMoneyField(required=False)
+	planned_fundings = SerializerMoneyField(required=True)
 
 
 class ReportSerializer(serializers.ModelSerializer):
@@ -102,5 +110,6 @@ class ReportSerializer(serializers.ModelSerializer):
 		queryset=Milestone.objects.all(), required=True)
 	project = ProjectBasicInfoSerializer(required=True)
 	use_of_budget_doc = UseOfBudgetDocumentSerializer(required=False)
+	status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
 
