@@ -1,4 +1,5 @@
 import random
+from moneyed import KZT, Money
 from django.core.management.base import BaseCommand, CommandError
 from projects import factories
 from documents import factories as doc_factories, models as doc_models
@@ -37,6 +38,8 @@ class Command(BaseCommand):
 		return rv
 
 	def gen_reports(self, project):
-		for milestone in project.milestone_set.all():
+		for i, milestone in enumerate(project.milestone_set.all()):
+			if i == 0:
+				milestone.set_start(Money(1000000, KZT))
 			if milestone.is_started():
 				factories.Report.create(milestone=milestone)

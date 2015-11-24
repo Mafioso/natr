@@ -1,6 +1,7 @@
 from rest_framework import serializers
 import documents.models as models
 from natr.rest_framework.fields import SerializerMoneyField
+from natr.rest_framework.mixins import ExcludeCurrencyFields
 
 __all__ = (
 	'DocumentSerializer',
@@ -81,7 +82,7 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
 		return doc
 
 
-class CalendarPlanItemSerializer(serializers.ModelSerializer):
+class CalendarPlanItemSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
 	class Meta:
 		model = models.CalendarPlanItem
@@ -108,7 +109,7 @@ class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
 		queryset=models.UseOfBudgetDocumentItem.objects.all(), many=True, required=False)
 
 
-class UseOfBudgetDocumentItemSerializer(serializers.ModelSerializer):
+class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 	
 	class Meta:
 		model = models.UseOfBudgetDocumentItem

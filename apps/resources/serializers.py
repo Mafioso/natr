@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from natr.rest_framework.fields import SerializerMoneyField
+from natr.rest_framework.mixins import ExcludeCurrencyFields
 from grantee.serializers import *
 from documents.serializers import *
 from projects.models import FundingType, Project, Milestone, Report
@@ -18,7 +19,7 @@ class FundingTypeSerializer(serializers.ModelSerializer):
 		model = FundingType
 
 
-class ProjectSerializer(serializers.ModelSerializer):
+class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
 	class Meta:
 		model = Project
@@ -84,7 +85,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 		return None
 
 
-class MilestoneSerializer(serializers.ModelSerializer):
+class MilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
 	class Meta:
 		model = Milestone

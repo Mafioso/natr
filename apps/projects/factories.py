@@ -59,9 +59,10 @@ class Milestone(DjangoModelFactory):
     date_start = factory.Faker('date_time')
     date_end = factory.Faker('date_time')
     period = factory.LazyAttribute(lambda x: random.randint(1, 12))
-    status = factory.LazyAttribute(lambda x: random.randint(models.Milestone.TRANCHE_PAY, models.Milestone.CLOSE))
+    status = factory.LazyAttribute(lambda x: models.Milestone.TRANCHE_PAY)
 
     project = factory.SubFactory('projects.factories.Project')
+
 
 
 class Report(DjangoModelFactory):
