@@ -3,7 +3,8 @@ from rest_framework import viewsets, response, filters
 from natr.rest_framework.decorators import patch_serializer_class
 from .serializers import *
 from projects import models as prj_models
-from .filters import ProjectFilter
+from .filters import ProjectFilter, ReportFilter
+
 
 class ProjectViewSet(viewsets.ModelViewSet):
 
@@ -28,7 +29,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
 	@patch_serializer_class(ReportSerializer)
 	def reports(self, request, *a, **kw):
 		project = self.get_object()
-		report_ser = self.get_serializer(project.get_reports(), many=True)
+		report_qs = ReportFilter(request.GET, project.get_reports())
+		report_ser = self.get_serializer(report_qs, many=True)
 		return response.Response({
 			'reports': report_ser.data,
 		})

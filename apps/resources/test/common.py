@@ -35,3 +35,6 @@ class CommonTestMixin(object):
 
     def chk_bad_request(self, response):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def chk_not_found(self, response):
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

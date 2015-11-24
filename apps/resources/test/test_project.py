@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import random
 from rest_framework.test import APITestCase
 from rest_framework import status
 from .common import CommonTestMixin
+from moneyed import Money, KZT, USD
 from projects import factories
 from documents import factories as doc_factories, models as doc_models
 
@@ -80,6 +82,15 @@ class ProjectsApiTestCase(CommonTestMixin, APITestCase):
         agr_doc = doc_factories.AgreementDocument.create(document=doc)
         return agr_doc
 
+    def create_reports(self, project):
+        reports = []
+        for i, milestone in enumerate(project.milestone_set.all()):
+            if i == 0:
+                milestone.set_start(Money(1000000, KZT))
+            if milestone.is_started():
+                reports.append(factories.Report.create(milestone=milestone))
+        return reports
+
     def test_project_filter(self):
         names, aggreement_numbers = [], []
         for _ in xrange(5):
@@ -118,3 +129,37 @@ class ProjectsApiTestCase(CommonTestMixin, APITestCase):
             self.chk_ok(response)
             data = self.load_response(response)
             self.assertTrue(data['count'] > 0)
+
+    def test_report_filter(self):
+        ids, milestones = [], set([])
+        for _ in xrange(5):
+            prj = factories.ProjectWithMilestones.create(name='a' * random.randint(1, 100))
+            prj.aggreement = self.create_aggrement(prj)
+            prj.save()
+            reports = self.create_reports(prj)
+            for report in reports:
+                milestones.add((report.milestone.number, prj.pk))
+            ids.append(prj.pk)
+
+        # 1. check found by prefix of project name
+        url, parsed = self.prepare_urls('project-reports', kwargs={'pk': random.choice(ids)})
+        params = {'search': 'a'}
+        response = self.client.get(url, params)
+        self.chk_ok(response)
+        data = self.load_response(response)
+        self.assertTrue(len(data) > 0)
+
+        # 2. check not found by prefix name
+        params = {'search': 'b' * 10} 
+        response = self.client.get(url, params)
+        self.chk_not_found(response)
+
+        # 3. check by milestone number
+        for milestone_number, prj_id in milestones:
+            url, parsed = self.prepare_urls('project-reports', kwargs={'pk': prj_id})
+            params = {'milestone': milestone_number}
+            response = self.client.get(url, params)
+            self.chk_ok(response)
+            data = self.load_response(response)
+            self.assertTrue(len(data) > 0)
+            
