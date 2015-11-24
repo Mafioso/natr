@@ -78,21 +78,34 @@ class DocumentDMLManager(models.Manager):
         
 class Document(ProjectBasedModel):
     ## identifier in (DA 'Document automation' = СЭД 'система электронного документооборота')
-    STATUSES = NEW, APPROVING, APPROVED, NOT_COMPLETE = range(4)
-    STATUSES_OPTS = zip(STATUSES, STATUSES)
+    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
+
+    STATUS_CAPS = (
+        u'неактивен'
+        u'формирование',
+        u'на проверке',
+        u'утверждение',
+        u'утвержден',
+        u'отправлен на доработку',
+        u'завершен')
+
+    STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
+
     external_id = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=255)
-    status = models.IntegerField(default=NEW)
+    status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
     date_created = models.DateTimeField(auto_now_add=True)
     date_sign = models.DateTimeField(null=True)
-
-    # project_documents_entry = models.ForeignKey(ProjectDocumentsEntry, related_name='documents')
-
 
     dml = DocumentDMLManager()
 
     def is_approved(self):
         return self.status == Document.APPROVED
+
+
+    def get_status_cap(self):
+        return Document.STATUS_CAPS[self.status]
+
 
 class AgreementDocument(models.Model):
     tp = 'agreement'
