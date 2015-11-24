@@ -100,8 +100,9 @@ class AttachmentSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = models.Attachment
-		exclude = ('document',)
 
+	document = serializers.PrimaryKeyRelatedField(
+		queryset=models.Document.objects.all(), required=False)
 
 
 
