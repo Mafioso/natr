@@ -56,7 +56,6 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         data = request.data
         tmp_file_path = data.get('file.path')
         fname = data.get('file.name')
-        print data
         _, ext = os.path.splitext(fname)
         _, remaining_path = tmp_file_path.split(settings.NGINX_TMP_UPLOAD_ROOT + '/')
         file_path = pj(settings.MEDIA_ROOT, remaining_path)
