@@ -3,7 +3,7 @@ from moneyed import KZT, Money
 from django.core.management.base import BaseCommand, CommandError
 from projects import factories
 from documents import factories as doc_factories, models as doc_models
-
+from journals import factories as journal_factories
 
 class Command(BaseCommand):
 
@@ -36,6 +36,7 @@ class Command(BaseCommand):
 
 			self.gen_monitoring(prj)
 			self.gen_reports(prj)
+			self.gen_journal(prj)
 		return rv
 
 	def gen_reports(self, project):
@@ -47,3 +48,6 @@ class Command(BaseCommand):
 
 	def gen_monitoring(self, project):
 		factories.Monitoring.create(project=project)
+
+	def gen_journal(self, project):
+		journal = journal_factories.Journal.create(project=project)

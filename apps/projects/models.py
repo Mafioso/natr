@@ -77,6 +77,11 @@ class Project(models.Model):
     def get_recent_todos(self):
         return MonitoringTodo.objects.by_project(self)
 
+    def get_journal(self):
+        if not self.journal:
+            return []
+        return self.journal.activities.all()
+
     def add_document(self, spec_doc):
         self.document_set.add(spec_doc.document)
 

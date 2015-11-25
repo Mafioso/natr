@@ -36,6 +36,9 @@ class JournalActivity(DjangoModelFactory):
 	
 	journal = factory.SubFactory('journal.factories.Journal')
 	project = factory.SubFactory('projects.factories.Project')
+	date_created = factory.Faker('date_time')
+	subject_name = factory.Faker('text')
+	result = factory.Faker('sentence')
 
 	@factory.post_generation
 	def attachments(self, create, count, **kwargs):
