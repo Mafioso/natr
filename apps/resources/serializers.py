@@ -125,7 +125,8 @@ class MonitoringSerializer(serializers.ModelSerializer):
 			self.fields['todos'] = MonitoringTodoSerializer(many=True)
 		super(MonitoringSerializer, self).__init__(*a, **kw)
 
-	project = ProjectBasicInfoSerializer(required=True)
+	project = serializers.PrimaryKeyRelatedField(
+		queryset=Project.objects.all(), required=True)
 
 
 class MonitoringTodoSerializer(serializers.ModelSerializer):

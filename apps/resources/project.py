@@ -49,4 +49,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
 class MonitoringViewSet(viewsets.ModelViewSet):
-	pass
+	queryset = prj_models.Monitoring.objects.all()
+	serializer_class = MonitoringSerializer
+
+
+class MonitoringTodoViewSet(viewsets.ModelViewSet):
+	queryset = prj_models.MonitoringTodo.objects.all()
+	serializer_class = MonitoringTodoSerializer
