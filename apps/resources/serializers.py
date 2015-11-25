@@ -3,14 +3,16 @@ from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields
 from grantee.serializers import *
 from documents.serializers import *
-from projects.models import FundingType, Project, Milestone, Report
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo
 
 
 __all__ = (
 	'FundingTypeSerializer',
 	'ProjectSerializer',
 	'ProjectBasicInfoSerializer',
-	'ReportSerializer'
+	'ReportSerializer',
+	'MonitoringSerializer',
+	'MonitoringTodoSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -112,4 +114,31 @@ class ReportSerializer(serializers.ModelSerializer):
 	use_of_budget_doc = UseOfBudgetDocumentSerializer(required=False)
 	status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
+
+class MonitoringSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = Monitoring
+
+	def __init__(self, *a, **kw):
+		if kw.pop('todos', False) is True:
+			self.fields['todos'] = MonitoringTodoSerializer(many=True)
+		super(MonitoringSerializer, self).__init__(*a, **kw)
+
+	project = ProjectBasicInfoSerializer(required=True)
+
+
+class MonitoringTodoSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = MonitoringTodo
+
+	monitoring = serializers.PrimaryKeyRelatedField(
+		queryset=Monitoring.objects.all(), required=True)
+
+	def create(self, validated_data):
+		monitoring = validated_data.pop('monitoring')
+		monitoring_todo = MonitoringTodo.objects.create(
+			monitoring=monitoring, **validated_data)
+		return monitoring_todo
 

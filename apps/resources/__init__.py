@@ -1,4 +1,4 @@
 __author__ = 'xepa4ep'
 
 
-from .project import ProjectViewSet
+# from .project import ProjectViewSet

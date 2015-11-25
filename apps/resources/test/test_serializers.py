@@ -6,6 +6,7 @@ from moneyed import Money, KZT, USD
 from natr import utils
 from resources.serializers import *
 from projects import factories
+from rest_framework import serializers
 # Create your tests here.
 
 
@@ -138,3 +139,23 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertTrue(len(monitoring.todos.all()) > 0)
 		for todo in monitoring.todos.all():
 			self.assertEqual((todo.date_end - todo.date_start).days, todo.period)
+
+		monitoring_data = MonitoringSerializer(instance=monitoring).data
+		self.assertNotIn('todos', monitoring_data)
+
+		monitoring_data = MonitoringSerializer(instance=monitoring, todos=True).data
+		self.assertIn('todos', monitoring_data)
+		self.assertEqual(len(monitoring_data['todos']), len(monitoring.todos.all()))
+
+	def test_monitoring_todo(self):
+		todo = factories.MonitoringTodo()
+		data = MonitoringTodoSerializer(instance=todo).data
+		todo_ser = MonitoringTodoSerializer(data=data)
+		with self.assertRaises(serializers.ValidationError):
+			todo_ser.is_valid(raise_exception=True)
+
+		monitoring = factories.Monitoring.create()
+		todo = monitoring.todos.first()
+		data = MonitoringTodoSerializer(instance=todo).data
+		todo_ser = MonitoringTodoSerializer(data=data)
+		todo_ser.is_valid(raise_exception=True)
