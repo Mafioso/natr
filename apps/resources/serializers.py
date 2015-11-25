@@ -46,7 +46,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 		aggrement_data = validated_data.pop('aggreement', None)
 
 		prj = Project.objects.create(**validated_data)
-		
+
 		if organization_details:
 			organization_details = OrganizationSerializer(data=organization_details)
 			organization_details.is_valid(raise_exception=True)
@@ -73,7 +73,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 		prj_journal = JournalSerializer(data={'project': prj.id})
 		prj_journal.is_valid(raise_exception=True)
 		prj_journal.save()
-		
+
 		# 2. create monitoring
 		prj_monitoring = MonitoringSerializer(data={'project': prj.id})
 		prj_monitoring.is_valid(raise_exception=True)
@@ -91,7 +91,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Project
-		_f = ('name', 'status', 'current_milestone', 'status_cap')
+		_f = ('id', 'name', 'status', 'current_milestone', 'status_cap')
 		fields = _f
 		read_only_fields = _f
 
@@ -161,4 +161,3 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
 		monitoring_todo = MonitoringTodo.objects.create(
 			monitoring=monitoring, **validated_data)
 		return monitoring_todo
-
