@@ -123,8 +123,14 @@ class MonitoringTodo(DjangoModelFactory):
         datetime.datetime(2014, 8, 2, tzinfo=pytz.UTC),
         datetime.datetime(2015, 12, 1, tzinfo=pytz.UTC))
 
+    monitoring = factory.SubFactory('projects.factories.Monitoring')
+
     @factory.lazy_attribute
     def period(self):
         return (self.date_end - self.date_start).days
+
+    @factory.lazy_attribute
+    def project(self):
+        return self.monitoring.project
 
     report_type = factory.Faker('sentence')

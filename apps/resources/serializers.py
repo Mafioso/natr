@@ -135,6 +135,9 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
 
 	monitoring = serializers.PrimaryKeyRelatedField(
 		queryset=Monitoring.objects.all(), required=True)
+	project = serializers.PrimaryKeyRelatedField(
+		queryset=Project.objects.all(), required=True)
+	remaining_days = serializers.IntegerField()
 
 	def create(self, validated_data):
 		monitoring = validated_data.pop('monitoring')

@@ -4,6 +4,7 @@
 __author__ = 'xepa4ep'
 
 import datetime
+from django.utils import timezone
 from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
@@ -59,6 +60,9 @@ class Project(models.Model):
 
     def get_reports(self):
         return Report.objects.by_project(self)
+
+    def get_recent_todos(self):
+        return MonitoringTodo.objects.by_project(self)
 
 
 class FundingType(models.Model):
@@ -249,6 +253,7 @@ class Monitoring(ProjectBasedModel):
 
 
 class MonitoringTodo(ProjectBasedModel):
+    """Мероприятие по мониторингу"""
     monitoring = models.ForeignKey(
         'Monitoring', null=True, verbose_name=u'мониторинг', related_name='todos')
 
@@ -260,10 +265,11 @@ class MonitoringTodo(ProjectBasedModel):
     report_type = models.CharField(u'форма завершения', null=True, max_length=2048)
 
     class Meta:
-        ordering = ('-date_start', '-date_end')
+        ordering = ('date_start', 'date_end')
 
     @property
     def remaining_days(self):
         if self.date_end and self.date_start:
-            return (self.date_end - self.date_start).days
+            now = timezone.now()
+            return (self.date_end - now).days
         return None

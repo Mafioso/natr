@@ -34,3 +34,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
 		return response.Response({
 			'reports': report_ser.data,
 		})
+
+	@detail_route(methods=['get'], url_path='recent_todos')
+	@patch_serializer_class(MonitoringTodoSerializer)
+	def recent_todos(self, request, *a, **kw):
+		project = self.get_object()
+		todo_qs = project.get_recent_todos()
+		page = self.paginate_queryset(todo_qs)
+		if page is not None:
+			serializer = self.get_serializer(page, many=True)
+			return self.get_paginated_response(serializer.data)
+		todos_ser = self.get_serializer(todo_qs, many=True)
+		return Response(todo_ser.data)
+
+
+class MonitoringViewSet(viewsets.ModelViewSet):
+	pass

@@ -34,6 +34,7 @@ class Command(BaseCommand):
 			prj.statement = statement
 			prj.save()
 
+			self.gen_monitoring(prj)
 			self.gen_reports(prj)
 		return rv
 
@@ -43,3 +44,6 @@ class Command(BaseCommand):
 				milestone.set_start(Money(1000000, KZT))
 			if milestone.is_started():
 				factories.Report.create(milestone=milestone)
+
+	def gen_monitoring(self, project):
+		factories.Monitoring.create(project=project)
