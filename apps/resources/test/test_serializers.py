@@ -132,3 +132,9 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertIn('use_of_budget_doc', report_data)
 		for item_id in report_data['use_of_budget_doc']['items']:
 			self.assertIn(item_id, item_ids)
+
+	def test_monitoring(self):
+		monitoring = factories.Monitoring()
+		self.assertTrue(len(monitoring.todos.all()) > 0)
+		for todo in monitoring.todos.all():
+			self.assertEqual((todo.date_end - todo.date_start).days, todo.period)

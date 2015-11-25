@@ -1,6 +1,8 @@
+import datetime
+import pytz
 import factory
 from factory.django import DjangoModelFactory
-from factory import BUILD_STRATEGY
+from factory import BUILD_STRATEGY, fuzzy
 from projects import models
 from natr import utils
 import random
@@ -84,3 +86,45 @@ class Report(DjangoModelFactory):
         return self.milestone.project
 
     description = factory.Faker('text')
+
+
+class Monitoring(DjangoModelFactory):
+
+    class Meta:
+        model = models.Monitoring
+        strategy = BUILD_STRATEGY
+
+    project = factory.SubFactory('projects.factories.Project')
+
+    @factory.post_generation
+    def todos(self, create, count, **kwargs):
+        if count is None:
+            count = 5
+
+        make_todo = getattr(MonitoringTodo, 'create' if create else 'build')
+        todos = [make_todo(monitoring=self) for i in xrange(count)]
+        if not create:
+            # Fiddle with django internals so self.product_set.all() works with build()
+            self._prefetched_objects_cache = {'todos': todos}
+
+
+class MonitoringTodo(DjangoModelFactory):
+
+    class Meta:
+        model = models.MonitoringTodo
+        strategy = BUILD_STRATEGY
+
+    event_name = factory.Faker('sentence')
+
+    date_start = fuzzy.FuzzyDateTime(
+        datetime.datetime(2014, 1, 1, tzinfo=pytz.UTC),
+        datetime.datetime(2014, 8, 1, tzinfo=pytz.UTC))
+    date_end = fuzzy.FuzzyDateTime(
+        datetime.datetime(2014, 8, 2, tzinfo=pytz.UTC),
+        datetime.datetime(2015, 12, 1, tzinfo=pytz.UTC))
+
+    @factory.lazy_attribute
+    def period(self):
+        return (self.date_end - self.date_start).days
+
+    report_type = factory.Faker('sentence')

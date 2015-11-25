@@ -146,6 +146,11 @@ class Corollary(ProjectBasedModel):
 
 class Milestone(ProjectBasedModel):
     
+
+    class Meta:
+        ordering = ['number']
+
+
     class AlreadyExists(Exception):
         pass
 
@@ -176,9 +181,6 @@ class Milestone(ProjectBasedModel):
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
 
-
-    class Meta:
-        ordering = ['number']
 
     def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():
@@ -239,3 +241,29 @@ class Milestone(ProjectBasedModel):
                 project=project
             ))
         return Milestone.objects.bulk_create(milestones)
+
+
+class Monitoring(ProjectBasedModel):
+    """План мониторинга проекта"""
+    pass
+
+
+class MonitoringTodo(ProjectBasedModel):
+    monitoring = models.ForeignKey(
+        'Monitoring', null=True, verbose_name=u'мониторинг', related_name='todos')
+
+    event_name = models.CharField(u'мероприятие мониторинга', max_length=2048, null=True)
+    date_start = models.DateTimeField(u'дата начала', null=True)
+    date_end = models.DateTimeField(u'дата завершения', null=True)
+    period = models.IntegerField(u'период (дней)', null=True)   # автозаполняемое
+
+    report_type = models.CharField(u'форма завершения', null=True, max_length=2048)
+
+    class Meta:
+        ordering = ('-date_start', '-date_end')
+
+    @property
+    def remaining_days(self):
+        if self.date_end and self.date_start:
+            return (self.date_end - self.date_start).days
+        return None
