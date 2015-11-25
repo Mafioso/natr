@@ -4,7 +4,7 @@ import datetime
 from django.test import TestCase
 from moneyed import Money, KZT, USD
 from natr import utils
-from journal import factories, models, serializers
+from journals import factories, models, serializers
 
 # Create your tests here.
 

@@ -5,6 +5,7 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from .common import CommonTestMixin
 from moneyed import Money, KZT, USD
+from natr import utils
 from projects import factories
 from documents import factories as doc_factories, models as doc_models
 
@@ -74,6 +75,8 @@ class ProjectsApiTestCase(CommonTestMixin, APITestCase):
         }
         url, parsed = self.prepare_urls('project-list')
         response = self.client.post(url, data, format='json')
+        data = self.load_response(response)
+#        utils.pretty(data)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
     def create_aggrement(self, project):

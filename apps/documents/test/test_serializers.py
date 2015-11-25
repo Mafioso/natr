@@ -59,7 +59,7 @@ class DocumentSerializerTestCase(TestCase):
             doc_ser = DocumentSerializer(instance=doc, data=upd_data)
             doc_ser.is_valid(raise_exception=False)
             errors = doc_ser.errors
-            utils.pretty(errors)
+#            utils.pretty(errors)
             doc = doc_ser.save()
 
             for k, v in upd_data.iteritems():

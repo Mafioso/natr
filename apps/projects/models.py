@@ -8,6 +8,7 @@ from django.utils import timezone
 from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
+from documents.models import CalendarPlanDocument
 
 
 class Project(models.Model):
@@ -55,6 +56,18 @@ class Project(models.Model):
         except Milestone.DoesNotExist:
             return None
 
+    @property
+    def calendar_plan(self):
+        return CalendarPlanDocument.objects.get(document__project=self)
+
+    @property
+    def journal(self):
+        return self.journal_set.first()
+
+    @property
+    def monitoring(self):
+        return self.monitoring_set.first()
+
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
 
@@ -63,6 +76,9 @@ class Project(models.Model):
 
     def get_recent_todos(self):
         return MonitoringTodo.objects.by_project(self)
+
+    def add_document(self, spec_doc):
+        self.document_set.add(spec_doc.document)
 
 
 class FundingType(models.Model):

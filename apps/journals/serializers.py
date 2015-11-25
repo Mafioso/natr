@@ -1,5 +1,9 @@
 from rest_framework import serializers
-from journal import models
+from journals import models
+
+
+__all__ = ('JournalSerializer', 'JournalActivitySerializer')
+
 
 class JournalSerializer(serializers.ModelSerializer):
 
@@ -10,9 +14,6 @@ class JournalSerializer(serializers.ModelSerializer):
 		if kw.pop('activities', False) is True:
 			self.fields['activities'] = JournalActivitySerializer(many=True)
 		super(JournalSerializer, self).__init__(*a, **kw)
-
-	project = serializers.PrimaryKeyRelatedField(
-		queryset=models.Journal.objects.all(), required=True)
 
 
 class JournalActivitySerializer(serializers.ModelSerializer):

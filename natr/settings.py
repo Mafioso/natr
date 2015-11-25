@@ -72,9 +72,8 @@ APPS = (
     'projects',
     'documents',
     'grantee',
-    'journal',
+    'journals',
     'resources',
-    
 )
 
 INSTALLED_APPS = (

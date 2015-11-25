@@ -1,5 +1,5 @@
 from documents.factories import Attachment as AttachmentFactory
-from journal import models
+from journals import models
 import factory
 from factory.django import DjangoModelFactory
 from factory import BUILD_STRATEGY, fuzzy

@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
                 ('subject_name', models.CharField(max_length=2048, null=True, verbose_name='\u0412\u043e\u043f\u0440\u043e\u0441 (\u0442\u0435\u043c\u0430)')),
                 ('result', models.CharField(max_length=2048, null=True, verbose_name='\u0420\u0435\u0437\u0443\u043b\u044c\u0442\u0430\u0442')),
                 ('attachments', models.ManyToManyField(to='documents.Attachment', verbose_name='\u041f\u0440\u0438\u043b\u043e\u0436\u0435\u043d\u0438\u044f')),
-                ('journal', models.ForeignKey(related_name='activities', to='journal.Journal', null=True)),
+                ('journal', models.ForeignKey(related_name='activities', to='journals.Journal', null=True)),
                 ('project', models.ForeignKey(to='projects.Project', null=True)),
             ],
             options={

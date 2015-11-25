@@ -3,6 +3,7 @@ from rest_framework import viewsets, response, filters
 from natr.rest_framework.decorators import patch_serializer_class
 from .serializers import *
 from projects import models as prj_models
+from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
 
 
@@ -47,6 +48,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
 		todos_ser = self.get_serializer(todo_qs, many=True)
 		return Response(todo_ser.data)
 
+	@detail_route(methods=['get'], url_path='journal')
+	@patch_serializer_class(journal_serializers.JournalActivitySerializer)
+	def journal(self, request, *a, **kw):
+		project = self.get_object()
+		activities = project.get_journal()
+		page = self.paginate_queryset(activities)
+		if page is not None:
+			serializer = self.get_serializer(page, many=True)
+			return self.get_paginated_response(serializer.data)
+		activity_ser = self.get_serializer(activities, many=True)
+		return Response(activity_ser.data)
 
 class MonitoringViewSet(viewsets.ModelViewSet):
 	queryset = prj_models.Monitoring.objects.all()
