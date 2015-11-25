@@ -38,3 +38,6 @@ class JournalActivity(ProjectBasedModel):
 	def get_activity_cap(self):
 		return JournalActivity.ACTIVITY_CAPS[self.activity_type]
 
+
+
+

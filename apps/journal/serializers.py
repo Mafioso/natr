@@ -20,4 +20,5 @@ class JournalActivitySerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.JournalActivity
 
-	activity_cap = serializers.CharField(source='get_activity_cap', read_only=True)
+	activity_cap = serializers.CharField(
+		source='get_activity_cap', read_only=True)
