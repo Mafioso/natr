@@ -159,3 +159,4 @@ class ProjectSerializerTestCase(TestCase):
 		data = MonitoringTodoSerializer(instance=todo).data
 		todo_ser = MonitoringTodoSerializer(data=data)
 		todo_ser.is_valid(raise_exception=True)
+		

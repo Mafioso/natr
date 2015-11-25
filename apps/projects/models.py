@@ -254,6 +254,10 @@ class Monitoring(ProjectBasedModel):
 
 class MonitoringTodo(ProjectBasedModel):
     """Мероприятие по мониторингу"""
+
+    class Meta:
+        ordering = ('date_start', 'date_end')
+
     monitoring = models.ForeignKey(
         'Monitoring', null=True, verbose_name=u'мониторинг', related_name='todos')
 
@@ -263,9 +267,6 @@ class MonitoringTodo(ProjectBasedModel):
     period = models.IntegerField(u'период (дней)', null=True)   # автозаполняемое
 
     report_type = models.CharField(u'форма завершения', null=True, max_length=2048)
-
-    class Meta:
-        ordering = ('date_start', 'date_end')
 
     @property
     def remaining_days(self):

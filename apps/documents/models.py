@@ -169,7 +169,6 @@ class Attachment(models.Model):
 
     document = models.ForeignKey('Document', null=True, related_name='attachments')
 
-
 class UseOfBudgetDocument(models.Model):
     tp = 'useofbudget'
     document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
