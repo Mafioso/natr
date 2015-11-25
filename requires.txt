@@ -4,6 +4,7 @@ billiard==3.3.0.21
 celery==3.1.19
 Django==1.8.6
 django-extensions==1.5.9
+django-filter==0.11.0
 django-money==0.7.4
 django-rest-swagger==0.3.4
 djangorestframework==3.3.1
