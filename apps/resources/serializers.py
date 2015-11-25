@@ -91,7 +91,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = Project
-		_f = ('id', 'name', 'status', 'current_milestone', 'status_cap')
+		_f = ('id', 'name', 'status', 'current_milestone', 'number_of_milestones', 'status_cap')
 		fields = _f
 		read_only_fields = _f
 
