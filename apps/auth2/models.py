@@ -5,7 +5,9 @@ __author__ = 'xepa4ep'
 
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group
+from django.db.models.signals import post_save
+
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -30,6 +32,10 @@ class UserManager(BaseUserManager):
 
     def create_superuser(self, email, password, **extra_fields):
         return self._create_user(email, password, True, **extra_fields)
+
+    def create_natrexpert(self, email, password, **extra_fields):
+        account = self._create_user(email, password, False, **extra_fields)
+        return NatrUser.objects.create(account=account)
 
 
 class Account(AbstractBaseUser, PermissionsMixin):
@@ -59,3 +65,41 @@ class Account(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         "Returns the short name for the user."
         return self.first_name
+
+
+class NatrUser(models.Model):
+
+    DEFAULT_GROUPS = EXPERT, MANAGER, ADMIN = ('expert', 'manager', 'admin')
+
+    account = models.OneToOneField('Account', related_name='user')
+
+    def add_to_experts(self):
+        group = Group.objects.get(name=NatrUser.EXPERT)
+        self.account.groups.add(group)
+        return self
+
+    def is_expert(self):
+        groups = self.get_groups()
+        return groups.filter(name=NatrUser.EXPERT).first()
+
+    def is_manager(self):
+        groups = self.get_groups()
+        return groups.filter(name=NatrUser.MANAGER).first()
+
+    def is_admin(self):
+        groups = self.get_groups()
+        return groups.filter(name=NatrUser.ADMIN).first()
+
+    def get_groups(self):
+        return self.account.groups.all()
+
+
+def assign_user_group(sender, instance, created=False, **kwargs):
+    """If natr user does not belong to any group, assign expert by default."""
+    if not created:
+        return
+    if instance.is_expert() or instance.is_manager() or instance.is_admin():
+        return
+    instance.add_to_experts()
+
+post_save.connect(assign_user_group, sender=NatrUser)
