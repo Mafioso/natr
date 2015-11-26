@@ -74,7 +74,8 @@ APPS = (
     'grantee',
     'journals',
     'resources',
-    'auth2'
+    'auth2',
+    'notifications'
 )
 
 INSTALLED_APPS = (
@@ -249,3 +250,11 @@ SHELL_PLUS_PRE_IMPORTS = (
 )
 
 CURRENCIES = ('KZT', 'USD')
+
+NOTIFICATION_CHANNEL = 'notification'
+
+
+CENTRIFUGO_HOST = os.getenv('CENTRIFUGO_PORT_8000_TCP_ADDR', '127.0.0.1')
+CENTRIFUGO_PORT = os.getenv('CENTRIFUGO_PORT_8000_TCP_PORT', 8001)
+CENTRIFUGE_ADDRESS = 'http://{}:{}'.format(CENTRIFUGO_HOST, CENTRIFUGO_PORT)
+CENTRIFUGE_SECRET = 'secret'

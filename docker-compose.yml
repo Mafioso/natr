@@ -26,6 +26,7 @@ app:
     - media
   links:
     - rabbitmq
+    - centrifugo
 
 nginx:
   image: anguis/nginx:1.9.4

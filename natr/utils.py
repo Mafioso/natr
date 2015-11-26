@@ -38,3 +38,10 @@ def pretty(d, indent=0):
             print u'\t' * (indent+1) + unicode(value)
 
     return ''
+
+
+def money_to_python(money_obj):
+    return {
+        'currency': money_obj.currency.code,
+        'amount': money_obj.amount
+    }
