@@ -1,0 +1,12 @@
+{
+	"secret": "secret",
+	"web_password": "12345",
+	"web_secret": "12345",
+	"watch": true,
+	"publish": true,
+	"anonymous": true,
+	"presence": true,
+	"history_size": 10,
+	"history_lifetime": 30,
+	"join_leave": true
+}
