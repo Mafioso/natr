@@ -4,6 +4,7 @@
 __author__ = 'xepa4ep'
 
 from django.db import models
+# from django.contrib.auth.models import User
 
 
 class Organization(models.Model):
@@ -36,3 +37,9 @@ class ContactDetails(models.Model):
 
 	phone_number = models.CharField(u'Телефон', max_length=255)
 	email = models.EmailField(u'Почтовый адрес')
+
+
+
+class Grantee(models.Model):
+	account = models.OneToOneField('auth2.Account', null=True, verbose_name=u'Аккаунт')
+	organization = models.ForeignKey('Organization', null=True)
