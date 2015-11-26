@@ -39,23 +39,27 @@ class Notification(models.Model):
 	def spray(self):
 		uids, subscriber_ids = self.store_by_subscriber()
 		channels = map(utils.prepare_channel, uids)
-		if not self.extra:
+		if not self.params:
 			notif_params = self.context.notification(
 				self.context_type, self.context_id)
 			self.params = JSONRenderer().render(notif_params)
 			self.save()
 		for uid, subscriber_id, user_channel in zip(uids, subscriber_ids, channels):
-			centrifugo_client.publish(user_channel, self.params, ack_id=subscriber_id)
+			notif_params['ack'] = subscriber_id
+			centrifugo_client.publish(user_channel, JSONRenderer().render(notif_params))
+		
+		# propogate error if it happens
+		return centrifugo_client.send()
 
 	def store_by_subscriber(self):
 		users = self.context.notification_subscribers()
 		subscribers = []
 		for user in users:
-			subscribers.append(NotificationSubscribtion.create(
+			subscribers.append(NotificationSubscribtion.objects.create(
 				account=user, notification=self))
 		return (
-			[u.id for user in users],
-			[s.id for subscriber in subscribers]
+			[u.id for u in users],
+			[s.id for s in subscribers]
 		)
 
 

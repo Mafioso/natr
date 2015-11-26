@@ -9,7 +9,9 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
 from natr import utils
+from auth2.models import Account
 from documents.models import CalendarPlanDocument
+
 
 
 class Project(models.Model):
@@ -223,6 +225,10 @@ class Milestone(ProjectBasedModel):
                 'fundings': utils.money_to_python(self.fundings)
             })
         return data
+
+    def notification_subscribers(self):
+        # todo: implement
+        return Account.objects.all()
 
     def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():

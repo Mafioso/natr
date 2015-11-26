@@ -21,6 +21,7 @@ class Notification(DjangoModelFactory):
 
         make_subscriber = getattr(NotificationSubscribtion, 'create' if create else 'build')
         subscribers = [make_subscriber(notification=self) for i in xrange(count)]
+
         return subscribers
 
 
@@ -40,3 +41,21 @@ class NotificationSubscribtion(DjangoModelFactory):
         if self.status == models.NotificationSubscribtion.READ:
             return timezone.now()
         return None
+
+
+class NotificationFresh(Notification):
+
+    @factory.post_generation
+    def subscribers(self, create, count, **kwargs):
+        if count is None:
+            count = 5
+
+        make_subscriber = getattr(NotificationFreshSubscription, 'create' if create else 'build')
+        subscribers = [make_subscriber(notification=self) for i in xrange(count)]
+
+        return subscribers
+
+
+class NotificationFreshSubscription(NotificationSubscribtion):
+
+    status = factory.LazyAttribute(lambda x: 0)
