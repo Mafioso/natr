@@ -6,7 +6,6 @@ __author__ = 'xepa4ep'
 
 from djmoney.models.fields import MoneyField
 from django.db import models
-from projects import models as project_models
 from natr.mixins import ProjectBasedModel
 
 
@@ -122,18 +121,31 @@ class StatementDocument(models.Model):
     document = models.OneToOneField(Document, related_name='statement', on_delete=models.CASCADE)
 
 
+class SimpleDocumentManager(models.Manager):
+    r"""Используется для того чтобы создавать пустышки"""
+
+    def create_empty(self, project):
+        doc = Document(type=self.model.tp, project=project)
+        doc.save()
+        self.model.create(document=doc)
+
+
 class CalendarPlanDocument(models.Model):
     tp = 'calendarplan'
 
     document = models.OneToOneField(Document, related_name='calendar_plan', on_delete=models.CASCADE)
+
+    objects = SimpleDocumentManager()
 
     def is_approved(self):
         return self.document.is_approved()
 
 
 class BudgetingDocument(models.Model):
+    tp = 'budgetdoc'
     document = models.OneToOneField(Document, related_name='budgeting_document', on_delete=models.CASCADE)
 
+    objects = SimpleDocumentManager()
 
 class CalendarPlanItem(models.Model):
 
@@ -169,10 +181,11 @@ class Attachment(models.Model):
 
     document = models.ForeignKey('Document', null=True, related_name='attachments')
 
-
 class UseOfBudgetDocument(models.Model):
     tp = 'useofbudget'
     document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
+
+    objects = SimpleDocumentManager()
 
 
 class UseOfBudgetDocumentItem(models.Model):

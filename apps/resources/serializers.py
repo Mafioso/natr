@@ -3,6 +3,7 @@ from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields
 from grantee.serializers import *
 from documents.serializers import *
+from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo
 
 
@@ -45,7 +46,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 		aggrement_data = validated_data.pop('aggreement', None)
 
 		prj = Project.objects.create(**validated_data)
-		
+
 		if organization_details:
 			organization_details = OrganizationSerializer(data=organization_details)
 			organization_details.is_valid(raise_exception=True)
@@ -67,6 +68,21 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 			prj.aggreement = agr_ser.save()
 
 		prj.save()
+
+		# 1. create journal
+		prj_journal = JournalSerializer(data={'project': prj.id})
+		prj_journal.is_valid(raise_exception=True)
+		prj_journal.save()
+
+		# 2. create monitoring
+		prj_monitoring = MonitoringSerializer(data={'project': prj.id})
+		prj_monitoring.is_valid(raise_exception=True)
+		prj_monitoring.save()
+
+		# 3. create calendar plan
+		prj_cp = CalendarPlanDocumentSerializer(data={'document': {'project': prj.id}})
+		prj_cp.is_valid(raise_exception=True)
+		prj_cp.save()
 		return prj
 
 
@@ -145,4 +161,3 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
 		monitoring_todo = MonitoringTodo.objects.create(
 			monitoring=monitoring, **validated_data)
 		return monitoring_todo
-

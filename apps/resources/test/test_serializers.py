@@ -6,6 +6,7 @@ from moneyed import Money, KZT, USD
 from natr import utils
 from resources.serializers import *
 from projects import factories
+from documents import models as doc_models
 from rest_framework import serializers
 # Create your tests here.
 
@@ -78,7 +79,7 @@ class ProjectSerializerTestCase(TestCase):
 		prj_ser = ProjectSerializer(data=self.data)
 		prj_ser.is_valid(raise_exception=False)
 		errors = prj_ser.errors
-		utils.pretty(errors)
+#		utils.pretty(errors)
 		
 		prj = prj_ser.save()
 		
@@ -89,7 +90,9 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertEqual(prj.total_month, 0)
 		self.assertEqual(prj.status, 1)
 		self.assertEqual(prj.number_of_milestones, 7)
-
+		self.assertTrue(isinstance(prj.calendar_plan, doc_models.CalendarPlanDocument))
+		self.assertIsNotNone(prj.journal)
+		self.assertIsNotNone(prj.monitoring)
 
 		def assertRelated(obj, rel_name, initial=None):
 			initial = initial if initial is not None else self.data
@@ -107,6 +110,7 @@ class ProjectSerializerTestCase(TestCase):
 		assertRelated(prj, 'aggreement')
 		assertRelated(prj.statement, 'document', initial=self.data['statement'])
 		assertRelated(prj.aggreement, 'document', initial=self.data['aggreement'])
+
 
 	def test_project_basic_info(self):
 		project = factories.ProjectWithMilestones.create()
@@ -159,3 +163,4 @@ class ProjectSerializerTestCase(TestCase):
 		data = MonitoringTodoSerializer(instance=todo).data
 		todo_ser = MonitoringTodoSerializer(data=data)
 		todo_ser.is_valid(raise_exception=True)
+		
