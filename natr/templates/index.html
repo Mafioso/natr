@@ -72,11 +72,52 @@
     <div class="app" id="app"></div>
 
     <script src="{% static 'js/bundle.js' %}"></script>
+    <script src="//cdn.jsdelivr.net/sockjs/1.0.0/sockjs.min.js"></script>
+    <script type="text/javascript" src="https://rawgit.com/centrifugal/centrifuge-js/master/centrifuge.min.js"></script>
     <script type="text/javascript" src="{% static 'js/jquery-2.1.4.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/jquery.easing.1.3.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/jquery.color-2.1.2.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/jquery.timer.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/script.js' %}"></script>
 
+    <script type="text/javascript">
+      var centrifuge = new Centrifuge({
+        url: '{{ CENTRIFUGE_SOCKJS_ENDPOINT }}',
+        user: '{{ CENTRIFUGE_USER }}',
+        timestamp: '{{ CENTRIFUGE_TIMESTAMP }}',
+        token: '{{ CENTRIFUGE_TOKEN }}'
+      });
+      centrifuge.connect()
+      centrifuge.on('error', function(errorMsg) {
+        // called every time error occurred, in normal cases it will never be called, if it
+        // was called then your client does something wrong or forbidden
+        console.log(errorMsg, "error")
+      }).on('connect', function() {
+        var channel = '{{ NOTIFICATION_CHANNEL }}'
+        var subscription = centrifuge.subscribe(channel, function(message) {
+            console.log(message.data, "message")
+        })
+        subscription.on('ready', function() {
+          // publish test message
+          subscription.publish({'foo': 'bar'})
+          subscription.presence(function(message) {
+            console.log(message)
+          })
+
+          subscription.history(function(message) {
+            console.log("channel history", message)
+          })
+          subscription.on('join', function(message) {
+            console.log(message, 'somebody subscribed')
+          })
+          subscription.on('leave', function(message) {
+            console.log(message, 'someone unsubscribed from channel')
+          })
+        })
+      }).on('disconnect', function() {
+        console.log('bye', arguments)
+      });
+      console.log(centrifuge, "hihi")
+    </script>
   </body>
 </html>

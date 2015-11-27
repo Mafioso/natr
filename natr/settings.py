@@ -95,7 +95,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
-    #'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     #'django.middleware.clickjacking.XFrameOptionsMiddleware',
     #'django.middleware.security.SecurityMiddleware',
@@ -114,6 +114,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'adjacent.context_processors.main',
+                'notifications.context_processors.main'
             ],
         },
     },
@@ -254,7 +256,7 @@ CURRENCIES = ('KZT', 'USD')
 NOTIFICATION_CHANNEL = 'notification'
 
 
-CENTRIFUGO_HOST = os.getenv('CENTRIFUGO_PORT_8000_TCP_ADDR', '127.0.0.1')
-CENTRIFUGO_PORT = os.getenv('CENTRIFUGO_PORT_8000_TCP_PORT', 8001)
+CENTRIFUGO_HOST = os.getenv('CENTRIFUGO_PORT_8001_TCP_ADDR', 'centrifugo.natr.kz')
+CENTRIFUGO_PORT = os.getenv('CENTRIFUGO_PORT_8001_TCP_PORT', 8001)
 CENTRIFUGE_ADDRESS = 'http://{}:{}'.format(CENTRIFUGO_HOST, CENTRIFUGO_PORT)
 CENTRIFUGE_SECRET = 'secret'

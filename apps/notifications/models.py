@@ -21,10 +21,10 @@ from adjacent import Client
 from natr.mixins import ProjectBasedModel
 from notifications import utils
 from auth2.models import Account
+from rest_framework.utils import encoders
 from rest_framework.renderers import JSONRenderer
 
-
-centrifugo_client = Client()
+centrifugo_client = Client(json_encoder=encoders.JSONEncoder)
 
 
 class Notification(models.Model):
@@ -46,7 +46,7 @@ class Notification(models.Model):
 			self.save()
 		for uid, subscriber_id, user_channel in zip(uids, subscriber_ids, channels):
 			notif_params['ack'] = subscriber_id
-			centrifugo_client.publish(user_channel, JSONRenderer().render(notif_params))
+			centrifugo_client.publish(user_channel, notif_params)
 		
 		# propogate error if it happens
 		return centrifugo_client.send()
@@ -62,6 +62,12 @@ class Notification(models.Model):
 			[s.id for s in subscribers]
 		)
 
+	@property
+	def milestone(self):
+		"""Hook property that is called by corresponding serializer.
+		Caution: Do not use this method."""
+		return self.context_id
+
 
 class NotificationSubscribtion(models.Model):
 
@@ -76,6 +82,16 @@ class NotificationSubscribtion(models.Model):
 	notification = models.ForeignKey('Notification', related_name='subscribtions')
 	status = models.IntegerField(choices=STATUSES_OPTS, default=SENT)
 	date_read = models.DateTimeField(null=True)
+
+	def save(self, *a, **kw):
+		if self.pk is not None:
+			orig = NotificationSubscribtion.objects.get(pk=self.pk)
+			if orig.status != self.status and self.is_read():
+				self.date_read = timezone.now()
+		return super(NotificationSubscribtion, self).save(*a, **kw)
+
+	def is_read(self):
+		return self.status == NotificationSubscribtion.READ
 
 	def mark_delivered(self):
 		self.status = NotificationSubscribtion.DELIVERED
