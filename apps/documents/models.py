@@ -32,6 +32,9 @@ class DocumentDMLManager(models.Manager):
             doc.items.add(item)
         return doc
 
+    def update_calendar_plan(self, **kwargs):
+        pass
+
     def create_doc_with_relations(self, doc_class, **kwargs):
         ddata = kwargs.pop('document', {})
         ddata['type'] = doc_class.tp
@@ -140,6 +143,26 @@ class CalendarPlanDocument(models.Model):
     def is_approved(self):
         return self.document.is_approved()
 
+    def get_items(self):
+        items = []
+        for item in self.items.all():
+            items.append({"id": item.id})
+
+        return items
+
+    def update_items(self, **kwargs):
+        items = kwargs.pop('items', [])
+        if items:
+            assert isinstance(items, list) and len(items) > 0, 'items should contain at least one CalendarPlanItem'
+            assert isinstance(items[0], dict) or isinstance(items[0], CalendarPlanItem), 'items should be either dict or instance of CalendarPlanItem'
+            if isinstance(items[0], dict):
+                for item in items:
+                    item['calendar_plan_id'] = self.id
+                    updated_item = CalendarPlanItem(id=item.pop('id'), **item)
+                    updated_item.save()
+
+        return self
+
 
 class BudgetingDocument(models.Model):
     tp = 'budgetdoc'
@@ -152,10 +175,10 @@ class CalendarPlanItem(models.Model):
     class Meta:
         ordering = ['number']
 
-    number = models.IntegerField(u'Номер этапа')
-    description = models.TextField(u'Наименование работ по этапу')
-    deadline = models.IntegerField(u'Срок выполнения работ (месяцев)')
-    reporting = models.TextField(u'Форма и вид отчетности')
+    number = models.IntegerField(u'Номер этапа', null=True, blank=True)
+    description = models.TextField(u'Наименование работ по этапу', null=True, blank=True)
+    deadline = models.IntegerField(u'Срок выполнения работ (месяцев)', null=True, blank=True)
+    reporting = models.TextField(u'Форма и вид отчетности', null=True, blank=True)
 
     # field below will store as json-data
     # {current: ‘KZT’, value: 123}

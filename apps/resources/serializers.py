@@ -37,6 +37,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 	aggreement = AgreementDocumentSerializer(required=False)
 	statement = StatementDocumentSerializer(required=False)
 	organization_details = OrganizationSerializer(required=False)
+	calendar_plan_id = serializers.IntegerField(source='get_calendar_plan_id', read_only=True, required=False)
 	status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
 	def create(self, validated_data):
@@ -83,6 +84,13 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 		prj_cp = CalendarPlanDocumentSerializer(data={'document': {'project': prj.id}})
 		prj_cp.is_valid(raise_exception=True)
 		prj_cp.save()
+
+		# 4. create calendar plan items for each stage
+		for i in range(validated_data.get('number_of_milestones', 3)):
+			cp_i = CalendarPlanItemSerializer(data={'calendar_plan': prj_cp['id'].value})
+			cp_i.is_valid(raise_exception=True)
+			cp_i.save()
+
 		return prj
 
 

@@ -70,29 +70,13 @@ class StatementDocumentSerializer(DocumentCompositionSerializer):
 		doc = models.Document.dml.create_statement(**validated_data)
 		return doc
 
-
-class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
-
-	class Meta:
-		model = models.CalendarPlanDocument
-
-	document = DocumentSerializer(required=True)
-
-	items = serializers.PrimaryKeyRelatedField(
-		queryset=models.CalendarPlanItem.objects.all(), many=True, required=False)
-
-
-	def create(self, validated_data):
-		doc = models.Document.dml.create_calendar_plan(**validated_data)
-		return doc
-
-
 class CalendarPlanItemSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
 	class Meta:
 		model = models.CalendarPlanItem
+		exclude = ['fundings']
 
-	fundings = SerializerMoneyField(required=False)
+	# fundings = SerializerMoneyField(required=False)
 	calendar_plan = serializers.PrimaryKeyRelatedField(
 		queryset=models.CalendarPlanDocument.objects.all(), required=True)
 
@@ -102,6 +86,20 @@ class CalendarPlanItemSerializer(ExcludeCurrencyFields, serializers.ModelSeriali
 		plan_item = models.CalendarPlanItem.objects.create(
 			calendar_plan=calendar_plan, **validated_data)
 		return plan_item
+
+
+class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
+
+	class Meta:
+		model = models.CalendarPlanDocument
+
+	document = DocumentSerializer(required=True)
+
+	items = CalendarPlanItemSerializer(many=True, required=False)
+	
+	def create(self, validated_data):
+		doc = models.Document.dml.create_calendar_plan(**validated_data)
+		return doc
 
 
 class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):

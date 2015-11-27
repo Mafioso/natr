@@ -45,6 +45,17 @@ class CalendarPlanDocumentViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(item_ser.data)
         return response.Response(item_ser.data, headers=headers)
 
+    @detail_route(methods=['post'], url_path='update')
+    @patch_serializer_class(CalendarPlanDocumentSerializer)
+    def update_items(self, request, *a, **kw):
+        """
+        Update calendar plan items
+        """
+        obj_cp = self.get_object()        
+        obj_cp.update_items(**request.data)
+        obj_ser = self.get_serializer(instance=obj_cp)
+        headers = self.get_success_headers(obj_ser.data)
+        return response.Response(obj_ser.data, headers=headers)
 
 
 class AttachmentViewSet(viewsets.ModelViewSet):
