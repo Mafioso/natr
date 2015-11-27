@@ -40,6 +40,14 @@ nginx:
   links:
     - app
 
+centrifugo:
+  image: fzambia/centrifugo:latest
+  command: centrifugo -c config.json -w
+  ports:
+    - "8001:8000"
+  volumes:
+    - ./conf/centrifugo.json:/centrifugo/config.json   # centrifugo -c config.json -w /opt/centrifugo/web
+
 # celery:
 #   image: anguis/natr_app:latest
 #   working_dir: /natr

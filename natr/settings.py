@@ -74,6 +74,7 @@ APPS = (
     'grantee',
     'journals',
     'resources',
+    'auth2'
 )
 
 INSTALLED_APPS = (
@@ -216,6 +217,8 @@ ADMINS = (('Rustem', 'r.kamun@gmail.com'),
           ('Yernar', 'mailubai@gmail.com'),)
 
 
+AUTH_USER_MODEL = 'auth2.Account'
+LOGIN_REDIRECT_URL = 'home'
 # celery conf
 BROKER_HOST = os.getenv('RABBITMQ_PORT_5672_TCP_ADDR', '127.0.0.1')
 BROKER_PORT = os.getenv('RABBITMQ_PORT_5672_TCP_PORT', 5672)

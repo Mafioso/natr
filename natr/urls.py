@@ -23,10 +23,11 @@ from resources import urls as resources_urls
 
 
 urlpatterns = [
-    url(r'^$', TemplateView.as_view(template_name='index.html')),
+    url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^docs/', include('rest_framework_swagger.urls')),
+    url(r'^auth/', include('django.contrib.auth.urls'))
 ]
 
 
