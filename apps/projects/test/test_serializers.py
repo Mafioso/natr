@@ -91,6 +91,8 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertEqual(prj.status, 1)
 		self.assertEqual(prj.number_of_milestones, 7)
 		self.assertTrue(isinstance(prj.calendar_plan, doc_models.CalendarPlanDocument))
+		self.assertTrue(len(prj.calendar_plan.items.all()) > 0)
+		self.assertEqual(len(prj.calendar_plan.items.all()), prj.number_of_milestones)
 		self.assertIsNotNone(prj.journal)
 		self.assertIsNotNone(prj.monitoring)
 
@@ -110,7 +112,23 @@ class ProjectSerializerTestCase(TestCase):
 		assertRelated(prj, 'aggreement')
 		assertRelated(prj.statement, 'document', initial=self.data['statement'])
 		assertRelated(prj.aggreement, 'document', initial=self.data['aggreement'])
+		return prj
 
+	def test_project_update(self):
+		prj = self.test_project_create()
+		old_number_of_milestones = prj.number_of_milestones
+		prj_ser = ProjectSerializer(instance=prj, data={
+			'id': prj.id,
+			'number_of_milestones': prj.number_of_milestones - 1})
+		prj_ser.is_valid(raise_exception=False)
+		errors = prj_ser.errors
+
+		updated_prj = prj_ser.save()
+		self.assertEqual(prj.id, updated_prj.id)
+		self.assertTrue(old_number_of_milestones - updated_prj.number_of_milestones == 1)
+		self.assertTrue(isinstance(updated_prj.calendar_plan, doc_models.CalendarPlanDocument))
+		self.assertTrue(len(updated_prj.calendar_plan.items.all()) > 0)
+		self.assertEqual(len(updated_prj.calendar_plan.items.all()), updated_prj.number_of_milestones)
 
 	def test_project_basic_info(self):
 		project = factories.ProjectWithMilestones.create()

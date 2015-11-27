@@ -1,11 +1,12 @@
 from rest_framework import serializers
+from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from journals import models
 
 
 __all__ = ('JournalSerializer', 'JournalActivitySerializer')
 
 
-class JournalSerializer(serializers.ModelSerializer):
+class JournalSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
 
 	class Meta:
 		model = models.Journal
@@ -14,6 +15,10 @@ class JournalSerializer(serializers.ModelSerializer):
 		if kw.pop('activities', False) is True:
 			self.fields['activities'] = JournalActivitySerializer(many=True)
 		super(JournalSerializer, self).__init__(*a, **kw)
+
+	@classmethod
+	def empty_data(cls, project):
+		return {'project': project.id}
 
 
 class JournalActivitySerializer(serializers.ModelSerializer):
