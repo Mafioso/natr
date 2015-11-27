@@ -9,66 +9,82 @@ from .filters import ProjectFilter, ReportFilter
 
 class ProjectViewSet(viewsets.ModelViewSet):
 
-	queryset = prj_models.Project.objects.all()
-	serializer_class = ProjectSerializer
-	filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
-	filter_class = ProjectFilter
+    queryset = prj_models.Project.objects.all()
+    serializer_class = ProjectSerializer
+    filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
+    filter_class = ProjectFilter
 
 
-	@list_route(methods=['get'], url_path='basic_info')
-	@patch_serializer_class(ProjectBasicInfoSerializer)
-	def list_projects_basic_info(self, request, *a, **kw):
-		projects = self.filter_queryset(self.get_queryset())
-		page = self.paginate_queryset(projects)
-		if page is not None:
-			serializer = self.get_serializer(page, many=True)
-			return self.get_paginated_response(serializer.data)
-		serializer = self.get_serializer(projects, many=True)
-		return Response(serializer.data)
+    @list_route(methods=['get'], url_path='basic_info')
+    @patch_serializer_class(ProjectBasicInfoSerializer)
+    def list_projects_basic_info(self, request, *a, **kw):
+        projects = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(projects)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(projects, many=True)
+        return Response(serializer.data)
 
-	@detail_route(methods=['get'], url_path='reports')
-	@patch_serializer_class(ReportSerializer)
-	def reports(self, request, *a, **kw):
-		project = self.get_object()
-		report_qs = ReportFilter(request.GET, project.get_reports())
-		report_ser = self.get_serializer(report_qs, many=True)
-		return response.Response({
-			'reports': report_ser.data,
-		})
+    @detail_route(methods=['get'], url_path='reports')
+    @patch_serializer_class(ReportSerializer)
+    def reports(self, request, *a, **kw):
+        project = self.get_object()
+        report_qs = ReportFilter(request.GET, project.get_reports())
+        report_ser = self.get_serializer(report_qs, many=True)
+        return response.Response({
+            'reports': report_ser.data,
+        })
 
-	@detail_route(methods=['get'], url_path='recent_todos')
-	@patch_serializer_class(MonitoringTodoSerializer)
-	def recent_todos(self, request, *a, **kw):
-		project = self.get_object()
-		todo_qs = project.get_recent_todos()
-		page = self.paginate_queryset(todo_qs)
-		if page is not None:
-			serializer = self.get_serializer(page, many=True)
-			return self.get_paginated_response(serializer.data)
-		todos_ser = self.get_serializer(todo_qs, many=True)
-		return Response(todo_ser.data)
+    @detail_route(methods=['get'], url_path='recent_todos')
+    @patch_serializer_class(MonitoringTodoSerializer)
+    def recent_todos(self, request, *a, **kw):
+        project = self.get_object()
+        todo_qs = project.get_recent_todos()
+        page = self.paginate_queryset(todo_qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        todos_ser = self.get_serializer(todo_qs, many=True)
+        return Response(todo_ser.data)
 
-	@detail_route(methods=['get'], url_path='journal')
-	@patch_serializer_class(journal_serializers.JournalActivitySerializer)
-	def journal(self, request, *a, **kw):
-		project = self.get_object()
-		activities = project.get_journal()
-		page = self.paginate_queryset(activities)
-		if page is not None:
-			serializer = self.get_serializer(page, many=True)
-			return self.get_paginated_response(serializer.data)
-		activity_ser = self.get_serializer(activities, many=True)
-		return Response(activity_ser.data)
+    @detail_route(methods=['get'], url_path='journal')
+    @patch_serializer_class(journal_serializers.JournalActivitySerializer)
+    def journal(self, request, *a, **kw):
+        project = self.get_object()
+        activities = project.get_journal()
+        page = self.paginate_queryset(activities)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        activity_ser = self.get_serializer(activities, many=True)
+        return Response(activity_ser.data)
+
 
 class MonitoringViewSet(viewsets.ModelViewSet):
-	queryset = prj_models.Monitoring.objects.all()
-	serializer_class = MonitoringSerializer
+    queryset = prj_models.Monitoring.objects.all()
+    serializer_class = MonitoringSerializer
 
 
 class MonitoringTodoViewSet(viewsets.ModelViewSet):
-	queryset = prj_models.MonitoringTodo.objects.all()
-	serializer_class = MonitoringTodoSerializer
+    queryset = prj_models.MonitoringTodo.objects.all()
+    serializer_class = MonitoringTodoSerializer
+
+    def list(self, request, monitoring_pk=None):
+        qs = self.filter_queryset(
+            self.get_queryset().filter(monitoring_id=monitoring_pk))
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    def create(self, request, monitoring_pk=None):
+        request.data['monitoring'] = monitoring_pk
+        return super(MonitoringTodoViewSet, self).create(request, monitoring_pk)
+
 
 class ReportViewSet(viewsets.ModelViewSet):
-	queryset = prj_models.Report.objects.all()
-	serializer_class = ReportSerializer
+    queryset = prj_models.Report.objects.all()
+    serializer_class = ReportSerializer
