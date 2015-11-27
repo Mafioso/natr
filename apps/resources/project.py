@@ -68,3 +68,7 @@ class MonitoringViewSet(viewsets.ModelViewSet):
 class MonitoringTodoViewSet(viewsets.ModelViewSet):
 	queryset = prj_models.MonitoringTodo.objects.all()
 	serializer_class = MonitoringTodoSerializer
+
+class ReportViewSet(viewsets.ModelViewSet):
+	queryset = prj_models.Report.objects.all()
+	serializer_class = ReportSerializer

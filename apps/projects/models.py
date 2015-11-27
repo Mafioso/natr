@@ -85,6 +85,9 @@ class Project(models.Model):
     def add_document(self, spec_doc):
         self.document_set.add(spec_doc.document)
 
+    def get_calendar_plan_id(self):
+        return self.calendar_plan.id
+
 
 class FundingType(models.Model):
     GRANT_TYPES = (
