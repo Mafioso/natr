@@ -4,7 +4,7 @@ import datetime
 from django.test import TestCase
 from moneyed import Money, KZT, USD
 from natr import utils
-from resources.serializers import *
+from projects.serializers import *
 from projects import factories
 from documents import models as doc_models
 from rest_framework import serializers
