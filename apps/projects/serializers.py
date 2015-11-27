@@ -83,6 +83,12 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj_cp = CalendarPlanDocumentSerializer.build_empty(prj)
         prj_cp.is_valid(raise_exception=True)
         prj_cp.save()
+
+        # 4. generate empty milestones
+        for i in xrange(prj.number_of_milestones):
+            milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
+            milestone_ser.is_valid(raise_exception=True)
+            milestone_ser.save()
         return prj
 
     def update(self, instance, validated_data):
@@ -128,6 +134,12 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj_cp = CalendarPlanDocumentSerializer.build_empty(prj)
         prj_cp.is_valid(raise_exception=True)
         prj_cp.save()
+
+        prj.milestone_set.clear()
+        for i in xrange(prj.number_of_milestones):
+            milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
+            milestone_ser.is_valid(raise_exception=True)
+            milestone_ser.save()
         return prj
 
 
@@ -151,7 +163,10 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
         return None
 
 
-class MilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+class MilestoneSerializer(
+        EmptyObjectDMLMixin,
+        ExcludeCurrencyFields,
+        serializers.ModelSerializer):
 
     class Meta:
         model = Milestone
@@ -161,7 +176,12 @@ class MilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         queryset=Project.objects.all(), required=True)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
-    planned_fundings = SerializerMoneyField(required=True)
+    planned_fundings = SerializerMoneyField(required=False)
+
+    @classmethod
+    def empty_data(cls, project, **kwargs):
+        kwargs.update({'project': project.id})
+        return kwargs
 
 
 class ReportSerializer(serializers.ModelSerializer):

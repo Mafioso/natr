@@ -16,7 +16,7 @@ class ExcludeCurrencyFields(object):
 class EmptyObjectDMLMixin(object):
 
 	@classmethod
-	def build_empty(cls, project):
+	def build_empty(cls, project, **kwargs):
 		assert hasattr(cls, 'empty_data') and callable(cls.empty_data), "Provide empty_data method"
-		data = cls.empty_data(project)
+		data = cls.empty_data(project, **kwargs)
 		return cls(data=data)

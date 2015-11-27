@@ -93,6 +93,9 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertTrue(isinstance(prj.calendar_plan, doc_models.CalendarPlanDocument))
 		self.assertTrue(len(prj.calendar_plan.items.all()) > 0)
 		self.assertEqual(len(prj.calendar_plan.items.all()), prj.number_of_milestones)
+
+		self.assertEqual(len(prj.milestone_set.all()), prj.number_of_milestones)
+
 		self.assertIsNotNone(prj.journal)
 		self.assertIsNotNone(prj.monitoring)
 
@@ -127,6 +130,7 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertEqual(prj.id, updated_prj.id)
 		self.assertTrue(old_number_of_milestones - updated_prj.number_of_milestones == 1)
 		self.assertTrue(isinstance(updated_prj.calendar_plan, doc_models.CalendarPlanDocument))
+		self.assertEqual(len(prj.milestone_set.all()), prj.number_of_milestones)
 		self.assertTrue(len(updated_prj.calendar_plan.items.all()) > 0)
 		self.assertEqual(len(updated_prj.calendar_plan.items.all()), updated_prj.number_of_milestones)
 
