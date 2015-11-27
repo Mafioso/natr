@@ -120,6 +120,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         prj.save()
 
+        if old_milestones == new_milestones:
+            return prj
+
         if prj.calendar_plan:
             prj.calendar_plan.delete()
         prj_cp = CalendarPlanDocumentSerializer.build_empty(prj)
