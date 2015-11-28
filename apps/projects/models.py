@@ -86,6 +86,11 @@ class Project(models.Model):
         self.document_set.add(spec_doc.document)
 
     def get_calendar_plan_id(self):
+        try:
+            calendar_plan = CalendarPlanDocument.objects.get(document__project=self)
+        except CalendarPlanDocument.DoesNotExist:
+            return None
+
         return self.calendar_plan.id
 
 

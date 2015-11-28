@@ -38,6 +38,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     statement = StatementDocumentSerializer(required=False)
     organization_details = OrganizationSerializer(required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    calendar_plan_id = serializers.IntegerField(source='get_calendar_plan_id', read_only=True, required=False)
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
@@ -89,6 +90,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
             milestone_ser.is_valid(raise_exception=True)
             milestone_ser.save()
+
         return prj
 
     def update(self, instance, validated_data):

@@ -61,11 +61,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(activity_ser.data)
 
 
-class MonitoringViewSet(viewsets.ModelViewSet):
-    queryset = prj_models.Monitoring.objects.all()
-    serializer_class = MonitoringSerializer
-
-
 class MonitoringTodoViewSet(viewsets.ModelViewSet):
     queryset = prj_models.MonitoringTodo.objects.all()
     serializer_class = MonitoringTodoSerializer
@@ -73,16 +68,32 @@ class MonitoringTodoViewSet(viewsets.ModelViewSet):
     def list(self, request, monitoring_pk=None):
         qs = self.filter_queryset(
             self.get_queryset().filter(monitoring_id=monitoring_pk))
-        page = self.paginate_queryset(queryset)
+        page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(queryset, many=True)
+        serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
     def create(self, request, monitoring_pk=None):
         request.data['monitoring'] = monitoring_pk
         return super(MonitoringTodoViewSet, self).create(request, monitoring_pk)
+
+
+class MonitoringViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.Monitoring.objects.all()
+    serializer_class = MonitoringSerializer
+
+    @list_route(methods=['get'], url_path='recent_todos')
+    @patch_serializer_class(MonitoringTodoSerializer)
+    def get_recent_todos(self, request, *a, **kw):
+        qs = prj_models.MonitoringTodo.objects.all().order_by('date_end')
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
 
 
 class ReportViewSet(viewsets.ModelViewSet):
