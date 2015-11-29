@@ -13,6 +13,7 @@ pj = os.path.join
 Document = doc_models.Document
 CalendarPlanDocument = doc_models.CalendarPlanDocument
 Attachment = doc_models.Attachment
+UseOfBudgetDocument = doc_models.UseOfBudgetDocument
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -100,3 +101,18 @@ class AttachmentViewSet(viewsets.ModelViewSet):
             else:
                 raise e
         return super(AttachmentViewSet, self).destroy(request, *a, **kw)
+
+class UseOfBudgetDocumentViewSet(viewsets.ModelViewSet):
+    serializer_class = UseOfBudgetDocumentSerializer
+    queryset = UseOfBudgetDocument.objects.all()
+
+    @detail_route(methods=['get'], url_path='items')
+    @patch_serializer_class(UseOfBudgetDocumentItemSerializer)
+    def get_items(self, request, *a, **kw):
+        """
+        Get UseOfBudgetDocument items
+        """
+        obj_use_of_b = self.get_object()    
+        qs = obj_use_of_b.items.all()    
+        serializer = self.get_serializer(qs, many=True)
+        return response.Response(serializer.data)

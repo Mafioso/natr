@@ -122,8 +122,8 @@ class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
         model = models.UseOfBudgetDocument
 
     document = DocumentSerializer(required=True)
-    items = serializers.PrimaryKeyRelatedField(
-        queryset=models.UseOfBudgetDocumentItem.objects.all(), many=True, required=False)
+    # items = serializers.PrimaryKeyRelatedField(
+    #     queryset=models.UseOfBudgetDocumentItem.objects.all(), many=True, required=False)
 
 
 class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
