@@ -204,6 +204,7 @@ class Attachment(models.Model):
 
     document = models.ForeignKey('Document', null=True, related_name='attachments')
 
+
 class UseOfBudgetDocument(models.Model):
     tp = 'useofbudget'
     document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
@@ -233,5 +234,44 @@ class UseOfBudgetDocumentItem(models.Model):
     notes = models.CharField(
         u'Примечания',
         max_length=1024, null=True, blank=True)
+
+
+class CostsDocument(models.Model):
+    u"""Документ сметы расходов"""
+    tp = 'costs'
+    document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
+    objects = SimpleDocumentManager()
+
+
+class CostType(models.Model):
+    u"""Вид статьи расходов"""
+    costs_document = models.ForeignKey('CostsDocument', related_name='cost_types')
+    name = models.CharField()
+
+
+class MilestoneCostsRow(models.Model):
+    u"""Статья расходов по этапу"""
+    costs_document = models.ForeignKey('CostsDocument', related_name='milestone_costs')
+    milestone = models.OneToOneField('projects.Milestone')
+    cost_type = models.ForeignKey('CostsTypes', null=True)
+    costs = MoneyField(
+        u'Сумма затрат (тенге)',
+        null=True,
+        max_digits=20, decimal_places=2, default_currency='KZT')
+
+class MilestoneFundingsRow(models.Model):
+    u"""Источник финансирования по этапу"""
+    costs_document = models.ForeignKey('CostsDocument', related_name='milestone_fundings')
+    milestone = models.OneToOneField('projects.Milestone')
+    cost_type = models.ForeignKey('CostsTypes', null=True)
+    fundings = MoneyField(
+        u'Сумма финансирования за счет других источников',
+        null=True,
+        max_digits=20, decimal_places=2, default_currency='KZT')
+
+
+# class CostItemType
+
+
 
 
