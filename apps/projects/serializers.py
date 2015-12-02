@@ -85,6 +85,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj_cp.is_valid(raise_exception=True)
         prj_cp.save()
 
+        # 4. create costs document
+        prj_cd = CostDocumentSerializer.build_empty(prj)
+        prj_cd.is_valid(raise_exception=True)
+        prj_cd.save()
+
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
             milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
