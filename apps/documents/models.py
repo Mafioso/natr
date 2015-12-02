@@ -236,34 +236,46 @@ class UseOfBudgetDocumentItem(models.Model):
         max_length=1024, null=True, blank=True)
 
 
-class CostsDocument(models.Model):
+class CostDocument(models.Model):
     u"""Документ сметы расходов"""
     tp = 'costs'
-    document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
+    document = models.OneToOneField(Document, related_name='cost_document', on_delete=models.CASCADE)
     objects = SimpleDocumentManager()
+
+
+    def get_milestone_costs(self):
+        return self.milestone_costs.all().order_by('milestone__number')
+
+    def get_milestone_fundings(self):
+        return self.milestone_fundings.all().order_by('milestone__number')
 
 
 class CostType(models.Model):
     u"""Вид статьи расходов"""
-    costs_document = models.ForeignKey('CostsDocument', related_name='cost_types')
-    name = models.CharField()
+    cost_document = models.ForeignKey('CostDocument', related_name='cost_types')
+    name = models.CharField(max_length=1024)
 
 
-class MilestoneCostsRow(models.Model):
+class FundingType(models.Model):
+    cost_document = models.ForeignKey('CostDocument', related_name='funding_types')
+    name = models.CharField(max_length=1024)
+
+
+class MilestoneCostRow(models.Model):
     u"""Статья расходов по этапу"""
-    costs_document = models.ForeignKey('CostsDocument', related_name='milestone_costs')
+    cost_document = models.ForeignKey('CostDocument', related_name='milestone_costs')
     milestone = models.OneToOneField('projects.Milestone')
-    cost_type = models.ForeignKey('CostsTypes', null=True)
+    cost_type = models.ForeignKey('CostType', null=True)
     costs = MoneyField(
         u'Сумма затрат (тенге)',
         null=True,
         max_digits=20, decimal_places=2, default_currency='KZT')
 
-class MilestoneFundingsRow(models.Model):
+class MilestoneFundingRow(models.Model):
     u"""Источник финансирования по этапу"""
-    costs_document = models.ForeignKey('CostsDocument', related_name='milestone_fundings')
+    cost_document = models.ForeignKey('CostDocument', related_name='milestone_fundings')
     milestone = models.OneToOneField('projects.Milestone')
-    cost_type = models.ForeignKey('CostsTypes', null=True)
+    funding_type = models.ForeignKey('FundingType', null=True)
     fundings = MoneyField(
         u'Сумма финансирования за счет других источников',
         null=True,

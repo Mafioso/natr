@@ -79,3 +79,31 @@ class DocumentTestCase(TestCase):
 		self.assertTrue(len(doc.attachments.all()) > 0)
 		for attachment in doc.attachments.all():
 			self.assertTrue(attachment.__class__, models.Attachment)
+
+	def test_create_cost_document(self):
+		doc = factories.CostDocument.create()
+		self.assertIsInstance(doc, models.CostDocument)
+		
+		self.assertIsNotNone(doc.cost_types.all())
+		self.assertTrue(len(doc.cost_types.all()) > 0)
+		self.assertIsInstance(doc.cost_types.first(), models.CostType)
+
+		self.assertIsNotNone(doc.funding_types.all())
+		self.assertTrue(len(doc.funding_types.all()) > 0)
+		self.assertIsInstance(doc.funding_types.first(), models.FundingType)
+
+		self.assertIsNotNone(doc.milestone_costs.all())
+		self.assertEqual(len(doc.milestone_costs.all()), len(doc.funding_types.all()))
+		self.assertIsInstance(doc.milestone_costs.first(), models.MilestoneCostRow)
+
+		self.assertIsNotNone(doc.milestone_fundings.all())
+		self.assertEqual(len(doc.milestone_fundings.all()), len(doc.cost_types.all()))
+		self.assertIsInstance(doc.milestone_fundings.first(), models.MilestoneFundingRow)
+
+		ordered_mcs = doc.get_milestone_costs()
+		for i in xrange(1, len(ordered_mcs)):
+			self.assertTrue(ordered_mcs[i].milestone.number >= ordered_mcs[i - 1].milestone.number)
+
+		ordered_fs = doc.get_milestone_fundings()
+		for i in xrange(1, len(ordered_fs)):
+			self.assertTrue(ordered_fs[i].milestone.number >= ordered_fs[i - 1].milestone.number)
