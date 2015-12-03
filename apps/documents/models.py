@@ -39,6 +39,26 @@ class DocumentDMLManager(models.Manager):
             doc.items.add(item)
         return doc
 
+    def create_empty_cost(self, **kwargs):
+        milestone_costs = kwargs.pop('milestone_costs', [])
+        milestone_fundings = kwargs.pop('milestone_fundings', [])
+        doc = self.create_doc_with_relations(CostDocument, **kwargs)
+        doc.save()
+
+        cost_type = CostType.create_empty(doc)
+        funding_type = FundingType.create_empty(doc)
+        
+        for milestone_cost_data in milestone_costs:
+            MilestoneCostRow.objects.create(
+                cost_document=doc, cost_type=cost_type, **milestone_cost_data)
+        for milestone_funding_data in milestone_fundings:
+            MilestoneFundingRow.objects.create(
+                cost_document=doc, funding_type=funding_type, **milestone_funding_data)
+        return doc
+
+    def create_cost(self, **kwargs):
+        pass
+
     def update_calendar_plan(self, **kwargs):
         pass
 
@@ -363,16 +383,24 @@ class CostDocument(models.Model):
 class CostType(models.Model):
     u"""Вид статьи расходов"""
     cost_document = models.ForeignKey('CostDocument', related_name='cost_types')
-    name = models.CharField(max_length=1024)
+    name = models.CharField(max_length=1024, default='')
     date_created = models.DateTimeField(auto_now_add=True, null=True)
     price_details = models.CharField(u'пояснение к ценообразованию', max_length=2048, default='')
     source_link = models.TextField(u'источник данных используемый в расчетах', default='')
 
+    @classmethod
+    def create_empty(cls, cost_document):
+        return CostType.objects.create(cost_document=cost_document)
+
 
 class FundingType(models.Model):
     cost_document = models.ForeignKey('CostDocument', related_name='funding_types')
-    name = models.CharField(max_length=1024)
-    date_created = models.DateTimeField(auto_now_add=True, null=True)    
+    name = models.CharField(max_length=1024, default='')
+    date_created = models.DateTimeField(auto_now_add=True, null=True)
+
+    @classmethod
+    def create_empty(cls, cost_document):
+        return FundingType.objects.create(cost_document=cost_document)
 
 
 class MilestoneCostRow(models.Model):

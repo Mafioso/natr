@@ -193,6 +193,23 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
     milestone_costs = MilestoneCostRowSerializer(many=True, required=False)
     milestone_fundings = MilestoneFundingRowSerializer(many=True, required=False)
 
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        milestone_costs = data.setdefault('milestone_costs', [])
+        milestone_fundings = data.setdefault('milestone_fundings', [])
+        for milestone in project.milestone_set.all():
+            milestone_costs.append({'milestone': milestone,})
+            milestone_fundings.append({'milestone': milestone})
+        return data
+
+    def create(self, validated_data):
+        is_empty = validated_data.pop('empty', False)
+        if is_empty:
+            return models.Document.dml.create_empty_cost(**validated_data)
+        else:
+            return models.Document.dml.create_cost(**validated_data)
+
 
 class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
 
