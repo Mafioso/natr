@@ -334,7 +334,8 @@ class CostDocument(models.Model):
     def total_funding(self):
         total = sum([
             row_funding.amount
-            for row_funding in map(self.total_funding_by_row, self.funding_types.all())])
+            for row_funding in map(self.total_funding_by_row, self.funding_types.all())
+        ])
         return Money(amount=total, currency=settings.KZT)
 
     def total_cost_by_row(self, cost_type):
@@ -360,7 +361,7 @@ class CostDocument(models.Model):
 
     def fundings_by_milestone(self, milestone):
         total = sum([
-            funding_cell.fundings.amount
+            funding_cell is not None and funding_cell.fundings.amount or 0
             for funding_cell in self.get_milestone_fundings(milestone)
         ])
         return Money(amount=total, currency=settings.KZT)
@@ -410,8 +411,8 @@ class MilestoneCostRow(models.Model):
     cost_type = models.ForeignKey('CostType', null=True)
     costs = MoneyField(
         u'Сумма затрат (тенге)',
-        null=True,
-        max_digits=20, decimal_places=2, default_currency='KZT')
+        default=0, default_currency=settings.KZT,
+        max_digits=20, decimal_places=2)
 
 
 class MilestoneFundingRow(models.Model):
@@ -421,8 +422,8 @@ class MilestoneFundingRow(models.Model):
     funding_type = models.ForeignKey('FundingType', null=True)
     fundings = MoneyField(
         u'Сумма финансирования за счет других источников',
-        null=True,
-        max_digits=20, decimal_places=2, default_currency='KZT')
+        default=0, default_currency=settings.KZT,
+        max_digits=20, decimal_places=2)
 
 
 # class CostItemType

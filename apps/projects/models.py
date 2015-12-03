@@ -11,6 +11,7 @@ from natr.mixins import ProjectBasedModel
 from documents.models import (
     CalendarPlanDocument, 
     BasicProjectPasportDocument,
+    CostDocument,
     # InnovativeProjectPasportDocument
 )
 
@@ -64,6 +65,10 @@ class Project(models.Model):
         return CalendarPlanDocument.objects.get(document__project=self)
 
     @property
+    def cost_document(self):
+        return CostDocument.objects.get(document__project=self)
+
+    @property
     def journal(self):
         return self.journal_set.first()
 
@@ -98,7 +103,7 @@ class Project(models.Model):
 
     @property 
     def pasport_type(self):
-        if self.pasport == None:
+        if self.pasport is None:
             return None
             
         pasport_type = None

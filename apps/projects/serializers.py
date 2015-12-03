@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import serializers
+from natr import utils
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
@@ -121,6 +122,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         # 4. create costs document
         prj_cd = CostDocumentSerializer.build_empty(prj)
         prj_cd.is_valid(raise_exception=True)
+        # utils.pretty(prj_cd.errors)
         prj_cd.save(empty=True)
 
         # 5. create project pasport which depends on funding type

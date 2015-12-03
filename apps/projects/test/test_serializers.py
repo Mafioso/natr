@@ -94,6 +94,14 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertTrue(len(prj.calendar_plan.items.all()) > 0)
 		self.assertEqual(len(prj.calendar_plan.items.all()), prj.number_of_milestones)
 
+		self.assertIsInstance(prj.cost_document, doc_models.CostDocument)
+		self.assertEqual(len(prj.cost_document.milestone_costs.all()), prj.number_of_milestones)
+		self.assertTrue(len(prj.cost_document.milestone_fundings.all()), prj.number_of_milestones)
+		self.assertEqual(prj.cost_document.total_cost.amount, 0)
+		self.assertEqual(prj.cost_document.total_funding.amount, 0)
+		self.assertEqual(len(prj.cost_document.cost_types.all()), 1)
+		self.assertEqual(len(prj.cost_document.funding_types.all()), 1)
+
 		self.assertEqual(len(prj.milestone_set.all()), prj.number_of_milestones)
 
 		self.assertIsNotNone(prj.journal)
@@ -115,6 +123,8 @@ class ProjectSerializerTestCase(TestCase):
 		assertRelated(prj, 'aggreement')
 		assertRelated(prj.statement, 'document', initial=self.data['statement'])
 		assertRelated(prj.aggreement, 'document', initial=self.data['aggreement'])
+
+
 		return prj
 
 	def test_project_update(self):
@@ -146,19 +156,19 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertIn('fundings', data['current_milestone'])
 		self.assertIn('planned_fundings', data['current_milestone'])
 
-	def test_report(self):
-		report = factories.Report.create()
-		self.assertTrue(hasattr(report, 'milestone'))
-		self.assertTrue(hasattr(report, 'use_of_budget_doc'))
-		self.assertTrue(len(report.use_of_budget_doc.items.all()) > 0)
-		item_ids = [item.id for item in report.use_of_budget_doc.items.all()]
+	# def test_report(self):
+	# 	report = factories.Report.create()
+	# 	self.assertTrue(hasattr(report, 'milestone'))
+	# 	self.assertTrue(hasattr(report, 'use_of_budget_doc'))
+	# 	self.assertTrue(len(report.use_of_budget_doc.items.all()) > 0)
+	# 	item_ids = [item.id for item in report.use_of_budget_doc.items.all()]
 
-		report_ser = ReportSerializer(instance=report)
-		report_data = report_ser.data
+	# 	report_ser = ReportSerializer(instance=report)
+	# 	report_data = report_ser.data
 
-		self.assertIn('use_of_budget_doc', report_data)
-		for item_id in report_data['use_of_budget_doc']['items']:
-			self.assertIn(item_id, item_ids)
+	# 	self.assertIn('use_of_budget_doc', report_data)
+	# 	for item_id in report_data['use_of_budget_doc']['items']:
+	# 		self.assertIn(item_id, item_ids)
 
 	def test_monitoring(self):
 		monitoring = factories.Monitoring()

@@ -157,11 +157,18 @@ class CostTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.CostType
 
+    cost_document = serializers.PrimaryKeyRelatedField(
+        queryset=models.CostDocument.objects.all(), required=False)
+
 
 class FundingTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.FundingType
+
+    cost_document = serializers.PrimaryKeyRelatedField(
+        queryset=models.CostDocument.objects.all(), required=False)
+
 
 
 class MilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
@@ -169,6 +176,8 @@ class MilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSeriali
     class Meta:
         model = models.MilestoneCostRow
 
+    cost_document = serializers.PrimaryKeyRelatedField(
+        queryset=models.CostDocument.objects.all(), required=False)
     cost_type_name = serializers.CharField(source='cost_type.name', required=False, read_only=True)
     costs = SerializerMoneyField(required=False)
 
@@ -178,6 +187,8 @@ class MilestoneFundingRowSerializer(ExcludeCurrencyFields, serializers.ModelSeri
     class Meta:
         model = models.MilestoneFundingRow
 
+    cost_document = serializers.PrimaryKeyRelatedField(
+        queryset=models.CostDocument.objects.all(), required=False)
     funding_type_name = serializers.CharField(source='funding_type.name', required=False, read_only=True)
     fundings = SerializerMoneyField(required=False)
 
@@ -199,8 +210,8 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
         milestone_costs = data.setdefault('milestone_costs', [])
         milestone_fundings = data.setdefault('milestone_fundings', [])
         for milestone in project.milestone_set.all():
-            milestone_costs.append({'milestone': milestone,})
-            milestone_fundings.append({'milestone': milestone})
+            milestone_costs.append({'milestone': milestone.pk,})
+            milestone_fundings.append({'milestone': milestone.pk})
         return data
 
     def create(self, validated_data):
