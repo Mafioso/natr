@@ -365,12 +365,14 @@ class CostType(models.Model):
     cost_document = models.ForeignKey('CostDocument', related_name='cost_types')
     name = models.CharField(max_length=1024)
     date_created = models.DateTimeField(auto_now_add=True, null=True)
+    price_details = models.CharField(u'пояснение к ценообразованию', max_length=2048, default='')
+    source_link = models.TextField(u'источник данных используемый в расчетах', default='')
 
 
 class FundingType(models.Model):
     cost_document = models.ForeignKey('CostDocument', related_name='funding_types')
     name = models.CharField(max_length=1024)
-    date_created = models.DateTimeField(auto_now_add=True, null=True)
+    date_created = models.DateTimeField(auto_now_add=True, null=True)    
 
 
 class MilestoneCostRow(models.Model):
