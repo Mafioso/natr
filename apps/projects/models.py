@@ -8,8 +8,11 @@ from django.utils import timezone
 from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
-from documents.models import CalendarPlanDocument
-
+from documents.models import (
+    CalendarPlanDocument, 
+    BasicProjectPasportDocument,
+    # InnovativeProjectPasportDocument
+)
 
 class Project(models.Model):
     STATUSES = MONITOR, FINISH, BREAK = range(3)
@@ -45,7 +48,7 @@ class Project(models.Model):
     # user = models.ForeignKey('User', related_name='projects')
 
     def __unicode__(self):
-        return self.name
+        return unicode(self.name) or u''
 
     @property
     def current_milestone(self):
@@ -92,6 +95,36 @@ class Project(models.Model):
             return None
 
         return self.calendar_plan.id
+
+    @property 
+    def pasport_type(self):
+        if self.pasport == None:
+            return None
+            
+        pasport_type = None
+        try:
+            pasport = BasicProjectPasportDocument.objects.get(document__project=self)
+        except BasicProjectPasportDocument.DoesNotExist:
+            pasport_type = 'innovative'
+        else:
+            pasport_type = 'basic'
+
+        return pasport_type
+
+    @property 
+    def pasport(self):
+        pasport = None
+        try:
+            pasport = BasicProjectPasportDocument.objects.get(document__project=self)
+        except BasicProjectPasportDocument.DoesNotExist:
+            # pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
+            pass
+
+        return pasport
+
+    @property 
+    def get_pasport_id(self):
+        return self.pasport.id
 
 
 class FundingType(models.Model):

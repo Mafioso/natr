@@ -6,12 +6,13 @@ from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixi
 __all__ = (
     'DocumentSerializer',
     'AgreementDocumentSerializer',
+    'BasicProjectPasportSerializer',
     'StatementDocumentSerializer',
     'CalendarPlanDocumentSerializer',
     'CalendarPlanItemSerializer',
     'UseOfBudgetDocumentSerializer',
     'UseOfBudgetDocumentItemSerializer',
-    'AttachmentSerializer'
+    'AttachmentSerializer',
 )
 
 
@@ -56,7 +57,6 @@ class DocumentCompositionSerializer(EmptyObjectDMLMixin, serializers.ModelSerial
 
 class AgreementDocumentSerializer(DocumentCompositionSerializer):
 
-
     class Meta:
         model = models.AgreementDocument
 
@@ -65,6 +65,37 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
     def create(self, validated_data):
         doc = models.Document.dml.create_agreement(**validated_data)
         return doc
+
+
+# class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
+
+#     class Meta:
+#         model = models.InnovativeProjectPasportDocument
+
+#     @classmethod
+#     def empty_data(cls, project):
+#         data = DocumentCompositionSerializer.empty_data(project)
+#         return data
+
+class BasicProjectPasportSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.BasicProjectPasportDocument
+
+    document = DocumentSerializer(required=True)
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_basic_project_pasport(**validated_data)
+        return doc
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
+
+    def update(self, instance, validated_data):
+        document = validated_data.pop('document')
+        return models.Document.dml.update_doc_(instance, **validated_data)
 
 
 class StatementDocumentSerializer(DocumentCompositionSerializer):

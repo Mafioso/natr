@@ -1,0 +1,52 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+class ProjectPasportStatuses():
+    RESULT_STATUSES = PATENT, LAB_SAMPLE, PROTOTYPE, ASSEMBLIES, SERVICE, OTHER = range(6)
+    RESULT_STATUS_CAPS = (
+        u'патент, другая документация',
+        u'лабораторный/опытный образец',
+        u'технология, прототипы изделий',
+        u'узлов и агрегатов',
+        u'сервисные и иные услуги',
+        u'другое'
+    )
+    RESULT_OPTS = zip(RESULT_STATUSES, RESULT_STATUS_CAPS)
+
+    CHARACTER_STATUSES = NEW_PRODUCT, SERVICE_CHAR, TECHNOLOGY, OTHER_CHAR= range(4)
+    CHARACTER_STATUS_CAPS = (
+        u'создание нового продукта',
+        u'услуги',
+        u'технологии',
+        u'другое'
+    )
+    CHARACTER_OPTS = zip(CHARACTER_STATUSES, CHARACTER_STATUS_CAPS)
+
+    DEFENCE_STATUSES = REQUIRED, NOT_REQUIRED, PATENTED, LEGALLY_PROTECTED = range(4)
+    DEFENCE_STATUS_CAPS = (
+        u'требуется',
+        u'не требуется',
+        u'имеется патент',
+        u'имеется правовая защита'
+    )
+    DEFENCE_OPTS = zip(DEFENCE_STATUSES, DEFENCE_STATUS_CAPS)
+
+    READINESS_STATUSES = IDEA, TECH_DOCS, READY_PROTOTYPE, CONSTR_DOC, READY_TO_PROD, READY_OTHER = range(6)
+    READINESS_STATUS_CAPS = (
+        u'идея проекта',
+        u'научно-техническая документация',
+        u'опытный образец',
+        u'конструкторская документация',
+        u'готовность к передаче в производство',
+        u'другое'
+    )
+    READINESS_OPTS = zip(READINESS_STATUSES, READINESS_STATUS_CAPS)
+
+
+class CommonStatuses():
+    YES_NO_STATUSES = YES, NO = range(2)
+    YES_NO_STATUS_CAPS = (
+        u'да',
+        u'нет'
+    )
+    YES_NO_OPTS = zip(YES_NO_STATUSES, YES_NO_STATUS_CAPS)
+    

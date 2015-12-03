@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from rest_framework import serializers
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
@@ -39,6 +42,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     organization_details = OrganizationSerializer(required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     calendar_plan_id = serializers.IntegerField(source='get_calendar_plan_id', read_only=True, required=False)
+    pasport_type = serializers.CharField(read_only=True, required=False)
+    pasport_id = serializers.IntegerField(source='get_pasport_id', read_only=True, required=False)
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
@@ -90,6 +95,16 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
             milestone_ser.is_valid(raise_exception=True)
             milestone_ser.save()
+
+        # 5. create project pasport which depends on funding type
+        # if prj.funding_type.name == u'Проведение промышленных исследований' or \
+        #     prj.funding_type.name == u'Патентование в зарубежных странах и (или) региональных патентных организациях' or \
+        #     prj.funding_type.name == u'Коммерциализацию технологий':
+        #     prj_pasport = InnovativeProjectPasportSerializer.build_empty(prj)
+        # else:
+        prj_pasport = BasicProjectPasportSerializer.build_empty(prj)
+        prj_pasport.is_valid(raise_exception=True)
+        prj_pasport.save()
 
         return prj
 

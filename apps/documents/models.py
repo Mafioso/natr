@@ -7,6 +7,7 @@ __author__ = 'xepa4ep'
 from djmoney.models.fields import MoneyField
 from django.db import models
 from natr.mixins import ProjectBasedModel
+from statuses import ProjectPasportStatuses, CommonStatuses
 
 
 class DocumentDMLManager(models.Manager):
@@ -18,6 +19,9 @@ class DocumentDMLManager(models.Manager):
 
     def create_agreement(self, **kwargs):
         return self.create_doc_with_relations(AgreementDocument, **kwargs)
+
+    def create_basic_project_pasport(self, **kwargs):
+        return self.create_doc_with_relations(BasicProjectPasportDocument, **kwargs)
 
     def create_calendar_plan(self, **kwargs):
         items = kwargs.pop('items', [])
@@ -116,7 +120,59 @@ class AgreementDocument(models.Model):
     number = models.IntegerField(unique=True)
     name = models.CharField(u'Название договора', max_length=1024, default='')
     subject = models.TextField(u'Предмет договора', default='')
-    
+
+
+class BasicProjectPasportDocument(models.Model):
+    tp = 'basicpasport'
+    document = models.OneToOneField(Document, related_name='basicpasport', on_delete=models.CASCADE)
+
+    result = models.IntegerField(u'Результат проекта', default=ProjectPasportStatuses.PATENT, 
+                                                        choices=ProjectPasportStatuses.RESULT_OPTS,
+                                                        null=True, blank=True)
+    result_statement = models.CharField(u'Результат проекта(другое)', max_length=140, null=True, blank=True)
+
+    inductry_application = models.CharField(u'Отрасль применения', max_length=1024, null=True, blank=True)
+
+    character = models.IntegerField(u'Характер проекта', default=ProjectPasportStatuses.NEW_PRODUCT, 
+                                                        choices=ProjectPasportStatuses.CHARACTER_OPTS,
+                                                        null=True, blank=True)
+    character_statement = models.CharField(u'Характер проекта(другое)', max_length=140, null=True, blank=True)
+
+    patent_defence = models.IntegerField(u'Патентная защита основных технических решений проекта', 
+                                                        default=ProjectPasportStatuses.REQUIRED, 
+                                                        choices=ProjectPasportStatuses.DEFENCE_OPTS,
+                                                        null=True, blank=True)
+
+    readiness = models.IntegerField(u'Степень готовности проекта', 
+                                                        default=ProjectPasportStatuses.IDEA, 
+                                                        choices=ProjectPasportStatuses.READINESS_OPTS,
+                                                        null=True, blank=True)
+    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=140, 
+                                                        null=True, blank=True)
+    other_agreements = models.IntegerField(u'Имеются ли договора/протоколы о намерении приобретения результатов проекта',
+                                                        default=CommonStatuses.NO,
+                                                        choices=CommonStatuses.YES_NO_OPTS,
+                                                        null=True, blank=True)
+    cost = MoneyField(u'Полная стоимость работ в тенге',
+                                                        max_digits=20, null=True,
+                                                        decimal_places=2, default_currency='KZT')
+    required_funding = MoneyField(u'Требуемое финансирование в тенге',
+                                                        max_digits=20, null=True,
+                                                        decimal_places=2, default_currency='KZT')
+    finance_source = models.CharField(u'Источники финансирования проекта (собственные средства, заемные \
+                                                        средства, гранты других организаций) и в каком объеме', 
+                                                        max_length=1024, null=True, blank=True)
+    goverment_support = models.CharField(u'Информация о государственной поддержке проекта на отраслевом, \
+                                                        региональном и республиканском уровне (номер, дата \
+                                                        и название)', 
+                                                        max_length=1024, null=True, blank=True)
+
+    project_head = models.CharField(u'Руководитель проекта (Ф.И.О., должность, ученая степень, подпись)', 
+                                                        max_length=1024, null=True, blank=True)
+
+
+# class InnovativeProjectPasportDocument(models.Model):
+#     pass
 
 class StatementDocument(models.Model):
     tp = 'statement'
@@ -233,5 +289,3 @@ class UseOfBudgetDocumentItem(models.Model):
     notes = models.CharField(
         u'Примечания',
         max_length=1024, null=True, blank=True)
-
-
