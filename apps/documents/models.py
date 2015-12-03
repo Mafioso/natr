@@ -5,7 +5,10 @@ __author__ = 'xepa4ep'
 
 
 from djmoney.models.fields import MoneyField
+from moneyed import Money
 from django.db import models
+from django.utils.functional import cached_property
+from django.conf import settings
 from natr.mixins import ProjectBasedModel
 from statuses import ProjectPasportStatuses, CommonStatuses
 
@@ -296,20 +299,72 @@ class CostDocument(models.Model):
     u"""Документ сметы расходов"""
     tp = 'costs'
     document = models.OneToOneField(Document, related_name='cost_document', on_delete=models.CASCADE)
+
     objects = SimpleDocumentManager()
 
+    @cached_property
+    def total_cost(self):
+        total = sum([
+            row_cost.amount
+            for row_cost in map(self.total_cost_by_row, self.cost_types.all())
+        ])
+        return Money(amount=total, currency=settings.KZT)
 
-    def get_milestone_costs(self):
-        return self.milestone_costs.all().order_by('milestone__number')
+    @cached_property
+    def total_funding(self):
+        total = sum([
+            row_funding.amount
+            for row_funding in map(self.total_funding_by_row, self.funding_types.all())])
+        return Money(amount=total, currency=settings.KZT)
 
-    def get_milestone_fundings(self):
-        return self.milestone_fundings.all().order_by('milestone__number')
+    def total_cost_by_row(self, cost_type):
+        total = sum([
+            cost_cell.costs.amount
+            for cost_cell in self.get_milestone_costs_row(cost_type)
+        ])
+        return Money(amount=total, currency=settings.KZT)
+
+    def total_funding_by_row(self, funding_type):
+        total = sum([
+            funding_cell.fundings.amount
+            for funding_cell in self.get_milestone_fundings_row(funding_type)
+        ])
+        return Money(amount=total, currency=settings.KZT)
+
+    def costs_by_milestone(self, milestone):
+        total = sum([
+            cost_cell.costs.amount
+            for cost_cell in self.get_milestone_costs(milestone)
+        ])
+        return Money(amount=total, currency=settings.KZT)
+
+    def fundings_by_milestone(self, milestone):
+        total = sum([
+            funding_cell.fundings.amount
+            for funding_cell in self.get_milestone_fundings(milestone)
+        ])
+        return Money(amount=total, currency=settings.KZT)
+
+    def get_milestone_costs_row(self, cost_type):
+        return self.milestone_costs.filter(
+            cost_document=self, cost_type=cost_type).order_by('milestone__number')
+
+    def get_milestone_fundings_row(self, funding_type):
+        return self.milestone_fundings.filter(
+            cost_document=self, funding_type=funding_type).order_by('milestone__number')
+
+    def get_milestone_costs(self, milestone):
+        return self.milestone_costs.filter(milestone=milestone)
+
+    def get_milestone_fundings(self, milestone):
+        return self.milestone_fundings.filter(milestone=milestone)
 
 
 class CostType(models.Model):
     u"""Вид статьи расходов"""
     cost_document = models.ForeignKey('CostDocument', related_name='cost_types')
     name = models.CharField(max_length=1024)
+    number = models.IntegerField(null=True)
 
 
 class FundingType(models.Model):
@@ -326,6 +381,7 @@ class MilestoneCostRow(models.Model):
         u'Сумма затрат (тенге)',
         null=True,
         max_digits=20, decimal_places=2, default_currency='KZT')
+
 
 class MilestoneFundingRow(models.Model):
     u"""Источник финансирования по этапу"""
