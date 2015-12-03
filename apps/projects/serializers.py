@@ -128,6 +128,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         aggrement_data = validated_data.pop('aggreement', None)
         old_milestones = instance.number_of_milestones
         new_milestones = validated_data['number_of_milestones']
+        current_milestone_data = validated_data.pop('current_milestone', None)
         prj = super(ProjectSerializer, self).update(instance, validated_data)
 
         if organization_details:
@@ -153,6 +154,12 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
                 instance=instance.aggreement, data=aggrement_data)
             agr_ser.is_valid(raise_exception=True)
             prj.aggreement = agr_ser.save()
+
+        if current_milestone_data:
+            mil_ser = MilestoneSerializer(
+                instance=instance.current_milestone, data=current_milestone_data)
+            mil_ser.is_valid(raise_exception=True)
+            prj.current_milestone = mil_ser.save()
 
         prj.save()
 
