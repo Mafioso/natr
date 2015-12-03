@@ -354,22 +354,23 @@ class CostDocument(models.Model):
             cost_document=self, funding_type=funding_type).order_by('milestone__number')
 
     def get_milestone_costs(self, milestone):
-        return self.milestone_costs.filter(milestone=milestone)
+        return self.milestone_costs.filter(milestone=milestone).order_by('cost_type__date_created')
 
     def get_milestone_fundings(self, milestone):
-        return self.milestone_fundings.filter(milestone=milestone)
+        return self.milestone_fundings.filter(milestone=milestone).order_by('funding_type__date_created')
 
 
 class CostType(models.Model):
     u"""Вид статьи расходов"""
     cost_document = models.ForeignKey('CostDocument', related_name='cost_types')
     name = models.CharField(max_length=1024)
-    number = models.IntegerField(null=True)
+    date_created = models.DateTimeField(auto_now_add=True, null=True)
 
 
 class FundingType(models.Model):
     cost_document = models.ForeignKey('CostDocument', related_name='funding_types')
     name = models.CharField(max_length=1024)
+    date_created = models.DateTimeField(auto_now_add=True, null=True)
 
 
 class MilestoneCostRow(models.Model):
