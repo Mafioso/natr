@@ -13,6 +13,11 @@ __all__ = (
     'UseOfBudgetDocumentSerializer',
     'UseOfBudgetDocumentItemSerializer',
     'AttachmentSerializer',
+    'CostDocumentSerializer',
+    'CostTypeSerializer',
+    'FundingTypeSerializer',
+    'MilestoneFundingRowSerializer',
+    'MilestoneCostRowSerializer'
 )
 
 
@@ -145,6 +150,48 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
         data = DocumentCompositionSerializer.empty_data(project)
         data['items'] = [{}] * project.number_of_milestones
         return data
+
+
+class CostTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.CostType
+
+
+class FundingTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.FundingType
+
+
+class MilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = models.MilestoneCostRow
+
+    cost_type_name = serializers.CharField(source='cost_type.name', required=False, read_only=True)
+    costs = SerializerMoneyField(required=False)
+
+
+class MilestoneFundingRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = models.MilestoneFundingRow
+
+    funding_type_name = serializers.CharField(source='funding_type.name', required=False, read_only=True)
+    fundings = SerializerMoneyField(required=False)
+
+
+class CostDocumentSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.CostDocument
+
+    document = DocumentSerializer(required=True)
+    cost_types = CostTypeSerializer(many=True, required=False)
+    funding_types = FundingTypeSerializer(many=True, required=False)
+    milestone_costs = MilestoneCostRowSerializer(many=True, required=False)
+    milestone_fundings = MilestoneFundingRowSerializer(many=True, required=False)
 
 
 class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):

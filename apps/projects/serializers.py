@@ -25,6 +25,27 @@ class FundingTypeSerializer(serializers.ModelSerializer):
         model = FundingType
 
 
+class MilestoneSerializer(
+        EmptyObjectDMLMixin,
+        ExcludeCurrencyFields,
+        serializers.ModelSerializer):
+
+    class Meta:
+        model = Milestone
+        read_only_fields = ('status_cap',)
+
+    project = serializers.PrimaryKeyRelatedField(
+        queryset=Project.objects.all(), required=True)
+    status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    fundings = SerializerMoneyField(required=False)
+    planned_fundings = SerializerMoneyField(required=False)
+
+    @classmethod
+    def empty_data(cls, project, **kwargs):
+        kwargs.update({'project': project.id})
+        return kwargs
+
+
 class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
@@ -44,6 +65,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     calendar_plan_id = serializers.IntegerField(source='get_calendar_plan_id', read_only=True, required=False)
     pasport_type = serializers.CharField(read_only=True, required=False)
     pasport_id = serializers.IntegerField(source='get_pasport_id', read_only=True, required=False)
+    current_milestone = MilestoneSerializer(required=False)
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
@@ -52,7 +74,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         aggrement_data = validated_data.pop('aggreement', None)
 
         prj = Project.objects.create(**validated_data)
-        
+
         if organization_details:
             organization_details = OrganizationSerializer(data=organization_details)
             organization_details.is_valid(raise_exception=True)
@@ -79,7 +101,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj_journal = JournalSerializer.build_empty(prj)
         prj_journal.is_valid(raise_exception=True)
         prj_journal.save()
-        
+
         # 2. create monitoring
         prj_monitoring = MonitoringSerializer.build_empty(prj)
         prj_monitoring.is_valid(raise_exception=True)
@@ -89,6 +111,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj_cp = CalendarPlanDocumentSerializer.build_empty(prj)
         prj_cp.is_valid(raise_exception=True)
         prj_cp.save()
+
+        # 4. create costs document
+        prj_cd = CostDocumentSerializer.build_empty(prj)
+        prj_cd.is_valid(raise_exception=True)
+        prj_cd.save()
 
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
@@ -116,7 +143,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         old_milestones = instance.number_of_milestones
         new_milestones = validated_data['number_of_milestones']
         prj = super(ProjectSerializer, self).update(instance, validated_data)
-        
+
         if organization_details:
             organization_details = OrganizationSerializer(
                 instance=instance.organization_details, data=organization_details)
@@ -180,27 +207,6 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
         return None
 
 
-class MilestoneSerializer(
-        EmptyObjectDMLMixin,
-        ExcludeCurrencyFields,
-        serializers.ModelSerializer):
-
-    class Meta:
-        model = Milestone
-        read_only_fields = ('status_cap',)
-
-    project = serializers.PrimaryKeyRelatedField(
-        queryset=Project.objects.all(), required=True)
-    status_cap = serializers.CharField(source='get_status_cap', read_only=True)
-    fundings = SerializerMoneyField(required=False)
-    planned_fundings = SerializerMoneyField(required=False)
-
-    @classmethod
-    def empty_data(cls, project, **kwargs):
-        kwargs.update({'project': project.id})
-        return kwargs
-
-
 class ReportSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -247,4 +253,3 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
         monitoring_todo = MonitoringTodo.objects.create(
             monitoring=monitoring, **validated_data)
         return monitoring_todo
-

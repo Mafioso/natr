@@ -260,6 +260,7 @@ class Attachment(models.Model):
 
     document = models.ForeignKey('Document', null=True, related_name='attachments')
 
+
 class UseOfBudgetDocument(models.Model):
     tp = 'useofbudget'
     document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
@@ -289,3 +290,52 @@ class UseOfBudgetDocumentItem(models.Model):
     notes = models.CharField(
         u'Примечания',
         max_length=1024, null=True, blank=True)
+
+
+class CostDocument(models.Model):
+    u"""Документ сметы расходов"""
+    tp = 'costs'
+    document = models.OneToOneField(Document, related_name='cost_document', on_delete=models.CASCADE)
+    objects = SimpleDocumentManager()
+
+
+    def get_milestone_costs(self):
+        return self.milestone_costs.all().order_by('milestone__number')
+
+    def get_milestone_fundings(self):
+        return self.milestone_fundings.all().order_by('milestone__number')
+
+
+class CostType(models.Model):
+    u"""Вид статьи расходов"""
+    cost_document = models.ForeignKey('CostDocument', related_name='cost_types')
+    name = models.CharField(max_length=1024)
+
+
+class FundingType(models.Model):
+    cost_document = models.ForeignKey('CostDocument', related_name='funding_types')
+    name = models.CharField(max_length=1024)
+
+
+class MilestoneCostRow(models.Model):
+    u"""Статья расходов по этапу"""
+    cost_document = models.ForeignKey('CostDocument', related_name='milestone_costs')
+    milestone = models.OneToOneField('projects.Milestone')
+    cost_type = models.ForeignKey('CostType', null=True)
+    costs = MoneyField(
+        u'Сумма затрат (тенге)',
+        null=True,
+        max_digits=20, decimal_places=2, default_currency='KZT')
+
+class MilestoneFundingRow(models.Model):
+    u"""Источник финансирования по этапу"""
+    cost_document = models.ForeignKey('CostDocument', related_name='milestone_fundings')
+    milestone = models.OneToOneField('projects.Milestone')
+    funding_type = models.ForeignKey('FundingType', null=True)
+    fundings = MoneyField(
+        u'Сумма финансирования за счет других источников',
+        null=True,
+        max_digits=20, decimal_places=2, default_currency='KZT')
+
+
+# class CostItemType
