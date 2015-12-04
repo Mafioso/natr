@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import serializers
+from natr import utils
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
@@ -97,6 +98,12 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         prj.save()
 
+        # 4. generate empty milestones
+        for i in xrange(prj.number_of_milestones):
+            milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
+            milestone_ser.is_valid(raise_exception=True)
+            milestone_ser.save()
+
         # 1. create journal
         prj_journal = JournalSerializer.build_empty(prj)
         prj_journal.is_valid(raise_exception=True)
@@ -115,13 +122,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         # 4. create costs document
         prj_cd = CostDocumentSerializer.build_empty(prj)
         prj_cd.is_valid(raise_exception=True)
-        prj_cd.save()
-
-        # 4. generate empty milestones
-        for i in xrange(prj.number_of_milestones):
-            milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
-            milestone_ser.is_valid(raise_exception=True)
-            milestone_ser.save()
+        # utils.pretty(prj_cd.errors)
+        prj_cd.save(empty=True)
 
         # 5. create project pasport which depends on funding type
         if prj.funding_type.name == 'INDS_RES' or \
