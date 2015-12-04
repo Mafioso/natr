@@ -17,7 +17,8 @@ __all__ = (
     'CostTypeSerializer',
     'FundingTypeSerializer',
     'MilestoneFundingRowSerializer',
-    'MilestoneCostRowSerializer'
+    'MilestoneCostRowSerializer',
+    'MilestoneCostCellSerializer'
 )
 
 
@@ -171,16 +172,36 @@ class FundingTypeSerializer(serializers.ModelSerializer):
 
 
 
-class MilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+class MilestoneCostRowSerializer(serializers.ListSerializer):
+
+    def create(self, validated_data):
+        for cost_cell in validated_data:
+            cost_type = dict(**cost_cell['cost_type'])
+            cost_type['cost_document'] = cost_cell['cost_document'].id
+            cost_type_ser = CostTypeSerializer(data=cost_type)
+            cost_type_ser.is_valid(raise_exception=False)
+            cost_type_obj = cost_type_ser.save()
+            cost_cell['cost_type'] = cost_type_obj
+        cost_row = [models.MilestoneCostRow(**cost_cell) for cost_cell in validated_data]
+        return models.MilestoneCostRow.objects.bulk_create(cost_row)
+
+
+class MilestoneCostCellSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
         model = models.MilestoneCostRow
+        list_serializer_class = MilestoneCostRowSerializer
 
     cost_document = serializers.PrimaryKeyRelatedField(
         queryset=models.CostDocument.objects.all(), required=False)
-    cost_type_name = serializers.CharField(source='cost_type.name', required=False, read_only=True)
+    cost_type = CostTypeSerializer(required=False)
+    # cost_type_name = serializers.CharField(source='cost_type.name', required=False, read_only=True)
     costs = SerializerMoneyField(required=False)
 
+    # def create(self, validated_data):
+    #     print validated_data, "hi"
+    #     cost_type = validated_data.pop('cost_type')
+    #     pass
 
 class MilestoneFundingRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
@@ -201,7 +222,7 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
     document = DocumentSerializer(required=True)
     cost_types = CostTypeSerializer(many=True, required=False)
     funding_types = FundingTypeSerializer(many=True, required=False)
-    milestone_costs = MilestoneCostRowSerializer(many=True, required=False)
+    milestone_costs = MilestoneCostCellSerializer(many=True, required=False)
     milestone_fundings = MilestoneFundingRowSerializer(many=True, required=False)
 
     @classmethod

@@ -4,9 +4,71 @@ from rest_framework.test import APITestCase
 from rest_framework import status
 from .common import CommonTestMixin
 from documents import models, factories
+from projects.serializers import ProjectSerializer
 
 
 class DocumentApiTestCase(CommonTestMixin, APITestCase):
+
+    def setUp(self):
+        self.project_data = {
+          "fundings": {
+            "currency": "KZT",
+            "amount": 300000000
+          },
+          "own_fundings": {
+            "currency": "KZT",
+            "amount": 100000
+          },
+          "funding_type": {
+            "name": u"Проведение промышленных исследований"
+          },
+          "aggreement": {
+            "document": {
+              "external_id": "123124124124",
+              "status": 0,
+              "date_sign": "2015-08-19T00:00",
+            },
+            "number": 123,
+            "name": u"Инновационный грант на реализацию и коммерциализацию технологий на стадии создания атомного реактора",
+            "subject": u"Реализация проекта"
+          },
+          "statement": {
+            "document": {
+              "external_id": "412513512351235",
+              "status": 0,
+              "date_sign": "2015-08-19T00:00",
+            }
+          },
+          "organization_details": {
+            "share_holders": [
+              {
+                "fio": u"Рустем Камун",
+                "iin": "124124124124",
+                "share_percentage": 20,
+                "organization": "Fatigue science"
+              }
+            ],
+            "contact_details": {
+              "phone_number": "87772952190",
+              "email": "r.kamun@gmail.com",
+              "organization": "Fatigue science"
+            },
+            "name": "Fatigue Science",
+            "bin": "124124124981924",
+            "bik": "4124891850821390581",
+            "iik": "124124124124124",
+            "address_1": "Tolebi 8, 34",
+            "address_2": "Lenina 14, 1",
+            "first_head_fio": u"Саттар Стамкулов",
+          },
+          "name": "lorem",
+          "description": "lorem ipsum",
+          "date_start": "2015-09-01T00:00",
+          "date_end": "2016-05-18T00:00",
+          "total_month": 0,
+          "status": 1,
+          "number_of_milestones": 7
+        }
 
     def test_create_document(self):
         data = {
@@ -94,6 +156,66 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
         self.chk_ok(response)
         self.assertIn('id', response_data)
 
+    def test_add_cost_row_to_cost(self):
+        # cost_row_data = [
+        #     {
+        #         'id': 1,
+        #         cost_document: 14,
+        #         milestone: 1,
+        #         cost_type: {
+        #             id: 1 (optional),
+        #             name: "lorem ipsum",
+        #             price_details: "lorem ipsum",
+        #             source_link: "http://lorem.ipsum.dololr",
+        #         },
+        #         costs: {
+        #             "amount": 1200,
+        #             "currency": "KZT"
+        #         }
+        #     },
+        #     {
+        #         id: 2,
+        #         cost_document: 14,
+        #         milestone: 2,
+        #         cost_type: {
+        #             id: 1 (optional),
+        #             name: "lorem ipsum",
+        #             price_details: "lorem ipsum",
+        #             source_link: "http://lorem.ipsum.dololr",
+        #         },
+        #         costs: {
+        #             "amount": 1200,
+        #             "currency": "KZT"
+        #         }
+        #     },
+        # ]
+        prj_ser = ProjectSerializer(data=self.project_data)
+        prj_ser.is_valid(raise_exception=True)
+        prj = prj_ser.save()
+        milestones = list(prj.milestone_set.all())
+        cost_doc = prj.cost_document
+        cost_row_data = []
+        for i, m in enumerate(milestones):
+            cost_row_data.append({
+                'milestone': m.id,
+                'cost_type': {
+                    'name': 'lorem ipsum ' + str(i)
+                },
+                'costs': {
+                    'amount': 1200 + i,
+                    'currency': 'KZT'
+                }
+            })
+        url, parsed = self.prepare_urls('costdocument-add-cost-row', kwargs={'pk': cost_doc.id})
+        response = self.client.post(url, cost_row_data, format='json')
+        response_data = self.load_response(response)
+        self.chk_ok(response)
+        for i, (item_after, item_before) in enumerate(zip(response_data, cost_row_data)):
+            self.assertEqual(item_after['milestone'], item_before['milestone'])
+            self.assertEqual(item_after['costs']['amount'], item_before['costs']['amount'])
+            self.assertEqual(item_after['cost_type']['name'], item_before['cost_type']['name'])
+            self.assertIn('id', item_after['cost_type'])
+        self.assertIsInstance(response_data, list)
     # data = {
         
     # }

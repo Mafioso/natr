@@ -15,6 +15,7 @@ CalendarPlanDocument = doc_models.CalendarPlanDocument
 Attachment = doc_models.Attachment
 UseOfBudgetDocument = doc_models.UseOfBudgetDocument
 BasicProjectPasportDocument = doc_models.BasicProjectPasportDocument
+CostDocument = doc_models.CostDocument
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -107,6 +108,69 @@ class AttachmentViewSet(viewsets.ModelViewSet):
             else:
                 raise e
         return super(AttachmentViewSet, self).destroy(request, *a, **kw)
+
+
+class CostDocumentViewSet(viewsets.ModelViewSet):
+    serializer_class = CostDocumentSerializer
+    queryset = CostDocument.objects.all()
+
+    @detail_route(methods=['post'], url_path='add_cost_row')
+    @patch_serializer_class(MilestoneCostCellSerializer)
+    def add_cost_row(self, request, *a, **kw):
+        """
+        [
+            {
+                id: 1,
+                cost_document: 14,
+                milestone: 1,
+                cost_type: {
+                    id: 1 (optional),
+                    name: "lorem ipsum",
+                    price_details: "lorem ipsum",
+                    source_link: "http://lorem.ipsum.dololr",
+                },
+                costs: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            },
+            {
+                id: 2,
+                cost_document: 14,
+                milestone: 2,
+                cost_type: {
+                    id: 1 (optional),
+                    name: "lorem ipsum",
+                    price_details: "lorem ipsum",
+                    source_link: "http://lorem.ipsum.dololr",
+                },
+                costs: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            },
+        ]
+
+        """
+        data = request.data
+        doc = self.get_object()
+        for cost_cell in data:
+            cost_cell['cost_document'] = doc.id
+            cost_type = dict(**cost_cell['cost_type'])
+            cost_type['cost_document'] = doc.id
+            # cost_type_ser = CostTypeSerializer(data=cost_type)
+            # cost_type_ser.is_valid(raise_exception=True)
+            # cost_type_obj = cost_type_ser.save()
+            # cost_cell['cost_type'] = cost_type_obj.id
+        
+        cost_row_ser = self.get_serializer(data=data, many=True)
+        # print repr(cost_row_ser)
+
+        cost_row_ser.is_valid(raise_exception=True)
+        cost_row_ser.save()
+        headers = self.get_success_headers(cost_row_ser.data)
+        return response.Response(cost_row_ser.data, headers=headers)
+
 
 class UseOfBudgetDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = UseOfBudgetDocumentSerializer

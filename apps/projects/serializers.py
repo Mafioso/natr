@@ -64,6 +64,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     organization_details = OrganizationSerializer(required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     calendar_plan_id = serializers.IntegerField(source='get_calendar_plan_id', read_only=True, required=False)
+    cost_id = serializers.IntegerField(source='cost_document_id', read_only=True, required=False)
     pasport_type = serializers.CharField(read_only=True, required=False)
     pasport_id = serializers.IntegerField(source='get_pasport_id', read_only=True, required=False)
     current_milestone = MilestoneSerializer(required=False)

@@ -7,7 +7,8 @@ from .document import (
 	BasicProjectPasportDocumentViewSet,
 	CalendarPlanDocumentViewSet, 
 	AttachmentViewSet, 
-	UseOfBudgetDocumentViewSet
+	UseOfBudgetDocumentViewSet,
+	CostDocumentViewSet
 )
 from .journal import JournalActivityViewSet, JournalViewSet
 
@@ -19,7 +20,7 @@ router.register(r'reports', ReportViewSet)
 router.register(r'attachments', AttachmentViewSet, 'attachment')
 router.register(r'use_of_budget', UseOfBudgetDocumentViewSet, 'use_of_budget')
 router.register(r'basic_pasport', BasicProjectPasportDocumentViewSet, 'basic_pasport')
-
+router.register(r'cost_documents', CostDocumentViewSet, 'costdocument')
 router.register(r'monitoring', MonitoringViewSet, 'monitoring')
 
 monitoring_router = routers.NestedSimpleRouter(router, r'monitoring', lookup='monitoring')

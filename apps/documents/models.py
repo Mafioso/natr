@@ -407,7 +407,7 @@ class FundingType(models.Model):
 class MilestoneCostRow(models.Model):
     u"""Статья расходов по этапу"""
     cost_document = models.ForeignKey('CostDocument', related_name='milestone_costs')
-    milestone = models.OneToOneField('projects.Milestone')
+    milestone = models.ForeignKey('projects.Milestone')
     cost_type = models.ForeignKey('CostType', null=True)
     costs = MoneyField(
         u'Сумма затрат (тенге)',
@@ -418,7 +418,7 @@ class MilestoneCostRow(models.Model):
 class MilestoneFundingRow(models.Model):
     u"""Источник финансирования по этапу"""
     cost_document = models.ForeignKey('CostDocument', related_name='milestone_fundings')
-    milestone = models.OneToOneField('projects.Milestone')
+    milestone = models.ForeignKey('projects.Milestone')
     funding_type = models.ForeignKey('FundingType', null=True)
     fundings = MoneyField(
         u'Сумма финансирования за счет других источников',

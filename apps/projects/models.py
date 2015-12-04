@@ -69,6 +69,10 @@ class Project(models.Model):
         return CostDocument.objects.get(document__project=self)
 
     @property
+    def cost_document_id(self):
+        return self.cost_document.id
+
+    @property
     def journal(self):
         return self.journal_set.first()
 
