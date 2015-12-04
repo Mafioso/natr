@@ -10,7 +10,12 @@ from django.db import models
 from django.utils.functional import cached_property
 from django.conf import settings
 from natr.mixins import ProjectBasedModel
-from statuses import ProjectPasportStatuses, CommonStatuses
+from statuses import (
+    BasicProjectPasportStatuses, 
+    InnovativeProjectPasportStatuses,
+    CommonStatuses
+)
+
 
 
 class DocumentDMLManager(models.Manager):
@@ -25,6 +30,12 @@ class DocumentDMLManager(models.Manager):
 
     def create_basic_project_pasport(self, **kwargs):
         return self.create_doc_with_relations(BasicProjectPasportDocument, **kwargs)
+
+    def create_innovative_project_pasport(self, **kwargs):
+        return self.create_doc_with_relations(InnovativeProjectPasportDocument, **kwargs)
+
+    def create_cost_doc(self, **kwargs):
+        return self.create_doc_with_relations(CostDocument, **kwargs)
 
     def create_calendar_plan(self, **kwargs):
         items = kwargs.pop('items', [])
@@ -149,26 +160,26 @@ class BasicProjectPasportDocument(models.Model):
     tp = 'basicpasport'
     document = models.OneToOneField(Document, related_name='basicpasport', on_delete=models.CASCADE)
 
-    result = models.IntegerField(u'Результат проекта', default=ProjectPasportStatuses.PATENT, 
-                                                        choices=ProjectPasportStatuses.RESULT_OPTS,
+    result = models.IntegerField(u'Результат проекта', default=BasicProjectPasportStatuses.PATENT, 
+                                                        choices=BasicProjectPasportStatuses.RESULT_OPTS,
                                                         null=True, blank=True)
     result_statement = models.CharField(u'Результат проекта(другое)', max_length=140, null=True, blank=True)
 
     inductry_application = models.CharField(u'Отрасль применения', max_length=1024, null=True, blank=True)
 
-    character = models.IntegerField(u'Характер проекта', default=ProjectPasportStatuses.NEW_PRODUCT, 
-                                                        choices=ProjectPasportStatuses.CHARACTER_OPTS,
+    character = models.IntegerField(u'Характер проекта', default=BasicProjectPasportStatuses.NEW_PRODUCT, 
+                                                        choices=BasicProjectPasportStatuses.CHARACTER_OPTS,
                                                         null=True, blank=True)
     character_statement = models.CharField(u'Характер проекта(другое)', max_length=140, null=True, blank=True)
 
     patent_defence = models.IntegerField(u'Патентная защита основных технических решений проекта', 
-                                                        default=ProjectPasportStatuses.REQUIRED, 
-                                                        choices=ProjectPasportStatuses.DEFENCE_OPTS,
+                                                        default=BasicProjectPasportStatuses.REQUIRED, 
+                                                        choices=BasicProjectPasportStatuses.DEFENCE_OPTS,
                                                         null=True, blank=True)
 
     readiness = models.IntegerField(u'Степень готовности проекта', 
-                                                        default=ProjectPasportStatuses.IDEA, 
-                                                        choices=ProjectPasportStatuses.READINESS_OPTS,
+                                                        default=BasicProjectPasportStatuses.IDEA, 
+                                                        choices=BasicProjectPasportStatuses.READINESS_OPTS,
                                                         null=True, blank=True)
     readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=140, 
                                                         null=True, blank=True)
@@ -194,8 +205,69 @@ class BasicProjectPasportDocument(models.Model):
                                                         max_length=1024, null=True, blank=True)
 
 
-# class InnovativeProjectPasportDocument(models.Model):
-#     pass
+class InnovativeProjectPasportDocument(models.Model):
+    tp = 'innovativepasport'
+    document = models.OneToOneField(Document, related_name='innovativepasport', on_delete=models.CASCADE)
+
+    relevance = models.CharField(u'Актуальность проекта', max_length=140, null=True, blank=True)
+
+    result = models.IntegerField(u'Ожидаемые результаты проекта', default=InnovativeProjectPasportStatuses.KNOW_HOW, 
+                                                        choices=InnovativeProjectPasportStatuses.RESULT_OPTS,
+                                                        null=True, blank=True)
+    result_statement = models.CharField(u'Ожидаемые результаты проекта(другое)', max_length=140, null=True, blank=True)
+
+    inductry_application = models.CharField(u'Отрасль применения', max_length=1024, null=True, blank=True)
+
+    character = models.IntegerField(u'Характер технического результата', default=InnovativeProjectPasportStatuses.NEW_PRODUCTION, 
+                                                        choices=InnovativeProjectPasportStatuses.CHARACTER_OPTS,
+                                                        null=True, blank=True)
+    character_statement = models.CharField(u'Характер технического результата(другое)', max_length=140, null=True, blank=True)
+
+    realization_plan = models.CharField(u'План реализации проекта', max_length=1024, null=True, blank=True)
+
+    patent_defence = models.IntegerField(u'Патентная защита основных технических решений проекта', 
+                                                        default=InnovativeProjectPasportStatuses.REQUIRED, 
+                                                        choices=InnovativeProjectPasportStatuses.DEFENCE_OPTS,
+                                                        null=True, blank=True)
+    readiness = models.IntegerField(u'Степень готовности проекта', 
+                                                        default=InnovativeProjectPasportStatuses.RESEARCH, 
+                                                        choices=InnovativeProjectPasportStatuses.READINESS_OPTS,
+                                                        null=True, blank=True)
+    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=140, 
+                                                        null=True, blank=True)
+    independent_test = models.IntegerField(u'Проведена ли независимая экспертиза проекта',
+                                                        default=CommonStatuses.NO,
+                                                        choices=CommonStatuses.YES_NO_OPTS,
+                                                        null=True, blank=True)
+    independent_test_statement = models.CharField(u'Проведена ли независимая экспертиза проекта(описание)', max_length=140, 
+                                                        null=True, blank=True)
+    marketing_research = models.CharField(u'Проведено ли маркетинговое исследование?', max_length=140, 
+                                                        null=True, blank=True)
+    result_agreement = models.IntegerField(u'Имеются ли договора/протоколы о намерении \
+                                                        приобретения результатов проекта',
+                                                        default=CommonStatuses.NO,
+                                                        choices=CommonStatuses.YES_NO_OPTS,
+                                                        null=True, blank=True)
+    result_agreement_statement = models.CharField(u'Имеются ли договора/протоколы о намерении \
+                                                        приобретения результатов проекта(описание)', max_length=140, 
+                                                        null=True, blank=True)
+    realization_area = models.CharField(u'Место реализации проекта', max_length=140, 
+                                                        null=True, blank=True)
+    total_cost = MoneyField(u'Полная стоимость проекта',
+                                                        max_digits=20, null=True,
+                                                        decimal_places=2, default_currency='KZT')
+    needed_cost = MoneyField(u'Требуемое финансирование',
+                                                        max_digits=20, null=True,
+                                                        decimal_places=2, default_currency='KZT')
+    other_financed_source = models.CharField(u'Финансировался ли данный проект \
+                                                        из других источников (да, нет) и в каком объеме?', max_length=140, 
+                                                        null=True, blank=True)
+
+    goverment_support = models.CharField(u'Были ли приняты решения Правительства Республики Казахстан по \
+                                                        поддержке проекта на отраслевом, региональном или \
+                                                        государственном уровне (номер, дата, название)?', max_length=140, 
+                                                        null=True, blank=True)
+
 
 class StatementDocument(models.Model):
     tp = 'statement'

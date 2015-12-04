@@ -20,7 +20,7 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
             "amount": 100000
           },
           "funding_type": {
-            "name": u"Проведение промышленных исследований"
+            "name": "ACQ_TECH"
           },
           "aggreement": {
             "document": {

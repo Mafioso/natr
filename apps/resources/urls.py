@@ -5,6 +5,7 @@ from .project import ProjectViewSet, MonitoringTodoViewSet, MonitoringViewSet, R
 from .document import (
 	DocumentViewSet, 
 	BasicProjectPasportDocumentViewSet,
+	InnovativeProjectPasportDocumentViewSet,
 	CalendarPlanDocumentViewSet, 
 	AttachmentViewSet, 
 	UseOfBudgetDocumentViewSet,
@@ -21,6 +22,7 @@ router.register(r'attachments', AttachmentViewSet, 'attachment')
 router.register(r'use_of_budget', UseOfBudgetDocumentViewSet, 'use_of_budget')
 router.register(r'basic_pasport', BasicProjectPasportDocumentViewSet, 'basic_pasport')
 router.register(r'cost_documents', CostDocumentViewSet, 'costdocument')
+router.register(r'innovative_pasport', InnovativeProjectPasportDocumentViewSet, 'innovative_pasport')
 router.register(r'monitoring', MonitoringViewSet, 'monitoring')
 
 monitoring_router = routers.NestedSimpleRouter(router, r'monitoring', lookup='monitoring')

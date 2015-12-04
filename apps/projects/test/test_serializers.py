@@ -25,7 +25,7 @@ class ProjectSerializerTestCase(TestCase):
 	        "amount": 100000
 	      },
 	      "funding_type": {
-	        "name": u"Проведение промышленных исследований"
+	        "name": "ACQ_TECH"
 	      },
 	      "aggreement": {
 	        "document": {
@@ -79,7 +79,7 @@ class ProjectSerializerTestCase(TestCase):
 		prj_ser = ProjectSerializer(data=self.data)
 		prj_ser.is_valid(raise_exception=False)
 		errors = prj_ser.errors
-#		utils.pretty(errors)
+		utils.pretty(errors)
 		
 		prj = prj_ser.save()
 		

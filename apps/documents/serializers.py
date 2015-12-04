@@ -7,6 +7,7 @@ __all__ = (
     'DocumentSerializer',
     'AgreementDocumentSerializer',
     'BasicProjectPasportSerializer',
+    'InnovativeProjectPasportSerializer',
     'StatementDocumentSerializer',
     'CalendarPlanDocumentSerializer',
     'CalendarPlanItemSerializer',
@@ -73,15 +74,25 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
         return doc
 
 
-# class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
+class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
 
-#     class Meta:
-#         model = models.InnovativeProjectPasportDocument
+    class Meta:
+        model = models.InnovativeProjectPasportDocument
 
-#     @classmethod
-#     def empty_data(cls, project):
-#         data = DocumentCompositionSerializer.empty_data(project)
-#         return data
+    document = DocumentSerializer(required=True)
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_innovative_project_pasport(**validated_data)
+        return doc
+
+    def update(self, instance, validated_data):
+        document = validated_data.pop('document')
+        return models.Document.dml.update_doc_(instance, **validated_data)
 
 class BasicProjectPasportSerializer(DocumentCompositionSerializer):
 
@@ -241,7 +252,6 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
             return models.Document.dml.create_empty_cost(**validated_data)
         else:
             return models.Document.dml.create_cost(**validated_data)
-
 
 class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
 
