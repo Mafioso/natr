@@ -157,38 +157,6 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
         self.assertIn('id', response_data)
 
     def test_add_cost_row_to_cost(self):
-        # cost_row_data = [
-        #     {
-        #         'id': 1,
-        #         cost_document: 14,
-        #         milestone: 1,
-        #         cost_type: {
-        #             id: 1 (optional),
-        #             name: "lorem ipsum",
-        #             price_details: "lorem ipsum",
-        #             source_link: "http://lorem.ipsum.dololr",
-        #         },
-        #         costs: {
-        #             "amount": 1200,
-        #             "currency": "KZT"
-        #         }
-        #     },
-        #     {
-        #         id: 2,
-        #         cost_document: 14,
-        #         milestone: 2,
-        #         cost_type: {
-        #             id: 1 (optional),
-        #             name: "lorem ipsum",
-        #             price_details: "lorem ipsum",
-        #             source_link: "http://lorem.ipsum.dololr",
-        #         },
-        #         costs: {
-        #             "amount": 1200,
-        #             "currency": "KZT"
-        #         }
-        #     },
-        # ]
         prj_ser = ProjectSerializer(data=self.project_data)
         prj_ser.is_valid(raise_exception=True)
         prj = prj_ser.save()
@@ -216,11 +184,32 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
             self.assertEqual(item_after['cost_type']['name'], item_before['cost_type']['name'])
             self.assertIn('id', item_after['cost_type'])
         self.assertIsInstance(response_data, list)
-    # data = {
-        
-    # }
-    # url, parsed = self.prepare_urls('project-list')
-    # response = self.client.post(url, data, format='json')
-    # self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
+    def test_add_funding_row_to_cost(self):
+        prj_ser = ProjectSerializer(data=self.project_data)
+        prj_ser.is_valid(raise_exception=True)
+        prj = prj_ser.save()
+        milestones = list(prj.milestone_set.all())
+        cost_doc = prj.cost_document
+        funding_row_data = []
+        for i, m in enumerate(milestones):
+            funding_row_data.append({
+                'milestone': m.id,
+                'funding_type': {
+                    'name': 'lorem ipsum ' + str(i)
+                },
+                'fundings': {
+                    'amount': 1200 + i,
+                    'currency': 'KZT'
+                }
+            })
+        url, parsed = self.prepare_urls('costdocument-add-funding-row', kwargs={'pk': cost_doc.id})
+        response = self.client.post(url, funding_row_data, format='json')
+        response_data = self.load_response(response)
+        self.chk_ok(response)
+        for i, (item_after, item_before) in enumerate(zip(response_data, funding_row_data)):
+            self.assertEqual(item_after['milestone'], item_before['milestone'])
+            self.assertEqual(item_after['fundings']['amount'], item_before['fundings']['amount'])
+            self.assertEqual(item_after['funding_type']['name'], item_before['funding_type']['name'])
+            self.assertIn('id', item_after['funding_type'])
 

@@ -18,6 +18,7 @@ __all__ = (
     'CostTypeSerializer',
     'FundingTypeSerializer',
     'MilestoneFundingRowSerializer',
+    'MilestoneFundingCellSerializer',
     'MilestoneCostRowSerializer',
     'MilestoneCostCellSerializer'
 )
@@ -187,11 +188,11 @@ class MilestoneCostRowSerializer(serializers.ListSerializer):
 
     def create(self, validated_data):
         for cost_cell in validated_data:
-            cost_type = dict(**cost_cell['cost_type'])
-            cost_type['cost_document'] = cost_cell['cost_document'].id
-            cost_type_ser = CostTypeSerializer(data=cost_type)
-            cost_type_ser.is_valid(raise_exception=False)
-            cost_type_obj = cost_type_ser.save()
+            cost_type = cost_cell['cost_type']
+            if 'id' not in cost_type:
+                cost_type_obj = models.CostType.objects.create(**cost_type)
+            else:
+                cost_type_obj = mdoels.CostType.objects.update(**cost_type)
             cost_cell['cost_type'] = cost_type_obj
         cost_row = [models.MilestoneCostRow(**cost_cell) for cost_cell in validated_data]
         return models.MilestoneCostRow.objects.bulk_create(cost_row)
@@ -206,22 +207,32 @@ class MilestoneCostCellSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     cost_document = serializers.PrimaryKeyRelatedField(
         queryset=models.CostDocument.objects.all(), required=False)
     cost_type = CostTypeSerializer(required=False)
-    # cost_type_name = serializers.CharField(source='cost_type.name', required=False, read_only=True)
     costs = SerializerMoneyField(required=False)
 
-    # def create(self, validated_data):
-    #     print validated_data, "hi"
-    #     cost_type = validated_data.pop('cost_type')
-    #     pass
 
-class MilestoneFundingRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+class MilestoneFundingRowSerializer(serializers.ListSerializer):
+
+    def create(self, validated_data):
+        for funding_cell in validated_data:
+            funding_type = funding_cell['funding_type']
+            if 'id' not in funding_type:
+                funding_type_obj = models.FundingType.objects.create(**funding_type)
+            else:
+                funding_type_obj = mdoels.FundingType.objects.update(**funding_type)
+            funding_cell['funding_type'] = funding_type_obj
+        funding_row = [models.MilestoneFundingRow(**funding_cell) for funding_cell in validated_data]
+        return models.MilestoneFundingRow.objects.bulk_create(funding_row)
+
+
+class MilestoneFundingCellSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
         model = models.MilestoneFundingRow
+        list_serializer_class = MilestoneFundingRowSerializer
 
     cost_document = serializers.PrimaryKeyRelatedField(
         queryset=models.CostDocument.objects.all(), required=False)
-    funding_type_name = serializers.CharField(source='funding_type.name', required=False, read_only=True)
+    funding_type = FundingTypeSerializer(required=False)
     fundings = SerializerMoneyField(required=False)
 
 
@@ -234,7 +245,7 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
     cost_types = CostTypeSerializer(many=True, required=False)
     funding_types = FundingTypeSerializer(many=True, required=False)
     milestone_costs = MilestoneCostCellSerializer(many=True, required=False)
-    milestone_fundings = MilestoneFundingRowSerializer(many=True, required=False)
+    milestone_fundings = MilestoneFundingCellSerializer(many=True, required=False)
 
     @classmethod
     def empty_data(cls, project):

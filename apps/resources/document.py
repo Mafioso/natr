@@ -163,20 +163,28 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
         doc = self.get_object()
         for cost_cell in data:
             cost_cell['cost_document'] = doc.id
-            cost_type = dict(**cost_cell['cost_type'])
+            cost_type = cost_cell['cost_type']
             cost_type['cost_document'] = doc.id
-            # cost_type_ser = CostTypeSerializer(data=cost_type)
-            # cost_type_ser.is_valid(raise_exception=True)
-            # cost_type_obj = cost_type_ser.save()
-            # cost_cell['cost_type'] = cost_type_obj.id
-        
         cost_row_ser = self.get_serializer(data=data, many=True)
-        # print repr(cost_row_ser)
-
         cost_row_ser.is_valid(raise_exception=True)
         cost_row_ser.save()
         headers = self.get_success_headers(cost_row_ser.data)
         return response.Response(cost_row_ser.data, headers=headers)
+
+    @detail_route(methods=['post'], url_path='add_funding_row')
+    @patch_serializer_class(MilestoneFundingCellSerializer)
+    def add_funding_row(self, request, *a, **kw):
+        data = request.data
+        doc = self.get_object()
+        for funding_cell in data:
+            funding_cell['cost_document'] = doc.id
+            funding_type = funding_cell['funding_type']
+            funding_type['cost_document'] = doc.id
+        funding_row_ser = self.get_serializer(data=data, many=True)
+        funding_row_ser.is_valid(raise_exception=True)
+        funding_row_ser.save()
+        headers = self.get_success_headers(funding_row_ser.data)
+        return response.Response(funding_row_ser.data, headers=headers)
 
 
 class UseOfBudgetDocumentViewSet(viewsets.ModelViewSet):
