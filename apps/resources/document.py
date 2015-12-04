@@ -15,7 +15,7 @@ CalendarPlanDocument = doc_models.CalendarPlanDocument
 Attachment = doc_models.Attachment
 UseOfBudgetDocument = doc_models.UseOfBudgetDocument
 BasicProjectPasportDocument = doc_models.BasicProjectPasportDocument
-
+InnovativeProjectPasportDocument = doc_models.InnovativeProjectPasportDocument
 
 class DocumentViewSet(viewsets.ModelViewSet):
 
@@ -28,6 +28,11 @@ class BasicProjectPasportDocumentViewSet(viewsets.ModelViewSet):
 
     serializer_class = BasicProjectPasportSerializer
     queryset = BasicProjectPasportDocument.objects.all()
+
+class InnovativeProjectPasportDocumentViewSet(viewsets.ModelViewSet):
+
+    serializer_class = InnovativeProjectPasportSerializer
+    queryset = InnovativeProjectPasportDocument.objects.all()
         
 
 class CalendarPlanDocumentViewSet(viewsets.ModelViewSet):

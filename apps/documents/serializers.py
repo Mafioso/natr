@@ -7,6 +7,7 @@ __all__ = (
     'DocumentSerializer',
     'AgreementDocumentSerializer',
     'BasicProjectPasportSerializer',
+    'InnovativeProjectPasportSerializer',
     'StatementDocumentSerializer',
     'CalendarPlanDocumentSerializer',
     'CalendarPlanItemSerializer',
@@ -72,15 +73,25 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
         return doc
 
 
-# class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
+class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
 
-#     class Meta:
-#         model = models.InnovativeProjectPasportDocument
+    class Meta:
+        model = models.InnovativeProjectPasportDocument
 
-#     @classmethod
-#     def empty_data(cls, project):
-#         data = DocumentCompositionSerializer.empty_data(project)
-#         return data
+    document = DocumentSerializer(required=True)
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_innovative_project_pasport(**validated_data)
+        return doc
+
+    def update(self, instance, validated_data):
+        document = validated_data.pop('document')
+        return models.Document.dml.update_doc_(instance, **validated_data)
 
 class BasicProjectPasportSerializer(DocumentCompositionSerializer):
 
@@ -192,6 +203,19 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
     funding_types = FundingTypeSerializer(many=True, required=False)
     milestone_costs = MilestoneCostRowSerializer(many=True, required=False)
     milestone_fundings = MilestoneFundingRowSerializer(many=True, required=False)
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_cost_doc(**validated_data)
+        return doc
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
+
+    def update(self, instance, validated_data):
+        document = validated_data.pop('document')
+        return models.Document.dml.update_doc_(instance, **validated_data)
 
 
 class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):

@@ -11,7 +11,7 @@ from natr.mixins import ProjectBasedModel
 from documents.models import (
     CalendarPlanDocument, 
     BasicProjectPasportDocument,
-    # InnovativeProjectPasportDocument
+    InnovativeProjectPasportDocument
 )
 
 class Project(models.Model):
@@ -117,8 +117,7 @@ class Project(models.Model):
         try:
             pasport = BasicProjectPasportDocument.objects.get(document__project=self)
         except BasicProjectPasportDocument.DoesNotExist:
-            # pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
-            pass
+            pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
 
         return pasport
 
@@ -128,6 +127,18 @@ class Project(models.Model):
 
 
 class FundingType(models.Model):
+ 
+    TYPE_KEYS = (ACQ_TECHNOLOGY, 
+                    INDUST_RESEARCH, 
+                    PERSONNEL_TRAINING, 
+                    PROD_SUPPORT,
+                    PATENTING,
+                    COMMERCIALIZATION,
+                    FOREIGN_PROFS,
+                    CONSULTING,
+                    INTRO_TECH) = ('ACQ_TECH', 'INDS_RES', 'PERSNL_TR', 'PROD_SUPPORT',
+                                        'PATENTING', 'COMMERCIALIZATION', 'FOREIGN_PROFS',
+                                        'CONSULTING', 'INTRO_TECH')
     GRANT_TYPES = (
         u'Приобретение технологий',
         u'Проведение промышленных исследований',
@@ -139,8 +150,8 @@ class FundingType(models.Model):
         u'Привлечение консалтинговых, проектных и инжиниринговых организаций',
         u'Внедрение управленческих и производственных технологий',
     )
-    GRANT_TYPES_OPTIONS = zip(GRANT_TYPES, GRANT_TYPES)
-    name = models.CharField(max_length=255, null=True, blank=True, choices=GRANT_TYPES_OPTIONS)
+    GRANT_TYPES_OPTIONS = zip(TYPE_KEYS, GRANT_TYPES)
+    name = models.CharField(max_length=25, null=True, blank=True, choices=GRANT_TYPES_OPTIONS)
 
     def __unicode__(self):
         return self.name

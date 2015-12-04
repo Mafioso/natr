@@ -124,14 +124,16 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             milestone_ser.save()
 
         # 5. create project pasport which depends on funding type
-        # if prj.funding_type.name == u'Проведение промышленных исследований' or \
-        #     prj.funding_type.name == u'Патентование в зарубежных странах и (или) региональных патентных организациях' or \
-        #     prj.funding_type.name == u'Коммерциализацию технологий':
-        #     prj_pasport = InnovativeProjectPasportSerializer.build_empty(prj)
-        # else:
-        prj_pasport = BasicProjectPasportSerializer.build_empty(prj)
-        prj_pasport.is_valid(raise_exception=True)
-        prj_pasport.save()
+        if prj.funding_type.name == 'INDS_RES' or \
+            prj.funding_type.name == 'PATENTING' or \
+            prj.funding_type.name == 'COMMERCIALIZATION':
+            prj_pasport = InnovativeProjectPasportSerializer.build_empty(prj)
+            prj_pasport.is_valid(raise_exception=True)
+            prj_pasport.save()
+        else:
+            prj_pasport = BasicProjectPasportSerializer.build_empty(prj)
+            prj_pasport.is_valid(raise_exception=True)
+            prj_pasport.save()
 
         return prj
 
