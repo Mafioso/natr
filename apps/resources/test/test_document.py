@@ -256,5 +256,24 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
         url, parsed = self.prepare_urls('costdocument-fetch-all-by-row', kwargs={'pk': cost_doc.id})
         response = self.client.get(url, {}, format='json')
         response_data = self.load_response(response)
-        print response_data
         self.chk_ok(response)
+        self.assertIn('cost_rows', response_data)
+        self.assertIn('funding_rows', response_data)
+        self.assertTrue(len(response_data['cost_rows']) > 0)
+        self.assertTrue(len(response_data['funding_rows']) > 0)
+        
+        for cost_row in response_data['cost_rows']:
+            cost_type_ids = set([])
+            for cost_cell in cost_row:
+                self.assertIn('cost_type', cost_cell)
+                self.assertTrue(isinstance(cost_cell['cost_type'], dict))
+                cost_type_ids.add(cost_cell['cost_type']['id'])
+            self.assertEqual(len(cost_type_ids), 1)
+
+        for funding_row in response_data['funding_rows']:
+            funding_type_ids = set([])
+            for funding_cell in funding_row:
+                self.assertIn('funding_type', funding_cell)
+                self.assertTrue(isinstance(funding_cell['funding_type'], dict))
+                funding_type_ids.add(funding_cell['funding_type']['id'])
+            self.assertEqual(len(funding_type_ids), 1)
