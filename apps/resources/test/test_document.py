@@ -156,60 +156,105 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
         self.chk_ok(response)
         self.assertIn('id', response_data)
 
-    def test_add_cost_row_to_cost(self):
+    def test_add_edit_cost_row_to_cost(self):
         prj_ser = ProjectSerializer(data=self.project_data)
         prj_ser.is_valid(raise_exception=True)
         prj = prj_ser.save()
         milestones = list(prj.milestone_set.all())
         cost_doc = prj.cost_document
-        cost_row_data = []
+        
+        data = {}
+        cost_type_data = data.setdefault('cost_type', {'name': 'lorem ipsum'})
+        cost_row_data = data.setdefault('cost_row', [])
         for i, m in enumerate(milestones):
             cost_row_data.append({
                 'milestone': m.id,
-                'cost_type': {
-                    'name': 'lorem ipsum ' + str(i)
-                },
                 'costs': {
                     'amount': 1200 + i,
                     'currency': 'KZT'
                 }
             })
+
         url, parsed = self.prepare_urls('costdocument-add-cost-row', kwargs={'pk': cost_doc.id})
-        response = self.client.post(url, cost_row_data, format='json')
+        response = self.client.post(url, data, format='json')
         response_data = self.load_response(response)
         self.chk_ok(response)
-        for i, (item_after, item_before) in enumerate(zip(response_data, cost_row_data)):
+        for i, (item_after, item_before) in enumerate(zip(response_data['cost_row'], data['cost_row'])):
             self.assertEqual(item_after['milestone'], item_before['milestone'])
             self.assertEqual(item_after['costs']['amount'], item_before['costs']['amount'])
-            self.assertEqual(item_after['cost_type']['name'], item_before['cost_type']['name'])
-            self.assertIn('id', item_after['cost_type'])
-        self.assertIsInstance(response_data, list)
+            self.assertIn('cost_type', item_after)
+        self.assertEqual(response_data['cost_type']['name'], data['cost_type']['name'])
+    
+        data = {}
+        cost_type_data = data.setdefault('cost_type', response_data['cost_type'])
+        cost_row_data = data.setdefault('cost_row', [])
+        
+        for i, item in enumerate(response_data['cost_row']):
+            new_item = dict(**item)
+            new_item['costs']['amount'] = item['costs']['amount'] + i
+            cost_row_data.append(new_item)
 
-    def test_add_funding_row_to_cost(self):
+        url, parsed = self.prepare_urls('costdocument-edit-cost-row', kwargs={'pk': cost_doc.id})
+        response = self.client.post(url, data, format='json')
+        response_data = self.load_response(response)
+        self.chk_ok(response)
+        for i, (item_after, item_before) in enumerate(zip(response_data['cost_row'], data['cost_row'])):
+            self.assertEqual(item_after['id'], item_before['id'])
+            self.assertEqual(item_after['costs']['amount'], item_before['costs']['amount'])
+        self.assertEqual(response_data['cost_type']['name'], data['cost_type']['name'])
+
+    def test_add_edit_funding_row_to_cost(self):
         prj_ser = ProjectSerializer(data=self.project_data)
         prj_ser.is_valid(raise_exception=True)
         prj = prj_ser.save()
         milestones = list(prj.milestone_set.all())
         cost_doc = prj.cost_document
-        funding_row_data = []
+
+        data = {}
+        funding_type_data = data.setdefault('funding_type', {'name': 'lorem ipsum'})
+        funding_row_data = data.setdefault('funding_row', [])
+        
         for i, m in enumerate(milestones):
             funding_row_data.append({
                 'milestone': m.id,
-                'funding_type': {
-                    'name': 'lorem ipsum ' + str(i)
-                },
                 'fundings': {
                     'amount': 1200 + i,
                     'currency': 'KZT'
                 }
             })
         url, parsed = self.prepare_urls('costdocument-add-funding-row', kwargs={'pk': cost_doc.id})
-        response = self.client.post(url, funding_row_data, format='json')
+        response = self.client.post(url, data, format='json')
         response_data = self.load_response(response)
         self.chk_ok(response)
-        for i, (item_after, item_before) in enumerate(zip(response_data, funding_row_data)):
+        for i, (item_after, item_before) in enumerate(zip(response_data['funding_row'], data['funding_row'])):
             self.assertEqual(item_after['milestone'], item_before['milestone'])
             self.assertEqual(item_after['fundings']['amount'], item_before['fundings']['amount'])
-            self.assertEqual(item_after['funding_type']['name'], item_before['funding_type']['name'])
-            self.assertIn('id', item_after['funding_type'])
+            self.assertIn('funding_type', item_after)
+        self.assertEqual(response_data['funding_type']['name'], data['funding_type']['name'])
 
+        data = {}
+        funding_type_data = data.setdefault('funding_type', response_data['funding_type'])
+        funding_row_data = data.setdefault('funding_row', [])
+        for i, item in enumerate(response_data['funding_row']):
+            new_item = dict(**item)
+            new_item['fundings']['amount'] = item['fundings']['amount'] + i
+        url, parsed = self.prepare_urls('costdocument-edit-funding-row', kwargs={'pk': cost_doc.id})
+        response = self.client.post(url, data, format='json')
+        response_data = self.load_response(response)
+        self.chk_ok(response)
+
+        for i, (item_after, item_before) in enumerate(zip(response_data['funding_row'], data['funding_row'])):
+            self.assertEqual(item_after['id'], item_before['id'])
+            self.assertEqual(item_after['fundings']['amount'], item_before['fundings']['amount'])
+        self.assertEqual(response_data['funding_type']['name'], data['funding_type']['name'])
+
+    def test_cost_fetch_all_by_row(self):
+        prj_ser = ProjectSerializer(data=self.project_data)
+        prj_ser.is_valid(raise_exception=True)
+        prj = prj_ser.save()
+        cost_doc = prj.cost_document
+        url, parsed = self.prepare_urls('costdocument-fetch-all-by-row', kwargs={'pk': cost_doc.id})
+        response = self.client.get(url, {}, format='json')
+        response_data = self.load_response(response)
+        print response_data
+        self.chk_ok(response)

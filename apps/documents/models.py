@@ -438,6 +438,12 @@ class CostDocument(models.Model):
         ])
         return Money(amount=total, currency=settings.KZT)
 
+    def get_costs_rows(self):
+        return map(self.get_milestone_costs_row, list(self.cost_types.all()))
+
+    def get_fundings_rows(self):
+        return map(self.get_milestone_fundings_row, list(self.funding_types.all()))
+
     def get_milestone_costs_row(self, cost_type):
         return self.milestone_costs.filter(
             cost_document=self, cost_type=cost_type).order_by('milestone__number')
@@ -460,6 +466,9 @@ class CostType(models.Model):
     date_created = models.DateTimeField(auto_now_add=True, null=True)
     price_details = models.CharField(u'пояснение к ценообразованию', max_length=2048, default='')
     source_link = models.TextField(u'источник данных используемый в расчетах', default='')
+
+    class Meta:
+        ordering = ['date_created']
 
     @classmethod
     def create_empty(cls, cost_document):
