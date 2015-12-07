@@ -61,6 +61,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(activity_ser.data)
 
 
+class MilestoneViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.Milestone.objects.all()
+    serializer_class = MilestoneSerializer
+
+
+
 class MonitoringTodoViewSet(viewsets.ModelViewSet):
     queryset = prj_models.MonitoringTodo.objects.all()
     serializer_class = MonitoringTodoSerializer

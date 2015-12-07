@@ -17,7 +17,8 @@ __all__ = (
     'ProjectBasicInfoSerializer',
     'ReportSerializer',
     'MonitoringSerializer',
-    'MonitoringTodoSerializer'
+    'MonitoringTodoSerializer',
+    'MilestoneSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -141,6 +142,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         return prj
 
     def update(self, instance, validated_data):
+        if self.partial:
+            return super(ProjectSerializer, self).update(instance, validated_data)
+        
         organization_details = validated_data.pop('organization_details', None)
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', None)
