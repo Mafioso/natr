@@ -268,6 +268,131 @@ class InnovativeProjectPasportDocument(models.Model):
                                                         государственном уровне (номер, дата, название)?', max_length=140, 
                                                         null=True, blank=True)
 
+    #Команда проекта
+class ProjectTeamMember(models.Model):
+    pasport = models.ForeignKey(InnovativeProjectPasportDocument, related_name='team_members', on_delete=models.CASCADE)
+    full_name = models.CharField(u'Ф.И.О.', max_length=140, null=True, blank=True)
+    experience = models.CharField(u'стаж работы', max_length=140, null=True, blank=True)
+    qualification = models.CharField(u'квалификация', max_length=140, null=True, blank=True)
+    responsibilities = models.CharField(u'функциональные обязанности', max_length=140, null=True, blank=True)
+    cv = models.ForeignKey('Attachment', related_name='cvs', on_delete=models.CASCADE)
+    business_skills = models.CharField(u'навыки ведения бизнеса', max_length=140, null=True, blank=True)
+
+    #Сведения о разработчиках технологии
+class DevelopersInfo(models.Model):
+    pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='dev_info', on_delete=models.CASCADE)
+    comp_name = models.CharField(u'Наименование предприятия', max_length=140, null=True, blank=True)
+    full_name = models.CharField(u'Ф.И.О.', max_length=140, null=True, blank=True)
+    position = models.CharField(u'Должность', max_length=140, null=True, blank=True)
+    phone = models.CharField(u'Телефон', max_length=140, null=True, blank=True)
+    fax = models.CharField(u'Факс', max_length=140, null=True, blank=True)
+    chat_addr = models.CharField(u'Адрес для переписки', max_length=140, null=True, blank=True)
+    email = models.CharField(u'Электронная почта', max_length=140, null=True, blank=True)
+    tech_stage = models.IntegerField(u'На каком этапе Ваша технология?', 
+                                                        default=InnovativeProjectPasportStatuses.FOUND_RESEARCH, 
+                                                        choices=InnovativeProjectPasportStatuses.TECHNOLOGY_STAGE_OPTS,
+                                                        null=True, blank=True)
+    expirience = models.CharField(u'Участвовали ли разработчики/исследователи в проектах коммерциализации технологий', 
+                                                        max_length=140, null=True, blank=True)
+    manager_team = models.CharField(u'Имеется ли или уже определена команда менеджеров проекта коммерциализации технологий с \
+                        необходимым опытом практического руководства реализацией инновационных \
+                        проектов? Описать в случае наличия.', max_length=140, null=True, blank=True)
+    participation = models.CharField(u'Будут ли разработчики участвовать непосредственно в проекте коммерциализации технологий?', 
+                                                        max_length=140, null=True, blank=True)
+    share_readiness = models.CharField(u'Готовы ли разработчики/исследователи поделиться долей своего инновационного предприятия \
+                        или частью своей интеллектуальной  собственности в обмен на финансирование проекта \
+                        внешними инвесторами?', max_length=140, null=True, blank=True)
+    invest_resources = models.CharField(u'Готовы ли разработчики/исследователи вкладывать собственные \
+                         ресурсы в инновационное предприятие реализующее проект коммерциализации технологий?', 
+                            max_length=140, null=True, blank=True)
+    
+    #Характеристика технологии/продукта
+class TechnologyCharacteristics(models.Model):
+    pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='tech_char', on_delete=models.CASCADE)
+    name = models.CharField(u'Название технологии/продукта', max_length=140, null=True, blank=True)
+    functionality = models.CharField(u'Функциональное назначение технологии', max_length=1024, null=True, blank=True)
+    description = models.CharField(u'Полное описание технологии', max_length=140, null=True, blank=True)
+    area = models.CharField(u'Области применения, в т.ч. перспективы применения', max_length=1024, null=True, blank=True)
+    tech_params = models.CharField(u'Список, по крайней мере, 5-6 технических параметров, по которым следует оценивать технологию',
+                                                     max_length=1024, null=True, blank=True)
+    analogues = models.CharField(u'Сравните параметры представленной технологии и параметры \
+                            конкурирующих современных разработок', max_length=1024, null=True, blank=True)
+    advantages = models.CharField(u'Сравните предполагаемые преимущества представленной технологии \
+                            с современным уровнем технического развития в данной области', 
+                            max_length=1024, null=True, blank=True)
+    analogue_descr = models.CharField(u'Включите название и/или достаточно полное описание \
+                            конкурирующей технологии для наведения дополнительных справок', 
+                            max_length=1024, null=True, blank=True)
+    adv_descr = models.CharField(u'Опишите каждое преимущество разработки по сравнению с \
+                            существующими технологиями как минимум из 5 предложений', 
+                            max_length=1024, null=True, blank=True)
+    area_descr = models.CharField(u'Опишите каждую область применения как минимум из 5 предложений', 
+                            max_length=1024, null=True, blank=True)
+    additional_res = models.CharField(u'Потребуются ли и в каком объеме дополнительное время, денежные \
+                            средства и другие ресурсы для проведения дополнительных НИОКР с \
+                            целью разработки прототипов, их испытаний, чтобы \
+                            продемонстрировать результаты работы технологии потенциальным \
+                            инвесторам/ партнерам?', max_length=1024, null=True, blank=True)
+    using_lims = models.CharField(u'Имеются ли какие/либо ограничения на эксплуатацию технологии, \
+                            например, имеется ли необходимость для получения лицензий, \
+                            разрешений, сертификатов каких/либо надзорных органов для \
+                            производства и продажи продукции или услуг на рынке?', 
+                            max_length=1024, null=True, blank=True)
+    
+    #Оценка интеллектуальной собственности
+class IntellectualPropertyAssesment(models.Model):
+    pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='intellectual_property', on_delete=models.CASCADE)
+    authors_names = models.CharField(u'Ф.И.О. авторов технологии', max_length=140, null=True, blank=True)
+    patent = models.CharField(u'Наличие патентов (предпатент, инновационный патент, Евразийский  \
+                            патент, иностранный патент)', max_length=140, null=True, blank=True)
+    analogue_tech = models.CharField(u'Результаты патентного поиска конкурентных технологий', max_length=140, null=True, blank=True)
+    know_how = models.CharField(u'Наличие know-how', max_length=140, null=True, blank=True)
+    applicat_date = models.DateField(u'Дата подачи заявки на патент', null=True, blank=True)
+    country_patent = models.CharField(u'Страна, в которой подана заявка на патент', max_length=140, null=True, blank=True)
+    patented_date = models.DateField(u'Дата выдачи патента', null=True, blank=True)
+    another_pats = models.CharField(u'Будут ли подаваться заявки на дополнительные патенты?', max_length=140, null=True, blank=True)
+    licence_start_date = models.DateField(u'Дата начала лицензирования (если есть)', null=True, blank=True)
+    licence_end_date = models.DateField(u'Дата прекращения лицензирования', null=True, blank=True)
+    licensee = models.CharField(u'Предполагаемые лицензиаты', max_length=140, null=True, blank=True)
+    author = models.CharField(u'Кто является автором и владельцем интеллектуальной собственности \
+                            (разработчики, исследователи, институт, заказчик, др.)?', 
+                            max_length=140, null=True, blank=True)
+    other_techs = models.CharField(u'Имеется ли ранее созданная технология (например, алгоритмы для \
+                            вычислений) и интеллектуальная собственность, которые были созданы \
+                            вне рамок НИОКР, но используемые для получения результатов \
+                            НИОКР? В какой форме и где охраняется эта интеллектуальная \
+                            собственность и кто обладает правами на нее?', 
+                            max_length=1024, null=True, blank=True)
+    
+    #Оценка степени готовности технологии
+class TechnologyReadiness(models.Model):
+    pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='tech_readiness', on_delete=models.CASCADE)
+    analogues = models.CharField(u'Наличие аналогов и заменителей', max_length=1024, null=True, blank=True)
+    firms = models.CharField(u'Фирмы-производители', max_length=1024, null=True, blank=True)
+    price = models.CharField(u'Рыночная цена единицы продукции данного производителя', max_length=1024, null=True, blank=True)
+    target_cons = models.CharField(u'Основная потребительская группа данной продукции', max_length=1024, null=True, blank=True)
+    advantages = models.CharField(u'Основное преимущество вашей технологии по сравнению с данным \
+                            производителем', max_length=1024, null=True, blank=True)
+    attractiveness = models.CharField(u'Оценка рыночной привлекательности проекта', max_length=1024, null=True, blank=True)
+    market_test = models.CharField(u'Проведены ли рыночные испытания инновационных продукции или \
+                            услуг?', max_length=1024, null=True, blank=True)
+    result_to_sale = models.CharField(u'Что будет продаваться в результате проекта: технология или \
+                            продукция/услуги, произведенные с ее применением?', 
+                            max_length=1024, null=True, blank=True)
+    consumers = models.CharField(u'Кто целевые потребители продукции или услуг?', max_length=1024, null=True, blank=True)
+    other_props = models.CharField(u'Какими дополнительными потребительскими свойствами или \
+                            конкурентными преимуществами продукция или услуги обладают по \
+                            сравнению с предлагаемыми или продаваемыми на рынке?', 
+                            max_length=1024, null=True, blank=True)
+    target_market = models.CharField(u'Каковы целевые рынки для продаж продукции или услуг, \
+                            идентифицированные по географическому, секторальному и другим \
+                            признакам.', max_length=1024, null=True, blank=True)
+    market_investigs = models.CharField(u'Проводилось ли изучения рынка посредством выявления интереса к \
+                            продукции или услугам, которые могут производиться с применением \
+                            разработанной технологии. Здесь необходимо указать названия \
+                            компаний, организаций или лиц, которые уже документально \
+                            продемонстрировали интерес к технологии.', max_length=1024, null=True, blank=True)
+
 
 class StatementDocument(models.Model):
     tp = 'statement'

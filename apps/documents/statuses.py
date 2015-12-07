@@ -84,6 +84,15 @@ class InnovativeProjectPasportStatuses():
     )
     READINESS_OPTS = zip(READINESS_STATUSES, READINESS_STATUS_CAPS)
 
+    TECHNOLOGY_STAGE_STATUSES = FOUND_RESEARCH, NIOKR, PREPROD_MODEL = range(3)
+    TECHNOLOGY_STAGE_CAPS = (
+        u'Фундаментальные исследования',
+        u'НИОКР',
+        u'Опытный образец'
+    )
+    TECHNOLOGY_STAGE_OPTS = zip(TECHNOLOGY_STAGE_STATUSES, TECHNOLOGY_STAGE_CAPS)
+
+
 
 class CommonStatuses():
     YES_NO_STATUSES = YES, NO = range(2)

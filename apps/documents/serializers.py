@@ -9,6 +9,11 @@ __all__ = (
     'AgreementDocumentSerializer',
     'BasicProjectPasportSerializer',
     'InnovativeProjectPasportSerializer',
+    'ProjectTeamMemberSerializer',
+    'DevelopersInfoSerializer',
+    'TechnologyCharacteristicsSerializer',
+    'IntellectualPropertyAssesmentSerializer',
+    'TechnologyReadinessSerializer',
     'StatementDocumentSerializer',
     'CalendarPlanDocumentSerializer',
     'CalendarPlanItemSerializer',
@@ -21,7 +26,7 @@ __all__ = (
     'MilestoneFundingRowSerializer',
     'MilestoneFundingCellSerializer',
     'MilestoneCostRowSerializer',
-    'MilestoneCostCellSerializer'
+    'MilestoneCostCellSerializer',
 )
 
 
@@ -75,27 +80,6 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
         doc = models.Document.dml.create_agreement(**validated_data)
         return doc
 
-
-class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
-
-    class Meta:
-        model = models.InnovativeProjectPasportDocument
-
-    document = DocumentSerializer(required=True)
-
-    @classmethod
-    def empty_data(cls, project):
-        data = DocumentCompositionSerializer.empty_data(project)
-        return data
-
-    def create(self, validated_data):
-        doc = models.Document.dml.create_innovative_project_pasport(**validated_data)
-        return doc
-
-    def update(self, instance, validated_data):
-        document = validated_data.pop('document')
-        return models.Document.dml.update_doc_(instance, **validated_data)
-
 class BasicProjectPasportSerializer(DocumentCompositionSerializer):
 
     class Meta:
@@ -116,6 +100,58 @@ class BasicProjectPasportSerializer(DocumentCompositionSerializer):
         document = validated_data.pop('document')
         return models.Document.dml.update_doc_(instance, **validated_data)
 
+class ProjectTeamMemberSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.ProjectTeamMember
+
+
+class DevelopersInfoSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.DevelopersInfo
+
+class TechnologyCharacteristicsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.TechnologyCharacteristics
+
+class IntellectualPropertyAssesmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.IntellectualPropertyAssesment
+
+class TechnologyReadinessSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.TechnologyReadiness
+
+
+class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.InnovativeProjectPasportDocument
+
+    document = DocumentSerializer(required=True)
+    team_members = ProjectTeamMemberSerializer(many=True, required=False)
+    dev_info = DevelopersInfoSerializer(required=False)
+    tech_char = TechnologyCharacteristicsSerializer(required=False)
+    intellectual_property = IntellectualPropertyAssesmentSerializer(required=False)
+    tech_readiness = TechnologyReadinessSerializer(required=False)
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_innovative_project_pasport(**validated_data)
+        return doc
+
+    def update(self, instance, validated_data):
+        document = validated_data.pop('document')
+        return models.Document.dml.update_doc_(instance, **validated_data)
+        
 
 class StatementDocumentSerializer(DocumentCompositionSerializer):
 
