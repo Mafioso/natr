@@ -23,6 +23,12 @@ class Project(models.Model):
         u'расторгнут'
     )
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
+
+    RISK_DEGREE = SMALL_R, MEDIUM_R, HIGH_R = range(3)
+    RISK_DEGREE_CAPS = (
+        u'низкий',
+        u'средний',
+        u'высокий')
     name = models.CharField(max_length=1024, null=True, blank=True)
     description = models.CharField(max_length=1024, null=True, blank=True)
     date_start = models.DateTimeField(null=True)
@@ -40,10 +46,15 @@ class Project(models.Model):
         null=True, blank=True)
     number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
 
+    risk_degree = models.IntegerField(u'Степень риска', default=SMALL_R)
+
     aggreement = models.OneToOneField(
         'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)
+    
     statement = models.OneToOneField(
         'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
+
+
 
     # grantee = models.ForeignKey('Grantee', related_name='projects')
     # user = models.ForeignKey('User', related_name='projects')
