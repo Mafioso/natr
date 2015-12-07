@@ -55,7 +55,7 @@ class Project(models.Model):
     def current_milestone(self):
         try:
             return self.milestone_set.get(
-                status__gt=Milestone.TRANCHE_PAY,
+                status__gt=Milestone.NOT_STARTED,
                 status__lt=Milestone.CLOSE)
         except Milestone.DoesNotExist:
             return None
@@ -241,7 +241,7 @@ class Milestone(ProjectBasedModel):
         pass
 
     # STATUSES = NOT_START, START, CLOSE = range(3)
-    STATUSES = TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(7)
+    STATUSES = NOT_STARTED, TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(8)
     STATUS_CAPS = (
         u'оплата транша',
         u'на реализации',
@@ -257,7 +257,7 @@ class Milestone(ProjectBasedModel):
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     period = models.IntegerField(u'Срок выполнения работ (месяцев)', null=True)
-    status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=TRANCHE_PAY)
+    status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=NOT_STARTED)
     
     date_funded = models.DateTimeField(u'Дата оплаты', null=True)
     fundings = MoneyField(u'Сумма оплаты по факту',
@@ -294,6 +294,10 @@ class Milestone(ProjectBasedModel):
         self.save()
         return self
 
+    def make_current(self):
+        self.status = Milestone.TRANCHE_PAY
+        self.save()
+
     def get_status_cap(self):
         return Milestone.STATUS_CAPS[self.status]
 
@@ -301,7 +305,7 @@ class Milestone(ProjectBasedModel):
         return Milestone.IMPLEMENTING <= self.status <= Milestone.COROLLARY_APROVING
 
     def not_started(self):
-        return self.status == Milestone.TRANCHE_PAY
+        return self.status == Milestone.NOT_STARTED
 
     def is_closed(self):
         return self.status == Milestone.CLOSE

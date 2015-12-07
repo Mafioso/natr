@@ -17,7 +17,8 @@ __all__ = (
     'ProjectBasicInfoSerializer',
     'ReportSerializer',
     'MonitoringSerializer',
-    'MonitoringTodoSerializer'
+    'MonitoringTodoSerializer',
+    'MilestoneSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):

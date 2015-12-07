@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 import json
 import urllib
+import datetime
 from urlparse import urlparse
 from rest_framework import status
 from rest_framework.reverse import reverse
@@ -38,3 +39,6 @@ class CommonTestMixin(object):
 
     def chk_not_found(self, response):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def load_dt(self, dt_iso):
+        return datetime.datetime.strptime(dt_iso, "%Y-%m-%dT%H:%M:%S.%fZ")
