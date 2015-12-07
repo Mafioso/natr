@@ -14,6 +14,10 @@ Document = doc_models.Document
 CalendarPlanDocument = doc_models.CalendarPlanDocument
 Attachment = doc_models.Attachment
 UseOfBudgetDocument = doc_models.UseOfBudgetDocument
+BasicProjectPasportDocument = doc_models.BasicProjectPasportDocument
+InnovativeProjectPasportDocument = doc_models.InnovativeProjectPasportDocument
+CostDocument = doc_models.CostDocument
+
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -22,6 +26,16 @@ class DocumentViewSet(viewsets.ModelViewSet):
     queryset = Document.objects.all()
 
     # def create(self, request, *args, **kwargs):
+
+class BasicProjectPasportDocumentViewSet(viewsets.ModelViewSet):
+
+    serializer_class = BasicProjectPasportSerializer
+    queryset = BasicProjectPasportDocument.objects.all()
+
+class InnovativeProjectPasportDocumentViewSet(viewsets.ModelViewSet):
+
+    serializer_class = InnovativeProjectPasportSerializer
+    queryset = InnovativeProjectPasportDocument.objects.all()
         
 
 class CalendarPlanDocumentViewSet(viewsets.ModelViewSet):
@@ -101,6 +115,251 @@ class AttachmentViewSet(viewsets.ModelViewSet):
             else:
                 raise e
         return super(AttachmentViewSet, self).destroy(request, *a, **kw)
+
+
+class CostDocumentViewSet(viewsets.ModelViewSet):
+    serializer_class = CostDocumentSerializer
+    queryset = CostDocument.objects.all()
+
+    @detail_route(methods=['get'], url_path='fetch_all_by_row')
+    def fetch_all_by_row(self, request, *a, **kw):
+        instance = self.get_object()
+        cost_rows = instance.get_costs_rows()
+        funding_rows = instance.get_fundings_rows()
+
+        cost_rows_data, funding_rows_data = [], []
+        for cost_row, funding_row in zip(cost_rows, funding_rows):
+            cost_rows_data.append(
+                MilestoneCostCellSerializer(instance=cost_row, cost_type=True, many=True).data)
+            funding_rows_data.append(
+                MilestoneFundingCellSerializer(instance=funding_row, funding_type=True, many=True).data)
+        rv_data = {
+            'cost_rows': cost_rows_data,
+            'funding_rows': funding_rows_data
+        }
+        headers = self.get_success_headers(rv_data)
+        return response.Response(rv_data, headers=headers)
+
+    @detail_route(methods=['post'], url_path='add_cost_row')
+    @patch_serializer_class(MilestoneCostCellSerializer)
+    def add_cost_row(self, request, *a, **kw):
+        """
+        {
+            cost_type: {
+                id: 1,
+                name: "lorem ipsum",
+                price_details: "lorem ipsum",
+                source_link: "http://lorem.ipsum.dololr",
+            },
+            cost_row: [{
+                cost_document: 14,
+                milestone: 1,
+                costs: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            },
+            {
+                cost_document: 14,
+                milestone: 2,
+                cost_type: 1,
+                costs: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            }]
+        }
+
+        """
+        data = request.data
+        doc = self.get_object()
+        
+        cost_type_data = data.pop('cost_type')
+        cost_type_data['cost_document'] = doc.id
+        cost_type_ser = CostTypeSerializer(data=cost_type_data)
+        cost_type_ser.is_valid(raise_exception=True)
+        cost_type_obj = cost_type_ser.save()
+
+        cost_row = data.pop('cost_row')
+        for cost_cell in cost_row:
+            cost_cell['cost_type'] = cost_type_obj.id
+            cost_cell['cost_document'] = doc.id
+        cost_row_ser = self.get_serializer(data=cost_row, many=True)
+        cost_row_ser.is_valid(raise_exception=True)
+        cost_row_ser.save()
+        
+        rv_data = {
+            'cost_type': cost_type_ser.data,
+            'cost_row': cost_row_ser.data
+        }
+        headers = self.get_success_headers(rv_data)
+        return response.Response(rv_data, headers=headers)
+
+    @detail_route(methods=['post'], url_path='edit_cost_row')
+    @patch_serializer_class(MilestoneCostCellSerializer)
+    def edit_cost_row(self, request, *a, **kw):
+        """
+        {
+            cost_type: {
+                id: 1,
+                name: "lorem ipsum",
+                price_details: "lorem ipsum",
+                source_link: "http://lorem.ipsum.dololr",
+            },
+            cost_row: [{
+                cost_document: 14,
+                milestone: 1,
+                costs: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            },
+            {
+                cost_document: 14,
+                milestone: 2,
+                cost_type: 1,
+                costs: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            }]
+        }
+
+        """
+        data = request.data
+        doc = self.get_object()
+        cost_type_data = data.pop('cost_type')
+        cost_type_obj = doc.cost_types.get(pk=cost_type_data['id'])
+        cost_type_ser = CostTypeSerializer(cost_type_obj, data=cost_type_data)
+        cost_type_ser.is_valid(raise_exception=True)
+        cost_type_ser.save()
+
+        cost_row_instance = doc.get_milestone_costs_row(cost_type_ser.instance)
+        cost_row_data = data.pop('cost_row')
+        for cost_cell in cost_row_data:
+            cost_cell['cost_type'] = cost_type_obj.id
+            cost_cell['cost_document'] = doc.id
+        
+        cost_row_ser = self.get_serializer(
+            cost_row_instance, data=cost_row_data, many=True)
+        cost_row_ser.is_valid(raise_exception=True)
+        cost_row_ser.save()
+        rv_data = {
+            'cost_type': cost_type_ser.data,
+            'cost_row': cost_row_ser.data
+        }
+        headers = self.get_success_headers(rv_data)
+        return response.Response(rv_data, headers=headers)
+
+    @detail_route(methods=['post'], url_path='add_funding_row')
+    @patch_serializer_class(MilestoneFundingCellSerializer)
+    def add_funding_row(self, request, *a, **kw):
+        """
+        {
+            funding_type: {
+                id: 1,
+                name: "lorem ipsum",
+            },
+            funding_row: [{
+                cost_document: 14,
+                milestone: 1,
+                funding_type: 1,
+                fundings: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            },
+            {
+                cost_document: 14,
+                milestone: 2,
+                funding_type: 1,
+                fundings: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            }]
+        }
+
+        """
+        data = request.data
+        doc = self.get_object()
+
+        funding_type_data = data.pop('funding_type')
+        funding_type_data['cost_document'] = doc.id
+        funding_type_ser = FundingTypeSerializer(data=funding_type_data)
+        funding_type_ser.is_valid(raise_exception=True)
+        funding_type_obj = funding_type_ser.save()
+
+        funding_row = data.pop('funding_row')
+        for funding_cell in funding_row:
+            funding_cell['cost_type'] = funding_type_obj.id
+            funding_cell['cost_document'] = doc.id
+        funding_row_ser = self.get_serializer(data=funding_row, many=True)
+        funding_row_ser.is_valid(raise_exception=True)
+        funding_row_ser.save()
+        rv_data = {
+            'funding_type': funding_type_ser.data,
+            'funding_row': funding_row_ser.data
+        }
+        headers = self.get_success_headers(rv_data)
+        return response.Response(rv_data, headers=headers)
+
+    @detail_route(methods=['post'], url_path='edit_funding_row')
+    @patch_serializer_class(MilestoneFundingCellSerializer)
+    def edit_funding_row(self, request, *a, **kw):
+        """
+        {
+            funding_type: {
+                id: 1,
+                name: "lorem ipsum",
+            },
+            funding_row: [{
+                cost_document: 14,
+                milestone: 1,
+                funding_type: 1,
+                fundings: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            },
+            {
+                cost_document: 14,
+                milestone: 2,
+                funding_type: 1,
+                fundings: {
+                    "amount": 1200,
+                    "currency": "KZT"
+                }
+            }]
+        }
+
+        """
+        data = request.data
+        doc = self.get_object()
+
+        funding_type_data = data.pop('funding_type')
+        funding_type_obj = doc.funding_types.get(pk=funding_type_data['id'])
+        funding_type_ser = FundingTypeSerializer(funding_type_obj, data=funding_type_data)
+        funding_type_ser.is_valid(raise_exception=True)
+        funding_type_obj = funding_type_ser.save()
+
+        funding_row_instance = doc.get_milestone_fundings_row(funding_type_ser.instance)
+        funding_row_data = data.pop('funding_row')
+        for funding_cell in funding_row_data:
+            funding_cell['funding_type'] = funding_type_obj.id
+            funding_cell['cost_document'] = doc.id
+
+        funding_row_ser = self.get_serializer(
+            funding_row_instance, data=funding_row_data, many=True)
+        funding_row_ser.is_valid(raise_exception=True)
+        funding_row_ser.save()
+        rv_data = {
+            'funding_type': funding_type_ser.data,
+            'funding_row': funding_row_ser.data
+        }
+        headers = self.get_success_headers(rv_data)
+        return response.Response(rv_data, headers=headers)
+
 
 class UseOfBudgetDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = UseOfBudgetDocumentSerializer

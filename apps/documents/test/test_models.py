@@ -100,10 +100,62 @@ class DocumentTestCase(TestCase):
 		self.assertEqual(len(doc.milestone_fundings.all()), len(doc.cost_types.all()))
 		self.assertIsInstance(doc.milestone_fundings.first(), models.MilestoneFundingRow)
 
-		ordered_mcs = doc.get_milestone_costs()
-		for i in xrange(1, len(ordered_mcs)):
-			self.assertTrue(ordered_mcs[i].milestone.number >= ordered_mcs[i - 1].milestone.number)
+	def test_cost_document_totals(self):
+		doc = factories.CostDocument.create()
+		for mcr in doc.milestone_costs.all():
+			costs_by_milestone = doc.get_milestone_costs(mcr.milestone)
+			self.assertTrue(len(costs_by_milestone) > 0)
+			self.assertIsInstance(costs_by_milestone.first(), models.MilestoneCostRow)
+		
+		for mcf in doc.milestone_fundings.all():
+			fundings_by_milestone = doc.get_milestone_fundings(mcf.milestone)
+			self.assertTrue(len(fundings_by_milestone) > 0)
+			self.assertIsInstance(fundings_by_milestone.first(), models.MilestoneFundingRow)
 
-		ordered_fs = doc.get_milestone_fundings()
-		for i in xrange(1, len(ordered_fs)):
-			self.assertTrue(ordered_fs[i].milestone.number >= ordered_fs[i - 1].milestone.number)
+		for mcr in doc.milestone_costs.all():
+			m_costs = doc.costs_by_milestone(mcr.milestone)
+			self.assertIsNotNone(m_costs)
+			self.assertIsInstance(m_costs, models.Money)
+			self.assertEqual(m_costs.amount, sum([
+				cost_cell.costs.amount
+				for cost_cell in doc.get_milestone_costs(mcr.milestone)]))
+
+		for mcf in doc.milestone_fundings.all():
+			m_fundings = doc.fundings_by_milestone(mcf.milestone)
+			self.assertIsNotNone(m_fundings)
+			self.assertIsInstance(m_fundings, models.Money)
+			self.assertEqual(m_fundings.amount, sum([
+				funding_cell.fundings.amount
+				for funding_cell in doc.get_milestone_fundings(mcf.milestone)]))
+
+		for cost_type in doc.cost_types.all():
+			row_costs = doc.total_cost_by_row(cost_type)
+			self.assertIsNotNone(row_costs)
+			self.assertIsInstance(row_costs, models.Money)
+			self.assertEqual(row_costs.amount, sum([
+				cost_cell.costs.amount
+				for cost_cell in doc.get_milestone_costs_row(cost_type)]))
+
+		for funding_type in doc.funding_types.all():
+			row_fundings = doc.total_funding_by_row(funding_type)
+			self.assertIsNotNone(row_fundings)
+			self.assertIsInstance(row_fundings, models.Money)
+			self.assertEqual(row_fundings.amount, sum([
+				funding_cell.fundings.amount
+				for funding_cell in doc.get_milestone_fundings_row(funding_type)]))
+
+		total = doc.total_cost
+		self.assertIsNotNone(total)
+		self.assertIsInstance(total, models.Money)
+		self.assertEqual(total.amount, sum([
+			row_cost.amount
+			for row_cost in map(doc.total_cost_by_row, doc.cost_types.all())]))
+
+		total = doc.total_funding
+		self.assertIsNotNone(total)
+		self.assertIsInstance(total, models.Money)
+		self.assertEqual(total.amount, sum([
+			row_funding.amount
+			for row_funding in map(doc.total_funding_by_row, doc.funding_types.all())]))
+		
+

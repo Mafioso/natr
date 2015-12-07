@@ -3,10 +3,11 @@
 import random
 from rest_framework.test import APITestCase
 from rest_framework import status
+from django.utils import timezone
 from .common import CommonTestMixin
 from moneyed import Money, KZT, USD
 from natr import utils
-from projects import factories
+from projects import factories, models
 from documents import factories as doc_factories, models as doc_models
 
 
@@ -23,7 +24,7 @@ class ProjectsApiTestCase(CommonTestMixin, APITestCase):
               "amount": 100000
             },
             "funding_type": {
-              "name": u"Проведение промышленных исследований"
+              "name": "ACQ_TECH"
             },
             "aggreement": {
               "document": {
@@ -165,4 +166,27 @@ class ProjectsApiTestCase(CommonTestMixin, APITestCase):
             self.chk_ok(response)
             data = self.load_response(response)
             self.assertTrue(len(data) > 0)
+
+    def test_patch_milestone(self):
+        prj = factories.ProjectWithMilestones.create(name='a' * random.randint(1, 100))
+        m = prj.milestone_set.first()
+        m.make_current()
+        self.assertIsNotNone(prj.current_milestone)
+
+        dt = timezone.now()
+        data = {
+            'status': models.Milestone.IMPLEMENTING,
+            'date_funded': dt
+        }
+
+        url, parsed = self.prepare_urls('milestone-detail', kwargs={'pk': m.id})
+        response = self.client.patch(url, data)
+        self.chk_ok(response)
+        data = self.load_response(response)
+        self.assertEqual(data['status'], models.Milestone.IMPLEMENTING)
+        mobj = models.Milestone.objects.get(pk=m.id)
+        self.assertEqual(data['status'], mobj.status)
+        self.assertIsNotNone(data['date_funded'])
+        self.assertEqual(timezone.make_aware(self.load_dt(data['date_funded'])), dt)
+
             

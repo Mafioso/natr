@@ -1,4 +1,8 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from rest_framework import serializers
+from natr import utils
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
@@ -13,7 +17,8 @@ __all__ = (
     'ProjectBasicInfoSerializer',
     'ReportSerializer',
     'MonitoringSerializer',
-    'MonitoringTodoSerializer'
+    'MonitoringTodoSerializer',
+    'MilestoneSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -60,8 +65,10 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     organization_details = OrganizationSerializer(required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     calendar_plan_id = serializers.IntegerField(source='get_calendar_plan_id', read_only=True, required=False)
+    cost_id = serializers.IntegerField(source='cost_document_id', read_only=True, required=False)
+    pasport_type = serializers.CharField(read_only=True, required=False)
+    pasport_id = serializers.IntegerField(source='get_pasport_id', read_only=True, required=False)
     current_milestone = MilestoneSerializer(required=False)
-
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
@@ -93,6 +100,12 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         prj.save()
 
+        # 4. generate empty milestones
+        for i in xrange(prj.number_of_milestones):
+            milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
+            milestone_ser.is_valid(raise_exception=True)
+            milestone_ser.save()
+
         # 1. create journal
         prj_journal = JournalSerializer.build_empty(prj)
         prj_journal.is_valid(raise_exception=True)
@@ -111,13 +124,20 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         # 4. create costs document
         prj_cd = CostDocumentSerializer.build_empty(prj)
         prj_cd.is_valid(raise_exception=True)
-        prj_cd.save()
+        # utils.pretty(prj_cd.errors)
+        prj_cd.save(empty=True)
 
-        # 4. generate empty milestones
-        for i in xrange(prj.number_of_milestones):
-            milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
-            milestone_ser.is_valid(raise_exception=True)
-            milestone_ser.save()
+        # 5. create project pasport which depends on funding type
+        if prj.funding_type.name == 'INDS_RES' or \
+            prj.funding_type.name == 'PATENTING' or \
+            prj.funding_type.name == 'COMMERCIALIZATION':
+            prj_pasport = InnovativeProjectPasportSerializer.build_empty(prj)
+            prj_pasport.is_valid(raise_exception=True)
+            prj_pasport.save()
+        else:
+            prj_pasport = BasicProjectPasportSerializer.build_empty(prj)
+            prj_pasport.is_valid(raise_exception=True)
+            prj_pasport.save()
 
         return prj
 

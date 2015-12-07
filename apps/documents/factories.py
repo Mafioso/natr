@@ -107,7 +107,7 @@ class CostDocument(DjangoModelFactory):
         if count is None:
             count = 5
         make_cost_type = getattr(CostType, 'create' if create else 'build')
-        cost_types = [make_cost_type(cost_document=self) for _ in xrange(count)]
+        cost_types = [make_cost_type(cost_document=self) for i in xrange(count)]
         if not create:
             self._prefetched_objects_cache = {'cost_types': cost_types}
 
@@ -147,6 +147,7 @@ class CostType(DjangoModelFactory):
 
     name = factory.Faker('sentence')
     cost_document = factory.SubFactory('documents.factories.CostDocument')
+    date_created = factory.Faker('date_time')
 
 
 class FundingType(DjangoModelFactory):
@@ -157,6 +158,7 @@ class FundingType(DjangoModelFactory):
 
     name = factory.Faker('sentence')
     cost_document = factory.SubFactory('documents.factories.CostDocument')
+    date_created = factory.Faker('date_time')
 
 
 class MilestoneCostRow(DjangoModelFactory):

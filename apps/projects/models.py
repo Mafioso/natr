@@ -8,8 +8,12 @@ from django.utils import timezone
 from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
-from documents.models import CalendarPlanDocument
-
+from documents.models import (
+    CalendarPlanDocument, 
+    BasicProjectPasportDocument,
+    InnovativeProjectPasportDocument,
+    CostDocument,
+)
 
 class Project(models.Model):
     STATUSES = MONITOR, FINISH, BREAK = range(3)
@@ -45,13 +49,13 @@ class Project(models.Model):
     # user = models.ForeignKey('User', related_name='projects')
 
     def __unicode__(self):
-        return self.name
+        return unicode(self.name) or u''
 
     @property
     def current_milestone(self):
         try:
             return self.milestone_set.get(
-                status__gt=Milestone.TRANCHE_PAY,
+                status__gt=Milestone.NOT_STARTED,
                 status__lt=Milestone.CLOSE)
         except Milestone.DoesNotExist:
             return None
@@ -59,6 +63,14 @@ class Project(models.Model):
     @property
     def calendar_plan(self):
         return CalendarPlanDocument.objects.get(document__project=self)
+
+    @property
+    def cost_document(self):
+        return CostDocument.objects.get(document__project=self)
+
+    @property
+    def cost_document_id(self):
+        return self.cost_document.id
 
     @property
     def journal(self):
@@ -93,8 +105,49 @@ class Project(models.Model):
 
         return self.calendar_plan.id
 
+    @property 
+    def pasport_type(self):
+        if self.pasport is None:
+            return None
+            
+        pasport_type = None
+        try:
+            pasport = BasicProjectPasportDocument.objects.get(document__project=self)
+        except BasicProjectPasportDocument.DoesNotExist:
+            pasport_type = 'innovative'
+        else:
+            pasport_type = 'basic'
+
+        return pasport_type
+
+    @property 
+    def pasport(self):
+        pasport = None
+        try:
+            pasport = BasicProjectPasportDocument.objects.get(document__project=self)
+        except BasicProjectPasportDocument.DoesNotExist:
+            pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
+
+        return pasport
+
+    @property 
+    def get_pasport_id(self):
+        return self.pasport.id
+
 
 class FundingType(models.Model):
+ 
+    TYPE_KEYS = (ACQ_TECHNOLOGY, 
+                    INDUST_RESEARCH, 
+                    PERSONNEL_TRAINING, 
+                    PROD_SUPPORT,
+                    PATENTING,
+                    COMMERCIALIZATION,
+                    FOREIGN_PROFS,
+                    CONSULTING,
+                    INTRO_TECH) = ('ACQ_TECH', 'INDS_RES', 'PERSNL_TR', 'PROD_SUPPORT',
+                                        'PATENTING', 'COMMERCIALIZATION', 'FOREIGN_PROFS',
+                                        'CONSULTING', 'INTRO_TECH')
     GRANT_TYPES = (
         u'Приобретение технологий',
         u'Проведение промышленных исследований',
@@ -106,8 +159,8 @@ class FundingType(models.Model):
         u'Привлечение консалтинговых, проектных и инжиниринговых организаций',
         u'Внедрение управленческих и производственных технологий',
     )
-    GRANT_TYPES_OPTIONS = zip(GRANT_TYPES, GRANT_TYPES)
-    name = models.CharField(max_length=255, null=True, blank=True, choices=GRANT_TYPES_OPTIONS)
+    GRANT_TYPES_OPTIONS = zip(TYPE_KEYS, GRANT_TYPES)
+    name = models.CharField(max_length=25, null=True, blank=True, choices=GRANT_TYPES_OPTIONS)
 
     def __unicode__(self):
         return self.name
@@ -188,7 +241,7 @@ class Milestone(ProjectBasedModel):
         pass
 
     # STATUSES = NOT_START, START, CLOSE = range(3)
-    STATUSES = TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(7)
+    STATUSES = NOT_STARTED, TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(8)
     STATUS_CAPS = (
         u'оплата транша',
         u'на реализации',
@@ -204,7 +257,7 @@ class Milestone(ProjectBasedModel):
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     period = models.IntegerField(u'Срок выполнения работ (месяцев)', null=True)
-    status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=TRANCHE_PAY)
+    status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=NOT_STARTED)
     
     date_funded = models.DateTimeField(u'Дата оплаты', null=True)
     fundings = MoneyField(u'Сумма оплаты по факту',
@@ -241,6 +294,10 @@ class Milestone(ProjectBasedModel):
         self.save()
         return self
 
+    def make_current(self):
+        self.status = Milestone.TRANCHE_PAY
+        self.save()
+
     def get_status_cap(self):
         return Milestone.STATUS_CAPS[self.status]
 
@@ -248,7 +305,7 @@ class Milestone(ProjectBasedModel):
         return Milestone.IMPLEMENTING <= self.status <= Milestone.COROLLARY_APROVING
 
     def not_started(self):
-        return self.status == Milestone.TRANCHE_PAY
+        return self.status == Milestone.NOT_STARTED
 
     def is_closed(self):
         return self.status == Milestone.CLOSE

@@ -21,20 +21,24 @@ def fake_path():
     return uri
 
 
-def pretty(d, indent=0):  
-    for key, value in d.iteritems():
-        print u'\t' * indent + unicode(key)
-        if hasattr(value, 'iteritems'):
-            pretty(value, indent+1)
-        else:
-            if isinstance(value, list):
-                val = ""
-                for item in value:
-                    if hasattr(item, 'iteritems'):
-                        val += ", " + pretty(item, indent + 1)
-                    else:
-                        val += ", " + item
-                value = val
-            print u'\t' * (indent+1) + unicode(value)
+def pretty(d, indent=0):
+    if isinstance(d, list) and d and hasattr(d[0], 'iteritems'):
+        for item in d:
+            pretty(item)
+    else: 
+        for key, value in d.iteritems():
+            print u'\t' * indent + unicode(key)
+            if hasattr(value, 'iteritems'):
+                pretty(value, indent+1)
+            else:
+                if isinstance(value, list):
+                    val = ""
+                    for item in value:
+                        if hasattr(item, 'iteritems'):
+                            val += ", " + pretty(item, indent + 1)
+                        else:
+                            val += ", " + unicode(item)
+                    value = val
+                print u'\t' * (indent+1) + unicode(value)
 
-    return ''
+        return ''
