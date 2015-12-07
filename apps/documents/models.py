@@ -32,7 +32,26 @@ class DocumentDMLManager(models.Manager):
         return self.create_doc_with_relations(BasicProjectPasportDocument, **kwargs)
 
     def create_innovative_project_pasport(self, **kwargs):
-        return self.create_doc_with_relations(InnovativeProjectPasportDocument, **kwargs)
+        doc = self.create_doc_with_relations(InnovativeProjectPasportDocument, **kwargs)
+
+        for team_member_kw in kwargs['team_members']:
+            team_member = ProjectTeamMember(pasport=doc, **team_member_kw)
+            team_member.save()
+
+        dev_info = DevelopersInfo(pasport=doc, **kwargs['dev_info'])
+        dev_info.save()
+
+        tech_char = TechnologyCharacteristics(pasport=doc, **kwargs['tech_char'])
+        tech_char.save()
+
+        intellectual_property = IntellectualPropertyAssesment(pasport=doc, **kwargs['intellectual_property'])
+        intellectual_property.save()
+
+        tech_readiness = TechnologyReadiness(pasport=doc, **kwargs['tech_readiness'])
+        tech_readiness.save()
+
+
+        return doc 
 
     def create_cost_doc(self, **kwargs):
         return self.create_doc_with_relations(CostDocument, **kwargs)
