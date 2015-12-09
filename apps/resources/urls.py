@@ -34,7 +34,7 @@ monitoring_router.register(r'todos', MonitoringTodoViewSet, base_name='monitorin
 router.register(r'journals', JournalViewSet, 'journal')
 router.register(r'journal/activities', JournalActivityViewSet, 'activity')
 router.register(r'notifications', NotificationViewSet, 'notification')
-router.register(r'notifsubscriptions', NotificationSubscriptionViewSet, 'notif_subscription')
+router.register(r'my-notifications', NotificationSubscriptionViewSet, 'notif_subscription')
 
 urlpatterns = [
 	url(r'', include(router.urls)),

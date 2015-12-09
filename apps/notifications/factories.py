@@ -12,9 +12,9 @@ class Notification(DjangoModelFactory):
         model = models.Notification
         strategy = BUILD_STRATEGY
 
-    context = factory.SubFactory('projects.factories.Milestone')
+    context = factory.SubFactory('projects.factories.MilestoneStatusTranche')
     notif_type = factory.LazyAttribute(lambda x: models.Notification.TRANSH_PAY)
-    
+
     @factory.post_generation
     def subscribers(self, create, count, **kwargs):
         if count is None:

@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 import datetime
 from django.test import TestCase
+from django.conf import settings
 from natr import utils
 from notifications.serializers import *
 from notifications.models import Notification
-from projects.factories import Milestone as MilestoneFactory
+from projects.factories import MilestoneStatusTranche as MilestoneFactory
 from projects.models import Milestone
 
 # Create your tests here.
@@ -32,5 +33,12 @@ class MilestoneSerializerTestCase(TestCase):
         self.assertTrue(isinstance(notif.context, Milestone))
         self.assertTrue(notif.notif_type == Notification.TRANSH_PAY)
         self.assertEqual(notif.context, m)
+
+        msg = notif.prepare_msg()
+        self.assertIn('number', msg)
+        self.assertIn('date_funded', msg)
+        self.assertIn('fundings', msg)
+        self.assertTrue(msg['fundings']['amount'] > 0)
+        self.assertTrue(msg['fundings']['currency'] == settings.KZT)
 
         

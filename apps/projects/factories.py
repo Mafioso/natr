@@ -68,6 +68,12 @@ class Milestone(DjangoModelFactory):
     project = factory.SubFactory('projects.factories.Project')
 
 
+class MilestoneStatusTranche(Milestone):
+
+    @factory.lazy_attribute
+    def status(self):
+        return models.Milestone.IMPLEMENTING
+
 
 class Report(DjangoModelFactory):
 

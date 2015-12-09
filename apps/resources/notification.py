@@ -12,16 +12,21 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
 	@list_route(methods=['post'], url_path='milestone')
 	@patch_serializer_class(serializers.MilestoneNotificationSerializer)
-	def milestone(self, request, *a, **kw):
+	def transh_pay(self, request, *a, **kw):
 		"""
-		Creates milestone notification and sprayed. The data of notification defined by corresponding serializer methods:
-		    notification -> jsonified params
-		    notification_subscribers -> list of auth2.Account object 
-
-		Params
-		-------
+		Create notification of type TRANSH_PAY.
+		
+		Request Body
+		------------
 		{
 			milestone: pk
+		}
+
+		Response Body
+		-------------
+		{
+			notification: json object,
+			notification_subscribers: list of ids
 		}
 		"""
 		return self.create(request, *a, **kw)
@@ -32,6 +37,18 @@ class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
 	queryset = models.NotificationSubscribtion.objects.all()
 	serializer_class = serializers.NotificationSubscribtionSerializer
 
+	def list(self, request, *a, **kw):
+		response = super(NotificationSubscriptionViewSet, self).list(request, *a, **kw)
+		data = []
+		for item in response.data['results']:
+			new_item = {
+				'id': item['id'],
+				'status': item['status'],
+			}
+			new_item.update(item['notification'])
+			data.append(new_item)
+		response.data['results'] = data
+		return response
 
 	def perform_update(self, serializer):
 		old_obj = self.get_object()

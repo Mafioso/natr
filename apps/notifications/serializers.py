@@ -65,5 +65,8 @@ class NotificationSubscribtionSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = models.NotificationSubscribtion
-		read_only_fields = ('notification', 'account')
+		exclude = ('account',)
+		read_only_fields = ('notification',)
+
+	notification = NotificationSerializer(required=True)
 
