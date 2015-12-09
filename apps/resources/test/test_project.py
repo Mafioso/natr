@@ -189,4 +189,18 @@ class ProjectsApiTestCase(CommonTestMixin, APITestCase):
         self.assertIsNotNone(data['date_funded'])
         self.assertEqual(timezone.make_aware(self.load_dt(data['date_funded'])), dt)
 
+    def test_patch_project(self):
+        prj = factories.ProjectWithMilestones.create(name='a' * random.randint(1, 100))
+        self.assertEqual(prj.risk_degree, models.Project.SMALL_R)
+
+        data = {
+            'risk_degree': models.Project.MEDIUM_R
+        }
+        url, parsed = self.prepare_urls('project-detail', kwargs={'pk': prj.id})
+        response = self.client.patch(url, data)
+        self.chk_ok(response)
+        data = self.load_response(response)
+        self.assertEqual(data['risk_degree'], models.Project.MEDIUM_R)
+        upd_prj = models.Project.objects.get(pk=prj.id)
+        self.assertEqual(data['risk_degree'], upd_prj.risk_degree)
             
