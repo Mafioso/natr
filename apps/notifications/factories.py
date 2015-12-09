@@ -13,7 +13,8 @@ class Notification(DjangoModelFactory):
         strategy = BUILD_STRATEGY
 
     context = factory.SubFactory('projects.factories.Milestone')
-
+    notif_type = factory.LazyAttribute(lambda x: models.Notification.TRANSH_PAY)
+    
     @factory.post_generation
     def subscribers(self, create, count, **kwargs):
         if count is None:
@@ -34,7 +35,6 @@ class NotificationSubscribtion(DjangoModelFactory):
     account = factory.SubFactory('auth2.factories.Account')
     status = factory.LazyAttribute(lambda x: random.randint(0, 2))
     notification = factory.SubFactory('notifications.factories.Notification')
-    
 
     @factory.lazy_attribute
     def date_read(self):

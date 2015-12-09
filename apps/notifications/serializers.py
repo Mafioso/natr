@@ -1,3 +1,4 @@
+import json
 from rest_framework import serializers
 from notifications import models
 from projects.models import Milestone
@@ -25,8 +26,11 @@ class NotificationSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.Notification
 
+	params = serializers.SerializerMethodField()
 	# context = NotificationContextRelatedField(queryset=models.Notification.objects.all())
 
+	def get_params(self, instance):
+		return json.loads(instance.params)
 
 class MilestoneNotificationSerializer(serializers.ModelSerializer):
 
@@ -50,7 +54,9 @@ class MilestoneNotificationSerializer(serializers.ModelSerializer):
 
 	def create(self, validated_data):
 		milestone = validated_data.pop('milestone')
-		notif = models.Notification.objects.create(context=milestone)
+		notif = models.Notification.objects.create(
+			notif_type=validated_data.get('notif_type'),
+			context=milestone)
 		notif.spray()
 		return notif
 
