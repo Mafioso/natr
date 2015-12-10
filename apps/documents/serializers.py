@@ -149,8 +149,9 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
         return doc
 
     def update(self, instance, validated_data):
+        print validated_data, "VALIDATED DATA"
         document = validated_data.pop('document')
-        return models.Document.dml.update_doc_(instance, **validated_data)
+        return models.Document.dml.update_innovative_project_pasport(instance, **validated_data)
         
 
 class StatementDocumentSerializer(DocumentCompositionSerializer):

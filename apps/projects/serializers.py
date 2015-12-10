@@ -68,6 +68,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     cost_id = serializers.IntegerField(source='cost_document_id', read_only=True, required=False)
     pasport_type = serializers.CharField(read_only=True, required=False)
     pasport_id = serializers.IntegerField(source='get_pasport_id', read_only=True, required=False)
+    monitoring_id = serializers.IntegerField(source='get_monitoring_id', read_only=True, required=False)
     current_milestone = MilestoneSerializer(required=False)
 
     def create(self, validated_data):

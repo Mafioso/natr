@@ -50,8 +50,60 @@ class DocumentDMLManager(models.Manager):
         tech_readiness = TechnologyReadiness(pasport=doc, **kwargs['tech_readiness'])
         tech_readiness.save()
 
-
         return doc 
+
+
+    def update_innovative_project_pasport(self, instance, **kwargs):
+        team_members = kwargs.pop('team_members')
+        dev_info_kw = kwargs.pop('dev_info')
+        tech_char_kw = kwargs.pop('tech_char')
+        intellectual_property_kw = kwargs.pop('intellectual_property')
+        tech_readiness_kw = kwargs.pop('tech_readiness')
+
+        team_member = None
+        dev_info = None
+        tech_char = None
+        intellectual_property = None
+        tech_readiness = None
+
+        for team_member_kw in team_members:
+            try:
+                team_member = ProjectTeamMember(id=team_member_kw.get('id', -1), **team_member_kw)
+            except ProjectTeamMember.DoesNotExist:
+                team_member = ProjectTeamMember(pasport=instance, **team_member_kw)
+            finally:
+                team_member.save()
+
+        try:
+            dev_info = DevelopersInfo(id=dev_info_kw.get('id', -1), **dev_info_kw)
+        except DevelopersInfo.DoesNotExist:
+            dev_info = DevelopersInfo(pasport=instance, **dev_info_kw)
+        finally:
+            dev_info.save()
+
+        try:
+            tech_char = TechnologyCharacteristics(id=tech_char_kw.get('id', -1), **tech_char_kw)
+        except TechnologyCharacteristics.DoesNotExist:
+            tech_char = TechnologyCharacteristics(pasport=instance, **tech_char_kw)
+        finally:
+            tech_char.save()
+
+        try:
+            intellectual_property = IntellectualPropertyAssesment(id=intellectual_property_kw.get('id', -1), **intellectual_property_kw)
+        except IntellectualPropertyAssesment.DoesNotExist:
+            intellectual_property = IntellectualPropertyAssesment(pasport=instance, **intellectual_property_kw)
+        finally:
+            intellectual_property.save()
+
+        try:
+            tech_readiness = TechnologyReadiness(id=tech_readiness_kw.get('id', -1), **tech_readiness_kw)
+        except TechnologyReadiness.DoesNotExist:
+            tech_readiness = TechnologyReadiness(pasport=instance, **tech_readiness_kw)
+        finally:
+            tech_readiness.save()
+
+        return update_doc_(instance, **kwargs)
+
 
     def create_cost_doc(self, **kwargs):
         return self.create_doc_with_relations(CostDocument, **kwargs)
@@ -294,7 +346,7 @@ class ProjectTeamMember(models.Model):
     experience = models.CharField(u'стаж работы', max_length=140, null=True, blank=True)
     qualification = models.CharField(u'квалификация', max_length=140, null=True, blank=True)
     responsibilities = models.CharField(u'функциональные обязанности', max_length=140, null=True, blank=True)
-    cv = models.ForeignKey('Attachment', related_name='cvs', on_delete=models.CASCADE)
+    cv = models.ForeignKey('Attachment', related_name='cvs', on_delete=models.CASCADE, null=True, blank=True)
     business_skills = models.CharField(u'навыки ведения бизнеса', max_length=140, null=True, blank=True)
 
     #Сведения о разработчиках технологии
@@ -366,12 +418,12 @@ class IntellectualPropertyAssesment(models.Model):
                             патент, иностранный патент)', max_length=140, null=True, blank=True)
     analogue_tech = models.CharField(u'Результаты патентного поиска конкурентных технологий', max_length=140, null=True, blank=True)
     know_how = models.CharField(u'Наличие know-how', max_length=140, null=True, blank=True)
-    applicat_date = models.DateField(u'Дата подачи заявки на патент', null=True, blank=True)
+    applicat_date = models.DateTimeField(u'Дата подачи заявки на патент', null=True, blank=True)
     country_patent = models.CharField(u'Страна, в которой подана заявка на патент', max_length=140, null=True, blank=True)
-    patented_date = models.DateField(u'Дата выдачи патента', null=True, blank=True)
+    patented_date = models.DateTimeField(u'Дата выдачи патента', null=True, blank=True)
     another_pats = models.CharField(u'Будут ли подаваться заявки на дополнительные патенты?', max_length=140, null=True, blank=True)
-    licence_start_date = models.DateField(u'Дата начала лицензирования (если есть)', null=True, blank=True)
-    licence_end_date = models.DateField(u'Дата прекращения лицензирования', null=True, blank=True)
+    licence_start_date = models.DateTimeField(u'Дата начала лицензирования (если есть)', null=True, blank=True)
+    licence_end_date = models.DateTimeField(u'Дата прекращения лицензирования', null=True, blank=True)
     licensee = models.CharField(u'Предполагаемые лицензиаты', max_length=140, null=True, blank=True)
     author = models.CharField(u'Кто является автором и владельцем интеллектуальной собственности \
                             (разработчики, исследователи, институт, заказчик, др.)?', 

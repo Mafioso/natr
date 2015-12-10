@@ -101,6 +101,23 @@ class MonitoringViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
+    @detail_route(methods=['post'], url_path='update')
+    @patch_serializer_class(MonitoringTodoSerializer)
+    def update_items(self, request, *a, **kw):
+        """
+        Update monitoring items
+        """
+        obj_monitoring = self.get_object()     
+        obj_monitoring.update_items(**request.data)
+
+        qs = obj_monitoring.todos.all()
+
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
 
 class ReportViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Report.objects.all()

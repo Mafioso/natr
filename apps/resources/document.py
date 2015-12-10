@@ -36,7 +36,7 @@ class InnovativeProjectPasportDocumentViewSet(viewsets.ModelViewSet):
 
     serializer_class = InnovativeProjectPasportSerializer
     queryset = InnovativeProjectPasportDocument.objects.all()
-        
+
 
 class CalendarPlanDocumentViewSet(viewsets.ModelViewSet):
 

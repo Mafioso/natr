@@ -137,13 +137,26 @@ class Project(models.Model):
         try:
             pasport = BasicProjectPasportDocument.objects.get(document__project=self)
         except BasicProjectPasportDocument.DoesNotExist:
-            pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
+            try:
+                pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
+            except InnovativeProjectPasportDocument.DoesNotExist:
+                pass
 
         return pasport
 
-    @property 
     def get_pasport_id(self):
+        if not self.pasport:
+            return None
+
         return self.pasport.id
+
+    def get_monitoring_id(self):
+        try:
+            monitoring = Monitoring.objects.get(project=self)
+        except Monitoring.DoesNotExist:
+            return None
+
+        return self.monitoring.id
 
 
 class FundingType(models.Model):
@@ -346,7 +359,15 @@ class Milestone(ProjectBasedModel):
 
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
-    pass
+    def update_items(self, **kwargs):
+        for item in kwargs['items']:
+            if 'id' in item:
+                monitoring_todo = MonitoringTodo(id=item['id'], **item)
+            else:
+                monitoring_todo = MonitoringTodo(monitoring=self, **item)
+            monitoring_todo.save()
+
+        return self.todos.all()
 
 
 class MonitoringTodo(ProjectBasedModel):
