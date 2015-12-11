@@ -38,6 +38,7 @@ class Project(models.Model):
         u'высокий')
     name = models.CharField(max_length=1024, null=True, blank=True)
     description = models.CharField(max_length=1024, null=True, blank=True)
+    innovation = models.CharField(u'Инновационность', max_length=1024, null=True, blank=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     total_month = models.IntegerField(u'Срок реализации проекта (месяцы)', default=24)
@@ -51,6 +52,7 @@ class Project(models.Model):
     own_fundings = MoneyField(
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
+    funding_date = models.DateTimeField(null=True)
     number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
 
     risk_degree = models.IntegerField(u'Степень риска', default=SMALL_R)
@@ -60,8 +62,6 @@ class Project(models.Model):
     
     statement = models.OneToOneField(
         'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
-
-
 
     # grantee = models.ForeignKey('Grantee', related_name='projects')
     # user = models.ForeignKey('User', related_name='projects')

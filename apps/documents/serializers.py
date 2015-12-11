@@ -7,6 +7,8 @@ from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixi
 __all__ = (
     'DocumentSerializer',
     'AgreementDocumentSerializer',
+    'OtherAgreementsDocumentSerializer',
+    'OtherAgreementItemSerializer',
     'BasicProjectPasportSerializer',
     'InnovativeProjectPasportSerializer',
     'ProjectTeamMemberSerializer',
@@ -81,6 +83,35 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
         doc = models.Document.dml.create_agreement(**validated_data)
         return doc
 
+class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.OtherAgreementsDocument
+
+    document = DocumentSerializer(required=True)
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_other_agr_doc(**validated_data)
+        return doc
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
+
+class OtherAgreementItemSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.OtherAgreementItem
+
+    def create(self, validated_data):
+        other_agreements_doc = validated_data.pop('other_agreements')
+        plan_item = models.OtherAgreementItem.objects.create(
+            other_agreements_doc=other_agreements_doc, **validated_data)
+        return plan_item
+
+
+
 class BasicProjectPasportSerializer(DocumentCompositionSerializer):
 
     class Meta:
@@ -150,7 +181,6 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
         return doc
 
     def update(self, instance, validated_data):
-        print validated_data, "VALIDATED DATA"
         document = validated_data.pop('document')
         return models.Document.dml.update_innovative_project_pasport(instance, **validated_data)
         
@@ -172,7 +202,7 @@ class CalendarPlanItemSerializer(ExcludeCurrencyFields, serializers.ModelSeriali
         model = models.CalendarPlanItem
         exclude = ['fundings']
 
-    # fundings = SerializerMoneyField(required=False)
+    fundings = SerializerMoneyField(required=False)
     calendar_plan = serializers.PrimaryKeyRelatedField(
         queryset=models.CalendarPlanDocument.objects.all(), required=False)
 
@@ -228,8 +258,12 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
     tax_local_avrg = SerializerMoneyField(required=False)
 
     def create(self, validated_data):
-        doc = models.Document.dml.create_doc_(**validated_data)
+        doc = models.Document.dml.create_start_description(**validated_data)
         return doc
+
+    def update(self, instance, validated_data):
+        document = validated_data.pop('document')
+        return models.Document.dml.update_doc_(instance, **validated_data)
 
     @classmethod
     def empty_data(cls, project):

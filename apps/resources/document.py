@@ -66,7 +66,7 @@ class CalendarPlanDocumentViewSet(viewsets.ModelViewSet):
         """
         Update calendar plan items
         """
-        obj_cp = self.get_object()        
+        obj_cp = self.get_object()     
         obj_cp.update_items(**request.data)
         obj_ser = self.get_serializer(instance=obj_cp)
         headers = self.get_success_headers(obj_ser.data)

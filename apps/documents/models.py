@@ -34,23 +34,35 @@ class DocumentDMLManager(models.Manager):
     def create_innovative_project_pasport(self, **kwargs):
         doc = self.create_doc_with_relations(InnovativeProjectPasportDocument, **kwargs)
 
-        for team_member_kw in kwargs['team_members']:
-            team_member = ProjectTeamMember(pasport=doc, **team_member_kw)
-            team_member.save()
+        if 'team_members' in kwargs:
+            for team_member_kw in kwargs['team_members']:
+                team_member = ProjectTeamMember(pasport=doc, **team_member_kw)
+                team_member.save()
 
-        dev_info = DevelopersInfo(pasport=doc, **kwargs['dev_info'])
-        dev_info.save()
+        if 'dev_info' in kwargs:
+            dev_info = DevelopersInfo(pasport=doc, **kwargs['dev_info'])
+            dev_info.save()
 
-        tech_char = TechnologyCharacteristics(pasport=doc, **kwargs['tech_char'])
-        tech_char.save()
+        if 'tech_char' in kwargs:
+            tech_char = TechnologyCharacteristics(pasport=doc, **kwargs['tech_char'])
+            tech_char.save()
 
-        intellectual_property = IntellectualPropertyAssesment(pasport=doc, **kwargs['intellectual_property'])
-        intellectual_property.save()
+        if 'intellectual_property' in kwargs:
+            intellectual_property = IntellectualPropertyAssesment(pasport=doc, **kwargs['intellectual_property'])
+            intellectual_property.save()
 
-        tech_readiness = TechnologyReadiness(pasport=doc, **kwargs['tech_readiness'])
-        tech_readiness.save()
+        if 'tech_readiness' in kwargs:
+            tech_readiness = TechnologyReadiness(pasport=doc, **kwargs['tech_readiness'])
+            tech_readiness.save()
 
         return doc 
+
+    def create_other_agr_doc(self, **kwargs):
+        return self.create_doc_with_relations(OtherAgreementsDocument, **kwargs)
+
+
+    def create_start_description(self, **kwargs):
+        return self.create_doc_with_relations(ProjectStartDescription, **kwargs)
 
 
     def update_innovative_project_pasport(self, instance, **kwargs):
@@ -192,7 +204,7 @@ class Document(ProjectBasedModel):
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
 
     STATUS_CAPS = (
-        u'неактивен'
+        u'неактивен',
         u'формирование',
         u'на проверке',
         u'утверждение',
@@ -224,7 +236,19 @@ class AgreementDocument(models.Model):
     document = models.OneToOneField(Document, related_name='agreement', on_delete=models.CASCADE)
     number = models.IntegerField(unique=True)
     name = models.CharField(u'Название договора', max_length=1024, default='')
+    # funding = MoneyField(u'Сумма договора', max_digits=20, null=True, blank=True, decimal_places=2, default_currency='KZT')
     subject = models.TextField(u'Предмет договора', default='')
+
+
+class OtherAgreementsDocument(models.Model):
+    tp="other_agreements"
+    document = models.OneToOneField(Document, related_name='other_agreements', on_delete=models.CASCADE)
+    
+
+class OtherAgreementItem(models.Model):
+    other_agreements_doc = models.ForeignKey(OtherAgreementsDocument, related_name='items', on_delete=models.CASCADE)
+    number = models.IntegerField(null=True, blank=True)
+    date_sign = models.DateTimeField(null=True)
 
 
 class BasicProjectPasportDocument(models.Model):
@@ -505,6 +529,7 @@ class CalendarPlanDocument(models.Model):
             if isinstance(items[0], dict):
                 for item in items:
                     item['calendar_plan_id'] = self.id
+                    fundings = item.pop('fundings', None)
                     updated_item = CalendarPlanItem(id=item.pop('id'), **item)
                     updated_item.save()
 
