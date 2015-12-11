@@ -17,6 +17,7 @@ __all__ = (
     'StatementDocumentSerializer',
     'CalendarPlanDocumentSerializer',
     'CalendarPlanItemSerializer',
+    'ProjectStartDescriptionSerializer',
     'UseOfBudgetDocumentSerializer',
     'UseOfBudgetDocumentItemSerializer',
     'AttachmentSerializer',
@@ -201,6 +202,41 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
         data = DocumentCompositionSerializer.empty_data(project)
         data['items'] = [{}] * project.number_of_milestones
         return data
+
+
+class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.ProjectStartDescription
+
+    document = DocumentSerializer(required=True)
+
+    prod_fact = SerializerMoneyField(required=False)
+    prod_plan = SerializerMoneyField(required=False)
+    prod_avrg = SerializerMoneyField(required=False)
+    rlzn_fact = SerializerMoneyField(required=False)
+    rlzn_plan = SerializerMoneyField(required=False)
+    rlzn_avrg = SerializerMoneyField(required=False)
+    rlzn_exp_fact = SerializerMoneyField(required=False)
+    rlzn_exp_plan = SerializerMoneyField(required=False)
+    rlzn_exp_avrg = SerializerMoneyField(required=False)
+    tax_fact = SerializerMoneyField(required=False)
+    tax_plan = SerializerMoneyField(required=False)
+    tax_avrg = SerializerMoneyField(required=False)
+    tax_local_fact = SerializerMoneyField(required=False)
+    tax_local_plan = SerializerMoneyField(required=False)
+    tax_local_avrg = SerializerMoneyField(required=False)
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_doc_(**validated_data)
+        return doc
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
+
+
 
 
 class CostTypeSerializer(serializers.ModelSerializer):

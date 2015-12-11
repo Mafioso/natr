@@ -13,6 +13,7 @@ from documents.models import (
     BasicProjectPasportDocument,
     InnovativeProjectPasportDocument,
     CostDocument,
+    ProjectStartDescription
 )
 
 class Project(models.Model):
@@ -91,6 +92,10 @@ class Project(models.Model):
     def monitoring(self):
         return self.monitoring_set.first()
 
+    @property
+    def start_description(self):
+        return ProjectStartDescription.objects.get(document__project=self)
+
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
 
@@ -157,6 +162,14 @@ class Project(models.Model):
             return None
 
         return self.monitoring.id
+
+    def get_start_description_id(self):
+        try:
+            monitoring = ProjectStartDescription.objects.get(document__project=self)
+        except ProjectStartDescription.DoesNotExist:
+            return None
+
+        return self.start_description.id
 
 
 class FundingType(models.Model):

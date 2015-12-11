@@ -537,6 +537,54 @@ class CalendarPlanItem(models.Model):
     # milestone = models.OneToOneField('Milestone', null=True, related_name='calendar_plan_item', on_delete=models.CASCADE)
 
 
+class ProjectStartDescription(models.Model):
+    '''
+        Показатели по состоянию на начало реализации проекта
+    '''
+    tp = 'startdescription'
+
+    document = models.OneToOneField(Document, related_name='startdescription', on_delete=models.CASCADE)
+
+    report_date = models.DateTimeField(null=True, blank=True)
+
+    workplaces_fact = models.IntegerField(u'Количество рабочих мест (Факт)', null=True, blank=True)
+    workplaces_plan = models.IntegerField(u'Количество рабочих мест (План)', null=True, blank=True)
+    workplaces_avrg = models.IntegerField(u'Количество рабочих мест (Средние показатели)', null=True, blank=True)
+
+    types_fact = models.IntegerField(u'Количество видов производимой продукции (Факт)', null=True, blank=True)
+    types_plan = models.IntegerField(u'Количество видов производимой продукции (План)', null=True, blank=True)
+    types_avrg = models.IntegerField(u'Количество видов производимой продукции (Средние показатели)', null=True, blank=True)
+
+    prod_fact = MoneyField(u'Объем выпускаемой продукции (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    prod_plan = MoneyField(u'Объем выпускаемой продукции (План)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    prod_avrg = MoneyField(u'Объем выпускаемой продукции (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+
+    rlzn_fact = MoneyField(u'Объем реализуемой продукции (внутренний рынок) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    rlzn_plan = MoneyField(u'Объем реализуемой продукции (внутренний рынок) (План)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    rlzn_avrg = MoneyField(u'Объем реализуемой продукции (внутренний рынок) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+
+    rlzn_exp_fact = MoneyField(u'Объем реализуемой продукции (экспорт) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    rlzn_exp_plan = MoneyField(u'Объем реализуемой продукции (экспорт) (План)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    rlzn_exp_avrg = MoneyField(u'Объем реализуемой продукции (экспорт) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+
+    tax_fact = MoneyField(u'Объем налоговых отчислений (В Республиканский бюджет) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    tax_plan = MoneyField(u'Объем налоговых отчислений (В Республиканский бюджет) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    tax_avrg = MoneyField(u'Объем налоговых отчислений (В Республиканский бюджет) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+
+    tax_local_fact = MoneyField(u'Объем налоговых отчислений (В местный бюджет) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    tax_local_plan = MoneyField(u'Объем налоговых отчислений (В местный бюджет) (План)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    tax_local_avrg = MoneyField(u'Объем налоговых отчислений (В местный бюджет) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+
+    innovs_fact = models.IntegerField(u'Количество внедренных инновационных продуктов (Факт)', null=True, blank=True)
+    innovs_plan = models.IntegerField(u'Количество внедренных инновационных продуктов (План)', null=True, blank=True)
+    innovs_avrg = models.IntegerField(u'Количество внедренных инновационных продуктов (Средние показатели)', null=True, blank=True)
+
+    kaz_part_fact = models.DecimalField(u'Доля Казахстанского содержания в продукции (Факт)', max_digits=20, decimal_places=2, null=True, blank=True)
+    kaz_part_plan = models.DecimalField(u'Доля Казахстанского содержания в продукции (План)', max_digits=20, decimal_places=2, null=True, blank=True)
+    kaz_part_avrg = models.DecimalField(u'Доля Казахстанского содержания в продукции (Средние показатели)', max_digits=20, decimal_places=2, null=True, blank=True)
+
+
+
 class CostItem(models.Model):
     type = models.IntegerField(null=True)
     budgeting_document = models.ForeignKey(
