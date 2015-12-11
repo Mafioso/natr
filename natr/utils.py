@@ -21,6 +21,13 @@ def fake_path():
     return uri
 
 
+def money_to_python(money_obj):
+    return {
+        'currency': money_obj.currency.code,
+        'amount': money_obj.amount
+    }
+
+
 def pretty(d, indent=0):
     if isinstance(d, list) and d and hasattr(d[0], 'iteritems'):
         for item in d:
@@ -41,4 +48,7 @@ def pretty(d, indent=0):
                     value = val
                 print u'\t' * (indent+1) + unicode(value)
 
+
         return ''
+
+

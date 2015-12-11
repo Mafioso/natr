@@ -1,4 +1,4 @@
-    #!/usr/bin/env python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 __author__ = 'xepa4ep'
@@ -13,6 +13,7 @@ __author__ = 'xepa4ep'
 5) Получение уведомлений о приблизжающимся отчете
 
 """
+import json
 from django.utils import timezone
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
@@ -31,6 +32,25 @@ class Notification(models.Model):
 
 	context_type = models.ForeignKey(ContentType, null=True)
 	context_id = models.PositiveIntegerField(null=True)
+
+	TRANSH_PAY = 1
+
+	MILESTONE_NOTIFS = (
+		TRANSH_PAY,
+	)
+	MILESTONE_NOTIFS_CAPS = (
+		u'оплата транша'
+	)
+
+	NOTIF_TYPES_CAPS = zip(
+		MILESTONE_NOTIFS,
+		MILESTONE_NOTIFS_CAPS
+	)
+
+	context_type = models.ForeignKey(ContentType, null=True)
+	context_id = models.PositiveIntegerField(null=True)
+	notif_type = models.IntegerField(choices=NOTIF_TYPES_CAPS)
+
 	context = GenericForeignKey('context_type', 'context_id')
 	params = models.TextField(u'запакованные в json параметры уведомления', null=True)
 
@@ -44,6 +64,9 @@ class Notification(models.Model):
 				self.context_type, self.context_id)
 			self.params = JSONRenderer().render(notif_params)
 			self.save()
+
+		notif_params = self.prepare_msg()
+
 		for uid, subscriber_id, user_channel in zip(uids, subscriber_ids, channels):
 			notif_params['ack'] = subscriber_id
 			centrifugo_client.publish(user_channel, notif_params)
@@ -51,12 +74,21 @@ class Notification(models.Model):
 		# propogate error if it happens
 		return centrifugo_client.send()
 
+	def prepare_msg(self):
+		if not self.params:
+			notif_params = self.context.notification(
+				self.context_type, self.context_id, self.notif_type)
+			self.params = JSONRenderer().render(notif_params)
+			self.save()
+		return json.loads(self.params)
+
 	def store_by_subscriber(self):
 		users = self.context.notification_subscribers()
 		subscribers = []
 		for user in users:
-			subscribers.append(NotificationSubscribtion.objects.create(
-				account=user, notification=self))
+			subscribers.append(
+				NotificationSubscribtion.objects.create(
+					account=user, notification=self))
 		return (
 			[u.id for u in users],
 			[s.id for s in subscribers]
