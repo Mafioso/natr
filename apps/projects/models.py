@@ -8,14 +8,8 @@ from django.utils import timezone
 from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
-
-
-from natr import utils
-from auth2.models import Account
-from notifications.models import Notification
-
 from documents.models import (
-    CalendarPlanDocument, 
+    CalendarPlanDocument,
     BasicProjectPasportDocument,
     InnovativeProjectPasportDocument,
     CostDocument,
@@ -56,7 +50,7 @@ class Project(models.Model):
 
     aggreement = models.OneToOneField(
         'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)
-    
+
     statement = models.OneToOneField(
         'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
 
@@ -122,11 +116,11 @@ class Project(models.Model):
 
         return self.calendar_plan.id
 
-    @property 
+    @property
     def pasport_type(self):
         if self.pasport is None:
             return None
-            
+
         pasport_type = None
         try:
             pasport = BasicProjectPasportDocument.objects.get(document__project=self)
@@ -137,7 +131,7 @@ class Project(models.Model):
 
         return pasport_type
 
-    @property 
+    @property
     def pasport(self):
         pasport = None
         try:
@@ -147,16 +141,16 @@ class Project(models.Model):
 
         return pasport
 
-    @property 
+    @property
     def get_pasport_id(self):
         return self.pasport.id
 
 
 class FundingType(models.Model):
- 
-    TYPE_KEYS = (ACQ_TECHNOLOGY, 
-                    INDUST_RESEARCH, 
-                    PERSONNEL_TRAINING, 
+
+    TYPE_KEYS = (ACQ_TECHNOLOGY,
+                    INDUST_RESEARCH,
+                    PERSONNEL_TRAINING,
                     PROD_SUPPORT,
                     PATENTING,
                     COMMERCIALIZATION,
@@ -184,7 +178,7 @@ class FundingType(models.Model):
 
 
 class Report(ProjectBasedModel):
-    
+
     class Meta:
         ordering = ['milestone__number']
 
@@ -203,7 +197,7 @@ class Report(ProjectBasedModel):
 
     type = models.IntegerField(null=True)
     date = models.DateTimeField(u'Дата отчета', null=True)
-    
+
     period = models.CharField(null=True, max_length=255)
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
 
@@ -219,8 +213,8 @@ class Report(ProjectBasedModel):
 
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
-    
-    
+
+
 class Corollary(ProjectBasedModel):
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
     STATUS_CAPS = (
@@ -238,7 +232,7 @@ class Corollary(ProjectBasedModel):
     domestication_period = models.CharField(u'Срок освоения', max_length=255, null=True)
     impl_period = models.CharField(u'Срок реализации', max_length=255, null=True)
     number_of_milestones = models.IntegerField(u'Количество этапов', default=1)
-    report_delivery_date = models.DateTimeField(null=True)  # from report 
+    report_delivery_date = models.DateTimeField(null=True)  # from report
     report = models.OneToOneField('Report', null=True)
 
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
@@ -248,7 +242,7 @@ class Corollary(ProjectBasedModel):
 
 
 class Milestone(ProjectBasedModel):
-    
+
 
     class Meta:
         ordering = ['number']
@@ -275,7 +269,7 @@ class Milestone(ProjectBasedModel):
     date_end = models.DateTimeField(null=True)
     period = models.IntegerField(u'Срок выполнения работ (месяцев)', null=True)
     status = models.IntegerField(null=True, choices=STATUSES_OPTS, default=NOT_STARTED)
-    
+
     date_funded = models.DateTimeField(u'Дата оплаты', null=True)
     fundings = MoneyField(u'Сумма оплаты по факту',
         max_digits=20, decimal_places=2, default_currency='KZT',
@@ -284,29 +278,6 @@ class Milestone(ProjectBasedModel):
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
 
-    def notification(self, cttype, ctid, notif_type):
-        """Prepare notification data to send to client (user agent, mobile)."""
-        assert notif_type in Notification.MILESTONE_NOTIFS, "Expected MILESTONE_NOTIFS"
-        data = {
-            'context_type': cttype.model,
-            'context_id': ctid,
-            'status': self.status,
-            'number': self.number,
-            'project': self.project_id,
-            'date_start': self.date_start,
-            'notif_type': Notification.TRANSH_PAY
-        }
-
-        if notif_type == Notification.TRANSH_PAY:
-            data.update({
-                'date_funded': self.date_funded,
-                'fundings': utils.money_to_python(self.fundings)
-            })
-        return data
-
-    def notification_subscribers(self):
-        # todo: implement
-        return Account.objects.all()
 
     def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():
