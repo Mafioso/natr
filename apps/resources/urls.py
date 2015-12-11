@@ -13,6 +13,7 @@ from .document import (
 	CostDocumentViewSet
 )
 from .journal import JournalActivityViewSet, JournalViewSet
+from .notification import NotificationViewSet, NotificationSubscriptionViewSet
 
 router = DefaultRouter()
 router.register(r'documents', DocumentViewSet)
@@ -34,6 +35,8 @@ monitoring_router.register(r'todos', MonitoringTodoViewSet, base_name='monitorin
 
 router.register(r'journals', JournalViewSet, 'journal')
 router.register(r'journal/activities', JournalActivityViewSet, 'activity')
+router.register(r'notifications', NotificationViewSet, 'notification')
+router.register(r'my-notifications', NotificationSubscriptionViewSet, 'notif_subscription')
 
 urlpatterns = [
 	url(r'', include(router.urls)),

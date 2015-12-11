@@ -1,9 +1,11 @@
 import random
 from moneyed import KZT, Money
 from django.core.management.base import BaseCommand, CommandError
+from django.core.management import call_command
 from projects import factories
 from documents import factories as doc_factories, models as doc_models
 from journals import factories as journal_factories
+from notifications import factories as notif_factories
 
 class Command(BaseCommand):
 
@@ -11,11 +13,23 @@ class Command(BaseCommand):
 		 u'Create random data for testing purposes.'
 	)
 
-	def handle(self, *a, **kw):
-		projects = self.gen_projects()
-	
+	def add_arguments(self, parser):
+		parser.add_argument('--replace',
+			action='store_true',
+			dest='replace',
+			default=False,
+			help='Clear data before appending new one.')
 
-	def gen_projects(self):
+	def handle(self, *a, **kw):
+		if kw['replace'] is True:
+			call_command('flush')
+		self.gen()
+	
+	def gen(self):
+		_projects = self.gen_projects_and_related()
+		_notifs = self.gen_notifications()
+
+	def gen_projects_and_related(self):
 		rv = []
 		for _ in xrange(5):
 			prj = factories.ProjectWithMilestones.create()
@@ -37,6 +51,14 @@ class Command(BaseCommand):
 			self.gen_monitoring(prj)
 			self.gen_reports(prj)
 			self.gen_journal(prj)
+		return rv
+
+	def gen_notifications(self):
+		rv = []
+		for _ in xrange(10):
+			n = notif_factories.Notification.create()
+			n.prepare_msg()
+			rv.append(n)
 		return rv
 
 	def gen_reports(self, project):
