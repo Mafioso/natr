@@ -68,6 +68,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     cost_id = serializers.IntegerField(source='cost_document_id', read_only=True, required=False)
     pasport_type = serializers.CharField(read_only=True, required=False)
     pasport_id = serializers.IntegerField(source='get_pasport_id', read_only=True, required=False)
+    monitoring_id = serializers.IntegerField(source='get_monitoring_id', read_only=True, required=False)
+    start_description_id = serializers.IntegerField(source='get_start_description_id', read_only=True, required=False)
     current_milestone = MilestoneSerializer(required=False)
 
     def create(self, validated_data):
@@ -75,10 +77,13 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', None)
         aggrement_data = validated_data.pop('aggreement', None)
+        other_agreements = validated_data.pop('other_agreements', None)
 
         prj = Project.objects.create(**validated_data)
+        prj.save()
 
         if organization_details:
+            organization_details['project'] = prj.id
             organization_details = OrganizationSerializer(data=organization_details)
             organization_details.is_valid(raise_exception=True)
             prj.organization_details = organization_details.save()
@@ -98,7 +103,13 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             agr_ser.is_valid(raise_exception=True)
             prj.aggreement = agr_ser.save()
 
+        if other_agreements:
+            oth_agr_ser = OtherAgreementsDocumentSerializer(data=other_agreements)
+            oth_agr_ser.is_valid(raise_exception=True)
+            oth_agr_ser.save()
+
         prj.save()
+
 
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
@@ -138,6 +149,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             prj_pasport = BasicProjectPasportSerializer.build_empty(prj)
             prj_pasport.is_valid(raise_exception=True)
             prj_pasport.save()
+
+        #create project start description
+        prj_std = ProjectStartDescriptionSerializer.build_empty(prj)
+        prj_std.is_valid(raise_exception=True)
+        prj_std.save(empty=True)
 
         return prj
 

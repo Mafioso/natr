@@ -13,6 +13,7 @@ from documents.models import (
     BasicProjectPasportDocument,
     InnovativeProjectPasportDocument,
     CostDocument,
+    ProjectStartDescription
 )
 
 class Project(models.Model):
@@ -31,6 +32,7 @@ class Project(models.Model):
         u'высокий')
     name = models.CharField(max_length=1024, null=True, blank=True)
     description = models.CharField(max_length=1024, null=True, blank=True)
+    innovation = models.CharField(u'Инновационность', max_length=1024, null=True, blank=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     total_month = models.IntegerField(u'Срок реализации проекта (месяцы)', default=24)
@@ -44,6 +46,7 @@ class Project(models.Model):
     own_fundings = MoneyField(
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
+    funding_date = models.DateTimeField(null=True)
     number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
 
     risk_degree = models.IntegerField(u'Степень риска', default=SMALL_R)
@@ -53,8 +56,6 @@ class Project(models.Model):
 
     statement = models.OneToOneField(
         'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
-
-
 
     # grantee = models.ForeignKey('Grantee', related_name='projects')
     # user = models.ForeignKey('User', related_name='projects')
@@ -90,6 +91,10 @@ class Project(models.Model):
     @property
     def monitoring(self):
         return self.monitoring_set.first()
+
+    @property
+    def start_description(self):
+        return ProjectStartDescription.objects.get(document__project=self)
 
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
@@ -137,13 +142,35 @@ class Project(models.Model):
         try:
             pasport = BasicProjectPasportDocument.objects.get(document__project=self)
         except BasicProjectPasportDocument.DoesNotExist:
-            pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
+            try:
+                pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
+            except InnovativeProjectPasportDocument.DoesNotExist:
+                pass
 
         return pasport
 
     @property
     def get_pasport_id(self):
+        if not self.pasport:
+            return None
+
         return self.pasport.id
+
+    def get_monitoring_id(self):
+        try:
+            monitoring = Monitoring.objects.get(project=self)
+        except Monitoring.DoesNotExist:
+            return None
+
+        return self.monitoring.id
+
+    def get_start_description_id(self):
+        try:
+            monitoring = ProjectStartDescription.objects.get(document__project=self)
+        except ProjectStartDescription.DoesNotExist:
+            return None
+
+        return self.start_description.id
 
 
 class FundingType(models.Model):
@@ -346,7 +373,15 @@ class Milestone(ProjectBasedModel):
 
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
-    pass
+    def update_items(self, **kwargs):
+        for item in kwargs['items']:
+            if 'id' in item:
+                monitoring_todo = MonitoringTodo(id=item['id'], **item)
+            else:
+                monitoring_todo = MonitoringTodo(monitoring=self, **item)
+            monitoring_todo.save()
+
+        return self.todos.all()
 
 
 class MonitoringTodo(ProjectBasedModel):

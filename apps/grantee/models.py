@@ -8,15 +8,26 @@ from django.db import models
 
 
 class Organization(models.Model):
-	name = models.CharField(u'Название юридического лица', max_length=255)
-	bin = models.CharField(u'БИН', max_length=255)
-	bik = models.CharField(u'БИК', max_length=255)
-	iik = models.CharField(u'ИИК', max_length=255)
-	address_1 = models.CharField(u'Юридический адрес', max_length=1024)
-	address_2 = models.CharField(u'Фактический адрес', max_length=1024)
-	first_head_fio = models.CharField(u'ФИО первого руководителя', max_length=512)
+    ORG_TYPES = INDIVIDUAL, COMPANY = range(2)
 
-	project = models.OneToOneField(
+    ORG_TYPES_CAPS = (
+        u'Физическое лицо',
+        u'Юридическое лицо'
+    )
+
+    ORG_TYPES_OPTS = zip(ORG_TYPES, ORG_TYPES_CAPS)
+
+    name = models.CharField(u'Название грантополучателя', max_length=255, null=True)    
+    org_type = models.IntegerField(u'Вид грантополучателя', default=INDIVIDUAL, choices=ORG_TYPES_OPTS)
+    bin = models.CharField(u'БИН', max_length=255, null=True)
+    bik = models.CharField(u'БИК-ИИН', max_length=255, null=True)
+    iik = models.CharField(u'ИИК', max_length=255, null=True)
+    address_1 = models.CharField(u'Юридический адрес', max_length=1024, null=True)
+    address_2 = models.CharField(u'Фактический адрес', max_length=1024)
+    requisites = models.CharField(u'Банковский реквизиты', max_length=1024, null=True)
+    first_head_fio = models.CharField(u'ФИО первого руководителя', max_length=512, null=True)
+    
+    project = models.OneToOneField(
         'projects.Project', null=True, on_delete=models.CASCADE,
         related_name='organization_details')
 
@@ -25,9 +36,9 @@ class ShareHolder(models.Model):
 	organization = models.ForeignKey(
 		'Organization', on_delete=models.CASCADE, null=True,
 		related_name='share_holders')
-	fio = models.CharField(u'ФИО', max_length=512)
-	iin = models.CharField(u'ИИН', max_length=255)
-	share_percentage = models.IntegerField(u'Процент доли', default=0)
+	fio = models.CharField(u'ФИО', max_length=512, null=True)
+	iin = models.CharField(u'ИИН', max_length=255, null=True)
+	share_percentage = models.IntegerField(u'Процент доли', default=0, null=True)
 
 
 class ContactDetails(models.Model):
@@ -35,9 +46,19 @@ class ContactDetails(models.Model):
 		'Organization', null=True, on_delete=models.SET_NULL,
 		related_name='contact_details')
 
-	phone_number = models.CharField(u'Телефон', max_length=255)
-	email = models.EmailField(u'Почтовый адрес')
+	phone_number = models.CharField(u'Телефон', max_length=255, null=True)
+	email = models.EmailField(u'Почтовый адрес, null=True')
 
+class AuthorizedToInteractGrantee(models.Model):
+    '''
+        Контактные данные лица, уполномоченного ГП для взаимодействия с АО НАТР
+    '''
+    organization = models.OneToOneField(
+        'Organization', null=True, on_delete=models.SET_NULL,
+        related_name='authorized_grantee')
+    full_name = models.CharField(u'ФИО', max_length=512, null=True)
+    phone_number = models.CharField(u'Телефон', max_length=255, null=True)
+    email = models.EmailField(u'Почтовый адрес', null=True)
 
 
 class Grantee(models.Model):

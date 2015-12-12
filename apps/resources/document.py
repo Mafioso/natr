@@ -17,7 +17,7 @@ UseOfBudgetDocument = doc_models.UseOfBudgetDocument
 BasicProjectPasportDocument = doc_models.BasicProjectPasportDocument
 InnovativeProjectPasportDocument = doc_models.InnovativeProjectPasportDocument
 CostDocument = doc_models.CostDocument
-
+ProjectStartDescription = doc_models.ProjectStartDescription
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -36,7 +36,7 @@ class InnovativeProjectPasportDocumentViewSet(viewsets.ModelViewSet):
 
     serializer_class = InnovativeProjectPasportSerializer
     queryset = InnovativeProjectPasportDocument.objects.all()
-        
+
 
 class CalendarPlanDocumentViewSet(viewsets.ModelViewSet):
 
@@ -66,11 +66,17 @@ class CalendarPlanDocumentViewSet(viewsets.ModelViewSet):
         """
         Update calendar plan items
         """
-        obj_cp = self.get_object()        
+        obj_cp = self.get_object()     
         obj_cp.update_items(**request.data)
         obj_ser = self.get_serializer(instance=obj_cp)
         headers = self.get_success_headers(obj_ser.data)
         return response.Response(obj_ser.data, headers=headers)
+
+
+class ProjectStartDescriptionViewSet(viewsets.ModelViewSet):
+
+    serializer_class = ProjectStartDescriptionSerializer
+    queryset = ProjectStartDescription.objects.all()  
 
 
 class AttachmentViewSet(viewsets.ModelViewSet):
