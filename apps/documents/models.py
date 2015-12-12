@@ -816,6 +816,14 @@ class MilestoneFactCostRow(models.Model):
     def cost_document(self):
         return self.cost_type.cost_document
 
+    @classmethod
+    def create(cls, **data):
+        gp_docs = data.pop('gp_docs', [])
+        obj = MilestoneFactCostRow.objects.create(**data)
+        gp_docs = [GPDocument.objects.create(**gp_doc) for gp_doc in gp_docs]
+        obj.add(*gp_docs)
+        return obj
+
 
 class MilestoneFundingRow(models.Model):
     u"""Источник финансирования по этапу"""
