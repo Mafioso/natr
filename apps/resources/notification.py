@@ -55,3 +55,10 @@ class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
 		new_data_dict = serializer.validated_data
 		# todo compare logic here
 		serializer.save()
+
+
+class NotificationCounterViewSet(viewsets.ModelViewSet):
+		
+	queryset = models.NotificationCounter.objects.all()
+	serializer_class = serializers.NotificationCounterSerializer
+

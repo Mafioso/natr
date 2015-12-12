@@ -203,4 +203,82 @@ class ProjectsApiTestCase(CommonTestMixin, APITestCase):
         self.assertEqual(data['risk_degree'], models.Project.MEDIUM_R)
         upd_prj = models.Project.objects.get(pk=prj.id)
         self.assertEqual(data['risk_degree'], upd_prj.risk_degree)
+
+    def test_create_project_hotfix_agreement(self):
+        data = {
+            "name":"Название проекта",
+            "organization_details":
+            {
+                "share_holders":[
+                    {
+                        "fio":"ФИО",
+                        "iin":85208520,
+                        "share_percentage":50
+                    }],
+                "contact_details":
+                    {
+                        "phone_number":"87007161130",
+                        "email":"abyken.nurlan@gmail.com"
+                    },
+                "authorized_grantee":
+                    {
+                        "full_name":"Контактные данные лица, уполномоченного ГП для взаимодействия с АО НАТР",
+                        "phone_number":"87007161130",
+                        "email":"abyken.nurlan@gmail.com"
+                    },
+                "name":"Название",
+                "org_type":"0",
+                "address_1":"Юридический адрес",
+                "address_2":"Фактический адрес",
+                "bin":"8520",
+                "bik":"8520",
+                "iik":"8520",
+                "requisites":"Банковские реквизиты 8520",
+                "first_head_fio":"ФИО первого руководителя"
+            },
+            "aggreement":
+                {
+                    "name":"Название договора",
+                    "number":7,
+                    "date_sign":"2015-12-27T00:00:00.000Z",
+                    "subject":"Предмет договора",
+                    "funding":
+                        {
+                            "amount":8520
+                        }
+                },
+            "funding_type":
+                {
+                    "name":"INDS_RES"
+                },
+            "funding_date":"2015-12-22T00:00:00.000Z",
+            "description":"Описание проекта",
+            "total_month":"6",
+            "number_of_milestones":2,
+            "innovation":"Инновационность",
+            "other_agreements":
+                {
+                    "items":[
+                        {
+                            "number":2,
+                            "date_sign":"2015-12-21T00:00:00.000Z"
+                        }]
+                },
+            "fundings":
+                {
+                    "amount":8520
+                },
+            "own_fundings":
+                {
+                    "amount":8520
+                }
+        }
+        url, parsed = self.prepare_urls('project-list')
+        response = self.client.post(url, data, format='json')
+        # self.chk_ok(response)
+        response_data = self.load_response(response)
+        utils.pretty(response_data)
+        print response_data
+
+
             

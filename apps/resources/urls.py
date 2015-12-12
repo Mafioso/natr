@@ -12,7 +12,8 @@ from .document import (
 	CostDocumentViewSet
 )
 from .journal import JournalActivityViewSet, JournalViewSet
-from .notification import NotificationViewSet, NotificationSubscriptionViewSet
+from .notification import NotificationViewSet, NotificationSubscriptionViewSet, NotificationCounterViewSet
+from .user import get_current_user
 
 router = DefaultRouter()
 router.register(r'documents', DocumentViewSet)
@@ -35,8 +36,10 @@ router.register(r'journals', JournalViewSet, 'journal')
 router.register(r'journal/activities', JournalActivityViewSet, 'activity')
 router.register(r'notifications', NotificationViewSet, 'notification')
 router.register(r'my-notifications', NotificationSubscriptionViewSet, 'notif_subscription')
+router.register(r'notif-counter', NotificationCounterViewSet, 'notif_counter')
 
 urlpatterns = [
 	url(r'', include(router.urls)),
 	url(r'', include(monitoring_router.urls)),
+	url(r'current-user/$', get_current_user)
 ]
