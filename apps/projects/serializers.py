@@ -71,6 +71,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     monitoring_id = serializers.IntegerField(source='get_monitoring_id', read_only=True, required=False)
     start_description_id = serializers.IntegerField(source='get_start_description_id', read_only=True, required=False)
     current_milestone = MilestoneSerializer(required=False)
+    other_agreements = OtherAgreementsDocumentSerializer(required=False)
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
@@ -104,6 +105,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             prj.aggreement = agr_ser.save()
 
         if other_agreements:
+            other_agreements['document']['project'] = prj.id
             oth_agr_ser = OtherAgreementsDocumentSerializer(data=other_agreements)
             oth_agr_ser.is_valid(raise_exception=True)
             oth_agr_ser.save()
