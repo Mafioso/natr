@@ -529,7 +529,6 @@ class CalendarPlanDocument(models.Model):
             if isinstance(items[0], dict):
                 for item in items:
                     item['calendar_plan_id'] = self.id
-                    fundings = item.pop('fundings', None)
                     updated_item = CalendarPlanItem(id=item.pop('id'), **item)
                     updated_item.save()
 
