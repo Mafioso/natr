@@ -551,11 +551,9 @@ class CalendarPlanItem(models.Model):
     deadline = models.IntegerField(u'Срок выполнения работ (месяцев)', null=True, blank=True)
     reporting = models.TextField(u'Форма и вид отчетности', null=True, blank=True)
 
-    # field below will store as json-data
-    # {current: ‘KZT’, value: 123}
     fundings = MoneyField(
         u'Расчетная цена этапа (тенге)',
-        max_digits=20, decimal_places=2, default_currency='KZT')
+        max_digits=20, decimal_places=2, default_currency=settings.KZT)
 
     calendar_plan = models.ForeignKey(CalendarPlanDocument, related_name='items')
     # milestone = models.OneToOneField('Milestone', null=True, related_name='calendar_plan_item', on_delete=models.CASCADE)
