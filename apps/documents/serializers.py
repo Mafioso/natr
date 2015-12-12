@@ -78,6 +78,7 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
         model = models.AgreementDocument
 
     document = DocumentSerializer(required=True)
+    funding = SerializerMoneyField(required=False)
 
     def create(self, validated_data):
         doc = models.Document.dml.create_agreement(**validated_data)

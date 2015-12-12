@@ -66,6 +66,14 @@ class Account(AbstractBaseUser, PermissionsMixin):
         "Returns the short name for the user."
         return self.first_name
 
+    def get_counters(self):
+        return {
+            'notif': {
+                'id': self.notif_counter.id,
+                'counter': self.notif_counter.counter
+            }
+        }
+
 
 class NatrUser(models.Model):
 

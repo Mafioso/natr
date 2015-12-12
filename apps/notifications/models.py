@@ -61,7 +61,7 @@ class Notification(models.Model):
 		channels = map(utils.prepare_channel, uids)
 		if not self.params:
 			notif_params = self.context.notification(
-				self.context_type, self.context_id)
+				self.context_type, self.context_id, self.notif_type)
 			self.params = JSONRenderer().render(notif_params)
 			self.save()
 
@@ -134,3 +134,36 @@ class NotificationSubscribtion(models.Model):
 		self.date_read = dt
 		self.status = NotificationSubscribtion.READ
 		self.save()
+
+
+class NotificationCounter(models.Model):
+
+	account = models.OneToOneField('auth2.Account', related_name='notif_counter')
+	counter = models.IntegerField(default=0)
+
+	def incr_counter(self):
+		self.counter += 1
+		self.save()
+
+	def reset_counter(self):
+		self.counter = 0
+		self.save()
+
+	@classmethod
+	def get_or_create(cls, account):
+		try:
+			counter = NotificationCounter.objects.get(account=account)
+		except NotificationCounter.DoesNotExist:
+			counter = NotificationCounter.objects.create(account=account)
+		return counter
+
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+@receiver(post_save, sender=Account)
+def on_user_create(sender, instance, created=False, **kwargs):
+	if not created:
+		return   # not interested
+	NotificationCounter.get_or_create(instance)

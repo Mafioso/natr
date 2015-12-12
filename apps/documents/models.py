@@ -238,6 +238,9 @@ class AgreementDocument(models.Model):
     name = models.CharField(u'Название договора', max_length=1024, default='')
     # funding = MoneyField(u'Сумма договора', max_digits=20, null=True, blank=True, decimal_places=2, default_currency='KZT')
     subject = models.TextField(u'Предмет договора', default='')
+    funding = MoneyField(
+        u'Полная стоимость работ в тенге', max_digits=20, null=True,
+        decimal_places=2, default_currency='KZT')
 
 
 class OtherAgreementsDocument(models.Model):

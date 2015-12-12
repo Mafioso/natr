@@ -8,6 +8,9 @@ from django.utils import timezone
 from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
+from natr import utils
+from django.contrib.auth import get_user_model
+from notifications.models import Notification
 from documents.models import (
     CalendarPlanDocument,
     BasicProjectPasportDocument,
@@ -305,6 +308,29 @@ class Milestone(ProjectBasedModel):
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
 
+    def notification(self, cttype, ctid, notif_type):
+        """Prepare notification data to send to client (user agent, mobile)."""
+        assert notif_type in Notification.MILESTONE_NOTIFS, "Expected MILESTONE_NOTIFS"
+        data = {
+            'context_type': cttype.model,
+            'context_id': ctid,
+            'status': self.status,
+            'number': self.number,
+            'project': self.project_id,
+            'date_start': self.date_start,
+            'notif_type': Notification.TRANSH_PAY
+        }
+
+        if notif_type == Notification.TRANSH_PAY:
+            data.update({
+                'date_funded': self.date_funded,
+                'fundings': utils.money_to_python(self.fundings)
+            })
+        return data
+
+    def notification_subscribers(self):
+        # todo: implement
+        return get_user_model().objects.all()
 
     def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():
