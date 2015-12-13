@@ -17,7 +17,7 @@ from documents.models import (
     BasicProjectPasportDocument,
     InnovativeProjectPasportDocument,
     CostDocument,
-    ProjectStartDescription
+    ProjectStartDescription,
 )
 
 class Project(models.Model):

@@ -5,9 +5,12 @@ __author__ = 'xepa4ep'
 
 import datetime
 from django.test import TestCase
+from django.conf import settings
 from natr import utils
 from documents.serializers import *
 from documents import models, factories
+from projects.serializers import ProjectSerializer
+from projects import factories as prj_factories
 
 # Create your tests here.
 
@@ -16,6 +19,68 @@ class DocumentSerializerTestCase(TestCase):
 
     def setUp(self):
         self.cnt = 5
+        self.data = {
+          "fundings": {
+            "currency": "KZT",
+            "amount": 300000000
+          },
+          "own_fundings": {
+            "currency": "KZT",
+            "amount": 100000
+          },
+          "funding_type": {
+            "name": "ACQ_TECH"
+          },
+          "aggreement": {
+            "document": {
+              "external_id": "123124124124",
+              "status": 0,
+              "date_sign": "2015-08-19T00:00",
+            },
+            "number": 123,
+            "name": u"Инновационный грант на реализацию и коммерциализацию технологий на стадии создания атомного реактора",
+            "subject": u"Реализация проекта"
+          },
+          "statement": {
+            "document": {
+              "external_id": "412513512351235",
+              "status": 0,
+              "date_sign": "2015-08-19T00:00",
+            }
+          },
+          "organization_details": {
+            "share_holders": [
+              {
+                "fio": u"Рустем Камун",
+                "iin": "124124124124",
+                "share_percentage": 20,
+                "organization": "Fatigue science"
+              }
+            ],
+            "contact_details": {
+              "phone_number": "87772952190",
+              "email": "r.kamun@gmail.com",
+              "organization": "Fatigue science"
+            },
+            "name": "Fatigue Science",
+            "bin": "124124124981924",
+            "bik": "4124891850821390581",
+            "iik": "124124124124124",
+            "address_1": "Tolebi 8, 34",
+            "address_2": "Lenina 14, 1",
+            "first_head_fio": u"Саттар Стамкулов",
+          },
+          "name": "lorem",
+          "description": "lorem ipsum",
+          "date_start": "2015-09-01T00:00",
+          "date_end": "2016-05-18T00:00",
+          "total_month": 0,
+          "status": 1,
+          "number_of_milestones": 7
+        }
+        prj_ser = ProjectSerializer(data=self.data)
+        prj_ser.is_valid(raise_exception=True)
+        self.prj = prj_ser.save()
 
     def test_create_document(self):
         attach_test_ids = map(str, range(3))
@@ -77,7 +142,127 @@ class DocumentSerializerTestCase(TestCase):
         test_(doc_obj, [attach_ids[2]])
 
 
-    def test_create_budget_document_item(self):
-        pass
+    def test_create_cost_document_when_project_created(self):
+        self.assertIsNotNone(self.prj.cost_document)
+        self.assertIsInstance(self.prj.cost_document_id, int)
 
+    def test_create_fake_cost_document(self):
+        cost_doc = factories.CostDocument.create()
+        self.assertTrue(len(cost_doc.cost_types.all()) > 0)
+        self.assertTrue(len(cost_doc.funding_types.all()) > 0)
+        self.assertTrue(len(cost_doc.milestone_costs.all()) > 0)
+        self.assertTrue(len(cost_doc.milestone_fundings.all()) > 0)
+        for cost_type in cost_doc.cost_types.all():
+            self.assertTrue(len(cost_doc.get_milestone_costs_row(cost_type)) > 0)
+        for funding_type in cost_doc.funding_types.all():
+            self.assertTrue(len(cost_doc.get_milestone_fundings_row(funding_type)) > 0)
 
+    def test_create_gp_doc(self):
+        data_thin = {
+            'document': {},
+            'name': u'lorem',
+            'number': u'123'
+        }
+        cost_row = factories.FactMilestoneCostRow.create()
+        data_with_row = {
+            'document': {},
+            'name': u'lorem',
+            'number': u'123',
+            'cost_row': cost_row.id
+        }
+        
+        ser = GPDocumentSerializer(data=data_thin)
+        ser.is_valid(raise_exception=True)
+        thin_obj = ser.save()
+        for key in data_thin:
+            if key == 'document':
+                self.assertIsNotNone(thin_obj.document)
+                continue
+            self.assertEqual(data_thin[key], getattr(thin_obj, key))
+
+        ser = GPDocumentSerializer(data=data_with_row)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+        for key in data_with_row:
+            if key == 'document':
+                self.assertIsNotNone(obj.document)
+                continue
+            if key == 'cost_row':
+                self.assertIsNotNone(obj.cost_row)
+                continue
+            self.assertEqual(data_with_row[key], getattr(obj, key))
+
+    def test_update_gp_doc(self):
+        data = {
+            'document': {},
+            'name': u'lorem',
+            'number': u'123'
+        }
+        ser = GPDocumentSerializer(data=data)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+
+        upd_data = {
+            'name': u'lorem',
+            'number': u'123',
+            'document': {'id': obj.document.id, 'status': 3},
+        }
+
+        ser = GPDocumentSerializer(instance=obj, data=upd_data)
+        ser.is_valid(raise_exception=True)
+        upd_obj = ser.save()
+
+        for key in upd_data:
+            if key == 'document':
+                self.assertEqual(upd_data['document']['id'], upd_obj.document.id)
+                self.assertEqual(upd_data['document']['status'], upd_obj.document.status)
+                continue
+            self.assertEqual(upd_data[key], getattr(upd_obj, key))
+
+    def test_create_fact_cost_row(self):
+        cost_type = factories.CostType.create()
+        milestone = prj_factories.Milestone.create()
+        _gp_docs = [factories.GPDocument.create() for _ in xrange(3)]
+
+        data =  {
+            'name': 'good',
+            'cost_type': cost_type.id,
+            'milestone': milestone.id,
+            'costs': {'amount': 30000, 'currency': settings.KZT},
+            'gp_docs': [gp_doc.id for gp_doc in _gp_docs]
+        }
+        ser = FactMilestoneCostRowSerializer(data=data)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+        self.assertEqual(data['name'], obj.name)
+        self.assertEqual(data['cost_type'], obj.cost_type.id)
+        self.assertEqual(data['milestone'], obj.milestone.id)
+        self.assertEqualMoney(data['costs'], obj.costs)
+
+        self.assertEqual(len(obj.gp_docs.all()), len(_gp_docs))
+        for doc in obj.gp_docs.all():
+            self.assertIn(doc.id, data['gp_docs'])
+
+    def test_update_fact_cost_row(self):
+        initial_cost_row = factories.FactMilestoneCostRow.create()
+        _gp_docs = [factories.GPDocument.create() for _ in xrange(3)]
+        data = {
+            'name': 'worst',
+            'cost_type': initial_cost_row.id,
+            'milestone': initial_cost_row.id,
+            'costs': {'amount': 40000, 'currency': settings.KZT},
+            'gp_docs': [gp_doc.id for gp_doc in _gp_docs]
+        }
+        ser = FactMilestoneCostRowSerializer(instance=initial_cost_row, data=data)
+        ser.is_valid(raise_exception=True)
+        upd_cost_row = ser.save()
+        self.assertEqual(data['name'], upd_cost_row.name)
+        self.assertEqualMoney(data['costs'], upd_cost_row.costs)
+        self.assertEqual(len(upd_cost_row.gp_docs.all()), len(_gp_docs))
+        for doc in upd_cost_row.gp_docs.all():
+            self.assertIn(doc.id, data['gp_docs'])
+
+    def assertEqualMoney(self, money_ser, money):
+        self.assertEqual(money_ser['amount'], money.amount)
+        self.assertEqual(money_ser['currency'], money.currency.code)
+        

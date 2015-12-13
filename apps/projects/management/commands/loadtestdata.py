@@ -47,7 +47,7 @@ class Command(BaseCommand):
 			prj.aggreement = agr_doc
 			prj.statement = statement
 			prj.save()
-
+			self.gen_cost_doc(prj)
 			self.gen_monitoring(prj)
 			self.gen_reports(prj)
 			self.gen_journal(prj)
@@ -73,3 +73,8 @@ class Command(BaseCommand):
 
 	def gen_journal(self, project):
 		journal = journal_factories.Journal.create(project=project)
+
+	def gen_cost_doc(self, project):
+		cost_doc = doc_factories.CostDocument.create()
+		cost_doc.document.project = project
+		cost_doc.document.save()

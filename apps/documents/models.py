@@ -60,10 +60,8 @@ class DocumentDMLManager(models.Manager):
     def create_other_agr_doc(self, **kwargs):
         return self.create_doc_with_relations(OtherAgreementsDocument, **kwargs)
 
-
     def create_start_description(self, **kwargs):
         return self.create_doc_with_relations(ProjectStartDescription, **kwargs)
-
 
     def update_innovative_project_pasport(self, instance, **kwargs):
         team_members = kwargs.pop('team_members')
@@ -132,6 +130,9 @@ class DocumentDMLManager(models.Manager):
         for item in items:
             doc.items.add(item)
         return doc
+
+    def create_gp_doc(self, **kwargs):
+        return self.create_doc_with_relations(GPDocument, **kwargs)
 
     def create_empty_cost(self, **kwargs):
         milestone_costs = kwargs.pop('milestone_costs', [])
@@ -536,13 +537,7 @@ class CalendarPlanDocument(models.Model):
                     updated_item.save()
 
         return self
-
-
-class BudgetingDocument(models.Model):
-    tp = 'budgetdoc'
-    document = models.OneToOneField(Document, related_name='budgeting_document', on_delete=models.CASCADE)
-
-    objects = SimpleDocumentManager()
+        
 
 class CalendarPlanItem(models.Model):
 
@@ -609,13 +604,6 @@ class ProjectStartDescription(models.Model):
     kaz_part_avrg = models.DecimalField(u'Доля Казахстанского содержания в продукции (Средние показатели)', max_digits=20, decimal_places=2, null=True, blank=True)
 
 
-
-class CostItem(models.Model):
-    type = models.IntegerField(null=True)
-    budgeting_document = models.ForeignKey(
-        BudgetingDocument, related_name='costs', on_delete=models.CASCADE)
-
-
 class Attachment(models.Model):
     file_path = models.CharField(max_length=270, null=True, blank=True)
     url = models.CharField(max_length=3000, null=True, blank=True)
@@ -626,6 +614,7 @@ class Attachment(models.Model):
 
 
 class UseOfBudgetDocument(models.Model):
+    u"""Документ использование целевых бюджетных средств"""
     tp = 'useofbudget'
     document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
 
@@ -639,7 +628,7 @@ class GPDocument(models.Model):
     document = models.OneToOneField(Document, related_name='gp_document', on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
     number = models.CharField(max_length=255, null=True, blank=True)
-    cost_row = models.ForeignKey('MilestoneFactCostRow', null=True, related_name='gp_docs')
+    cost_row = models.ForeignKey('FactMilestoneCostRow', null=True, related_name='gp_docs')
 
 
 class UseOfBudgetDocumentItem(models.Model):
@@ -648,8 +637,8 @@ class UseOfBudgetDocumentItem(models.Model):
     cost_type = models.ForeignKey('CostType', verbose_name=u'Наименование статей затрат')
     milestone = models.ForeignKey('projects.Milestone', verbose_name='этап')
     fundings = models.ManyToManyField('MilestoneFundingRow', verbose_name=u'Сумма бюджетных средств')
-    costs = models.ManyToManyField('MilestoneFactCostRow', verbose_name=u'Наименования подтверждающих документов')
-
+    costs = models.ManyToManyField('FactMilestoneCostRow', verbose_name=u'Наименования подтверждающих документов')
+    date_created = models.DateTimeField(auto_now_add=True)
     notes = models.CharField(
         u'Примечания',
         max_length=1024, null=True, blank=True)
@@ -689,6 +678,14 @@ class UseOfBudgetDocumentItem(models.Model):
         for fact_cost in self.costs.all():
             rv.extend(fact_cost.gp_docs.all())
         return rv
+
+    @classmethod
+    def get_cost_type_group(cls, cost_type):
+        u"""Перечень затрат по статье"""
+        return UseOfBudgetDocumentItem.objects.filter(
+            cost_type=cost_type)\
+        .select_related('cost_type', 'milestone',)\
+        .prefetch_related('costs', 'costs__gp_docs', 'fundings')
 
 
 
@@ -781,6 +778,7 @@ class CostType(models.Model):
 
 
 class FundingType(models.Model):
+    u"""Источник финансирования"""
     cost_document = models.ForeignKey('CostDocument', related_name='funding_types')
     name = models.CharField(max_length=1024, default='')
     date_created = models.DateTimeField(auto_now_add=True, null=True)
@@ -801,7 +799,7 @@ class MilestoneCostRow(models.Model):
         max_digits=20, decimal_places=2)
 
 
-class MilestoneFactCostRow(models.Model):
+class FactMilestoneCostRow(models.Model):
     u"""Расход на предприятие фактическая по этапу"""
     name = models.CharField(max_length=1024, default='')
     cost_type = models.ForeignKey('CostType', null=True, related_name='fact_cost_rows')
@@ -819,7 +817,7 @@ class MilestoneFactCostRow(models.Model):
     @classmethod
     def create(cls, **data):
         gp_docs = data.pop('gp_docs', [])
-        obj = MilestoneFactCostRow.objects.create(**data)
+        obj = FactMilestoneCostRow.objects.create(**data)
         gp_docs = [GPDocument.objects.create(**gp_doc) for gp_doc in gp_docs]
         obj.add(*gp_docs)
         return obj
@@ -835,5 +833,3 @@ class MilestoneFundingRow(models.Model):
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2)
 
-
-# class CostItemType
