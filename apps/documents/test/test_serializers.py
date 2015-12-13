@@ -77,7 +77,7 @@ class DocumentSerializerTestCase(TestCase):
         test_(doc_obj, [attach_ids[2]])
 
 
-    def test_add_calendar_plan_item(self):
+    def test_create_budget_document_item(self):
         pass
 
 

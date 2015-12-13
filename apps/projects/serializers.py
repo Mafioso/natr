@@ -7,6 +7,7 @@ from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
 from documents.serializers import *
+from documents import models as doc_models
 from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo
 
@@ -90,25 +91,16 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             prj.organization_details = organization_details.save()
 
         if funding_type_data:
-            funding_type_ser = FundingTypeSerializer(data=funding_type_data)
-            funding_type_ser.is_valid(raise_exception=True)
-            prj.funding_type = funding_type_ser.save()
+            prj.funding_type = FundingType.objects.create(**funding_type_data)
 
         if statement_data:
-            statement_ser = StatementDocumentSerializer(data=statement_data)
-            statement_ser.is_valid(raise_exception=True)
-            prj.statement = statement_ser.save()
+            prj.statement = doc_models.Document.dml.create_statement(**statement_data)
 
         if aggrement_data:
-            agr_ser = AgreementDocumentSerializer(data=aggrement_data)
-            agr_ser.is_valid(raise_exception=True)
-            prj.aggreement = agr_ser.save()
+            prj.aggreement = doc_models.Document.dml.create_agreement(**aggrement_data)
 
         if other_agreements:
-            other_agreements['document']['project'] = prj.id
-            oth_agr_ser = OtherAgreementsDocumentSerializer(data=other_agreements)
-            oth_agr_ser.is_valid(raise_exception=True)
-            oth_agr_ser.save()
+            oth_agr = models.Document.dml.create_other_agr_doc(**other_agreements)
 
         prj.save()
 

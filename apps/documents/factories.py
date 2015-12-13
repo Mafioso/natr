@@ -57,6 +57,7 @@ class AgreementDocument(DjangoModelFactory):
     document = factory.SubFactory('documents.factories.Document')
     number = factory.LazyAttribute(lambda x: random.randint(1, 100000000))
     name = factory.Faker('sentence')
+    funding = factory.LazyAttribute(lambda x: utils.fake_money())
 
 
 class CalendarPlanDocument(DjangoModelFactory):
@@ -71,7 +72,7 @@ class CalendarPlanDocument(DjangoModelFactory):
     @factory.post_generation
     def items(self, create, count, **kwargs):
         if count is None:
-            count = 5
+            count = 2
 
         make_item = getattr(CalendarPlanItem, 'create' if create else 'build')
         items = [make_item(calendar_plan=self) for i in xrange(count)]
@@ -105,7 +106,7 @@ class CostDocument(DjangoModelFactory):
     @factory.post_generation
     def cost_types(self, create, count, **kwargs):
         if count is None:
-            count = 5
+            count = 2
         make_cost_type = getattr(CostType, 'create' if create else 'build')
         cost_types = [make_cost_type(cost_document=self) for i in xrange(count)]
         if not create:
@@ -114,7 +115,7 @@ class CostDocument(DjangoModelFactory):
     @factory.post_generation
     def funding_types(self, create, count, **kwargs):
         if count is None:
-            count = 5
+            count = 2
         make_funding_type = getattr(FundingType, 'create' if create else 'build')
         funding_types = [make_funding_type(cost_document=self) for _ in xrange(count)]
         if not create:
@@ -197,7 +198,7 @@ class UseOfBudgetDocument(DjangoModelFactory):
     @factory.post_generation
     def items(self, create, count, **kwargs):
         if count is None:
-            count = 5
+            count = 2
 
         make_item = getattr(UseOfBudgetDocumentItem, 'create' if create else 'build')
         items = [make_item(use_of_budget_doc=self) for i in xrange(count)]
@@ -214,12 +215,66 @@ class UseOfBudgetDocumentItem(DjangoModelFactory):
 
 
     use_of_budget_doc = factory.SubFactory('documents.factories.UseOfBudgetDocument')
-    number = factory.LazyAttribute(lambda x: random.randint(1, 1000))
-    planned_fundings = factory.LazyAttribute(lambda x: utils.fake_money())
-    spent_fundings = factory.LazyAttribute(lambda x: utils.fake_money())
-    remain_fundings = factory.LazyAttribute(lambda x: utils.fake_money())
-    name_of_documents = factory.Faker('text')
+    cost_type = factory.SubFactory('documents.factories.CostType')
+    milestone = factory.SubFactory('projects.factories.Milestone')
     notes = factory.Faker('text')
+
+    @factory.post_generation
+    def costs(self, create, count, **kwargs):
+        if not create:
+            return
+        if not count:
+            count = 2
+        make_ = getattr(MilestoneFactCostRow, 'create' if create else 'build')
+        items = [make_(milestone=self.milestone, cost_type=self.cost_type) for i in xrange(count)]
+        self.costs.add(*items)
+        return self.costs
+
+    @factory.post_generation
+    def fundings(self, create, count, **kwargs):
+        if not create:
+            return
+        if not count:
+            count = 2
+        make_ = getattr(MilestoneFundingRow, 'create' if create else 'build')
+        items = [make_(milestone=self.milestone) for i in xrange(count)]
+        self.fundings.add(*items)
+        return self.fundings
+
+
+class MilestoneFactCostRow(DjangoModelFactory):
+    class Meta:
+        model = models.MilestoneFactCostRow
+        strategy = BUILD_STRATEGY
+
+    name = factory.Faker('word')
+    cost_type = factory.SubFactory('documents.factories.CostType')
+    milestone = factory.SubFactory('projects.factories.Milestone')
+    plan_cost_row = factory.SubFactory('documents.factories.MilestoneCostRow')
+    costs = factory.LazyAttribute(lambda x: utils.fake_money())
+
+    @factory.post_generation
+    def gp_docs(self, create, count, **kwargs):
+        if not create:
+            return
+        if not count:
+            count = 2
+        make_ = getattr(GPDocument, 'create' if create else 'build')
+        items = [make_(cost_row=self) for i in xrange(count)]
+        if not create:
+            # Fiddle with django internals so self.product_set.all() works with build()
+            self._prefetched_objects_cache = {'gp_docs': items}
+
+
+class GPDocument(DjangoModelFactory):
+    class Meta:
+        model = models.GPDocument
+        strategy = BUILD_STRATEGY
+
+    name = factory.Faker('word')
+    number = factory.LazyAttribute(lambda x: random.randint(1, 100000000))
+    cost_row = factory.SubFactory('documents.factories.MilestoneFactCostRow')
+    document = factory.SubFactory('documents.factories.Document')
 
 
 class Attachment(DjangoModelFactory):

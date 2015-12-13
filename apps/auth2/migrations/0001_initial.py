@@ -3,6 +3,8 @@ from __future__ import unicode_literals
 
 from django.db import migrations, models
 import django.utils.timezone
+from django.conf import settings
+import auth2.models
 
 
 class Migration(migrations.Migration):
@@ -30,5 +32,15 @@ class Migration(migrations.Migration):
             options={
                 'abstract': False,
             },
+            managers=[
+                ('objects', auth2.models.UserManager()),
+            ],
+        ),
+        migrations.CreateModel(
+            name='NatrUser',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                ('account', models.OneToOneField(related_name='user', to=settings.AUTH_USER_MODEL)),
+            ],
         ),
     ]

@@ -235,7 +235,8 @@ class ProjectSerializerTestCase(TestCase):
 					"subject":u"Предмет договора",
 					"funding":
 						{
-							"amount":8520
+							"amount":8520,
+							"currency": "KZT"
 						},
 					"document": {
 						"date_sign":"2015-12-27T00:00:00.000Z"
@@ -268,7 +269,8 @@ class ProjectSerializerTestCase(TestCase):
 				}
 		}
 		prj_ser = ProjectSerializer(data=data)
-		prj_ser.is_valid(raise_exception=True)
+		prj_ser.is_valid(raise_exception=False)
+		utils.pretty(prj_ser.errors)
 		prj = prj_ser.save()
 		
 		self.assertTrue(isinstance(prj.id, int))

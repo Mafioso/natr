@@ -70,3 +70,11 @@ class NotificationSubscribtionSerializer(serializers.ModelSerializer):
 
 	notification = NotificationSerializer(required=True)
 
+
+class NotificationCounterSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = models.NotificationCounter
+		
+
+

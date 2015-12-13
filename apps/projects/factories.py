@@ -34,7 +34,7 @@ class ProjectWithMilestones(Project):
     @factory.post_generation
     def milestone_set(self, create, count, **kwargs):
         if count is None:
-            count = 5
+            count = 2
 
         make_milestone = getattr(Milestone, 'create' if create else 'build')
         milestones = [make_milestone(project=self, status=models.Milestone.NOT_STARTED) for i in xrange(count)]
@@ -105,7 +105,7 @@ class Monitoring(DjangoModelFactory):
     @factory.post_generation
     def todos(self, create, count, **kwargs):
         if count is None:
-            count = 5
+            count = 2
 
         make_todo = getattr(MonitoringTodo, 'create' if create else 'build')
         todos = [make_todo(monitoring=self) for i in xrange(count)]
