@@ -12,6 +12,7 @@ from natr import utils
 from django.contrib.auth import get_user_model
 from notifications.models import Notification
 from documents.models import (
+    OtherAgreementsDocument,
     CalendarPlanDocument,
     BasicProjectPasportDocument,
     InnovativeProjectPasportDocument,
@@ -98,6 +99,16 @@ class Project(models.Model):
     @property
     def start_description(self):
         return ProjectStartDescription.objects.get(document__project=self)
+
+    @property
+    def other_agreements(self):
+        other_agreements = None
+        try: 
+            other_agreements = OtherAgreementsDocument.objects.get(document__project=self)
+        except OtherAgreementsDocument.DoesNotExist:
+            return None
+
+        return other_agreements
 
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]

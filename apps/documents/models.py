@@ -632,32 +632,68 @@ class UseOfBudgetDocument(models.Model):
     objects = SimpleDocumentManager()
 
 
+class GPDocument(models.Model):
+    u"""Документ по отчету ГП, например: акт, счет фактура, акт выполненных работ, который
+    раскрывают смету расходов в общем."""
+    tp = 'gp_doc'
+    document = models.OneToOneField(Document, related_name='gp_document', on_delete=models.CASCADE)
+    name = models.CharField(max_length=255)
+    number = models.CharField(max_length=255, null=True, blank=True)
+    cost_row = models.ForeignKey('MilestoneFactCostRow', null=True, related_name='gp_docs')
+
+
 class UseOfBudgetDocumentItem(models.Model):
-
+    u"""Статья расходов (факт) по бюджету гранта за этап заполняемая ГП в рамках камерального отчета."""
     use_of_budget_doc = models.ForeignKey(UseOfBudgetDocument, related_name='items', on_delete=models.CASCADE)
+    cost_type = models.ForeignKey('CostType', verbose_name=u'Наименование статей затрат')
+    milestone = models.ForeignKey('projects.Milestone', verbose_name='этап')
+    fundings = models.ManyToManyField('MilestoneFundingRow', verbose_name=u'Сумма бюджетных средств')
+    costs = models.ManyToManyField('MilestoneFactCostRow', verbose_name=u'Наименования подтверждающих документов')
 
-    number = models.IntegerField(u'Номер')
-    costs_description = models.CharField(
-        u'Наименование статей затрат', max_length=1024)
-    planned_fundings = MoneyField(
-        u'Сумма бюджетных средств по смете (тенге)',
-        max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    spent_fundings = MoneyField(
-        u'Израсходованная сумма (тенге)',
-        max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    remain_fundings = MoneyField(
-        u'Остаток средств (тенге)',
-        max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    name_of_documents = models.CharField(
-        u'Наименования подтверждающих документов',
-        max_length=1024, null=True, blank=True)
     notes = models.CharField(
         u'Примечания',
         max_length=1024, null=True, blank=True)
 
+    @property
+    def total_budget(self):
+        u"""Сумма бюджетных стредств по смете"""
+        total = sum([
+            funding_cell is not None and funding_cell.fundings.amount or 0
+            for funding_cell in self.fundings.all()
+        ])
+        return Money(amount=total, currency=settings.KZT)
+
+    @property
+    def total_expense(self):
+        u"""Израсходованная сумма"""
+        total = sum([
+            cost_cell.costs.amount
+            for cost_cell in self.costs.all()
+        ])
+        return Money(amount=total, currency=settings.KZT)
+
+    @property
+    def remain_budget(self):
+        u"""Остаток средств"""
+        return self.total_budget - self.total_expense
+
+    @property
+    def cost_name(self):
+        u"""Наименование статей затрат по смете"""
+        return self.cost_type.name
+
+    @property
+    def documents(self):
+        u"""Наименование подтверждающих документов"""
+        rv = []
+        for fact_cost in self.costs.all():
+            rv.extend(fact_cost.gp_docs.all())
+        return rv
+
+
 
 class CostDocument(models.Model):
-    u"""Документ сметы расходов"""
+    u"""Документ сметы расходов (план)"""
     tp = 'costs'
     document = models.OneToOneField(Document, related_name='cost_document', on_delete=models.CASCADE)
 
@@ -729,7 +765,7 @@ class CostDocument(models.Model):
 
 
 class CostType(models.Model):
-    u"""Вид статьи расходов"""
+    u"""Вид статьи расходов (статья затрат)"""
     cost_document = models.ForeignKey('CostDocument', related_name='cost_types')
     name = models.CharField(max_length=1024, default='')
     date_created = models.DateTimeField(auto_now_add=True, null=True)
@@ -763,6 +799,30 @@ class MilestoneCostRow(models.Model):
         u'Сумма затрат (тенге)',
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2)
+
+
+class MilestoneFactCostRow(models.Model):
+    u"""Расход на предприятие фактическая по этапу"""
+    name = models.CharField(max_length=1024, default='')
+    cost_type = models.ForeignKey('CostType', null=True, related_name='fact_cost_rows')
+    milestone = models.ForeignKey('projects.Milestone')
+    plan_cost_row = models.ForeignKey('MilestoneCostRow', null=True)
+    costs = MoneyField(
+        u'Сумма затрат (тенге)',
+        default=0, default_currency=settings.KZT,
+        max_digits=20, decimal_places=2)
+
+    @property
+    def cost_document(self):
+        return self.cost_type.cost_document
+
+    @classmethod
+    def create(cls, **data):
+        gp_docs = data.pop('gp_docs', [])
+        obj = MilestoneFactCostRow.objects.create(**data)
+        gp_docs = [GPDocument.objects.create(**gp_doc) for gp_doc in gp_docs]
+        obj.add(*gp_docs)
+        return obj
 
 
 class MilestoneFundingRow(models.Model):

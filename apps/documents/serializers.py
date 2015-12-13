@@ -84,21 +84,6 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
         doc = models.Document.dml.create_agreement(**validated_data)
         return doc
 
-class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
-
-    class Meta:
-        model = models.OtherAgreementsDocument
-
-    document = DocumentSerializer(required=True)
-
-    def create(self, validated_data):
-        doc = models.Document.dml.create_other_agr_doc(**validated_data)
-        return doc
-
-    @classmethod
-    def empty_data(cls, project):
-        data = DocumentCompositionSerializer.empty_data(project)
-        return data
 
 class OtherAgreementItemSerializer(serializers.ModelSerializer):
 
@@ -110,7 +95,24 @@ class OtherAgreementItemSerializer(serializers.ModelSerializer):
         plan_item = models.OtherAgreementItem.objects.create(
             other_agreements_doc=other_agreements_doc, **validated_data)
         return plan_item
+        
 
+class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.OtherAgreementsDocument
+
+    document = DocumentSerializer(required=True)
+    items = OtherAgreementItemSerializer(many=True, required=False)
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_other_agr_doc(**validated_data)
+        return doc
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
 
 
 class BasicProjectPasportSerializer(DocumentCompositionSerializer):
@@ -402,21 +404,33 @@ class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
     #     queryset=models.UseOfBudgetDocumentItem.objects.all(), many=True, required=False)
 
 
+class MilestoneFactCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = models.MilestoneFactCostRow
+
+    costs = SerializerMoneyField(required=False)
+
+
+
 class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     
     class Meta:
         model = models.UseOfBudgetDocumentItem
 
-    planned_fundings = SerializerMoneyField(required=False)
-    spent_fundings = SerializerMoneyField(required=False)
-    remain_fundings = SerializerMoneyField(required=False)
-    use_of_budget_doc = serializers.PrimaryKeyRelatedField(
-        queryset=models.UseOfBudgetDocument.objects.all(), required=True)
+    total_expense = SerializerMoneyField(required=False)
+    remain_budget = SerializerMoneyField(required=False)
+    total_budget = SerializerMoneyField(required=False)
+    costs = MilestoneFactCostRowSerializer(many=True, required=False)
+
 
     def create(self, validated_data):
-        use_of_budget_doc = validated_data.pop('use_of_budget_doc')
-        use_of_budget_item = models.UseOfBudgetDocumentItem.objects.create(
-            use_of_budget_doc=use_of_budget_doc, **validated_data)
+        costs = validated_data.pop('costs', [])
+        doc_item = models.UseOfBudgetDocumentItem.objects.create(**validated_data)
+        costs = [models.MilestoneFactCostRow.create(
+            milestone=doc_item.milestone,
+            cost_type=doc_item.cost_type, **fact_cost) for fact_cost in costs]
+        doc_item.costs.add(*costs)
         return use_of_budget_item
 
 

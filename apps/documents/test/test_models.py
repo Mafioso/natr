@@ -157,5 +157,41 @@ class DocumentTestCase(TestCase):
 		self.assertEqual(total.amount, sum([
 			row_funding.amount
 			for row_funding in map(doc.total_funding_by_row, doc.funding_types.all())]))
-		
+
+
+	def test_create_use_of_budget_document_item(self, item=None):
+		doc_item = factories.UseOfBudgetDocumentItem.create() if item is None else item
+		self.assertIsNotNone(doc_item.cost_type)
+		self.assertTrue(len(doc_item.costs.all()) > 0)
+		self.assertTrue(len(doc_item.fundings.all()) > 0)
+		self.assertTrue(doc_item.total_budget.amount > 0)
+		self.assertTrue(doc_item.total_expense.amount > 0)
+		for cost_item in doc_item.costs.all():
+			self.assertEqual(doc_item.cost_type, cost_item.cost_type)
+			self.assertEqual(doc_item.milestone, cost_item.milestone)
+
+
+	def test_create_use_of_budget_document(self):
+		doc = factories.UseOfBudgetDocument.create()
+		self.assertIsInstance(doc, models.UseOfBudgetDocument)
+		self.assertTrue(len(doc.items.all()) > 0)
+		for item in doc.items.all():
+			self.test_create_use_of_budget_document_item(item)
+
+	def test_manipulate_fact_cost_row(self):
+		cost_row = factories.MilestoneFactCostRow.create()
+		cost_row.milestone
+		cost_row.plan_cost_row
+
+		self.assertTrue(len(cost_row.gp_docs.all()) > 0)
+		self.assertIsInstance(cost_row.gp_docs.first(), models.GPDocument)
+		for gp_doc in cost_row.gp_docs.all():
+			self.test_manipulate_gp_doc(gp_doc)
+
+	def test_manipulate_gp_doc(self, gp_doc=None):
+		gp_doc = factories.GPDocument.create() if not gp_doc else gp_doc
+		gp_doc.number
+		gp_doc.cost_row
+		self.assertIsNotNone(gp_doc.document)
+
 
