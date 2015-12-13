@@ -5,10 +5,12 @@ __author__ = 'xepa4ep'
 
 import datetime
 from django.test import TestCase
+from django.conf import settings
 from natr import utils
 from documents.serializers import *
 from documents import models, factories
 from projects.serializers import ProjectSerializer
+from projects import factories as prj_factories
 
 # Create your tests here.
 
@@ -217,3 +219,50 @@ class DocumentSerializerTestCase(TestCase):
                 continue
             self.assertEqual(upd_data[key], getattr(upd_obj, key))
 
+    def test_create_fact_cost_row(self):
+        cost_type = factories.CostType.create()
+        milestone = prj_factories.Milestone.create()
+        _gp_docs = [factories.GPDocument.create() for _ in xrange(3)]
+
+        data =  {
+            'name': 'good',
+            'cost_type': cost_type.id,
+            'milestone': milestone.id,
+            'costs': {'amount': 30000, 'currency': settings.KZT},
+            'gp_docs': [gp_doc.id for gp_doc in _gp_docs]
+        }
+        ser = FactMilestoneCostRowSerializer(data=data)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+        self.assertEqual(data['name'], obj.name)
+        self.assertEqual(data['cost_type'], obj.cost_type.id)
+        self.assertEqual(data['milestone'], obj.milestone.id)
+        self.assertEqualMoney(data['costs'], obj.costs)
+
+        self.assertEqual(len(obj.gp_docs.all()), len(_gp_docs))
+        for doc in obj.gp_docs.all():
+            self.assertIn(doc.id, data['gp_docs'])
+
+    def test_update_fact_cost_row(self):
+        initial_cost_row = factories.FactMilestoneCostRow.create()
+        _gp_docs = [factories.GPDocument.create() for _ in xrange(3)]
+        data = {
+            'name': 'worst',
+            'cost_type': initial_cost_row.id,
+            'milestone': initial_cost_row.id,
+            'costs': {'amount': 40000, 'currency': settings.KZT},
+            'gp_docs': [gp_doc.id for gp_doc in _gp_docs]
+        }
+        ser = FactMilestoneCostRowSerializer(instance=initial_cost_row, data=data)
+        ser.is_valid(raise_exception=True)
+        upd_cost_row = ser.save()
+        self.assertEqual(data['name'], upd_cost_row.name)
+        self.assertEqualMoney(data['costs'], upd_cost_row.costs)
+        self.assertEqual(len(upd_cost_row.gp_docs.all()), len(_gp_docs))
+        for doc in upd_cost_row.gp_docs.all():
+            self.assertIn(doc.id, data['gp_docs'])
+
+    def assertEqualMoney(self, money_ser, money):
+        self.assertEqual(money_ser['amount'], money.amount)
+        self.assertEqual(money_ser['currency'], money.currency.code)
+        

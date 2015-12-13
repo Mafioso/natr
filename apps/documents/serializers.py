@@ -455,21 +455,28 @@ class FactMilestoneCostGroupSerializer(serializers.ListSerializer):
 class FactMilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
-        model = models.UseOfBudgetDocumentItem
+        model = models.FactMilestoneCostRow
         list_serializer_class = FactMilestoneCostGroupSerializer
 
     costs = SerializerMoneyField(required=False)
+    use_of_budget_doc = serializers.PrimaryKeyRelatedField(
+        queryset=models.UseOfBudgetDocumentItem.objects.all(), many=True, required=False)
+    gp_docs = serializers.PrimaryKeyRelatedField(
+        queryset=models.GPDocument.objects.all(), many=True, required=False)
 
     def create(self, validated_data):
-        gp_docs = item.pop('gp_docs', [])
-        obj = models.FactMilestoneCostRow.objects.create(**item)
-        obj.add(*gp_docs)
+        gp_docs = validated_data.pop('gp_docs', [])
+        obj = models.FactMilestoneCostRow.objects.create(**validated_data)
+        obj.gp_docs.add(*gp_docs)
         return obj
 
     def update(self, instance, validated_data):
-        instance.costs = item['costs']
-        instance.name = item['name']
+        gp_docs = validated_data.pop('gp_docs', [])
+        instance.costs = validated_data['costs']
+        instance.name = validated_data['name']
         instance.save()
+        instance.gp_docs.clear()
+        instance.gp_docs.add(*gp_docs)
         return instance
 
 
