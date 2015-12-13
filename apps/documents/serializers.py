@@ -407,7 +407,7 @@ class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
 class MilestoneFactCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
-        model = models.UseOfBudgetDocumentItem
+        model = models.MilestoneFactCostRow
 
     costs = SerializerMoneyField(required=False)
 
@@ -418,9 +418,9 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
     class Meta:
         model = models.UseOfBudgetDocumentItem
 
-    total_expense = SerializerMoneyField(source='total_expense', required=False)
-    remain_budget = SerializerMoneyField(source='remain_budget', required=False)
-    total_budget = SerializerMoneyField(source='total_budget', required=False)
+    total_expense = SerializerMoneyField(required=False)
+    remain_budget = SerializerMoneyField(required=False)
+    total_budget = SerializerMoneyField(required=False)
     costs = MilestoneFactCostRowSerializer(many=True, required=False)
 
 
