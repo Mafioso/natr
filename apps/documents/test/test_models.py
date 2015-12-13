@@ -179,7 +179,7 @@ class DocumentTestCase(TestCase):
 			self.test_create_use_of_budget_document_item(item)
 
 	def test_manipulate_fact_cost_row(self):
-		cost_row = factories.MilestoneFactCostRow.create()
+		cost_row = factories.FactMilestoneCostRow.create()
 		cost_row.milestone
 		cost_row.plan_cost_row
 

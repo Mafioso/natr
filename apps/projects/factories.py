@@ -140,3 +140,4 @@ class MonitoringTodo(DjangoModelFactory):
         return self.monitoring.project
 
     report_type = factory.Faker('sentence')
+
