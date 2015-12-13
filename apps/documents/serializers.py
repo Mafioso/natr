@@ -422,6 +422,7 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
     remain_budget = SerializerMoneyField(required=False)
     total_budget = SerializerMoneyField(required=False)
     costs = MilestoneFactCostRowSerializer(many=True, required=False)
+    cost_name = serializers.CharField()
 
 
     def create(self, validated_data):
