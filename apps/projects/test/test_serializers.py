@@ -78,9 +78,6 @@ class ProjectSerializerTestCase(TestCase):
 	def test_project_create(self):
 		prj_ser = ProjectSerializer(data=self.data)
 		prj_ser.is_valid(raise_exception=True)
-		errors = prj_ser.errors
-		utils.pretty(errors)
-		
 		prj = prj_ser.save()
 		
 		self.assertEqual(prj.name, 'lorem')

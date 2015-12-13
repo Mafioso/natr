@@ -60,10 +60,8 @@ class DocumentDMLManager(models.Manager):
     def create_other_agr_doc(self, **kwargs):
         return self.create_doc_with_relations(OtherAgreementsDocument, **kwargs)
 
-
     def create_start_description(self, **kwargs):
         return self.create_doc_with_relations(ProjectStartDescription, **kwargs)
-
 
     def update_innovative_project_pasport(self, instance, **kwargs):
         team_members = kwargs.pop('team_members')
@@ -132,6 +130,9 @@ class DocumentDMLManager(models.Manager):
         for item in items:
             doc.items.add(item)
         return doc
+
+    def create_gp_doc(self, **kwargs):
+        return self.create_doc_with_relations(GPDocument, **kwargs)
 
     def create_empty_cost(self, **kwargs):
         milestone_costs = kwargs.pop('milestone_costs', [])
@@ -637,7 +638,7 @@ class UseOfBudgetDocumentItem(models.Model):
     milestone = models.ForeignKey('projects.Milestone', verbose_name='этап')
     fundings = models.ManyToManyField('MilestoneFundingRow', verbose_name=u'Сумма бюджетных средств')
     costs = models.ManyToManyField('FactMilestoneCostRow', verbose_name=u'Наименования подтверждающих документов')
-
+    date_created = models.DateTimeField(auto_now_add=True)
     notes = models.CharField(
         u'Примечания',
         max_length=1024, null=True, blank=True)
@@ -677,6 +678,14 @@ class UseOfBudgetDocumentItem(models.Model):
         for fact_cost in self.costs.all():
             rv.extend(fact_cost.gp_docs.all())
         return rv
+
+    @classmethod
+    def get_cost_type_group(cls, cost_type):
+        u"""Перечень затрат по статье"""
+        return UseOfBudgetDocumentItem.objects.filter(
+            cost_type=cost_type)\
+        .select_related('cost_type', 'milestone',)\
+        .prefetch_related('costs', 'costs__gp_docs', 'fundings')
 
 
 

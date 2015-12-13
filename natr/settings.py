@@ -88,6 +88,7 @@ INSTALLED_APPS = (
     'rest_framework',
     'django_extensions',
     'rest_framework_swagger',
+    'test_without_migrations'
 ) + APPS
 
 MIDDLEWARE_CLASSES = (

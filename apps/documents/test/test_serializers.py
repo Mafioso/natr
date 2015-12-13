@@ -155,3 +155,38 @@ class DocumentSerializerTestCase(TestCase):
         for funding_type in cost_doc.funding_types.all():
             self.assertTrue(len(cost_doc.get_milestone_fundings_row(funding_type)) > 0)
 
+    def test_create_gp_doc(self):
+        data_thin = {
+            'document': {},
+            'name': u'lorem',
+            'number': u'123'
+        }
+        cost_row = factories.FactMilestoneCostRow.create()
+        data_with_row = {
+            'document': {},
+            'name': u'lorem',
+            'number': u'123',
+            'cost_row': cost_row.id
+        }
+        
+        ser = GPDocumentSerializer(data=data_thin)
+        ser.is_valid(raise_exception=False)
+        utils.pretty(ser.errors)
+        thin_obj = ser.save()
+        for key in data_thin:
+            if key == 'document':
+                self.assertIsNotNone(thin_obj.document)
+                continue
+            self.assertEqual(data_thin[key], getattr(thin_obj, key))
+
+        ser = GPDocumentSerializer(data=data_with_row)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+        for key in data_with_row:
+            if key == 'document':
+                self.assertIsNotNone(obj.document)
+                continue
+            if key == 'cost_row':
+                self.assertIsNotNone(obj.cost_row)
+                continue
+            self.assertEqual(data_with_row[key], getattr(obj, key))
