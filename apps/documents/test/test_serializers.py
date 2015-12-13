@@ -170,8 +170,7 @@ class DocumentSerializerTestCase(TestCase):
         }
         
         ser = GPDocumentSerializer(data=data_thin)
-        ser.is_valid(raise_exception=False)
-        utils.pretty(ser.errors)
+        ser.is_valid(raise_exception=True)
         thin_obj = ser.save()
         for key in data_thin:
             if key == 'document':
@@ -190,3 +189,31 @@ class DocumentSerializerTestCase(TestCase):
                 self.assertIsNotNone(obj.cost_row)
                 continue
             self.assertEqual(data_with_row[key], getattr(obj, key))
+
+    def test_update_gp_doc(self):
+        data = {
+            'document': {},
+            'name': u'lorem',
+            'number': u'123'
+        }
+        ser = GPDocumentSerializer(data=data)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+
+        upd_data = {
+            'name': u'lorem',
+            'number': u'123',
+            'document': {'id': obj.document.id, 'status': 3},
+        }
+
+        ser = GPDocumentSerializer(instance=obj, data=upd_data)
+        ser.is_valid(raise_exception=True)
+        upd_obj = ser.save()
+
+        for key in upd_data:
+            if key == 'document':
+                self.assertEqual(upd_data['document']['id'], upd_obj.document.id)
+                self.assertEqual(upd_data['document']['status'], upd_obj.document.status)
+                continue
+            self.assertEqual(upd_data[key], getattr(upd_obj, key))
+

@@ -488,7 +488,7 @@ class GPDocumentSerializer(DocumentCompositionSerializer):
 
     def update(self, instance, validated_data):
         instance.name = validated_data['name']
-        instance.number = validated_data.pop['number']
+        instance.number = validated_data['number']
         instance.save()
         models.Document.dml.update_doc_(instance.document, **validated_data['document'])
         return instance
