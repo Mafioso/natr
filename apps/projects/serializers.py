@@ -9,7 +9,7 @@ from grantee.serializers import *
 from documents.serializers import *
 from documents import models as doc_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment
 
 
 __all__ = (
@@ -279,3 +279,17 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
         monitoring_todo = MonitoringTodo.objects.create(
             monitoring=monitoring, **validated_data)
         return monitoring_todo
+
+class CommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Comment
+
+    report = serializers.PrimaryKeyRelatedField(
+        queryset=Report.objects.all(), required=True)
+    expert = serializers.PrimaryKeyRelatedField(
+        queryset=auth2.models.NatrUser.objects.all(), required=True)
+
+    def create(self, validated_data):
+        comment = Comment.objects.create(**validated_data)
+        return comment

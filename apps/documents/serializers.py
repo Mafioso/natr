@@ -454,34 +454,6 @@ class FactMilestoneCostGroupSerializer(serializers.ListSerializer):
         return instance_dict.values()
 
 
-class FactMilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
-
-    class Meta:
-        model = models.FactMilestoneCostRow
-        list_serializer_class = FactMilestoneCostGroupSerializer
-
-    costs = SerializerMoneyField(required=False)
-    use_of_budget_doc = serializers.PrimaryKeyRelatedField(
-        queryset=models.UseOfBudgetDocumentItem.objects.all(), many=True, required=False)
-    gp_docs = serializers.PrimaryKeyRelatedField(
-        queryset=models.GPDocument.objects.all(), many=True, required=False)
-
-    def create(self, validated_data):
-        gp_docs = validated_data.pop('gp_docs', [])
-        obj = models.FactMilestoneCostRow.objects.create(**validated_data)
-        obj.gp_docs.add(*gp_docs)
-        return obj
-
-    def update(self, instance, validated_data):
-        gp_docs = validated_data.pop('gp_docs', [])
-        instance.costs = validated_data['costs']
-        instance.name = validated_data['name']
-        instance.save()
-        instance.gp_docs.clear()
-        instance.gp_docs.add(*gp_docs)
-        return instance
-
-
 class GPDocumentSerializer(DocumentCompositionSerializer):
 
     class Meta:
@@ -511,7 +483,8 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
     total_expense = SerializerMoneyField(required=False)
     remain_budget = SerializerMoneyField(required=False)
     total_budget = SerializerMoneyField(required=False)
-    costs = FactMilestoneCostRowSerializer(many=True, required=False)
+    # costs = FactMilestoneCostRowSerializer(many=True, required=False)
+    cost_name = serializers.CharField()
 
 
     def create(self, validated_data):
@@ -522,6 +495,33 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
             cost_type=doc_item.cost_type, **fact_cost) for fact_cost in costs]
         doc_item.costs.add(*costs)
         return use_of_budget_item
+
+
+class FactMilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = models.FactMilestoneCostRow
+        list_serializer_class = FactMilestoneCostGroupSerializer
+
+    costs = SerializerMoneyField(required=False)
+    use_of_budget_doc = UseOfBudgetDocumentItemSerializer(many=True, required=False)
+    gp_docs = serializers.PrimaryKeyRelatedField(
+        queryset=models.GPDocument.objects.all(), many=True, required=False)
+
+    def create(self, validated_data):
+        gp_docs = validated_data.pop('gp_docs', [])
+        obj = models.FactMilestoneCostRow.objects.create(**validated_data)
+        obj.gp_docs.add(*gp_docs)
+        return obj
+
+    def update(self, instance, validated_data):
+        gp_docs = validated_data.pop('gp_docs', [])
+        instance.costs = validated_data['costs']
+        instance.name = validated_data['name']
+        instance.save()
+        instance.gp_docs.clear()
+        instance.gp_docs.add(*gp_docs)
+        return instance
 
 
 class AttachmentSerializer(serializers.ModelSerializer):

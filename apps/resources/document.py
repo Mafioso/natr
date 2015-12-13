@@ -2,10 +2,11 @@ import os
 import shutil
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import list_route, detail_route
-from rest_framework import viewsets, response
+from rest_framework import viewsets, response, status
 from natr.rest_framework.decorators import patch_serializer_class
 from documents.serializers import *
 from documents import models as doc_models
+from projects import models as prj_models
 from django.conf import settings
 
 pj = os.path.join
@@ -18,6 +19,7 @@ BasicProjectPasportDocument = doc_models.BasicProjectPasportDocument
 InnovativeProjectPasportDocument = doc_models.InnovativeProjectPasportDocument
 CostDocument = doc_models.CostDocument
 ProjectStartDescription = doc_models.ProjectStartDescription
+CostType = doc_models.CostType
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -381,3 +383,27 @@ class UseOfBudgetDocumentViewSet(viewsets.ModelViewSet):
         qs = obj_use_of_b.items.all()    
         serializer = self.get_serializer(qs, many=True)
         return response.Response(serializer.data)
+
+class CostTypeViewSet(viewsets.ModelViewSet):
+    serializer_class = CostTypeSerializer
+    queryset = CostType.objects.all()
+
+    @detail_route(methods=['get'], url_path='costs')
+    @patch_serializer_class(FactMilestoneCostRowSerializer)
+    def get_report_costs(self, request, *a, **kw):
+        cost_type = self.get_object() 
+        report_id = request.GET.get('report', -1)
+        # report = None
+        try:
+            report = prj_models.Report.objects.get(id=report_id)
+        except prj_models.Report.DoesNotExist:
+            return response.Response({'message': 'Report does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+        cost_row = doc_models.FactMilestoneCostRow.objects.filter(cost_type=cost_type)
+
+        serializer = self.get_serializer(cost_row, many=True)
+        return response.Response(serializer.data)
+
+class FactMilestoneCostRowViewSet(viewsets.ModelViewSet):
+    serializer_class = FactMilestoneCostRowSerializer
+    queryset = doc_models.FactMilestoneCostRow.objects.all()

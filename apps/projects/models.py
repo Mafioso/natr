@@ -223,16 +223,23 @@ class Report(ProjectBasedModel):
     class Meta:
         ordering = ['milestone__number']
 
-    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
+    # STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
+
+    # STATUS_CAPS = (
+    #     u'неактивен'
+    #     u'формирование',
+    #     u'на проверке',
+    #     u'утверждение',
+    #     u'утвержден',
+    #     u'отправлен на доработку',
+    #     u'завершен')
+
+    STATUSES = BUILD, APPROVE, REWORK = range(3)
 
     STATUS_CAPS = (
-        u'неактивен'
-        u'формирование',
-        u'на проверке',
-        u'утверждение',
-        u'утвержден',
-        u'отправлен на доработку',
-        u'завершен')
+        u'Формирование',
+        u'Согласование',
+        u'Доработка')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
 
@@ -240,7 +247,7 @@ class Report(ProjectBasedModel):
     date = models.DateTimeField(u'Дата отчета', null=True)
 
     period = models.CharField(null=True, max_length=255)
-    status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
+    status = models.IntegerField(null=True, choices=STATUS_OPTS, default=BUILD)
 
     # max 2 reports for one milestone
     milestone = models.ForeignKey('Milestone', related_name='reports')
@@ -443,3 +450,15 @@ class MonitoringTodo(ProjectBasedModel):
             now = timezone.now()
             return (self.date_end - now).days
         return None
+
+class Comment(models.Model):
+    """
+        Комментарий к проекту
+    """
+    report = models.ForeignKey(Report, related_name='comments')
+    expert = models.ForeignKey('auth2.NatrUser', related_name='comments')
+    comment_text = models.TextField(null=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+
+
+
