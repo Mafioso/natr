@@ -225,7 +225,7 @@ class UseOfBudgetDocumentItem(DjangoModelFactory):
             return
         if not count:
             count = 2
-        make_ = getattr(MilestoneFactCostRow, 'create' if create else 'build')
+        make_ = getattr(FactMilestoneCostRow, 'create' if create else 'build')
         items = [make_(milestone=self.milestone, cost_type=self.cost_type) for i in xrange(count)]
         self.costs.add(*items)
         return self.costs
@@ -242,9 +242,9 @@ class UseOfBudgetDocumentItem(DjangoModelFactory):
         return self.fundings
 
 
-class MilestoneFactCostRow(DjangoModelFactory):
+class FactMilestoneCostRow(DjangoModelFactory):
     class Meta:
-        model = models.MilestoneFactCostRow
+        model = models.FactMilestoneCostRow
         strategy = BUILD_STRATEGY
 
     name = factory.Faker('word')
@@ -273,7 +273,7 @@ class GPDocument(DjangoModelFactory):
 
     name = factory.Faker('word')
     number = factory.LazyAttribute(lambda x: random.randint(1, 100000000))
-    cost_row = factory.SubFactory('documents.factories.MilestoneFactCostRow')
+    cost_row = factory.SubFactory('documents.factories.FactMilestoneCostRow')
     document = factory.SubFactory('documents.factories.Document')
 
 

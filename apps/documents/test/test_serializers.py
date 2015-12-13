@@ -8,6 +8,7 @@ from django.test import TestCase
 from natr import utils
 from documents.serializers import *
 from documents import models, factories
+from projects.serializers import ProjectSerializer
 
 # Create your tests here.
 
@@ -16,6 +17,68 @@ class DocumentSerializerTestCase(TestCase):
 
     def setUp(self):
         self.cnt = 5
+        self.data = {
+          "fundings": {
+            "currency": "KZT",
+            "amount": 300000000
+          },
+          "own_fundings": {
+            "currency": "KZT",
+            "amount": 100000
+          },
+          "funding_type": {
+            "name": "ACQ_TECH"
+          },
+          "aggreement": {
+            "document": {
+              "external_id": "123124124124",
+              "status": 0,
+              "date_sign": "2015-08-19T00:00",
+            },
+            "number": 123,
+            "name": u"Инновационный грант на реализацию и коммерциализацию технологий на стадии создания атомного реактора",
+            "subject": u"Реализация проекта"
+          },
+          "statement": {
+            "document": {
+              "external_id": "412513512351235",
+              "status": 0,
+              "date_sign": "2015-08-19T00:00",
+            }
+          },
+          "organization_details": {
+            "share_holders": [
+              {
+                "fio": u"Рустем Камун",
+                "iin": "124124124124",
+                "share_percentage": 20,
+                "organization": "Fatigue science"
+              }
+            ],
+            "contact_details": {
+              "phone_number": "87772952190",
+              "email": "r.kamun@gmail.com",
+              "organization": "Fatigue science"
+            },
+            "name": "Fatigue Science",
+            "bin": "124124124981924",
+            "bik": "4124891850821390581",
+            "iik": "124124124124124",
+            "address_1": "Tolebi 8, 34",
+            "address_2": "Lenina 14, 1",
+            "first_head_fio": u"Саттар Стамкулов",
+          },
+          "name": "lorem",
+          "description": "lorem ipsum",
+          "date_start": "2015-09-01T00:00",
+          "date_end": "2016-05-18T00:00",
+          "total_month": 0,
+          "status": 1,
+          "number_of_milestones": 7
+        }
+        prj_ser = ProjectSerializer(data=self.data)
+        prj_ser.is_valid(raise_exception=True)
+        self.prj = prj_ser.save()
 
     def test_create_document(self):
         attach_test_ids = map(str, range(3))
@@ -77,7 +140,7 @@ class DocumentSerializerTestCase(TestCase):
         test_(doc_obj, [attach_ids[2]])
 
 
-    def test_create_budget_document_item(self):
-        pass
-
+    def test_create_cost_document_when_project_created(self):
+        self.assertIsNotNone(self.prj.cost_document)
+        self.assertIsInstance(self.prj.cost_document_id, int)
 

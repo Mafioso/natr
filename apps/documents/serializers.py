@@ -402,7 +402,7 @@ class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
     #     queryset=models.UseOfBudgetDocumentItem.objects.all(), many=True, required=False)
 
 
-class MilestoneFactCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+class FactMilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
         model = models.UseOfBudgetDocumentItem
@@ -419,13 +419,13 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
     total_expense = SerializerMoneyField(source='total_expense', required=False)
     remain_budget = SerializerMoneyField(source='remain_budget', required=False)
     total_budget = SerializerMoneyField(source='total_budget', required=False)
-    costs = MilestoneFactCostRowSerializer(many=True, required=False)
+    costs = FactMilestoneCostRowSerializer(many=True, required=False)
 
 
     def create(self, validated_data):
         costs = validated_data.pop('costs', [])
         doc_item = models.UseOfBudgetDocumentItem.objects.create(**validated_data)
-        costs = [models.MilestoneFactCostRow.create(
+        costs = [models.FactMilestoneCostRow.create(
             milestone=doc_item.milestone,
             cost_type=doc_item.cost_type, **fact_cost) for fact_cost in costs]
         doc_item.costs.add(*costs)
