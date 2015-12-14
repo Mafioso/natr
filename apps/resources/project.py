@@ -123,24 +123,24 @@ class ReportViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Report.objects.all()
     serializer_class = ReportSerializer
 
-    @detail_route(methods=['post'], url_path='rework')
-    @patch_serializer_class(CommentSerializer)
-    def to_rework(self, request, *a, **kw):
-        """
-        Update monitoring items
-        """
-        report = self.get_object()
-        report.status = prj_models.Report.REWORK
-        report.save()
+    # @detail_route(methods=['post'], url_path='rework')
+    # @patch_serializer_class(CommentSerializer)
+    # def to_rework(self, request, *a, **kw):
+    #     """
+    #     Update monitoring items
+    #     """
+    #     report = self.get_object()
+    #     report.status = prj_models.Report.REWORK
+    #     report.save()
 
-        item_def = request.data
-        cpdoc = self.get_object()
-        item_def['report'] = report.id
-        item_def['expert'] = auth2.models.NatrUser.objects.get(account=request.user).id
+    #     item_def = request.data
+    #     cpdoc = self.get_object()
+    #     item_def['report'] = report.id
+    #     item_def['expert'] = auth2.models.NatrUser.objects.get(account=request.user).id
 
-        item_ser = self.get_serializer(data=item_def)
-        item_ser.is_valid(raise_exception=True)
-        item_obj = item_ser.save()
+    #     item_ser = self.get_serializer(data=item_def)
+    #     item_ser.is_valid(raise_exception=True)
+    #     item_obj = item_ser.save()
 
-        headers = self.get_success_headers(item_ser.data)
-        return response.Response(item_ser.data, headers=headers)
+    #     headers = self.get_success_headers(item_ser.data)
+    #     return response.Response(item_ser.data, headers=headers)
