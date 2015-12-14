@@ -30,9 +30,11 @@ class CostType(ProjectBasedModel):
 
 class FundingType(ProjectBasedModel):
     u"""Источник финансирования"""
+    OWN_FUND = u'Свои средства'
+    NATR_FUND = u'Средства НАТР'
     DEFAULT = (
-    	u'Свои средства',
-        u'Средства НАТР')
+    	OWN_FUND,
+        NATR_FUND)
     # cost_document = models.ForeignKey('CostDocument', related_name='funding_types', null=True)
     name = models.CharField(max_length=1024, default='')
     date_created = models.DateTimeField(auto_now_add=True, null=True)

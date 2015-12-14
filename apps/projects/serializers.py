@@ -9,7 +9,7 @@ from grantee.serializers import *
 from documents.serializers import *
 from documents import models as doc_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary
 from auth2.models import NatrUser
 
 
@@ -230,11 +230,17 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 
     current_milestone = serializers.SerializerMethodField()
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
-
+    agreement = serializers.SerializerMethodField()
+    
     def get_current_milestone(self, instance):
         cur_milestone = instance.current_milestone
         if cur_milestone:
             return MilestoneSerializer(cur_milestone).data
+        return None
+
+    def get_agreement(self, instance):
+        if instance.aggreement:
+            return AgreementDocumentSerializer(instance.aggreement).data
         return None
 
 
@@ -247,6 +253,18 @@ class ReportSerializer(serializers.ModelSerializer):
         queryset=Milestone.objects.all(), required=True)
     project = ProjectBasicInfoSerializer(required=True)
     use_of_budget_doc = UseOfBudgetDocumentSerializer(required=False)
+    status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+
+
+class CorollarySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Corollary
+
+    project = ProjectBasicInfoSerializer(required=True)
+    milestone = MilestoneSerializer(required=True)
+    use_of_budget_doc = UseOfBudgetDocumentSerializer(required=True)
+    report_date = serializers.DateTimeField()
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
 

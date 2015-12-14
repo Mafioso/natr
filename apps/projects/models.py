@@ -304,17 +304,111 @@ class Corollary(ProjectBasedModel):
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul
     type = models.IntegerField(null=True)
-    domestication_period = models.CharField(u'Срок освоения', max_length=255, null=True)
-    impl_period = models.CharField(u'Срок реализации', max_length=255, null=True)
-    number_of_milestones = models.IntegerField(u'Количество этапов', default=1)
-    report_delivery_date = models.DateTimeField(null=True)  # from report
     report = models.OneToOneField('Report', null=True)
-
+    milestone = models.OneToOneField('Milestone', related_name='corollary')
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
 
     def get_status_cap(self):
         return Corollary.STATUS_CAPS[self.status]
 
+    def build_stat(self):
+        planned_costs = {cost.cost_type_id: cost for cost in self.planned_costs}
+
+        stat_by_type = {
+            cost_type.id: CorollaryStatByCostType(
+                corollary=self,)
+            for cost_type in self.project.costtype_set.all()}
+        for cost_type_id, stat_obj in stat_by_type.iteritems():
+            stat_obj.costs_received_by_natr = stat_obj.planned_costs = planned_costs[cost_type_id].costs
+            fact_cost_lst = FactMilestoneCostRow.objects.filter(
+                cost_type=cost_type_id,
+                milestone=self.milestone)
+            stat_obj.fact_costs = sum([
+                cost_item.costs.amount
+                for cost_item in fact_cost_list
+            ])
+
+
+    @property
+    def use_of_budget_doc(self):
+        u"""Отчет об использовании целевых бюджетных средств"""
+        return self.report.use_of_budget_doc
+
+    @property
+    def cost_document(self):
+        u"""Смета расходов (на начало проекта)"""
+        return self.project.cost_document
+
+    @property
+    def planned_costs(self):
+        u"""Расходы согласно договора"""
+        return self.cost_document.get_milestone_costs(self.milestone)
+
+    @property
+    def planned_fundings(self):
+        u"""Бюджетные средства согласно договора"""
+        return self.cost_document.get_milestone_fundings(self.milestone)
+
+    @property
+    def number_of_milestones(self):
+        u"""Количество этапов"""
+        return self.project.number_of_milestones
+
+    @property
+    def total_month(self):
+        u"""Срок освоения гранта"""
+        return self.project.total_month
+
+    @property
+    def total_month_for_milestone(self):
+        u"""Срок реализации"""
+        return self.milestone.period
+
+    @property
+    def report_date(self):
+        u"""Дата представления отчета за 1-й этап"""
+        return self.report.date
+
+    @property
+    def agreement_number(self):
+        u"""Договор"""
+        return self.agreement.number
+
+    @property
+    def agreement_date(self):
+        u"""Договор"""
+        return self.agreement.date_sign
+
+    @property
+    def agreement(self):
+        return self.project.aggreement
+
+
+class CorollaryStatByCostType(models.Model):
+    corollary = models.ForeignKey('Corollary')
+    cost_type = models.ForeignKey('natr.CostType')
+    natr_fundings = MoneyField(u'Средства гранта',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    own_fundings = MoneyField(u'Собственные средства',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    planned_costs = MoneyField(u'Сумма согласно договора',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    fact_costs = MoneyField(u'Сумма представленная ГП',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    costs_received_by_natr = MoneyField(u'Сумма принимаемая НАТР',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    costs_approved_by_docs = MoneyField(u'Сумма подтвержденная документами',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    savings = MoneyField(u'Экономия',
+        max_digits=20, decimal_places=2, default_currency='KZT',
+        null=True, blank=True)
+    
 
 class Milestone(ProjectBasedModel):
 
