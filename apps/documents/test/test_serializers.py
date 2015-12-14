@@ -147,15 +147,12 @@ class DocumentSerializerTestCase(TestCase):
         self.assertIsInstance(self.prj.cost_document_id, int)
 
     def test_create_fake_cost_document(self):
-        cost_doc = factories.CostDocument.create()
+        d = factories.Document.create(project=self.prj)
+        cost_doc = factories.CostDocument.create(document=d)
         self.assertTrue(len(cost_doc.cost_types.all()) > 0)
-        self.assertTrue(len(cost_doc.funding_types.all()) > 0)
         self.assertTrue(len(cost_doc.milestone_costs.all()) > 0)
-        self.assertTrue(len(cost_doc.milestone_fundings.all()) > 0)
         for cost_type in cost_doc.cost_types.all():
             self.assertTrue(len(cost_doc.get_milestone_costs_row(cost_type)) > 0)
-        for funding_type in cost_doc.funding_types.all():
-            self.assertTrue(len(cost_doc.get_milestone_fundings_row(funding_type)) > 0)
 
     def test_create_gp_doc(self):
         data_thin = {

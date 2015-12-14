@@ -34,12 +34,6 @@ class Project(DjangoModelFactory):
             return
         natr_models.CostType.create_default(self)
     
-    @factory.post_generation
-    def fundingtype_set(self, create, *args, **kwargs):
-        if not create:
-            return
-        natr_models.FundingType.create_default(self)
-
 
 class ProjectWithMilestones(Project):
 

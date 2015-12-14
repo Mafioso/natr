@@ -203,52 +203,6 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
             self.assertEqual(item_after['costs']['amount'], item_before['costs']['amount'])
         self.assertEqual(response_data['cost_type']['name'], data['cost_type']['name'])
 
-    def test_add_edit_funding_row_to_cost(self):
-        prj_ser = ProjectSerializer(data=self.project_data)
-        prj_ser.is_valid(raise_exception=True)
-        prj = prj_ser.save()
-        milestones = list(prj.milestone_set.all())
-        cost_doc = prj.cost_document
-
-        data = {}
-        funding_type_data = data.setdefault('funding_type', {'name': 'lorem ipsum'})
-        funding_row_data = data.setdefault('funding_row', [])
-        
-        for i, m in enumerate(milestones):
-            funding_row_data.append({
-                'milestone': m.id,
-                'fundings': {
-                    'amount': 1200 + i,
-                    'currency': 'KZT'
-                }
-            })
-        url, parsed = self.prepare_urls('costdocument-add-funding-row', kwargs={'pk': cost_doc.id})
-        response = self.client.post(url, data, format='json')
-        response_data = self.load_response(response)
-        self.chk_ok(response)
-        for i, (item_after, item_before) in enumerate(zip(response_data['funding_row'], data['funding_row'])):
-            self.assertEqual(item_after['milestone'], item_before['milestone'])
-            self.assertEqual(item_after['fundings']['amount'], item_before['fundings']['amount'])
-            self.assertIn('funding_type', item_after)
-        self.assertEqual(response_data['funding_type']['name'], data['funding_type']['name'])
-
-        data = {}
-        funding_type_data = data.setdefault('funding_type', response_data['funding_type'])
-        funding_row_data = data.setdefault('funding_row', [])
-        for i, item in enumerate(response_data['funding_row']):
-            new_item = dict(**item)
-            new_item['fundings']['amount'] = item['fundings']['amount'] + i
-        url, parsed = self.prepare_urls('costdocument-edit-funding-row', kwargs={'pk': cost_doc.id})
-        print data
-        response = self.client.post(url, data, format='json')
-        response_data = self.load_response(response)
-        self.chk_ok(response)
-
-        for i, (item_after, item_before) in enumerate(zip(response_data['funding_row'], data['funding_row'])):
-            self.assertEqual(item_after['id'], item_before['id'])
-            self.assertEqual(item_after['fundings']['amount'], item_before['fundings']['amount'])
-        self.assertEqual(response_data['funding_type']['name'], data['funding_type']['name'])
-
     def test_cost_fetch_all_by_row(self):
         prj_ser = ProjectSerializer(data=self.project_data)
         prj_ser.is_valid(raise_exception=True)
@@ -258,23 +212,13 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
         response = self.client.get(url, {}, format='json')
         response_data = self.load_response(response)
         self.chk_ok(response)
-        self.assertIn('cost_rows', response_data)
-        self.assertIn('funding_rows', response_data)
-        self.assertTrue(len(response_data['cost_rows']) > 0)
-        self.assertTrue(len(response_data['funding_rows']) > 0)
+        self.assertIsInstance(response_data, list)
+        self.assertTrue(len(response_data) > 0)
         
-        for cost_row in response_data['cost_rows']:
+        for cost_row in response_data:
             cost_type_ids = set([])
             for cost_cell in cost_row:
                 self.assertIn('cost_type', cost_cell)
                 self.assertTrue(isinstance(cost_cell['cost_type'], dict))
                 cost_type_ids.add(cost_cell['cost_type']['id'])
             self.assertEqual(len(cost_type_ids), 1)
-
-        for funding_row in response_data['funding_rows']:
-            funding_type_ids = set([])
-            for funding_cell in funding_row:
-                self.assertIn('funding_type', funding_cell)
-                self.assertTrue(isinstance(funding_cell['funding_type'], dict))
-                funding_type_ids.add(funding_cell['funding_type']['id'])
-            self.assertEqual(len(funding_type_ids), 1)

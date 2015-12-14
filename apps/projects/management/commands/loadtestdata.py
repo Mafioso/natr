@@ -94,6 +94,5 @@ class Command(BaseCommand):
 		doc = doc_factories.Document.create(project=project)
 		cost_doc = doc_factories.CostDocument.create(
 			document=doc,
-			cost_types=project.costtype_set.all(),
-			funding_types=project.fundingtype_set.all())
+			cost_types=project.costtype_set.all())
 		cost_doc.document.save()

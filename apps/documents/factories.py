@@ -114,17 +114,6 @@ class CostDocument(DjangoModelFactory):
         if not create:
             self._prefetched_objects_cache = {'milestone_costs': milestone_costs}
 
-    @factory.post_generation
-    def milestone_fundings(self, create, count, **kwargs):
-        milestone_fundings = []
-        make_milestone_fund = getattr(MilestoneFundingRow, 'create' if create else 'build')
-        for m in self.document.project.milestone_set.all():
-            milestone_fundings.extend([
-                make_milestone_fund(cost_document=self, funding_type=funding_type, milestone=m)
-                for funding_type in self.funding_types.all()])
-        if not create:
-            self._prefetched_objects_cache = {'milestone_fundings': milestone_fundings}
-
 
 class CostType(DjangoModelFactory):
 
@@ -135,16 +124,6 @@ class CostType(DjangoModelFactory):
     name = factory.Faker('sentence')
     date_created = factory.Faker('date_time')
     project = factory.SubFactory('projects.factories.Project')
-
-class FundingType(DjangoModelFactory):
-
-    class Meta:
-        model = models.FundingType
-        strategy = BUILD_STRATEGY
-
-    name = factory.Faker('sentence')
-    cost_document = factory.SubFactory('documents.factories.CostDocument')
-    date_created = factory.Faker('date_time')
 
 
 class MilestoneCostRow(DjangoModelFactory):
@@ -158,17 +137,9 @@ class MilestoneCostRow(DjangoModelFactory):
     cost_type = factory.SubFactory('documents.factories.CostType')
     costs = factory.LazyAttribute(lambda _: utils.fake_money())
 
-
-class MilestoneFundingRow(DjangoModelFactory):
-
-    class Meta:
-        model = models.MilestoneFundingRow
-        strategy = BUILD_STRATEGY
-
-    cost_document = factory.SubFactory('documents.factories.CostDocument')
-    milestone = factory.SubFactory('projects.factories.Milestone')
-    funding_type = factory.SubFactory('documents.factories.FundingType')
-    fundings = factory.LazyAttribute(lambda _: utils.fake_money())
+    @factory.lazy_attribute
+    def own_costs(self):
+        return self.costs - utils.Money(amount=10, currency=utils.KZT)
 
 
 class UseOfBudgetDocument(DjangoModelFactory):

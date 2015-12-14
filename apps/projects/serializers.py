@@ -108,7 +108,6 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj.save()
 
         natr_models.CostType.create_default(prj)
-        natr_models.FundingType.create_default(prj)
 
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):

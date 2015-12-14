@@ -9,7 +9,7 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
 from natr import utils
-from natr.models import CostType, FundingType
+from natr.models import CostType
 from django.contrib.auth import get_user_model
 from notifications.models import Notification
 from documents.models import (
