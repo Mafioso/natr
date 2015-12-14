@@ -645,7 +645,7 @@ class GPDocument(models.Model):
     раскрывают смету расходов в общем."""
     tp = 'gp_doc'
     document = models.OneToOneField(Document, related_name='gp_document', on_delete=models.CASCADE)
-    type = models.ForeignKey(GPDocumentType, related_name='gp_docs', default=doc_utils.get_default_gp_type().id)
+    type = models.ForeignKey(GPDocumentType, related_name='gp_docs', null=True)
     number = models.CharField(max_length=255, null=True, blank=True)
     cost_row = models.ForeignKey('FactMilestoneCostRow', null=True, related_name='gp_docs')
 
