@@ -4,6 +4,7 @@
 from rest_framework import serializers
 from moneyed import Money
 import documents.models as models
+from natr.rest_framework.serializers import *
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 
@@ -280,30 +281,6 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
         return data
 
 
-
-
-class CostTypeSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = models.CostType
-
-    cost_document = serializers.PrimaryKeyRelatedField(
-        queryset=models.CostDocument.objects.all(), required=False)
-
-    price_details = serializers.CharField(allow_blank=True, required=False)
-    source_link = serializers.CharField(allow_blank=True, required=False)
-
-
-class FundingTypeSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = models.FundingType
-
-    cost_document = serializers.PrimaryKeyRelatedField(
-        queryset=models.CostDocument.objects.all(), required=False)
-
-
-
 class MilestoneCostRowSerializer(serializers.ListSerializer):
 
     def create(self, validated_data):
@@ -367,7 +344,6 @@ class MilestoneFundingCellSerializer(ExcludeCurrencyFields, serializers.ModelSer
 
     cost_document = serializers.PrimaryKeyRelatedField(
         queryset=models.CostDocument.objects.all(), required=False)
-    funding_type = FundingTypeSerializer(required=False)
     fundings = SerializerMoneyField(required=False)
 
 
@@ -388,8 +364,14 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
         milestone_costs = data.setdefault('milestone_costs', [])
         milestone_fundings = data.setdefault('milestone_fundings', [])
         for milestone in project.milestone_set.all():
-            milestone_costs.append({'milestone': milestone.pk,})
-            milestone_fundings.append({'milestone': milestone.pk})
+            for ctype in project.costtype_set.all():
+                milestone_costs.append({
+                    'milestone': milestone.pk,
+                    'cost_type': ctype.pk})
+            for ftype in project.fundingtype_set.all():
+                milestone_fundings.append({
+                    'milestone': milestone.pk,
+                    'funding_type': ftype.pk})
         return data
 
     def create(self, validated_data):
@@ -454,6 +436,41 @@ class FactMilestoneCostGroupSerializer(serializers.ListSerializer):
         return instance_dict.values()
 
 
+class FactMilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = models.FactMilestoneCostRow
+        list_serializer_class = FactMilestoneCostGroupSerializer
+
+    costs = SerializerMoneyField(required=False)
+    budget_item = serializers.PrimaryKeyRelatedField(
+        queryset=models.UseOfBudgetDocumentItem.objects.all(), required=False)
+    gp_docs = serializers.PrimaryKeyRelatedField(
+        queryset=models.GPDocument.objects.all(), many=True, required=False)
+
+    def __init__(self, *a, **kw):
+        if kw.pop('gp_docs', False) == True:
+            self.fields['gp_docs'] = GPDocumentSerializer(many=True)
+        if kw.pop('budget_item', False) == True:
+            self.fields['budget_item'] = UseOfBudgetDocumentItemSerializer()
+        super(FactMilestoneCostRowSerializer, self).__init__(*a, **kw)
+
+    def create(self, validated_data):
+        gp_docs = validated_data.pop('gp_docs', [])
+        obj = models.FactMilestoneCostRow.objects.create(**validated_data)
+        obj.gp_docs.add(*gp_docs)
+        return obj
+
+    def update(self, instance, validated_data):
+        gp_docs = validated_data.pop('gp_docs', [])
+        instance.costs = validated_data['costs']
+        instance.name = validated_data['name']
+        instance.budget_item = validated_data['budget_item']
+        instance.save()
+        instance.gp_docs.clear()
+        instance.gp_docs.add(*gp_docs)
+        return instance
+
 class GPDocumentSerializer(DocumentCompositionSerializer):
 
     class Meta:
@@ -495,33 +512,6 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
             cost_type=doc_item.cost_type, **fact_cost) for fact_cost in costs]
         doc_item.costs.add(*costs)
         return use_of_budget_item
-
-
-class FactMilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
-
-    class Meta:
-        model = models.FactMilestoneCostRow
-        list_serializer_class = FactMilestoneCostGroupSerializer
-
-    costs = SerializerMoneyField(required=False)
-    use_of_budget_doc = UseOfBudgetDocumentItemSerializer(many=True, required=False)
-    gp_docs = serializers.PrimaryKeyRelatedField(
-        queryset=models.GPDocument.objects.all(), many=True, required=False)
-
-    def create(self, validated_data):
-        gp_docs = validated_data.pop('gp_docs', [])
-        obj = models.FactMilestoneCostRow.objects.create(**validated_data)
-        obj.gp_docs.add(*gp_docs)
-        return obj
-
-    def update(self, instance, validated_data):
-        gp_docs = validated_data.pop('gp_docs', [])
-        instance.costs = validated_data['costs']
-        instance.name = validated_data['name']
-        instance.save()
-        instance.gp_docs.clear()
-        instance.gp_docs.add(*gp_docs)
-        return instance
 
 
 class AttachmentSerializer(serializers.ModelSerializer):

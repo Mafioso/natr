@@ -239,6 +239,7 @@ class DocumentApiTestCase(CommonTestMixin, APITestCase):
             new_item = dict(**item)
             new_item['fundings']['amount'] = item['fundings']['amount'] + i
         url, parsed = self.prepare_urls('costdocument-edit-funding-row', kwargs={'pk': cost_doc.id})
+        print data
         response = self.client.post(url, data, format='json')
         response_data = self.load_response(response)
         self.chk_ok(response)

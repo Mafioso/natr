@@ -9,6 +9,7 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
 from natr import utils
+from natr.models import CostType, FundingType
 from django.contrib.auth import get_user_model
 from notifications.models import Notification
 from documents.models import (
@@ -18,6 +19,7 @@ from documents.models import (
     InnovativeProjectPasportDocument,
     CostDocument,
     ProjectStartDescription,
+    UseOfBudgetDocument
 )
 
 class Project(models.Model):
@@ -37,6 +39,7 @@ class Project(models.Model):
     name = models.CharField(max_length=1024, null=True, blank=True)
     description = models.CharField(max_length=1024, null=True, blank=True)
     innovation = models.CharField(u'Инновационность', max_length=1024, null=True, blank=True)
+    grant_goal = models.CharField(u'цель гранта', max_length=1024, null=True, blank=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     total_month = models.IntegerField(u'Срок реализации проекта (месяцы)', default=24)
@@ -223,27 +226,27 @@ class Report(ProjectBasedModel):
     class Meta:
         ordering = ['milestone__number']
 
-    # STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
-
-    # STATUS_CAPS = (
-    #     u'неактивен'
-    #     u'формирование',
-    #     u'на проверке',
-    #     u'утверждение',
-    #     u'утвержден',
-    #     u'отправлен на доработку',
-    #     u'завершен')
-
-    STATUSES = BUILD, APPROVE, REWORK = range(3)
+    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
 
     STATUS_CAPS = (
-        u'Формирование',
-        u'Согласование',
-        u'Доработка')
-
+        u'неактивен'
+        u'формирование',
+        u'на проверке',
+        u'утверждение',
+        u'утвержден',
+        u'отправлен на доработку',
+        u'завершен')
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
 
-    type = models.IntegerField(null=True)
+    TYPES = CAMERAL, OTHER, FINAL = range(3)
+    TYPES_CAPS = (
+        u'камеральный отчет',
+        u'другой отчет',
+        u'итоговый отчет')
+
+    TYPES_OPTS = zip(TYPES, TYPES_CAPS)
+
+    type = models.IntegerField(null=True, choices=TYPES_OPTS, default=CAMERAL)
     date = models.DateTimeField(u'Дата отчета', null=True)
 
     period = models.CharField(null=True, max_length=255)
@@ -261,6 +264,19 @@ class Report(ProjectBasedModel):
 
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
+
+    @classmethod
+    def build_empty(cls, milestone):
+        budget_doc = UseOfBudgetDocument.objects.create_empty(
+            milestone.project, milestone=milestone)
+        r = Report(
+            milestone=milestone,
+            project=milestone.project,
+            use_of_budget_doc=budget_doc)
+        r.save()
+        for cost_type in r.project.costtype_set.all():
+            budget_doc.add_empty_item(cost_type)
+        return r
 
 
 class Corollary(ProjectBasedModel):
@@ -392,6 +408,13 @@ class Milestone(ProjectBasedModel):
     def is_closed(self):
         return self.status == Milestone.CLOSE
 
+    @property
+    def cameral_report(self):
+        return self.get_report_by_type(Report.CAMERAL)
+
+    def get_report_by_type(self, report_type):
+        return self.reports.get(type=report_type)
+
     @classmethod
     def build_from_calendar_plan(cls, calendar_plan, project=None, force=False):
         """Regenerates milestones if not already"""
@@ -413,6 +436,7 @@ class Milestone(ProjectBasedModel):
                 project=project
             ))
         return Milestone.objects.bulk_create(milestones)
+
 
 
 class Monitoring(ProjectBasedModel):
@@ -461,4 +485,11 @@ class Comment(models.Model):
     date_created = models.DateTimeField(auto_now_add=True)
 
 
+from django.db.models.signals import post_save
 
+def on_milestone_create(sender, instance, created=False, **kwargs):
+    if not created:
+        return
+    Report.build_empty(instance)
+
+post_save.connect(on_milestone_create, sender=Milestone)

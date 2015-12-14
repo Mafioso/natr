@@ -4,7 +4,7 @@ import factory
 from factory.django import DjangoModelFactory
 from factory import BUILD_STRATEGY, fuzzy
 from projects import models
-from natr import utils
+from natr import utils, models as natr_models
 import random
 
 def fake_choice(choices):
@@ -27,6 +27,18 @@ class Project(DjangoModelFactory):
     funding_type = factory.SubFactory('projects.factories.FundingType')
     # aggreement = factory.SubFactory('documents.factories.AgreementDocument')  # max recursion depth
     # statement = factory.SubFactory('documents.factories.StatementDocument')
+
+    @factory.post_generation
+    def costtype_set(self, create, *args, **kwargs):
+        if not create:
+            return
+        natr_models.CostType.create_default(self)
+    
+    @factory.post_generation
+    def fundingtype_set(self, create, *args, **kwargs):
+        if not create:
+            return
+        natr_models.FundingType.create_default(self)
 
 
 class ProjectWithMilestones(Project):

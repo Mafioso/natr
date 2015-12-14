@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import serializers
-from natr import utils
+from natr import utils, models as natr_models
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
@@ -19,7 +19,8 @@ __all__ = (
     'ReportSerializer',
     'MonitoringSerializer',
     'MonitoringTodoSerializer',
-    'MilestoneSerializer'
+    'MilestoneSerializer',
+    'CommentSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -45,7 +46,8 @@ class MilestoneSerializer(
 
     @classmethod
     def empty_data(cls, project, **kwargs):
-        kwargs.update({'project': project.id})
+        kwargs.update({
+            'project': project.id})
         return kwargs
 
 
@@ -104,6 +106,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         prj.save()
 
+        natr_models.CostType.create_default(prj)
+        natr_models.FundingType.create_default(prj)
 
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
@@ -287,8 +291,8 @@ class CommentSerializer(serializers.ModelSerializer):
 
     report = serializers.PrimaryKeyRelatedField(
         queryset=Report.objects.all(), required=True)
-    expert = serializers.PrimaryKeyRelatedField(
-        queryset=auth2.models.NatrUser.objects.all(), required=True)
+    # expert = serializers.PrimaryKeyRelatedField(
+    #     queryset=auth2.models.NatrUser.objects.all(), required=True)
 
     def create(self, validated_data):
         comment = Comment.objects.create(**validated_data)

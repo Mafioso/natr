@@ -3,9 +3,9 @@
 import datetime
 from django.test import TestCase
 from moneyed import Money, KZT, USD
-from natr import utils
+from natr import utils, models as natr_models
 from projects.serializers import *
-from projects import factories
+from projects import factories, models as prj_models
 from documents import models as doc_models
 from rest_framework import serializers
 # Create your tests here.
@@ -77,7 +77,8 @@ class ProjectSerializerTestCase(TestCase):
 
 	def test_project_create(self):
 		prj_ser = ProjectSerializer(data=self.data)
-		prj_ser.is_valid(raise_exception=True)
+		prj_ser.is_valid(raise_exception=False)
+		utils.pretty(prj_ser.errors)
 		prj = prj_ser.save()
 		
 		self.assertEqual(prj.name, 'lorem')
@@ -91,18 +92,28 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertTrue(len(prj.calendar_plan.items.all()) > 0)
 		self.assertEqual(len(prj.calendar_plan.items.all()), prj.number_of_milestones)
 
+		self.assertEqual(len(prj.costtype_set.all()), len(natr_models.CostType.DEFAULT))
+		self.assertEqual(len(prj.fundingtype_set.all()), len(natr_models.FundingType.DEFAULT))
+
 		self.assertIsInstance(prj.cost_document, doc_models.CostDocument)
-		self.assertEqual(len(prj.cost_document.milestone_costs.all()), prj.number_of_milestones)
-		self.assertTrue(len(prj.cost_document.milestone_fundings.all()), prj.number_of_milestones)
+		self.assertEqual(len(prj.cost_document.milestone_costs.all()) / prj.number_of_milestones, len(prj.costtype_set.all()))
+		self.assertTrue(len(prj.cost_document.milestone_fundings.all()) / prj.number_of_milestones, len(prj.fundingtype_set.all()))
 		self.assertEqual(prj.cost_document.total_cost.amount, 0)
 		self.assertEqual(prj.cost_document.total_funding.amount, 0)
-		self.assertEqual(len(prj.cost_document.cost_types.all()), 1)
-		self.assertEqual(len(prj.cost_document.funding_types.all()), 1)
+		self.assertEqual(len(prj.cost_document.cost_types.all()), len(prj.costtype_set.all()))
+		self.assertEqual(len(prj.cost_document.funding_types.all()), len(prj.fundingtype_set.all()))
 
 		self.assertEqual(len(prj.milestone_set.all()), prj.number_of_milestones)
 
 		self.assertIsNotNone(prj.journal)
 		self.assertIsNotNone(prj.monitoring)
+
+		for m in prj.milestone_set.all():
+			self.assertIsNotNone(m.cameral_report)
+			self.assertIsInstance(m.cameral_report, prj_models.Report)
+			self.assertIsNotNone(m.cameral_report.use_of_budget_doc)
+			self.assertIsInstance(m.cameral_report.use_of_budget_doc, doc_models.UseOfBudgetDocument)
+			self.assertEqual(len(m.cameral_report.use_of_budget_doc.items.all()), len(prj.costtype_set.all()))
 
 		def assertRelated(obj, rel_name, initial=None):
 			initial = initial if initial is not None else self.data
@@ -283,12 +294,8 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertEqual(len(prj.calendar_plan.items.all()), prj.number_of_milestones)
 
 		self.assertIsInstance(prj.cost_document, doc_models.CostDocument)
-		self.assertEqual(len(prj.cost_document.milestone_costs.all()), prj.number_of_milestones)
-		self.assertTrue(len(prj.cost_document.milestone_fundings.all()), prj.number_of_milestones)
 		self.assertEqual(prj.cost_document.total_cost.amount, 0)
 		self.assertEqual(prj.cost_document.total_funding.amount, 0)
-		self.assertEqual(len(prj.cost_document.cost_types.all()), 1)
-		self.assertEqual(len(prj.cost_document.funding_types.all()), 1)
 
 		self.assertEqual(len(prj.milestone_set.all()), prj.number_of_milestones)
 
