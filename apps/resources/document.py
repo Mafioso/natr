@@ -411,3 +411,20 @@ class FactMilestoneCostRowViewSet(viewsets.ModelViewSet):
     serializer_class = FactMilestoneCostRowSerializer
     queryset = doc_models.FactMilestoneCostRow.objects.all()
 
+class GPDocimentViewSet(viewsets.ModelViewSet):
+    serializer_class = GPDocumentSerializer
+    queryset = doc_models.GPDocument.objects.all()
+    filter_fields = ('id')
+
+    def get_queryset(self):
+        """
+        Override get_queryset() to filter on multiple values for 'id'
+        """
+
+        id_value = self.request.query_params.get('id', None)
+        if id_value:
+            id_list = id_value.split(',')
+            queryset = self.queryset.filter(id__in=id_list)
+
+        return queryset
+

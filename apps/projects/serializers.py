@@ -246,7 +246,8 @@ class ReportSerializer(serializers.ModelSerializer):
     milestone = serializers.PrimaryKeyRelatedField(
         queryset=Milestone.objects.all(), required=True)
     project = ProjectBasicInfoSerializer(required=True)
-    use_of_budget_doc = UseOfBudgetDocumentSerializer(required=False)
+    use_of_budget_doc = serializers.PrimaryKeyRelatedField(
+        queryset=doc_models.UseOfBudgetDocument.objects.all(), required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
 

@@ -39,6 +39,7 @@ class Project(models.Model):
     name = models.CharField(max_length=1024, null=True, blank=True)
     description = models.CharField(max_length=1024, null=True, blank=True)
     innovation = models.CharField(u'Инновационность', max_length=1024, null=True, blank=True)
+    grant_goal = models.CharField(u'Цель гранта', max_length=1024, null=True, blank=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     total_month = models.IntegerField(u'Срок реализации проекта (месяцы)', default=24)
@@ -272,6 +273,7 @@ class Report(ProjectBasedModel):
         'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
         verbose_name=u'Отчет об использовании целевых бюджетных средств')
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
+    results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)
 
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
