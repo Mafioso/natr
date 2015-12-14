@@ -36,9 +36,9 @@ class Command(BaseCommand):
 		rv = []
 		for _ in xrange(5):
 			prj = factories.ProjectWithMilestones.create()
+			num = prj.number_of_milestones
 			rv.append(prj)
-			for _ in xrange(3):
-				factories.Milestone.create(project=prj)
+			random.choice(prj.milestone_set.all()).make_current()
 			doc = doc_factories.Document.create(
 				type=doc_models.StatementDocument.tp, project=prj)
 			statement = doc_factories.StatementDocument.create(document=doc)
