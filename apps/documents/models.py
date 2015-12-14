@@ -16,6 +16,7 @@ from statuses import (
     InnovativeProjectPasportStatuses,
     CommonStatuses
 )
+import utils as doc_utils
 
 
 
@@ -620,15 +621,37 @@ class UseOfBudgetDocument(models.Model):
             use_of_budget_doc=self,
             cost_type=cost_type)
 
+class GPDocumentType(models.Model):
+    u"""
+        Тип документа по отчету например: акт, счет фактура, акт выполненных работ
+    """
+    DEFAULT = (
+        u'договор',
+        u'счёт на оплату',
+        u'платёжное поручение',
+        u'счёт-фактура',
+        u'акт выполненных работ'
+    )
+
+    name = models.CharField(max_length=255)
+
+    @classmethod
+    def create_default(cls):
+        return [cls.objects.create(name=gp_doc_type) for gp_doc_type in cls.DEFAULT]
+
 
 class GPDocument(models.Model):
-    u"""Документ по отчету ГП, например: акт, счет фактура, акт выполненных работ, который
+    u"""Документ по отчету ГП, например по типу: акт, счет фактура, акт выполненных работ, который
     раскрывают смету расходов в общем."""
     tp = 'gp_doc'
     document = models.OneToOneField(Document, related_name='gp_document', on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
+    type = models.ForeignKey(GPDocumentType, related_name='gp_docs', default=doc_utils.get_default_gp_type().id)
     number = models.CharField(max_length=255, null=True, blank=True)
     cost_row = models.ForeignKey('FactMilestoneCostRow', null=True, related_name='gp_docs')
+
+    @property 
+    def name(self):
+        return self.type.name
 
 
 
