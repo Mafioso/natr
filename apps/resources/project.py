@@ -107,7 +107,7 @@ class MonitoringViewSet(viewsets.ModelViewSet):
         """
         Update monitoring items
         """
-        obj_monitoring = self.get_object()     
+        obj_monitoring = self.get_object()
         obj_monitoring.update_items(**request.data)
 
         qs = obj_monitoring.todos.all()
@@ -129,7 +129,7 @@ class ReportViewSet(viewsets.ModelViewSet):
         """
         Update monitoring items
         """
-        report = self.get_object()  
+        report = self.get_object()
         report.status = prj_models.Report.REWORK
         report.save()
 
@@ -137,7 +137,7 @@ class ReportViewSet(viewsets.ModelViewSet):
         cpdoc = self.get_object()
         item_def['report'] = report.id
         item_def['expert'] = auth2.models.NatrUser.objects.get(account=request.user).id
-        
+
         item_ser = self.get_serializer(data=item_def)
         item_ser.is_valid(raise_exception=True)
         item_obj = item_ser.save()

@@ -475,14 +475,14 @@ class MonitoringTodo(ProjectBasedModel):
             return (self.date_end - now).days
         return None
 
-class Comment(models.Model):
-    """
-        Комментарий к проекту
-    """
-    report = models.ForeignKey(Report, related_name='comments')
-    expert = models.ForeignKey('auth2.NatrUser', related_name='comments')
-    comment_text = models.TextField(null=True)
-    date_created = models.DateTimeField(auto_now_add=True)
+# class Comment(models.Model):
+#     """
+#         Комментарий к проекту
+#     """
+#     report = models.ForeignKey(Report, related_name='comments')
+#     expert = models.ForeignKey('auth2.NatrUser', related_name='comments')
+#     comment_text = models.TextField(null=True)
+#     date_created = models.DateTimeField(auto_now_add=True)
 
 
 from django.db.models.signals import post_save

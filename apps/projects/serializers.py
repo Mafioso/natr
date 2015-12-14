@@ -9,7 +9,8 @@ from grantee.serializers import *
 from documents.serializers import *
 from documents import models as doc_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo
+from auth2.models import NatrUser
 
 
 __all__ = (
@@ -19,8 +20,7 @@ __all__ = (
     'ReportSerializer',
     'MonitoringSerializer',
     'MonitoringTodoSerializer',
-    'MilestoneSerializer',
-    'CommentSerializer'
+    'MilestoneSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -158,7 +158,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if self.partial:
             return super(ProjectSerializer, self).update(instance, validated_data)
-        
+
         organization_details = validated_data.pop('organization_details', None)
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', None)
@@ -284,16 +284,18 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
             monitoring=monitoring, **validated_data)
         return monitoring_todo
 
-class CommentSerializer(serializers.ModelSerializer):
+# class CommentSerializer(serializers.ModelSerializer):
 
-    class Meta:
-        model = Comment
+#     class Meta:
+#         model = Comment
 
-    report = serializers.PrimaryKeyRelatedField(
-        queryset=Report.objects.all(), required=True)
-    # expert = serializers.PrimaryKeyRelatedField(
-    #     queryset=auth2.models.NatrUser.objects.all(), required=True)
+#     report = serializers.PrimaryKeyRelatedField(
+#         queryset=Report.objects.all(), required=True)
+#     # expert = serializers.PrimaryKeyRelatedField(
+#     #     queryset=auth2.models.NatrUser.objects.all(), required=True)
+#     expert = serializers.PrimaryKeyRelatedField(
+#         queryset=NatrUser.objects.all(), required=True)
 
-    def create(self, validated_data):
-        comment = Comment.objects.create(**validated_data)
-        return comment
+#     def create(self, validated_data):
+#         comment = Comment.objects.create(**validated_data)
+#         return comment
