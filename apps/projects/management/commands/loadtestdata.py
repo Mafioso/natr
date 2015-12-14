@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import random
 from moneyed import KZT, Money
 from django.core.management.base import BaseCommand, CommandError
@@ -62,11 +65,21 @@ class Command(BaseCommand):
 		return rv
 
 	def gen_reports(self, project):
-		for i, milestone in enumerate(project.milestone_set.all()):
-			if i == 0:
-				milestone.set_start(Money(1000000, KZT))
-			if milestone.is_started():
-				factories.Report.create(milestone=milestone)
+		for report in project.report_set.all():
+			budget_doc = report.use_of_budget_doc
+			for budget_item in budget_doc.items.all():
+				for _ in xrange(2):
+					cost_row = doc_models.FactMilestoneCostRow.objects.create(
+						cost_type=budget_item.cost_type,
+						milestone=budget_doc.milestone,
+						budget_item=budget_item)
+					for _ in xrange(2):
+						_doc = doc_models.Document.objects.create()
+						doc_models.GPDocument.objects.create(
+							name=u'акт',
+							number=u'0001',
+							cost_row=cost_row,
+							document=_doc)
 
 	def gen_monitoring(self, project):
 		factories.Monitoring.create(project=project)

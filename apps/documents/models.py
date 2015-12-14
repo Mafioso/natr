@@ -831,7 +831,7 @@ class FactMilestoneCostRow(models.Model):
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2)
     budget_item = models.ForeignKey('UseOfBudgetDocumentItem', related_name='costs')
-
+    note = models.CharField(max_length=1024, null=True)
 
     @property
     def project(self):
