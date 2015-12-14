@@ -489,6 +489,7 @@ class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
             obj = instance_dict[_id]
             obj.costs = item['costs']
             obj.name = item['name']
+            obj.note = item['note']
             obj.save()
 
         for item in to_create_data:
