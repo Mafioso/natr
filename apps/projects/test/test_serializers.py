@@ -179,7 +179,7 @@ class ProjectSerializerTestCase(TestCase):
 	# 		self.assertIn(item_id, item_ids)
 
 	def test_monitoring(self):
-		monitoring = factories.Monitoring()
+		monitoring = factories.Monitoring.create()
 		self.assertTrue(len(monitoring.todos.all()) > 0)
 		for todo in monitoring.todos.all():
 			self.assertEqual((todo.date_end - todo.date_start).days, todo.period)
@@ -192,7 +192,7 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertEqual(len(monitoring_data['todos']), len(monitoring.todos.all()))
 
 	def test_monitoring_todo(self):
-		todo = factories.MonitoringTodo()
+		todo = factories.MonitoringTodo.create()
 		data = MonitoringTodoSerializer(instance=todo).data
 		todo_ser = MonitoringTodoSerializer(data=data)
 		with self.assertRaises(serializers.ValidationError):
