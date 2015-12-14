@@ -9,6 +9,7 @@ from django.db import models
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
 from natr import utils
+from natr.models import CostType, FundingType
 from django.contrib.auth import get_user_model
 from notifications.models import Notification
 from documents.models import (
@@ -17,6 +18,7 @@ from documents.models import (
     InnovativeProjectPasportDocument,
     CostDocument,
     ProjectStartDescription,
+    UseOfBudgetDocument
 )
 
 class Project(models.Model):
@@ -244,6 +246,16 @@ class Report(ProjectBasedModel):
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
 
+    @classmethod
+    def build_empty(cls, milestone):
+        r = Report(milestone=milestone, project=milestone.project)
+        r.save()
+
+        budget_doc = UseOfBudgetDocument.objects.create_empty(milestone=milestone)
+        for cost_type in self.project.cost_document.cost_types.all():
+            budget_doc.add_empty_item(cost_type)
+        return r
+
 
 class Corollary(ProjectBasedModel):
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
@@ -432,3 +444,11 @@ class MonitoringTodo(ProjectBasedModel):
             now = timezone.now()
             return (self.date_end - now).days
         return None
+
+
+from django.db.models.signals import post_save
+
+def on_milestone_create(sender, instance, created=False, **kwargs):
+    if not created:
+        return
+    Report.build_empty(instance)

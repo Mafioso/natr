@@ -10,6 +10,7 @@ from django.db import models
 from django.utils.functional import cached_property
 from django.conf import settings
 from natr.mixins import ProjectBasedModel
+from natr.models import CostType, FundingType
 from statuses import (
     BasicProjectPasportStatuses, 
     InnovativeProjectPasportStatuses,
@@ -140,15 +141,12 @@ class DocumentDMLManager(models.Manager):
         doc = self.create_doc_with_relations(CostDocument, **kwargs)
         doc.save()
 
-        cost_type = CostType.create_empty(doc)
-        funding_type = FundingType.create_empty(doc)
-        
         for milestone_cost_data in milestone_costs:
             MilestoneCostRow.objects.create(
-                cost_document=doc, cost_type=cost_type, **milestone_cost_data)
+                cost_document=doc, **milestone_cost_data)
         for milestone_funding_data in milestone_fundings:
             MilestoneFundingRow.objects.create(
-                cost_document=doc, funding_type=funding_type, **milestone_funding_data)
+                cost_document=doc, **milestone_funding_data)
         return doc
 
     def create_cost(self, **kwargs):
@@ -502,10 +500,10 @@ class StatementDocument(models.Model):
 class SimpleDocumentManager(models.Manager):
     r"""Используется для того чтобы создавать пустышки"""
 
-    def create_empty(self, project):
+    def create_empty(self, project, **kwargs):
         doc = Document(type=self.model.tp, project=project)
         doc.save()
-        self.model.create(document=doc)
+        self.model.create(document=doc, **kwargs)
 
 
 class CalendarPlanDocument(models.Model):
@@ -617,8 +615,14 @@ class UseOfBudgetDocument(models.Model):
     u"""Документ использование целевых бюджетных средств"""
     tp = 'useofbudget'
     document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
+    milestone = models.ForeignKey('projects.Milestone', verbose_name='этап', null=True)
 
     objects = SimpleDocumentManager()
+
+    def add_empty_item(self, cost_type):
+        return UseOfBudgetDocumentItem.objects.create(
+            use_of_budget_doc=self,
+            cost_type=cost_type)
 
 
 class GPDocument(models.Model):
@@ -631,17 +635,45 @@ class GPDocument(models.Model):
     cost_row = models.ForeignKey('FactMilestoneCostRow', null=True, related_name='gp_docs')
 
 
+
+class UseOfBudgetDocumentItemManager(models.Manager):
+    def get_queryset(self):
+        return super(UseOfBudgetDocumentItemManager, self).get_queryset().select_related(
+            'use_of_budget_doc', 'use_of_budget_doc__milestone', 'use_of_budget_doc__document', 'use_of_budget_doc__document__project', 'use_of_budget_doc__report', 'cost_type').prefetch_related('costs', 'costs__gp_docs')
+
+
 class UseOfBudgetDocumentItem(models.Model):
     u"""Статья расходов (факт) по бюджету гранта за этап заполняемая ГП в рамках камерального отчета."""
     use_of_budget_doc = models.ForeignKey(UseOfBudgetDocument, related_name='items', on_delete=models.CASCADE)
-    cost_type = models.ForeignKey('CostType', verbose_name=u'Наименование статей затрат')
-    milestone = models.ForeignKey('projects.Milestone', verbose_name='этап')
-    fundings = models.ManyToManyField('MilestoneFundingRow', verbose_name=u'Сумма бюджетных средств')
-    costs = models.ManyToManyField('FactMilestoneCostRow', verbose_name=u'Наименования подтверждающих документов')
+    cost_type = models.ForeignKey('natr.CostType', verbose_name=u'Наименование статей затрат', related_name='budget_items')
+    # fundings = models.ManyToManyField('MilestoneFundingRow', verbose_name=u'Сумма бюджетных средств')
+    # costs = models.ManyToManyField('FactMilestoneCostRow', verbose_name=u'Наименования подтверждающих документов', related_name='budget_items')
     date_created = models.DateTimeField(auto_now_add=True)
     notes = models.CharField(
         u'Примечания',
         max_length=1024, null=True, blank=True)
+
+    objects = UseOfBudgetDocumentItemManager()
+
+    @property
+    def project(self):
+        return self.use_of_budget_doc.document.project
+
+    @property
+    def milestone(self):
+        self.use_of_budget_doc.milestone
+
+    @property
+    def report(self):
+        return self.use_of_budget_doc.report
+
+    @property
+    def cost_document(self):
+        return self.project.cost_document
+
+    @property
+    def fundings(self):
+        return self.cost_document.get_milestone_fundings(self.milestone)
 
     @property
     def total_budget(self):
@@ -680,12 +712,12 @@ class UseOfBudgetDocumentItem(models.Model):
         return rv
 
     @classmethod
-    def get_cost_type_group(cls, cost_type):
+    def by_cost_type(cls, report_id, cost_type):
         u"""Перечень затрат по статье"""
         return UseOfBudgetDocumentItem.objects.filter(
-            cost_type=cost_type)\
+            cost_type=cost_type, use_of_budget_doc__report_id=report_id)\
         .select_related('cost_type', 'milestone',)\
-        .prefetch_related('costs', 'costs__gp_docs', 'fundings')
+        .prefetch_related('costs', 'costs__gp_docs', 'fundings').get()
 
 
 
@@ -760,39 +792,24 @@ class CostDocument(models.Model):
     def get_milestone_fundings(self, milestone):
         return self.milestone_fundings.filter(milestone=milestone).order_by('funding_type__date_created')
 
+    @property
+    def cost_types(self):
+        return self.project.costtype_set.all()
 
-class CostType(models.Model):
-    u"""Вид статьи расходов (статья затрат)"""
-    cost_document = models.ForeignKey('CostDocument', related_name='cost_types')
-    name = models.CharField(max_length=1024, default='')
-    date_created = models.DateTimeField(auto_now_add=True, null=True)
-    price_details = models.CharField(u'пояснение к ценообразованию', max_length=2048, default='')
-    source_link = models.TextField(u'источник данных используемый в расчетах', default='')
+    @property
+    def funding_types(self):
+        return self.project.fundingtype_set.all()
 
-    class Meta:
-        ordering = ['date_created']
-
-    @classmethod
-    def create_empty(cls, cost_document):
-        return CostType.objects.create(cost_document=cost_document)
-
-
-class FundingType(models.Model):
-    u"""Источник финансирования"""
-    cost_document = models.ForeignKey('CostDocument', related_name='funding_types')
-    name = models.CharField(max_length=1024, default='')
-    date_created = models.DateTimeField(auto_now_add=True, null=True)
-
-    @classmethod
-    def create_empty(cls, cost_document):
-        return FundingType.objects.create(cost_document=cost_document)
+    @property
+    def project(self):
+        return self.document.project
 
 
 class MilestoneCostRow(models.Model):
     u"""Статья расходов по этапу"""
     cost_document = models.ForeignKey('CostDocument', related_name='milestone_costs')
     milestone = models.ForeignKey('projects.Milestone')
-    cost_type = models.ForeignKey('CostType', null=True)
+    cost_type = models.ForeignKey('natr.CostType')
     costs = MoneyField(
         u'Сумма затрат (тенге)',
         default=0, default_currency=settings.KZT,
@@ -802,17 +819,23 @@ class MilestoneCostRow(models.Model):
 class FactMilestoneCostRow(models.Model):
     u"""Расход на предприятие фактическая по этапу"""
     name = models.CharField(max_length=1024, default='')
-    cost_type = models.ForeignKey('CostType', null=True, related_name='fact_cost_rows')
+    cost_type = models.ForeignKey('natr.CostType', null=True, related_name='fact_cost_rows')
     milestone = models.ForeignKey('projects.Milestone')
     plan_cost_row = models.ForeignKey('MilestoneCostRow', null=True)
     costs = MoneyField(
         u'Сумма затрат (тенге)',
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2)
+    budget_item = models.ForeignKey('UseOfBudgetDocumentItem', related_name='costs')
+
+
+    @property
+    def project(self):
+        return self.milestone.project
 
     @property
     def cost_document(self):
-        return self.cost_type.cost_document
+        return self.project.cost_document
 
     @classmethod
     def create(cls, **data):
@@ -827,9 +850,10 @@ class MilestoneFundingRow(models.Model):
     u"""Источник финансирования по этапу"""
     cost_document = models.ForeignKey('CostDocument', related_name='milestone_fundings')
     milestone = models.ForeignKey('projects.Milestone')
-    funding_type = models.ForeignKey('FundingType', null=True)
+    funding_type = models.ForeignKey('natr.FundingType', null=True)
     fundings = MoneyField(
         u'Сумма финансирования за счет других источников',
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2)
+
 

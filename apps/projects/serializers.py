@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import serializers
-from natr import utils
+from natr import utils, models as natr_models
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
@@ -45,7 +45,8 @@ class MilestoneSerializer(
 
     @classmethod
     def empty_data(cls, project, **kwargs):
-        kwargs.update({'project': project.id})
+        kwargs.update({
+            'project': project.id})
         return kwargs
 
 
@@ -103,6 +104,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         prj.save()
 
+        natr_models.CostType.create_default(prj)
+        natr_models.FundingType.create_default(prj)
 
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):

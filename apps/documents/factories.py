@@ -104,24 +104,6 @@ class CostDocument(DjangoModelFactory):
     document = factory.SubFactory('documents.factories.Document')
 
     @factory.post_generation
-    def cost_types(self, create, count, **kwargs):
-        if count is None:
-            count = 2
-        make_cost_type = getattr(CostType, 'create' if create else 'build')
-        cost_types = [make_cost_type(cost_document=self) for i in xrange(count)]
-        if not create:
-            self._prefetched_objects_cache = {'cost_types': cost_types}
-
-    @factory.post_generation
-    def funding_types(self, create, count, **kwargs):
-        if count is None:
-            count = 2
-        make_funding_type = getattr(FundingType, 'create' if create else 'build')
-        funding_types = [make_funding_type(cost_document=self) for _ in xrange(count)]
-        if not create:
-            self._prefetched_objects_cache = {'funding_types': funding_types}
-
-    @factory.post_generation
     def milestone_costs(self, create, count, **kwargs):
         make_milestone_cost = getattr(MilestoneCostRow, 'create' if create else 'build')
         milestone_costs = [
@@ -147,9 +129,8 @@ class CostType(DjangoModelFactory):
         strategy = BUILD_STRATEGY
 
     name = factory.Faker('sentence')
-    cost_document = factory.SubFactory('documents.factories.CostDocument')
     date_created = factory.Faker('date_time')
-
+    project = factory.SubFactory('projects.factories.Project')
 
 class FundingType(DjangoModelFactory):
 
@@ -195,6 +176,8 @@ class UseOfBudgetDocument(DjangoModelFactory):
     
     document = factory.SubFactory('documents.factories.Document')
 
+    milestone = factory.SubFactory('projects.factories.Milestone')
+
     @factory.post_generation
     def items(self, create, count, **kwargs):
         if count is None:
@@ -216,7 +199,6 @@ class UseOfBudgetDocumentItem(DjangoModelFactory):
 
     use_of_budget_doc = factory.SubFactory('documents.factories.UseOfBudgetDocument')
     cost_type = factory.SubFactory('documents.factories.CostType')
-    milestone = factory.SubFactory('projects.factories.Milestone')
     notes = factory.Faker('text')
 
     @factory.post_generation
@@ -226,20 +208,9 @@ class UseOfBudgetDocumentItem(DjangoModelFactory):
         if not count:
             count = 2
         make_ = getattr(FactMilestoneCostRow, 'create' if create else 'build')
-        items = [make_(milestone=self.milestone, cost_type=self.cost_type) for i in xrange(count)]
+        items = [make_(milestone=self.use_of_budget_doc.milestone, budget_item=self, cost_type=self.cost_type) for i in xrange(count)]
         self.costs.add(*items)
         return self.costs
-
-    @factory.post_generation
-    def fundings(self, create, count, **kwargs):
-        if not create:
-            return
-        if not count:
-            count = 2
-        make_ = getattr(MilestoneFundingRow, 'create' if create else 'build')
-        items = [make_(milestone=self.milestone) for i in xrange(count)]
-        self.fundings.add(*items)
-        return self.fundings
 
 
 class FactMilestoneCostRow(DjangoModelFactory):
@@ -251,6 +222,7 @@ class FactMilestoneCostRow(DjangoModelFactory):
     cost_type = factory.SubFactory('documents.factories.CostType')
     milestone = factory.SubFactory('projects.factories.Milestone')
     plan_cost_row = factory.SubFactory('documents.factories.MilestoneCostRow')
+    budget_item = factory.SubFactory('documents.factories.UseOfBudgetDocumentItem')
     costs = factory.LazyAttribute(lambda x: utils.fake_money())
 
     @factory.post_generation

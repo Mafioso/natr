@@ -221,13 +221,16 @@ class DocumentSerializerTestCase(TestCase):
 
     def test_create_fact_cost_row(self):
         cost_type = factories.CostType.create()
+        budget_item = factories.UseOfBudgetDocumentItem.create()
         milestone = prj_factories.Milestone.create()
+
         _gp_docs = [factories.GPDocument.create() for _ in xrange(3)]
 
         data =  {
             'name': 'good',
             'cost_type': cost_type.id,
             'milestone': milestone.id,
+            'budget_item': budget_item.id,
             'costs': {'amount': 30000, 'currency': settings.KZT},
             'gp_docs': [gp_doc.id for gp_doc in _gp_docs]
         }
@@ -237,6 +240,7 @@ class DocumentSerializerTestCase(TestCase):
         self.assertEqual(data['name'], obj.name)
         self.assertEqual(data['cost_type'], obj.cost_type.id)
         self.assertEqual(data['milestone'], obj.milestone.id)
+        self.assertEqual(data['budget_item'], obj.budget_item.id)
         self.assertEqualMoney(data['costs'], obj.costs)
 
         self.assertEqual(len(obj.gp_docs.all()), len(_gp_docs))
@@ -245,11 +249,13 @@ class DocumentSerializerTestCase(TestCase):
 
     def test_update_fact_cost_row(self):
         initial_cost_row = factories.FactMilestoneCostRow.create()
+        budget_item = factories.UseOfBudgetDocumentItem.create()
         _gp_docs = [factories.GPDocument.create() for _ in xrange(3)]
         data = {
             'name': 'worst',
             'cost_type': initial_cost_row.id,
             'milestone': initial_cost_row.id,
+            'budget_item': budget_item.id,
             'costs': {'amount': 40000, 'currency': settings.KZT},
             'gp_docs': [gp_doc.id for gp_doc in _gp_docs]
         }
@@ -257,6 +263,7 @@ class DocumentSerializerTestCase(TestCase):
         ser.is_valid(raise_exception=True)
         upd_cost_row = ser.save()
         self.assertEqual(data['name'], upd_cost_row.name)
+        self.assertEqual(data['budget_item'], upd_cost_row.budget_item.id)
         self.assertEqualMoney(data['costs'], upd_cost_row.costs)
         self.assertEqual(len(upd_cost_row.gp_docs.all()), len(_gp_docs))
         for doc in upd_cost_row.gp_docs.all():

@@ -4,6 +4,7 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import list_route, detail_route
 from rest_framework import viewsets, response
 from natr.rest_framework.decorators import patch_serializer_class
+from natr.rest_framework import serializers as natr_serializers
 from documents.serializers import *
 from documents import models as doc_models
 from django.conf import settings
@@ -182,7 +183,8 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
         
         cost_type_data = data.pop('cost_type')
         cost_type_data['cost_document'] = doc.id
-        cost_type_ser = CostTypeSerializer(data=cost_type_data)
+        cost_type_data['project'] = doc.project.id
+        cost_type_ser = natr_serializers.CostTypeSerializer(data=cost_type_data)
         cost_type_ser.is_valid(raise_exception=True)
         cost_type_obj = cost_type_ser.save()
 
@@ -236,7 +238,7 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
         doc = self.get_object()
         cost_type_data = data.pop('cost_type')
         cost_type_obj = doc.cost_types.get(pk=cost_type_data['id'])
-        cost_type_ser = CostTypeSerializer(cost_type_obj, data=cost_type_data)
+        cost_type_ser = natr_serializers.CostTypeSerializer(cost_type_obj, data=cost_type_data)
         cost_type_ser.is_valid(raise_exception=True)
         cost_type_ser.save()
 
@@ -292,13 +294,14 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
 
         funding_type_data = data.pop('funding_type')
         funding_type_data['cost_document'] = doc.id
-        funding_type_ser = FundingTypeSerializer(data=funding_type_data)
+        funding_type_data['project'] = doc.project.id
+        funding_type_ser = natr_serializers.FundingTypeSerializer(data=funding_type_data)
         funding_type_ser.is_valid(raise_exception=True)
         funding_type_obj = funding_type_ser.save()
 
         funding_row = data.pop('funding_row')
         for funding_cell in funding_row:
-            funding_cell['cost_type'] = funding_type_obj.id
+            funding_cell['funding_type'] = funding_type_obj.id
             funding_cell['cost_document'] = doc.id
         funding_row_ser = self.get_serializer(data=funding_row, many=True)
         funding_row_ser.is_valid(raise_exception=True)
@@ -345,7 +348,7 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
 
         funding_type_data = data.pop('funding_type')
         funding_type_obj = doc.funding_types.get(pk=funding_type_data['id'])
-        funding_type_ser = FundingTypeSerializer(funding_type_obj, data=funding_type_data)
+        funding_type_ser = natr_serializers.FundingTypeSerializer(funding_type_obj, data=funding_type_data)
         funding_type_ser.is_valid(raise_exception=True)
         funding_type_obj = funding_type_ser.save()
 
