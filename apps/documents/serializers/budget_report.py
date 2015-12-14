@@ -44,6 +44,11 @@ class FactMilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSer
         instance.gp_docs.add(*gp_docs)
         return instance
 
+class GPDocumentTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.GPDocumentType
+
 
 class GPDocumentSerializer(DocumentCompositionSerializer):
 
@@ -53,6 +58,7 @@ class GPDocumentSerializer(DocumentCompositionSerializer):
     cost_row = serializers.PrimaryKeyRelatedField(
         queryset=models.FactMilestoneCostRow.objects.all(), required=False)
     document = DocumentSerializer(required=True)
+    type = GPDocumentTypeSerializer(required=True)
 
     def create(self, validated_data):
         doc = models.Document.dml.create_gp_doc(**validated_data)
