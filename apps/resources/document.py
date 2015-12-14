@@ -374,13 +374,13 @@ class UseOfBudgetDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = UseOfBudgetDocumentSerializer
     queryset = UseOfBudgetDocument.objects.all()
 
-    @detail_route(methods=['get'], url_path='items')
-    @patch_serializer_class(UseOfBudgetDocumentItemSerializer)
-    def get_items(self, request, *a, **kw):
-        """
-        Get UseOfBudgetDocument items
-        """
-        obj_use_of_b = self.get_object()    
-        qs = obj_use_of_b.items.all()    
-        serializer = self.get_serializer(qs, many=True)
-        return response.Response(serializer.data)
+    # @detail_route(methods=['get'], url_path='items')
+    # @patch_serializer_class(UseOfBudgetDocumentItemSerializer)
+    # def get_items(self, request, *a, **kw):
+    #     """
+    #     Get UseOfBudgetDocument items
+    #     """
+    #     obj_use_of_b = self.get_object()    
+    #     qs = obj_use_of_b.items.all()    
+    #     serializer = self.get_serializer(qs, many=True)
+    #     return response.Response(serializer.data)

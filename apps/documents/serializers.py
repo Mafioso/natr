@@ -4,6 +4,7 @@
 from rest_framework import serializers
 from moneyed import Money
 import documents.models as models
+from natr import models as natr_models
 from natr.rest_framework.serializers import *
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
@@ -36,7 +37,6 @@ __all__ = (
     'MilestoneCostCellSerializer',
     'GPDocumentSerializer',
     'FactMilestoneCostRowSerializer',
-    'FactMilestoneCostGroupSerializer'
 )
 
 
@@ -380,65 +380,10 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
             return models.Document.dml.create_cost(**validated_data)
 
 
-class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
-
-    class Meta:
-        model = models.UseOfBudgetDocument
-
-    document = DocumentSerializer(required=True)
-    # items = serializers.PrimaryKeyRelatedField(
-    #     queryset=models.UseOfBudgetDocumentItem.objects.all(), many=True, required=False)
-
-
-class FactMilestoneCostGroupSerializer(serializers.ListSerializer):
-
-    def validate(self, data):
-        cost_types = set([])
-        for item in data:
-            cost_types.add(item['cost_type'])
-        if not len(cost_types) == 1:
-            raise serializers.ValidationError(u".FactMilestoneCostGroupSerializer:: Перечень затрат должен быть по одной статья")
-        return data
-
-    def create(self, validated_data):
-        instance = []
-        for item in validated_data:
-            gp_docs = item.pop('gp_docs', [])
-            obj = models.FactMilestoneCostRow.objects.create(**item)
-            obj.add(*gp_docs)
-            instance.append(obj)
-        return instance
-
-    def update(self, instance, validated_data):
-        instance_dict = {obj.id: obj for obj in instance}
-        stored_ids = [item.id for item in instance]
-        to_upd = {item['id']:item for item in validated_data if 'id' in item}
-        to_create_data = (item for item in validated_data if not 'id' in item)
-        to_remove_ids = list(set(stored_ids) - set(to_upd_ids))
-
-        for _id in to_remove_ids:
-            instance_dict.pop(_id).delete()
-
-        for _id, item in to_upd.iteritems():
-            obj = instance_dict[_id]
-            obj.costs = item['costs']
-            obj.name = item['name']
-            obj.save()
-
-        for item in to_create_data:
-            gp_docs = item.pop('gp_docs', [])
-            obj = models.FactMilestoneCostRow.objects.create(**item)
-            obj.add(*gp_docs)
-            instance_dict[obj.id] = obj
-        
-        return instance_dict.values()
-
-
 class FactMilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
         model = models.FactMilestoneCostRow
-        list_serializer_class = FactMilestoneCostGroupSerializer
 
     costs = SerializerMoneyField(required=False)
     budget_item = serializers.PrimaryKeyRelatedField(
@@ -496,20 +441,63 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
     class Meta:
         model = models.UseOfBudgetDocumentItem
 
-    total_expense = SerializerMoneyField(source='total_expense', required=False)
-    remain_budget = SerializerMoneyField(source='remain_budget', required=False)
-    total_budget = SerializerMoneyField(source='total_budget', required=False)
+    total_expense = SerializerMoneyField(required=False)
+    remain_budget = SerializerMoneyField(required=False)
+    total_budget = SerializerMoneyField(required=False)
     costs = FactMilestoneCostRowSerializer(many=True, required=False)
+    cost_type = CostTypeSerializer(read_only=True)
 
+    
 
-    def create(self, validated_data):
-        costs = validated_data.pop('costs', [])
-        doc_item = models.UseOfBudgetDocumentItem.objects.create(**validated_data)
-        costs = [models.FactMilestoneCostRow.create(
-            milestone=doc_item.milestone,
-            cost_type=doc_item.cost_type, **fact_cost) for fact_cost in costs]
-        doc_item.costs.add(*costs)
-        return use_of_budget_item
+class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.UseOfBudgetDocument
+
+    document = DocumentSerializer(required=True)
+    items = UseOfBudgetDocumentItemSerializer(many=True, required=False)
+
+    def update(self, instance, validated_data):
+        models.Document.dml.update_doc_(instance.document, **validated_data.pop('document'))
+        self.update_items(
+            instance=instance.items.all(),
+            validated_data=validated_data.pop('items'))
+        return instance
+    
+    def update_items(self, instance, validated_data):
+        for item_obj, item_data in zip(instance, validated_data):
+            costs_data = item_data.pop('costs')
+            item_obj.notes = item_data['notes']
+            item_obj.save()
+            self.update_costs(
+                instance=item_obj.costs.all(),
+                validated_data=costs_data)
+        return instance
+
+    def update_costs(self, instance, validated_data):
+        instance_dict = {obj.id: obj for obj in instance}
+        stored_ids = [item.id for item in instance]
+        to_upd = {item['id']:item for item in validated_data if 'id' in item}
+        to_create_data = (item for item in validated_data if not 'id' in item)
+        to_remove_ids = list(set(stored_ids) - set(to_upd.keys()))
+
+        for _id in to_remove_ids:
+            instance_dict.pop(_id).delete()
+
+        for _id, item in to_upd.iteritems():
+            obj = instance_dict[_id]
+            obj.costs = item['costs']
+            obj.name = item['name']
+            obj.save()
+
+        for item in to_create_data:
+            gp_docs = item.pop('gp_docs', [])
+            obj = models.FactMilestoneCostRow.objects.create(**item)
+            obj.gp_docs.add(*gp_docs)
+            instance_dict[obj.id] = obj
+        
+        return instance_dict.values()
+
 
 
 class AttachmentSerializer(serializers.ModelSerializer):

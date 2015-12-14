@@ -269,7 +269,228 @@ class DocumentSerializerTestCase(TestCase):
         for doc in upd_cost_row.gp_docs.all():
             self.assertIn(doc.id, data['gp_docs'])
 
+
+    def test_use_of_budget_create_update(self):
+        data = {
+          "id": 1,
+          "document": {
+            "attachments": [],
+            "status_cap": "формирование",
+            "external_id": None,
+            "type": "useofbudget",
+            "status": 1,
+            "date_created": "2015-12-14T08:13:54.113402Z",
+            "date_sign": None,
+            "project": 1
+          },
+          "items": [
+            {
+              "id": 1,
+              "total_expense": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "remain_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "total_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "costs": [],
+              "cost_type": {
+                "id": 1,
+                "price_details": "",
+                "source_link": "",
+                "name": "Оплата работ выполняемых третьими лицами",
+                "date_created": "2015-12-14T08:13:54.091792Z",
+                "project": 1
+              },
+              "date_created": "2015-12-14T08:13:54.121288Z",
+              "notes": None,
+              "use_of_budget_doc": 1
+            },
+            {
+              "id": 2,
+              "total_expense": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "remain_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "total_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "costs": [],
+              "cost_type": {
+                "id": 2,
+                "price_details": "",
+                "source_link": "",
+                "name": "Оборудование",
+                "date_created": "2015-12-14T08:13:54.093664Z",
+                "project": 1
+              },
+              "date_created": "2015-12-14T08:13:54.122850Z",
+              "notes": None,
+              "use_of_budget_doc": 1
+            },
+            {
+              "id": 3,
+              "total_expense": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "remain_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "total_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "costs": [],
+              "cost_type": {
+                "id": 3,
+                "price_details": "",
+                "source_link": "",
+                "name": "Материалы и комплектующие",
+                "date_created": "2015-12-14T08:13:54.095435Z",
+                "project": 1
+              },
+              "date_created": "2015-12-14T08:13:54.124344Z",
+              "notes": None,
+              "use_of_budget_doc": 1
+            },
+            {
+              "id": 4,
+              "total_expense": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "remain_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "total_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "costs": [],
+              "cost_type": {
+                "id": 4,
+                "price_details": "",
+                "source_link": "",
+                "name": "Командировка",
+                "date_created": "2015-12-14T08:13:54.097528Z",
+                "project": 1
+              },
+              "date_created": "2015-12-14T08:13:54.125698Z",
+              "notes": None,
+              "use_of_budget_doc": 1
+            },
+            {
+              "id": 5,
+              "total_expense": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "remain_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "total_budget": {
+                "currency": "KZT",
+                "amount": 0
+              },
+              "costs": [],
+              "cost_type": {
+                "id": 5,
+                "price_details": "",
+                "source_link": "",
+                "name": "Накладные расходы",
+                "date_created": "2015-12-14T08:13:54.100529Z",
+                "project": 1
+              },
+              "date_created": "2015-12-14T08:13:54.127009Z",
+              "notes": None,
+              "use_of_budget_doc": 1
+            }
+          ],
+          "milestone": 1
+        }
+        obj = models.UseOfBudgetDocument.objects.get(pk=data['id'])
+        ser = UseOfBudgetDocumentSerializer(obj, data=data)
+        ser.is_valid(raise_exception=True)
+        upd_obj = ser.save()
+
+        self.assertIsInstance(upd_obj, models.UseOfBudgetDocument)
+        self.assertIsNotNone(upd_obj.id)
+
+        # add cost row
+        first_item = upd_obj.items.first()
+        fact_cost_row_data = {
+            'cost_type': first_item.cost_type.id,
+            'milestone': upd_obj.milestone.id,
+            'costs': {
+                'currency': settings.KZT,
+                'amount': 30000
+            },
+            'budget_item': first_item.id
+        }
+        data['items'][0]['costs'].append(fact_cost_row_data)
+        ser = UseOfBudgetDocumentSerializer(upd_obj, data=data)
+        ser.is_valid(raise_exception=True)
+        upd_obj = ser.save()
+
+        self.assertTrue(len(upd_obj.items.first().costs.all()) == len(data['items'][0]['costs']))
+        cost_obj = upd_obj.items.first().costs.first()
+        
+        cost_data = data['items'][0]['costs'][0]
+        self.assertEqual(cost_obj.cost_type.id, cost_data['cost_type'])
+        self.assertEqual(cost_obj.milestone.id, cost_data['milestone'])
+        self.assertEqual(cost_obj.budget_item.id, cost_data['budget_item'])
+        self.assertEqualMoney(cost_data['costs'], cost_obj.costs)
+
+        # add gp_docs to cost row
+        gp_doc = {
+            'document': {},
+            'name': u'акты',
+            'number': '13',
+            'cost_row': cost_obj.id
+        }
+        gp_doc_ser = GPDocumentSerializer(data=gp_doc)
+        gp_doc_ser.is_valid(raise_exception=True)
+        gp_doc_obj = gp_doc_ser.save()
+
+        self.assertDoc(gp_doc_obj, gp_doc)
+
+        fact_cost_row_data.update({
+            'gp_docs': [gp_doc_obj.id],
+            'id': cost_obj.id})
+        ser = UseOfBudgetDocumentSerializer(upd_obj, data=data)
+        ser.is_valid(raise_exception=True)
+        utils.pretty(ser.errors)
+        upd_obj = ser.save()
+        self.assertTrue(len(upd_obj.items.first().costs.all()) == 1)
+        cost_obj = upd_obj.items.first().costs.first()
+        cost_data = data['items'][0]['costs'][0]
+
+        self.assertTrue(len(cost_obj.gp_docs.all()) > 0)
+        self.assertEqual(len(cost_obj.gp_docs.all()), len(cost_data['gp_docs']))
+        self.assertEqual(cost_data['gp_docs'][0], cost_obj.gp_docs.first().id)
+        
+    # def 
+
     def assertEqualMoney(self, money_ser, money):
         self.assertEqual(money_ser['amount'], money.amount)
         self.assertEqual(money_ser['currency'], money.currency.code)
+
+    def assertDoc(self, obj, data):
+        self.assertEqual(obj.name, data['name'])
+        self.assertEqual(obj.number, data['number'])
+        self.assertEqual(obj.cost_row.id, data['cost_row'])
         
