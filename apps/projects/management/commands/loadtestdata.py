@@ -5,6 +5,7 @@ import random
 from moneyed import KZT, Money
 from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
+from natr import utils
 from projects import factories
 from documents import factories as doc_factories, models as doc_models
 from journals import factories as journal_factories
@@ -65,6 +66,7 @@ class Command(BaseCommand):
 		return rv
 
 	def gen_reports(self, project):
+
 		for report in project.report_set.all():
 			budget_doc = report.use_of_budget_doc
 			for budget_item in budget_doc.items.all():
@@ -72,14 +74,15 @@ class Command(BaseCommand):
 					cost_row = doc_models.FactMilestoneCostRow.objects.create(
 						cost_type=budget_item.cost_type,
 						milestone=budget_doc.milestone,
-						budget_item=budget_item)
+						budget_item=budget_item,
+						costs=utils.fake_money())
 					for _ in xrange(2):
 						_doc = doc_models.Document.objects.create()
 						doc_models.GPDocument.objects.create(
 							name=u'акт',
 							number=u'0001',
 							cost_row=cost_row,
-							document=_doc)
+							document=_doc,)
 
 	def gen_monitoring(self, project):
 		factories.Monitoring.create(project=project)
@@ -88,6 +91,9 @@ class Command(BaseCommand):
 		journal = journal_factories.Journal.create(project=project)
 
 	def gen_cost_doc(self, project):
-		cost_doc = doc_factories.CostDocument.create()
-		cost_doc.document.project = project
+		doc = doc_factories.Document.create(project=project)
+		cost_doc = doc_factories.CostDocument.create(
+			document=doc,
+			cost_types=project.costtype_set.all(),
+			funding_types=project.fundingtype_set.all())
 		cost_doc.document.save()

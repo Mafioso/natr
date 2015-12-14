@@ -177,9 +177,7 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
                     "currency": "KZT"
                 }
             }]
-        }
-
-        """
+        }"""
         data = request.data
         doc = self.get_object()
         
