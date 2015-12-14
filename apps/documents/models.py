@@ -638,7 +638,12 @@ class GPDocument(models.Model):
 class UseOfBudgetDocumentItemManager(models.Manager):
     def get_queryset(self):
         return super(UseOfBudgetDocumentItemManager, self).get_queryset().select_related(
-            'use_of_budget_doc', 'use_of_budget_doc__milestone', 'use_of_budget_doc__document', 'use_of_budget_doc__document__project', 'use_of_budget_doc__report', 'cost_type').prefetch_related('costs', 'costs__gp_docs')
+            'use_of_budget_doc',
+            'use_of_budget_doc__milestone',
+            'use_of_budget_doc__document',
+            'use_of_budget_doc__document__project',
+            'use_of_budget_doc__report',
+            'cost_type').prefetch_related('costs', 'costs__gp_docs')
 
 
 class UseOfBudgetDocumentItem(models.Model):
@@ -660,7 +665,7 @@ class UseOfBudgetDocumentItem(models.Model):
 
     @property
     def milestone(self):
-        self.use_of_budget_doc.milestone
+        return self.use_of_budget_doc.milestone
 
     @property
     def report(self):
