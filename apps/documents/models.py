@@ -503,7 +503,7 @@ class SimpleDocumentManager(models.Manager):
     def create_empty(self, project, **kwargs):
         doc = Document(type=self.model.tp, project=project)
         doc.save()
-        self.model.create(document=doc, **kwargs)
+        return self.model.objects.create(document=doc, **kwargs)
 
 
 class CalendarPlanDocument(models.Model):

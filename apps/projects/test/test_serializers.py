@@ -5,7 +5,7 @@ from django.test import TestCase
 from moneyed import Money, KZT, USD
 from natr import utils, models as natr_models
 from projects.serializers import *
-from projects import factories
+from projects import factories, models as prj_models
 from documents import models as doc_models
 from rest_framework import serializers
 # Create your tests here.
@@ -107,6 +107,13 @@ class ProjectSerializerTestCase(TestCase):
 
 		self.assertIsNotNone(prj.journal)
 		self.assertIsNotNone(prj.monitoring)
+
+		for m in prj.milestone_set.all():
+			self.assertIsNotNone(m.cameral_report)
+			self.assertIsInstance(m.cameral_report, prj_models.Report)
+			self.assertIsNotNone(m.cameral_report.use_of_budget_doc)
+			self.assertIsInstance(m.cameral_report.use_of_budget_doc, doc_models.UseOfBudgetDocument)
+			self.assertEqual(len(m.cameral_report.use_of_budget_doc.items.all()), len(prj.costtype_set.all()))
 
 		def assertRelated(obj, rel_name, initial=None):
 			initial = initial if initial is not None else self.data

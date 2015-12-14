@@ -224,10 +224,17 @@ class Report(ProjectBasedModel):
         u'утвержден',
         u'отправлен на доработку',
         u'завершен')
-
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
 
-    type = models.IntegerField(null=True)
+    TYPES = CAMERAL, OTHER, FINAL = range(3)
+    TYPES_CAPS = (
+        u'камеральный отчет',
+        u'другой отчет',
+        u'итоговый отчет')
+
+    TYPES_OPTS = zip(TYPES, TYPES_CAPS)
+
+    type = models.IntegerField(null=True, choices=TYPES_OPTS, default=CAMERAL)
     date = models.DateTimeField(u'Дата отчета', null=True)
 
     period = models.CharField(null=True, max_length=255)
@@ -248,11 +255,14 @@ class Report(ProjectBasedModel):
 
     @classmethod
     def build_empty(cls, milestone):
-        r = Report(milestone=milestone, project=milestone.project)
+        budget_doc = UseOfBudgetDocument.objects.create_empty(
+            milestone.project, milestone=milestone)
+        r = Report(
+            milestone=milestone,
+            project=milestone.project,
+            use_of_budget_doc=budget_doc)
         r.save()
-
-        budget_doc = UseOfBudgetDocument.objects.create_empty(milestone=milestone)
-        for cost_type in self.project.cost_document.cost_types.all():
+        for cost_type in r.project.costtype_set.all():
             budget_doc.add_empty_item(cost_type)
         return r
 
@@ -386,6 +396,13 @@ class Milestone(ProjectBasedModel):
     def is_closed(self):
         return self.status == Milestone.CLOSE
 
+    @property
+    def cameral_report(self):
+        return self.get_report_by_type(Report.CAMERAL)
+
+    def get_report_by_type(self, report_type):
+        return self.reports.get(type=report_type)
+
     @classmethod
     def build_from_calendar_plan(cls, calendar_plan, project=None, force=False):
         """Regenerates milestones if not already"""
@@ -407,6 +424,7 @@ class Milestone(ProjectBasedModel):
                 project=project
             ))
         return Milestone.objects.bulk_create(milestones)
+
 
 
 class Monitoring(ProjectBasedModel):
@@ -452,3 +470,5 @@ def on_milestone_create(sender, instance, created=False, **kwargs):
     if not created:
         return
     Report.build_empty(instance)
+
+post_save.connect(on_milestone_create, sender=Milestone)
