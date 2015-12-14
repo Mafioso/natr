@@ -10,6 +10,7 @@ from documents.serializers import *
 from documents import models as doc_models
 from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment
+from auth2.models import NatrUser
 
 
 __all__ = (
@@ -19,7 +20,8 @@ __all__ = (
     'ReportSerializer',
     'MonitoringSerializer',
     'MonitoringTodoSerializer',
-    'MilestoneSerializer'
+    'MilestoneSerializer',
+    'CommentSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -154,7 +156,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if self.partial:
             return super(ProjectSerializer, self).update(instance, validated_data)
-        
+
         organization_details = validated_data.pop('organization_details', None)
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', None)
@@ -288,7 +290,7 @@ class CommentSerializer(serializers.ModelSerializer):
     report = serializers.PrimaryKeyRelatedField(
         queryset=Report.objects.all(), required=True)
     expert = serializers.PrimaryKeyRelatedField(
-        queryset=auth2.models.NatrUser.objects.all(), required=True)
+        queryset=NatrUser.objects.all(), required=True)
 
     def create(self, validated_data):
         comment = Comment.objects.create(**validated_data)
