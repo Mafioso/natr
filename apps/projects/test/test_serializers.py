@@ -204,6 +204,7 @@ class ProjectSerializerTestCase(TestCase):
 		todo_ser = MonitoringTodoSerializer(data=data)
 		todo_ser.is_valid(raise_exception=True)
 
+
 	def test_create_project_hotfix_document_agreement(self):
 		data = {
 			"name": u"Название проекта",
