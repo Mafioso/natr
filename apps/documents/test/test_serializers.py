@@ -440,7 +440,8 @@ class DocumentSerializerTestCase(TestCase):
                 'currency': settings.KZT,
                 'amount': 30000
             },
-            'budget_item': first_item.id
+            'budget_item': first_item.id,
+            'note': 'lorem'
         }
         data['items'][0]['costs'].append(fact_cost_row_data)
         ser = UseOfBudgetDocumentSerializer(upd_obj, data=data)
