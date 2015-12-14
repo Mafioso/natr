@@ -684,7 +684,6 @@ class UseOfBudgetDocumentItem(models.Model):
     @property
     def total_budget(self):
         u"""Сумма бюджетных стредств по смете"""
-        print self.cost_document.get_milestone_fundings(self.milestone)
         total = sum([
             funding_cell is not None and funding_cell.fundings.amount
             for funding_cell in self.fundings.all()
