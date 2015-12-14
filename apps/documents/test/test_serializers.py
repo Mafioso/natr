@@ -433,6 +433,7 @@ class DocumentSerializerTestCase(TestCase):
         # add cost row
         first_item = upd_obj.items.first()
         fact_cost_row_data = {
+            'name': u'ИП Динамик',
             'cost_type': first_item.cost_type.id,
             'milestone': upd_obj.milestone.id,
             'costs': {
@@ -471,9 +472,10 @@ class DocumentSerializerTestCase(TestCase):
         fact_cost_row_data.update({
             'gp_docs': [gp_doc_obj.id],
             'id': cost_obj.id})
+        data['items'][0]['costs'] = [fact_cost_row_data]
         ser = UseOfBudgetDocumentSerializer(upd_obj, data=data)
         ser.is_valid(raise_exception=True)
-        utils.pretty(ser.errors)
+        # utils.pretty(ser.errors)
         upd_obj = ser.save()
         self.assertTrue(len(upd_obj.items.first().costs.all()) == 1)
         cost_obj = upd_obj.items.first().costs.first()

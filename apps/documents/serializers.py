@@ -91,6 +91,21 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
         doc = models.Document.dml.create_agreement(**validated_data)
         return doc
 
+class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.OtherAgreementsDocument
+
+    document = DocumentSerializer(required=True)
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_other_agr_doc(**validated_data)
+        return doc
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
 
 class OtherAgreementItemSerializer(serializers.ModelSerializer):
 
@@ -102,24 +117,7 @@ class OtherAgreementItemSerializer(serializers.ModelSerializer):
         plan_item = models.OtherAgreementItem.objects.create(
             other_agreements_doc=other_agreements_doc, **validated_data)
         return plan_item
-        
 
-class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
-
-    class Meta:
-        model = models.OtherAgreementsDocument
-
-    document = DocumentSerializer(required=True)
-    items = OtherAgreementItemSerializer(many=True, required=False)
-
-    def create(self, validated_data):
-        doc = models.Document.dml.create_other_agr_doc(**validated_data)
-        return doc
-
-    @classmethod
-    def empty_data(cls, project):
-        data = DocumentCompositionSerializer.empty_data(project)
-        return data
 
 
 class BasicProjectPasportSerializer(DocumentCompositionSerializer):
@@ -387,6 +385,7 @@ class FactMilestoneCostRowSerializer(ExcludeCurrencyFields, serializers.ModelSer
     class Meta:
         model = models.FactMilestoneCostRow
 
+    id = serializers.IntegerField(read_only=False, required=False)
     costs = SerializerMoneyField(required=False)
     budget_item = serializers.PrimaryKeyRelatedField(
         queryset=models.UseOfBudgetDocumentItem.objects.all(), required=False)
