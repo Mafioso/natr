@@ -650,6 +650,7 @@ class UseOfBudgetDocumentItemManager(models.Manager):
 class UseOfBudgetDocumentItem(models.Model):
     u"""Статья расходов (факт) по бюджету гранта за этап заполняемая ГП в рамках камерального отчета."""
     use_of_budget_doc = models.ForeignKey(UseOfBudgetDocument, related_name='items', on_delete=models.CASCADE)
+
     cost_type = models.ForeignKey('natr.CostType', verbose_name=u'Наименование статей затрат', related_name='budget_items')
     # fundings = models.ManyToManyField('MilestoneFundingRow', verbose_name=u'Сумма бюджетных средств')
     # costs = models.ManyToManyField('FactMilestoneCostRow', verbose_name=u'Наименования подтверждающих документов', related_name='budget_items')
@@ -841,6 +842,10 @@ class FactMilestoneCostRow(models.Model):
     @property
     def cost_document(self):
         return self.project.cost_document
+
+    @property 
+    def use_of_budget_doc(self):
+        return self.cost_type.use_of_budget_doc_items
 
     @classmethod
     def create(cls, **data):

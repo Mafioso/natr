@@ -8,6 +8,7 @@
     <link rel="shortcut icon" href="{% static 'images/favicon.png' %}" type="image/png">
     <link rel="stylesheet" type="text/css" href="{% static 'css/icons.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/handsontable.full.min.css' %}">
   </head>
 
   <body>
@@ -94,7 +95,6 @@
 
     <div class="app" id="app"></div>
 
-    <script src="{% static 'js/bundle.js' %}"></script>
     <script src="//cdn.jsdelivr.net/sockjs/1.0.0/sockjs.min.js"></script>
     <script type="text/javascript" src="https://rawgit.com/centrifugal/centrifuge-js/master/centrifuge.min.js"></script>
     <script type="text/javascript" src="{% static 'js/jquery-2.1.4.js' %}"></script>
@@ -102,6 +102,13 @@
     <script type="text/javascript" src="{% static 'js/jquery.color-2.1.2.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/jquery.timer.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/script.js' %}"></script>
+
+    <script type="text/javascript" src="{% static 'js/handsontable.full.js' %}"></script>
+    <script type="text/javascript">
+      var Handsontable = Handsontable;
+    </script>
+
+    <script src="{% static 'js/bundle.js' %}"></script>
 
     <script type="text/javascript">
       // var centrifuge = new Centrifuge({
