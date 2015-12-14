@@ -106,18 +106,22 @@ class CostDocument(DjangoModelFactory):
     @factory.post_generation
     def milestone_costs(self, create, count, **kwargs):
         make_milestone_cost = getattr(MilestoneCostRow, 'create' if create else 'build')
-        milestone_costs = [
-            make_milestone_cost(cost_document=self, cost_type=cost_type)
-            for cost_type in self.cost_types.all()]
+        milestone_costs = []
+        for m in self.document.project.milestone_set.all():
+            milestone_costs.extend([
+                make_milestone_cost(cost_document=self, cost_type=cost_type, milestone=m)
+                for cost_type in self.cost_types.all()])
         if not create:
             self._prefetched_objects_cache = {'milestone_costs': milestone_costs}
 
     @factory.post_generation
     def milestone_fundings(self, create, count, **kwargs):
+        milestone_fundings = []
         make_milestone_fund = getattr(MilestoneFundingRow, 'create' if create else 'build')
-        milestone_fundings = [
-            make_milestone_fund(cost_document=self, funding_type=funding_type)
-            for funding_type in self.funding_types.all()]
+        for m in self.document.project.milestone_set.all():
+            milestone_fundings.extend([
+                make_milestone_fund(cost_document=self, funding_type=funding_type, milestone=m)
+                for funding_type in self.funding_types.all()])
         if not create:
             self._prefetched_objects_cache = {'milestone_fundings': milestone_fundings}
 
