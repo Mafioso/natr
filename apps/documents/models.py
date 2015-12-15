@@ -617,9 +617,8 @@ class UseOfBudgetDocument(models.Model):
     objects = SimpleDocumentManager()
 
     def add_empty_item(self, cost_type):
-        return UseOfBudgetDocumentItem.objects.create(
-            use_of_budget_doc=self,
-            cost_type=cost_type)
+        return UseOfBudgetDocumentItem.objects.get_or_create(
+            use_of_budget_doc=self, cost_type=cost_type)
 
     def calc_total_expense(self):
         return sum([item.total_expense for item in self.items.all()])
@@ -790,6 +789,11 @@ class CostDocument(models.Model):
     def project(self):
         return self.document.project
 
+    def add_empty_row(self, cost_type):
+        for m in self.project.milestone_set.all():
+            MilestoneCostRow.objects.get_or_create(
+                cost_document=self, milestone=m, cost_type=cost_type)
+
 
 class MilestoneCostRow(models.Model):
     u"""Статья расходов по этапу"""
@@ -839,4 +843,23 @@ class FactMilestoneCostRow(models.Model):
         obj.add(*gp_docs)
         return obj
 
+
+from django.db.models.signals import post_save
+
+def on_cost_type_create(sender, instance, created=False, **kwargs):
+    if not created:
+        return
+    project = instance.project
+    try:
+        cost_doc = project.cost_document
+    except CostDocument.DoesNotExist:
+        pass
+    else:
+        cost_doc.add_empty_row(instance)
+
+    budget_reports = UseOfBudgetDocument.objects.filter(document__project=project)
+    for budget_report in budget_reports:
+        budget_report.add_empty_item(instance)
+
+post_save.connect(on_cost_type_create, sender=CostType)
 

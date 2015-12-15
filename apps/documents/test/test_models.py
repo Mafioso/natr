@@ -150,4 +150,17 @@ class DocumentTestCase(TestCase):
 		gp_doc.cost_row
 		self.assertIsNotNone(gp_doc.document)
 
+	def test_add_new_cost_type(self):
+		doc = factories.Document.create(project=self.prj)
+		cost_doc = factories.CostDocument.create(
+			document=doc,
+			cost_types=self.prj.costtype_set.all())
+		cost_doc.document.save()
+		cost_type = factories.CostType.create(project=self.prj)
+		self.assertIsInstance(cost_type, models.CostType)
+		cost_type_rows = self.prj.cost_document.get_milestone_costs_row(cost_type)
+		self.assertTrue(len(cost_type_rows) > 0)
+
+		budget_items = models.UseOfBudgetDocumentItem.objects.filter(cost_type=cost_type)
+		self.assertTrue(len(budget_items) > 0)
 
