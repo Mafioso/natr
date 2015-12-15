@@ -23,7 +23,8 @@ __all__ = (
     'MilestoneSerializer',
     'CommentSerializer',
     'CorollarySerializer',
-    'CorollaryStatByCostTypeSerializer'
+    'CorollaryStatByCostTypeSerializer',
+    'ExpandedMilestoneSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -64,6 +65,14 @@ class MilestoneFinSummarySerializer(ExcludeCurrencyFields, serializers.ModelSeri
     natr_costs = SerializerMoneyField()
     own_costs = SerializerMoneyField()
 
+class MilestoneBaseInfo(serializers.ModelSerializer):
+
+    class Meta:
+        model = Milestone
+        fields = ('id', 'number', 'status_cap')
+
+    status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+
 
 class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
@@ -89,7 +98,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     start_description_id = serializers.IntegerField(source='get_start_description_id', read_only=True, required=False)
     current_milestone = MilestoneSerializer(required=False)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
-    milestone_set = MilestoneFinSummarySerializer(many=True, required=False)
+    milestone_set = MilestoneBaseInfo(many=True, required=False)
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
@@ -300,9 +309,7 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     class Meta:
         model = Milestone
         read_only_fields = ('status_cap',)
-
-    project = serializers.PrimaryKeyRelatedField(
-        queryset=Project.objects.all(), required=False)
+        
     reports = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(), many=True, required=False)
 

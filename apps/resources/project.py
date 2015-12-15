@@ -65,6 +65,12 @@ class MilestoneViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Milestone.objects.all()
     serializer_class = MilestoneSerializer
 
+    @detail_route(methods=['get'], url_path='expanded')
+    @patch_serializer_class(ExpandedMilestoneSerializer)
+    def journal(self, request, *a, **kw):
+        serializer = self.get_serializer(self.get_object())
+        return response.Response(serializer.data)
+
 
 class MonitoringTodoViewSet(viewsets.ModelViewSet):
     queryset = prj_models.MonitoringTodo.objects.all()
@@ -121,6 +127,18 @@ class MonitoringViewSet(viewsets.ModelViewSet):
 class ReportViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Report.objects.all()
     serializer_class = ReportSerializer
+
+    def get_queryset(self):
+        """
+        Override get_queryset() to filter on multiple values for 'id'
+        """
+        queryset = self.queryset
+        id_value = self.request.query_params.get('id', None)
+        if id_value:
+            id_list = id_value.split(',')
+            queryset = self.queryset.filter(id__in=id_list)
+
+        return queryset
 
     @detail_route(methods=['get'], url_path='project')
     @patch_serializer_class(ProjectSerializer)

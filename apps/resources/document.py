@@ -303,7 +303,7 @@ class GPDocimentViewSet(viewsets.ModelViewSet):
         """
         Override get_queryset() to filter on multiple values for 'id'
         """
-
+        queryset = self.queryset
         id_value = self.request.query_params.get('id', None)
         if id_value:
             id_list = id_value.split(',')
