@@ -258,7 +258,7 @@ class ReportSerializer(serializers.ModelSerializer):
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
 
-class CorollaryTotalsSerializer(serializers.Serializer):
+class CorollaryTotalsSerializer(ExcludeCurrencyFields, serializers.Serializer):
     natr_fundings = SerializerMoneyField()
     own_fundings = SerializerMoneyField()
     planned_costs = SerializerMoneyField()
@@ -268,7 +268,7 @@ class CorollaryTotalsSerializer(serializers.Serializer):
     savings = SerializerMoneyField()
 
 
-class CorollaryStatByCostTypeSerializer(serializers.ModelSerializer):
+class CorollaryStatByCostTypeSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
         model = CorollaryStatByCostType
@@ -283,7 +283,19 @@ class CorollaryStatByCostTypeSerializer(serializers.ModelSerializer):
     savings = SerializerMoneyField()
 
 
-class CorollarySerializer(serializers.ModelSerializer):
+
+class MilestoneFinSummarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = Milestone
+        fields = ('number', 'total_costs', 'natr_costs', 'own_costs')
+
+    total_costs = SerializerMoneyField()
+    natr_costs = SerializerMoneyField()
+    own_costs = SerializerMoneyField()
+
+
+class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
         model = Corollary
@@ -294,6 +306,7 @@ class CorollarySerializer(serializers.ModelSerializer):
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     stats = CorollaryStatByCostTypeSerializer(read_only=True, many=True)
     totals = serializers.SerializerMethodField()
+    next_funding = serializers.SerializerMethodField()
 
     def get_totals(self, instance):
         rv = {
@@ -309,6 +322,10 @@ class CorollarySerializer(serializers.ModelSerializer):
             for stat_obj in instance.stats.all():
                 rv[stat_key] += getattr(stat_obj, stat_key)
         return CorollaryTotalsSerializer(rv).data
+
+    def get_next_funding(self, instance):
+        milestone = instance.project.take_next_milestone()
+        return MilestoneFinSummarySerializer(instance=milestone).data
 
 
 class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):

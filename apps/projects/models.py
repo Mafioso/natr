@@ -11,6 +11,7 @@ from natr.mixins import ProjectBasedModel
 from natr import utils
 from natr.models import CostType
 from django.contrib.auth import get_user_model
+from django.utils.functional import cached_property
 from notifications.models import Notification
 from documents.models import (
     OtherAgreementsDocument,
@@ -79,6 +80,10 @@ class Project(models.Model):
                 status__lt=Milestone.CLOSE)
         except Milestone.DoesNotExist:
             return None
+
+    def take_next_milestone(self):
+        return self.milestone_set.get(
+            number=self.current_milestone.number)
 
     @property
     def calendar_plan(self):
@@ -527,6 +532,22 @@ class Milestone(ProjectBasedModel):
 
     def is_closed(self):
         return self.status == Milestone.CLOSE
+
+    @cached_property
+    def natr_costs(self):
+        return self.total_costs - self.own_costs
+
+    @cached_property
+    def total_costs(self):
+        return sum([cost_obj.costs for cost_obj in self.costs])
+
+    @cached_property
+    def own_costs(self):
+        return sum([cost_obj.own_costs for cost_obj in self.costs])
+
+    @cached_property
+    def costs(self):
+        return list(self.project.cost_document.get_milestone_costs(self))
 
     @property
     def cameral_report(self):
