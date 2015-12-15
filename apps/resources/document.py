@@ -136,8 +136,14 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
         cost_rows = instance.get_costs_rows()
         cost_rows_data = []
         for cost_row in cost_rows:
-            cost_rows_data.append(
-                MilestoneCostCellSerializer(instance=cost_row, cost_type=True, many=True).data)
+            assert len(cost_row) > 0, 'have to be at least one element'
+            cost_cell = cost_row[0]
+            cost_type_data = natr_serializers.CostTypeSerializer(instance=cost_cell.cost_type).data
+            cost_row_data = MilestoneCostCellSerializer(instance=cost_row, many=True).data
+            cost_rows_data.append({
+                "cost_type": cost_type_data,
+                "cost_row": cost_row_data
+            })
         headers = self.get_success_headers(cost_rows_data)
         return response.Response(cost_rows_data, headers=headers)
 
