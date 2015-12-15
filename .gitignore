@@ -19,3 +19,5 @@ dist/
 secrets.cfg
 .DS_Store
 .eggs
+static/js
+!static/js/bundle.js
