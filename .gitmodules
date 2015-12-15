@@ -1,0 +1,3 @@
+[submodule "natr-frontend"]
+	path = natr-frontend
+	url = git@github.com:Mafioso/natr-frontend.git

@@ -163,7 +163,6 @@ NGINX_TMP_UPLOAD_ROOT = os.path.join(MEDIA_ROOT, 'tmp')
 
 STATICFILES_DIRS = (
     rel('static'),
-    rel(os.path.expanduser('~/.natr/static'))
 )
 
 LOCALE_PATHS = (
