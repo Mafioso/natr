@@ -2,7 +2,7 @@ import json
 from rest_framework import serializers
 from notifications import models
 from projects.models import Milestone
-from resources.serializers import MilestoneSerializer
+from projects.serializers import MilestoneSerializer
 
 
 __all__ = (
