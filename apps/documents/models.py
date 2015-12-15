@@ -10,12 +10,13 @@ from django.db import models
 from django.utils.functional import cached_property
 from django.conf import settings
 from natr.mixins import ProjectBasedModel
-from natr.models import CostType, FundingType
+from natr.models import CostType
 from statuses import (
     BasicProjectPasportStatuses, 
     InnovativeProjectPasportStatuses,
     CommonStatuses
 )
+import utils as doc_utils
 
 
 
@@ -137,16 +138,12 @@ class DocumentDMLManager(models.Manager):
 
     def create_empty_cost(self, **kwargs):
         milestone_costs = kwargs.pop('milestone_costs', [])
-        milestone_fundings = kwargs.pop('milestone_fundings', [])
         doc = self.create_doc_with_relations(CostDocument, **kwargs)
         doc.save()
 
         for milestone_cost_data in milestone_costs:
             MilestoneCostRow.objects.create(
                 cost_document=doc, **milestone_cost_data)
-        for milestone_funding_data in milestone_fundings:
-            MilestoneFundingRow.objects.create(
-                cost_document=doc, **milestone_funding_data)
         return doc
 
     def create_cost(self, **kwargs):
@@ -624,15 +621,37 @@ class UseOfBudgetDocument(models.Model):
             use_of_budget_doc=self,
             cost_type=cost_type)
 
+class GPDocumentType(models.Model):
+    u"""
+        Тип документа по отчету например: акт, счет фактура, акт выполненных работ
+    """
+    DEFAULT = (
+        u'договор',
+        u'счёт на оплату',
+        u'платёжное поручение',
+        u'счёт-фактура',
+        u'акт выполненных работ'
+    )
+
+    name = models.CharField(max_length=255)
+
+    @classmethod
+    def create_default(cls):
+        return [cls.objects.create(name=gp_doc_type) for gp_doc_type in cls.DEFAULT]
+
 
 class GPDocument(models.Model):
-    u"""Документ по отчету ГП, например: акт, счет фактура, акт выполненных работ, который
+    u"""Документ по отчету ГП, например по типу: акт, счет фактура, акт выполненных работ, который
     раскрывают смету расходов в общем."""
     tp = 'gp_doc'
     document = models.OneToOneField(Document, related_name='gp_document', on_delete=models.CASCADE)
-    name = models.CharField(max_length=255)
+    type = models.ForeignKey(GPDocumentType, related_name='gp_docs', null=True)
     number = models.CharField(max_length=255, null=True, blank=True)
     cost_row = models.ForeignKey('FactMilestoneCostRow', null=True, related_name='gp_docs')
+
+    @property 
+    def name(self):
+        return self.type.name
 
 
 
@@ -652,8 +671,6 @@ class UseOfBudgetDocumentItem(models.Model):
     use_of_budget_doc = models.ForeignKey(UseOfBudgetDocument, related_name='items', on_delete=models.CASCADE)
 
     cost_type = models.ForeignKey('natr.CostType', verbose_name=u'Наименование статей затрат', related_name='budget_items')
-    # fundings = models.ManyToManyField('MilestoneFundingRow', verbose_name=u'Сумма бюджетных средств')
-    # costs = models.ManyToManyField('FactMilestoneCostRow', verbose_name=u'Наименования подтверждающих документов', related_name='budget_items')
     date_created = models.DateTimeField(auto_now_add=True)
     notes = models.CharField(
         u'Примечания',
@@ -678,15 +695,11 @@ class UseOfBudgetDocumentItem(models.Model):
         return self.project.cost_document
 
     @property
-    def fundings(self):
-        return self.cost_document.get_milestone_fundings(self.milestone)
-
-    @property
     def total_budget(self):
         u"""Сумма бюджетных стредств по смете"""
         total = sum([
-            funding_cell is not None and funding_cell.fundings.amount
-            for funding_cell in self.fundings.all()
+            cost_cell is not None and cost_cell.own_costs.amount
+            for cost_cell in self.get_milestone_costs(self.milestone).all()
         ])
         return Money(amount=total, currency=settings.KZT)
 
@@ -723,7 +736,7 @@ class UseOfBudgetDocumentItem(models.Model):
         return UseOfBudgetDocumentItem.objects.filter(
             cost_type=cost_type, use_of_budget_doc__report_id=report_id)\
         .select_related('cost_type', 'milestone',)\
-        .prefetch_related('costs', 'costs__gp_docs', 'fundings').get()
+        .prefetch_related('costs', 'costs__gp_docs').get()
 
 
 
@@ -742,25 +755,10 @@ class CostDocument(models.Model):
         ])
         return Money(amount=total, currency=settings.KZT)
 
-    @cached_property
-    def total_funding(self):
-        total = sum([
-            row_funding.amount
-            for row_funding in map(self.total_funding_by_row, self.funding_types.all())
-        ])
-        return Money(amount=total, currency=settings.KZT)
-
     def total_cost_by_row(self, cost_type):
         total = sum([
             cost_cell.costs.amount
             for cost_cell in self.get_milestone_costs_row(cost_type)
-        ])
-        return Money(amount=total, currency=settings.KZT)
-
-    def total_funding_by_row(self, funding_type):
-        total = sum([
-            funding_cell.fundings.amount
-            for funding_cell in self.get_milestone_fundings_row(funding_type)
         ])
         return Money(amount=total, currency=settings.KZT)
 
@@ -771,40 +769,19 @@ class CostDocument(models.Model):
         ])
         return Money(amount=total, currency=settings.KZT)
 
-    def fundings_by_milestone(self, milestone):
-        total = sum([
-            funding_cell is not None and funding_cell.fundings.amount or 0
-            for funding_cell in self.get_milestone_fundings(milestone)
-        ])
-        return Money(amount=total, currency=settings.KZT)
-
     def get_costs_rows(self):
         return map(self.get_milestone_costs_row, list(self.cost_types.all()))
-
-    def get_fundings_rows(self):
-        return map(self.get_milestone_fundings_row, list(self.funding_types.all()))
 
     def get_milestone_costs_row(self, cost_type):
         return self.milestone_costs.filter(
             cost_document=self, cost_type=cost_type).order_by('milestone__number')
 
-    def get_milestone_fundings_row(self, funding_type):
-        return self.milestone_fundings.filter(
-            cost_document=self, funding_type=funding_type).order_by('milestone__number')
-
     def get_milestone_costs(self, milestone):
         return self.milestone_costs.filter(milestone=milestone).order_by('cost_type__date_created')
-
-    def get_milestone_fundings(self, milestone):
-        return self.milestone_fundings.filter(milestone=milestone).order_by('funding_type__date_created')
 
     @property
     def cost_types(self):
         return self.project.costtype_set.all()
-
-    @property
-    def funding_types(self):
-        return self.project.fundingtype_set.all()
 
     @property
     def project(self):
@@ -818,6 +795,10 @@ class MilestoneCostRow(models.Model):
     cost_type = models.ForeignKey('natr.CostType')
     costs = MoneyField(
         u'Сумма затрат (тенге)',
+        default=0, default_currency=settings.KZT,
+        max_digits=20, decimal_places=2)
+    own_costs = MoneyField(
+        u'Собственные средства (тенге)',
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2)
 
@@ -854,16 +835,5 @@ class FactMilestoneCostRow(models.Model):
         gp_docs = [GPDocument.objects.create(**gp_doc) for gp_doc in gp_docs]
         obj.add(*gp_docs)
         return obj
-
-
-class MilestoneFundingRow(models.Model):
-    u"""Источник финансирования по этапу"""
-    cost_document = models.ForeignKey('CostDocument', related_name='milestone_fundings')
-    milestone = models.ForeignKey('projects.Milestone')
-    funding_type = models.ForeignKey('natr.FundingType', null=True)
-    fundings = MoneyField(
-        u'Сумма финансирования за счет других источников',
-        default=0, default_currency=settings.KZT,
-        max_digits=20, decimal_places=2)
 
 

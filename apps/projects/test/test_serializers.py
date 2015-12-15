@@ -93,7 +93,6 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertEqual(len(prj.calendar_plan.items.all()), prj.number_of_milestones)
 
 		self.assertEqual(len(prj.costtype_set.all()), len(natr_models.CostType.DEFAULT))
-		self.assertEqual(len(prj.fundingtype_set.all()), len(natr_models.FundingType.DEFAULT))
 
 		self.assertIsInstance(prj.cost_document, doc_models.CostDocument)
 		self.assertEqual(len(prj.cost_document.milestone_costs.all()) / prj.number_of_milestones, len(prj.costtype_set.all()))
@@ -101,7 +100,6 @@ class ProjectSerializerTestCase(TestCase):
 		self.assertEqual(prj.cost_document.total_cost.amount, 0)
 		self.assertEqual(prj.cost_document.total_funding.amount, 0)
 		self.assertEqual(len(prj.cost_document.cost_types.all()), len(prj.costtype_set.all()))
-		self.assertEqual(len(prj.cost_document.funding_types.all()), len(prj.fundingtype_set.all()))
 
 		self.assertEqual(len(prj.milestone_set.all()), prj.number_of_milestones)
 
@@ -195,8 +193,7 @@ class ProjectSerializerTestCase(TestCase):
 		todo = factories.MonitoringTodo.create()
 		data = MonitoringTodoSerializer(instance=todo).data
 		todo_ser = MonitoringTodoSerializer(data=data)
-		with self.assertRaises(serializers.ValidationError):
-			todo_ser.is_valid(raise_exception=True)
+		todo_ser.is_valid(raise_exception=True)
 
 		monitoring = factories.Monitoring.create()
 		todo = monitoring.todos.first()
@@ -204,104 +201,6 @@ class ProjectSerializerTestCase(TestCase):
 		todo_ser = MonitoringTodoSerializer(data=data)
 		todo_ser.is_valid(raise_exception=True)
 
-
-	def test_create_project_hotfix_document_agreement(self):
-		data = {
-			"name": u"Название проекта",
-			"organization_details":
-			{
-				"share_holders":[
-					{
-						"fio": u"ФИО",
-						"iin":85208520,
-						"share_percentage":50
-					}],
-				"contact_details":
-					{
-						"phone_number": u"87007161130",
-						"email":"abyken.nurlan@gmail.com"
-					},
-				"authorized_grantee":
-					{
-						"full_name":u"Контактные данные лица, уполномоченного ГП для взаимодействия с АО НАТР",
-						"phone_number":u"87007161130",
-						"email":"abyken.nurlan@gmail.com"
-					},
-				"name":u"Название",
-				"org_type":u"0",
-				"address_1":u"Юридический адрес",
-				"address_2":u"Фактический адрес",
-				"bin":u"8520",
-				"bik":u"8520",
-				"iik":u"8520",
-				"requisites":u"Банковские реквизиты 8520",
-				"first_head_fio":u"ФИО первого руководителя"
-			},
-			"aggreement":
-				{
-					"name":u"Название договора",
-					"number":7,
-					"subject":u"Предмет договора",
-					"funding":
-						{
-							"amount":8520,
-							"currency": "KZT"
-						},
-					"document": {
-						"date_sign":"2015-12-27T00:00:00.000Z"
-					}
-				},
-			"funding_type":
-				{
-					"name":"INDS_RES"
-				},
-			"funding_date":"2015-12-22T00:00:00.000Z",
-			"description":u"Описание проекта",
-			"total_month":"6",
-			"number_of_milestones":2,
-			"innovation":u"Инновационность",
-			"other_agreements":
-				{
-					"items":[
-						{
-							"number":2,
-							"date_sign":"2015-12-21T00:00:00.000Z"
-						}]
-				},
-			"fundings":
-				{
-					"amount":8520
-				},
-			"own_fundings":
-				{
-					"amount":8520
-				}
-		}
-		prj_ser = ProjectSerializer(data=data)
-		prj_ser.is_valid(raise_exception=False)
-		utils.pretty(prj_ser.errors)
-		prj = prj_ser.save()
-		
-		self.assertTrue(isinstance(prj.id, int))
-		self.assertEqual(prj.name, u'Название проекта')
-		self.assertEqual(prj.description, u'Описание проекта')
-
-		prj.aggreement
-		self.assertTrue(prj.aggreement.id > 0)
-
-		self.assertEqual(prj.number_of_milestones, 2)
-		self.assertTrue(isinstance(prj.calendar_plan, doc_models.CalendarPlanDocument))
-		self.assertTrue(len(prj.calendar_plan.items.all()) > 0)
-		self.assertEqual(len(prj.calendar_plan.items.all()), prj.number_of_milestones)
-
-		self.assertIsInstance(prj.cost_document, doc_models.CostDocument)
-		self.assertEqual(prj.cost_document.total_cost.amount, 0)
-		self.assertEqual(prj.cost_document.total_funding.amount, 0)
-
-		self.assertEqual(len(prj.milestone_set.all()), prj.number_of_milestones)
-
-		self.assertIsNotNone(prj.journal)
-		self.assertIsNotNone(prj.monitoring)
 		
 
 		

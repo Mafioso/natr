@@ -8,8 +8,6 @@ from .budget_report import (
 from .cost import (
     MilestoneCostRowSerializer,
     MilestoneCostCellSerializer,
-    MilestoneFundingRowSerializer,
-    MilestoneFundingCellSerializer,
     CostDocumentSerializer)
 from .misc import (
     DocumentSerializer,
@@ -39,8 +37,6 @@ budget_classes = (
 cost = (
     MilestoneCostRowSerializer,
     MilestoneCostCellSerializer,
-    MilestoneFundingRowSerializer,
-    MilestoneFundingCellSerializer,
     CostDocumentSerializer)
 misc = (
     DocumentSerializer,

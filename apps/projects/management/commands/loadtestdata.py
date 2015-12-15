@@ -55,6 +55,7 @@ class Command(BaseCommand):
 			self.gen_monitoring(prj)
 			self.gen_reports(prj)
 			self.gen_journal(prj)
+			self.gen_default_gp_docs_types()
 		return rv
 
 	def gen_notifications(self):
@@ -94,6 +95,8 @@ class Command(BaseCommand):
 		doc = doc_factories.Document.create(project=project)
 		cost_doc = doc_factories.CostDocument.create(
 			document=doc,
-			cost_types=project.costtype_set.all(),
-			funding_types=project.fundingtype_set.all())
+			cost_types=project.costtype_set.all())
 		cost_doc.document.save()
+
+	def gen_default_gp_docs_types(self):
+		doc_models.GPDocumentType.create_default()

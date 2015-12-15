@@ -134,20 +134,12 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
     def fetch_all_by_row(self, request, *a, **kw):
         instance = self.get_object()
         cost_rows = instance.get_costs_rows()
-        funding_rows = instance.get_fundings_rows()
-
-        cost_rows_data, funding_rows_data = [], []
-        for cost_row, funding_row in zip(cost_rows, funding_rows):
+        cost_rows_data = []
+        for cost_row in cost_rows:
             cost_rows_data.append(
                 MilestoneCostCellSerializer(instance=cost_row, cost_type=True, many=True).data)
-            funding_rows_data.append(
-                MilestoneFundingCellSerializer(instance=funding_row, funding_type=True, many=True).data)
-        rv_data = {
-            'cost_rows': cost_rows_data,
-            'funding_rows': funding_rows_data
-        }
-        headers = self.get_success_headers(rv_data)
-        return response.Response(rv_data, headers=headers)
+        headers = self.get_success_headers(cost_rows_data)
+        return response.Response(cost_rows_data, headers=headers)
 
     @detail_route(methods=['post'], url_path='add_cost_row')
     @patch_serializer_class(MilestoneCostCellSerializer)
@@ -259,116 +251,6 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(rv_data)
         return response.Response(rv_data, headers=headers)
 
-    @detail_route(methods=['post'], url_path='add_funding_row')
-    @patch_serializer_class(MilestoneFundingCellSerializer)
-    def add_funding_row(self, request, *a, **kw):
-        """
-        {
-            funding_type: {
-                id: 1,
-                name: "lorem ipsum",
-            },
-            funding_row: [{
-                cost_document: 14,
-                milestone: 1,
-                funding_type: 1,
-                fundings: {
-                    "amount": 1200,
-                    "currency": "KZT"
-                }
-            },
-            {
-                cost_document: 14,
-                milestone: 2,
-                funding_type: 1,
-                fundings: {
-                    "amount": 1200,
-                    "currency": "KZT"
-                }
-            }]
-        }
-
-        """
-        data = request.data
-        doc = self.get_object()
-
-        funding_type_data = data.pop('funding_type')
-        funding_type_data['cost_document'] = doc.id
-        funding_type_data['project'] = doc.project.id
-        funding_type_ser = natr_serializers.FundingTypeSerializer(data=funding_type_data)
-        funding_type_ser.is_valid(raise_exception=True)
-        funding_type_obj = funding_type_ser.save()
-
-        funding_row = data.pop('funding_row')
-        for funding_cell in funding_row:
-            funding_cell['funding_type'] = funding_type_obj.id
-            funding_cell['cost_document'] = doc.id
-        funding_row_ser = self.get_serializer(data=funding_row, many=True)
-        funding_row_ser.is_valid(raise_exception=True)
-        funding_row_ser.save()
-        rv_data = {
-            'funding_type': funding_type_ser.data,
-            'funding_row': funding_row_ser.data
-        }
-        headers = self.get_success_headers(rv_data)
-        return response.Response(rv_data, headers=headers)
-
-    @detail_route(methods=['post'], url_path='edit_funding_row')
-    @patch_serializer_class(MilestoneFundingCellSerializer)
-    def edit_funding_row(self, request, *a, **kw):
-        """
-        {
-            funding_type: {
-                id: 1,
-                name: "lorem ipsum",
-            },
-            funding_row: [{
-                cost_document: 14,
-                milestone: 1,
-                funding_type: 1,
-                fundings: {
-                    "amount": 1200,
-                    "currency": "KZT"
-                }
-            },
-            {
-                cost_document: 14,
-                milestone: 2,
-                funding_type: 1,
-                fundings: {
-                    "amount": 1200,
-                    "currency": "KZT"
-                }
-            }]
-        }
-
-        """
-        data = request.data
-        doc = self.get_object()
-
-        funding_type_data = data.pop('funding_type')
-        funding_type_obj = doc.funding_types.get(pk=funding_type_data['id'])
-        funding_type_ser = natr_serializers.FundingTypeSerializer(funding_type_obj, data=funding_type_data)
-        funding_type_ser.is_valid(raise_exception=True)
-        funding_type_obj = funding_type_ser.save()
-
-        funding_row_instance = doc.get_milestone_fundings_row(funding_type_ser.instance)
-        funding_row_data = data.pop('funding_row')
-        for funding_cell in funding_row_data:
-            funding_cell['funding_type'] = funding_type_obj.id
-            funding_cell['cost_document'] = doc.id
-
-        funding_row_ser = self.get_serializer(
-            funding_row_instance, data=funding_row_data, many=True)
-        funding_row_ser.is_valid(raise_exception=True)
-        funding_row_ser.save()
-        rv_data = {
-            'funding_type': funding_type_ser.data,
-            'funding_row': funding_row_ser.data
-        }
-        headers = self.get_success_headers(rv_data)
-        return response.Response(rv_data, headers=headers)
-
 
 class UseOfBudgetDocumentViewSet(viewsets.ModelViewSet):
     serializer_class = UseOfBudgetDocumentSerializer
@@ -408,4 +290,21 @@ class CostTypeViewSet(viewsets.ModelViewSet):
 class FactMilestoneCostRowViewSet(viewsets.ModelViewSet):
     serializer_class = FactMilestoneCostRowSerializer
     queryset = doc_models.FactMilestoneCostRow.objects.all()
+
+class GPDocimentViewSet(viewsets.ModelViewSet):
+    serializer_class = GPDocumentSerializer
+    queryset = doc_models.GPDocument.objects.all()
+    filter_fields = ('id')
+
+    def get_queryset(self):
+        """
+        Override get_queryset() to filter on multiple values for 'id'
+        """
+
+        id_value = self.request.query_params.get('id', None)
+        if id_value:
+            id_list = id_value.split(',')
+            queryset = self.queryset.filter(id__in=id_list)
+
+        return queryset
 

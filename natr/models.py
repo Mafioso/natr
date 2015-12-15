@@ -26,19 +26,3 @@ class CostType(ProjectBasedModel):
     @classmethod
     def create_default(cls, prj):
     	return [CostType.objects.create(project=prj, name=ctype) for ctype in cls.DEFAULT]
-
-
-class FundingType(ProjectBasedModel):
-    u"""Источник финансирования"""
-    OWN_FUND = u'Свои средства'
-    NATR_FUND = u'Средства НАТР'
-    DEFAULT = (
-    	OWN_FUND,
-        NATR_FUND)
-    # cost_document = models.ForeignKey('CostDocument', related_name='funding_types', null=True)
-    name = models.CharField(max_length=1024, default='')
-    date_created = models.DateTimeField(auto_now_add=True, null=True)
-
-    @classmethod
-    def create_default(cls, prj):
-    	return [FundingType.objects.create(project=prj, name=ftype) for ftype in cls.DEFAULT]

@@ -123,6 +123,18 @@ class ReportViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Report.objects.all()
     serializer_class = ReportSerializer
 
+    @detail_route(methods=['get'], url_path='project')
+    @patch_serializer_class(ProjectSerializer)
+    def get_project(self, request, *a, **kw):
+        """
+            Get report project
+        """
+        report = self.get_object()
+        serializer = self.get_serializer(report.project)
+
+        return response.Response(serializer.data)
+
+
     @detail_route(methods=['post'], url_path='rework')
     @patch_serializer_class(CommentSerializer)
     def to_rework(self, request, *a, **kw):
