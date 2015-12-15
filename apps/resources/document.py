@@ -287,9 +287,12 @@ class CostTypeViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(cost_row, many=True)
         return response.Response(serializer.data)
 
+
 class FactMilestoneCostRowViewSet(viewsets.ModelViewSet):
     serializer_class = FactMilestoneCostRowSerializer
     queryset = doc_models.FactMilestoneCostRow.objects.all()
+
+
 
 class GPDocimentViewSet(viewsets.ModelViewSet):
     serializer_class = GPDocumentSerializer

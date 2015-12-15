@@ -19,7 +19,8 @@ from documents.models import (
     InnovativeProjectPasportDocument,
     CostDocument,
     ProjectStartDescription,
-    UseOfBudgetDocument
+    UseOfBudgetDocument,
+    MilestoneCostRow
 )
 
 class Project(models.Model):
@@ -306,30 +307,32 @@ class Corollary(ProjectBasedModel):
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul
     type = models.IntegerField(null=True)
-    report = models.OneToOneField('Report', null=True)
-    milestone = models.OneToOneField('Milestone', related_name='corollary')
+    report = models.OneToOneField('Report')
+    milestone = models.OneToOneField('Milestone', related_name='corollary', null=True)
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
 
     def get_status_cap(self):
         return Corollary.STATUS_CAPS[self.status]
 
     def build_stat(self):
+        self.stats.all().delete()
         planned_costs = {cost.cost_type_id: cost for cost in self.planned_costs}
-
         stat_by_type = {
             cost_type.id: CorollaryStatByCostType(
-                corollary=self,)
+                corollary=self, cost_type=cost_type)
             for cost_type in self.project.costtype_set.all()}
         for cost_type_id, stat_obj in stat_by_type.iteritems():
-            stat_obj.costs_received_by_natr = stat_obj.planned_costs = planned_costs[cost_type_id].costs
-            fact_cost_lst = FactMilestoneCostRow.objects.filter(
-                cost_type=cost_type_id,
-                milestone=self.milestone)
-            stat_obj.fact_costs = sum([
-                cost_item.costs.amount
-                for cost_item in fact_cost_list
-            ])
-
+            plan_cost_objs = MilestoneCostRow.objects.filter(
+                cost_type_id=cost_type_id, milestone=self.milestone)
+            plan_total_costs = sum([item.costs for item in plan_cost_objs])
+            stat_obj.own_fundings = sum([item.own_costs for item in plan_cost_objs])
+            stat_obj.natr_fundings = plan_total_costs - stat_obj.own_fundings
+            stat_obj.planned_costs = plan_total_costs
+            stat_obj.costs_approved_by_docs = stat_obj.fact_costs = self.use_of_budget_doc.calc_total_expense()
+            stat_obj.costs_received_by_natr = min(stat_obj.costs_approved_by_docs, stat_obj.natr_fundings)
+            stat_obj.savings = stat_obj.natr_fundings - stat_obj.costs_received_by_natr
+            stat_obj.save()
+        return stat_by_type.values()
 
     @property
     def use_of_budget_doc(self):
@@ -385,9 +388,19 @@ class Corollary(ProjectBasedModel):
     def agreement(self):
         return self.project.aggreement
 
+    @classmethod
+    def gen_by_report(cls, report_id):
+        report = Report.objects.get(pk=report_id)
+        corollary, _ = Corollary.objects.get_or_create(
+            report=report, defaults={
+                'milestone': report.milestone,
+                'project': report.project})
+        corollary.build_stat()
+        return corollary
+
 
 class CorollaryStatByCostType(models.Model):
-    corollary = models.ForeignKey('Corollary')
+    corollary = models.ForeignKey('Corollary', related_name='stats')
     cost_type = models.ForeignKey('natr.CostType')
     natr_fundings = MoneyField(u'Средства гранта',
         max_digits=20, decimal_places=2, default_currency='KZT',

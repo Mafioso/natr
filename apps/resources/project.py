@@ -156,3 +156,14 @@ class ReportViewSet(viewsets.ModelViewSet):
 
         headers = self.get_success_headers(item_ser.data)
         return response.Response(item_ser.data, headers=headers)
+
+
+class CorollaryViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.Corollary.objects.all()
+    serializer_class = CorollarySerializer
+
+    @list_route(methods=['post'], url_path='build')
+    def build(self, request, *a, **kw):
+        corollary = prj_models.Corollary.gen_by_report(request.data.get('report'))
+        serializer = self.get_serializer(instance=corollary)
+        return response.Response(serializer.data)

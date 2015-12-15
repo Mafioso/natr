@@ -10,6 +10,9 @@ f = faker.Faker()
 def fake_money():
     return Money(random.randint(1, 100) * 1000, KZT)
 
+def zero_money():
+    return Money(0, KZT)
+
 
 def fake_url():
     host = f.url()[:-1]

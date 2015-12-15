@@ -9,7 +9,7 @@ from grantee.serializers import *
 from documents.serializers import *
 from documents import models as doc_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType
 from auth2.models import NatrUser
 
 
@@ -21,7 +21,9 @@ __all__ = (
     'MonitoringSerializer',
     'MonitoringTodoSerializer',
     'MilestoneSerializer',
-    'CommentSerializer'
+    'CommentSerializer',
+    'CorollarySerializer',
+    'CorollaryStatByCostTypeSerializer'
 )
 
 class FundingTypeSerializer(serializers.ModelSerializer):
@@ -222,7 +224,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        _f = ( 'id', 'name', 'status', 'current_milestone', 'status_cap')
+        _f = ( 'id', 'name', 'status', 'current_milestone', 'status_cap', 'agreement')
         fields = _f
         read_only_fields = _f
 
@@ -256,16 +258,57 @@ class ReportSerializer(serializers.ModelSerializer):
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
 
+class CorollaryTotalsSerializer(serializers.Serializer):
+    natr_fundings = SerializerMoneyField()
+    own_fundings = SerializerMoneyField()
+    planned_costs = SerializerMoneyField()
+    fact_costs = SerializerMoneyField()
+    costs_received_by_natr = SerializerMoneyField()
+    costs_approved_by_docs = SerializerMoneyField()
+    savings = SerializerMoneyField()
+
+
+class CorollaryStatByCostTypeSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = CorollaryStatByCostType
+
+
+    natr_fundings = SerializerMoneyField()
+    own_fundings = SerializerMoneyField()
+    planned_costs = SerializerMoneyField()
+    fact_costs = SerializerMoneyField()
+    costs_received_by_natr = SerializerMoneyField()
+    costs_approved_by_docs = SerializerMoneyField()
+    savings = SerializerMoneyField()
+
+
 class CorollarySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Corollary
 
-    project = ProjectBasicInfoSerializer(required=True)
-    milestone = MilestoneSerializer(required=True)
-    use_of_budget_doc = UseOfBudgetDocumentSerializer(required=True)
-    report_date = serializers.DateTimeField()
+    project = ProjectBasicInfoSerializer(read_only=True)
+    # use_of_budget_doc = UseOfBudgetDocumentSerializer(read_only=True)
+    report_date = serializers.DateTimeField(read_only=True)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    stats = CorollaryStatByCostTypeSerializer(read_only=True, many=True)
+    totals = serializers.SerializerMethodField()
+
+    def get_totals(self, instance):
+        rv = {
+            'natr_fundings': utils.zero_money(),
+            'own_fundings': utils.zero_money(),
+            'planned_costs': utils.zero_money(),
+            'fact_costs': utils.zero_money(),
+            'costs_received_by_natr': utils.zero_money(),
+            'costs_approved_by_docs': utils.zero_money(),
+            'savings': utils.zero_money()
+        }
+        for stat_key in rv:
+            for stat_obj in instance.stats.all():
+                rv[stat_key] += getattr(stat_obj, stat_key)
+        return CorollaryTotalsSerializer(rv).data
 
 
 class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):

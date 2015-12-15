@@ -621,6 +621,9 @@ class UseOfBudgetDocument(models.Model):
             use_of_budget_doc=self,
             cost_type=cost_type)
 
+    def calc_total_expense(self):
+        return sum([item.total_expense for item in self.items.all()])
+
 class GPDocumentType(models.Model):
     u"""
         Тип документа по отчету например: акт, счет фактура, акт выполненных работ
