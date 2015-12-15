@@ -66,7 +66,6 @@ class MilestoneViewSet(viewsets.ModelViewSet):
     serializer_class = MilestoneSerializer
 
 
-
 class MonitoringTodoViewSet(viewsets.ModelViewSet):
     queryset = prj_models.MonitoringTodo.objects.all()
     serializer_class = MonitoringTodoSerializer

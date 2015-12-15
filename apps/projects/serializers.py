@@ -54,6 +54,17 @@ class MilestoneSerializer(
         return kwargs
 
 
+class MilestoneFinSummarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = Milestone
+        fields = ('number', 'total_costs', 'natr_costs', 'own_costs')
+
+    total_costs = SerializerMoneyField()
+    natr_costs = SerializerMoneyField()
+    own_costs = SerializerMoneyField()
+
+
 class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
@@ -78,6 +89,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     start_description_id = serializers.IntegerField(source='get_start_description_id', read_only=True, required=False)
     current_milestone = MilestoneSerializer(required=False)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
+    milestone_set = MilestoneFinSummarySerializer(many=True, required=False)
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
@@ -283,16 +295,21 @@ class CorollaryStatByCostTypeSerializer(ExcludeCurrencyFields, serializers.Model
     savings = SerializerMoneyField()
 
 
-
-class MilestoneFinSummarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
         model = Milestone
-        fields = ('number', 'total_costs', 'natr_costs', 'own_costs')
+        read_only_fields = ('status_cap',)
 
-    total_costs = SerializerMoneyField()
-    natr_costs = SerializerMoneyField()
-    own_costs = SerializerMoneyField()
+    project = serializers.PrimaryKeyRelatedField(
+        queryset=Project.objects.all(), required=False)
+    reports = serializers.PrimaryKeyRelatedField(
+        queryset=Project.objects.all(), many=True, required=False)
+
+    status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    fundings = SerializerMoneyField(required=False)
+    planned_fundings = SerializerMoneyField(required=False)
+
 
 
 class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
