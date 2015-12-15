@@ -1,0 +1,1292 @@
+/*import Open Sans font*/
+@font-face {
+    font-family: "OpenSansRegular";
+    src: url("../fonts/OpenSansRegular/OpenSansRegular.eot");
+    src: url("../fonts/OpenSansRegular/OpenSansRegular.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansRegular/OpenSansRegular.woff") format("woff"),
+    url("../fonts/OpenSansRegular/OpenSansRegular.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+@font-face {
+    font-family: "OpenSansLight";
+    src: url("../fonts/OpenSansLight/OpenSansLight.eot");
+    src: url("../fonts/OpenSansLight/OpenSansLight.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansLight/OpenSansLight.woff") format("woff"),
+    url("../fonts/OpenSansLight/OpenSansLight.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+@font-face {
+    font-family: "OpenSansItalic";
+    src: url("../fonts/OpenSansItalic/OpenSansItalic.eot");
+    src: url("../fonts/OpenSansItalic/OpenSansItalic.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansItalic/OpenSansItalic.woff") format("woff"),
+    url("../fonts/OpenSansItalic/OpenSansItalic.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+@font-face {
+    font-family: "OpenSansBold";
+    src: url("../fonts/OpenSansBold/OpenSansBold.eot");
+    src: url("../fonts/OpenSansBold/OpenSansBold.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansBold/OpenSansBold.woff") format("woff"),
+    url("../fonts/OpenSansBold/OpenSansBold.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+@font-face {
+    font-family: "OpenSansExtraBold";
+    src: url("../fonts/OpenSansExtraBold/OpenSansExtraBold.eot");
+    src: url("../fonts/OpenSansExtraBold/OpenSansExtraBold.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansExtraBold/OpenSansExtraBold.woff") format("woff"),
+    url("../fonts/OpenSansExtraBold/OpenSansExtraBold.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+@font-face {
+    font-family: "OpenSansExtraBoldItalic";
+    src: url("../fonts/OpenSansExtraBoldItalic/OpenSansExtraBoldItalic.eot");
+    src: url("../fonts/OpenSansExtraBoldItalic/OpenSansExtraBoldItalic.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansExtraBoldItalic/OpenSansExtraBoldItalic.woff") format("woff"),
+    url("../fonts/OpenSansExtraBoldItalic/OpenSansExtraBoldItalic.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+@font-face {
+    font-family: "OpenSansBoldItalic";
+    src: url("../fonts/OpenSansBoldItalic/OpenSansBoldItalic.eot");
+    src: url("../fonts/OpenSansBoldItalic/OpenSansBoldItalic.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansBoldItalic/OpenSansBoldItalic.woff") format("woff"),
+    url("../fonts/OpenSansBoldItalic/OpenSansBoldItalic.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+@font-face {
+    font-family: "OpenSansRegularItalic";
+    src: url("../fonts/OpenSansRegularItalic/OpenSansRegularItalic.eot");
+    src: url("../fonts/OpenSansRegularItalic/OpenSansRegularItalic.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansRegularItalic/OpenSansRegularItalic.woff") format("woff"),
+    url("../fonts/OpenSansRegularItalic/OpenSansRegularItalic.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+@font-face {
+    font-family: "OpenSansSemiBold";
+    src: url("../fonts/OpenSansSemiBold/OpenSansSemiBold.eot");
+    src: url("../fonts/OpenSansSemiBold/OpenSansSemiBold.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansSemiBold/OpenSansSemiBold.woff") format("woff"),
+    url("../fonts/OpenSansSemiBold/OpenSansSemiBold.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+@font-face {
+    font-family: "OpenSansSemiBoldItalic";
+    src: url("../fonts/OpenSansSemiBoldItalic/OpenSansSemiBoldItalic.eot");
+    src: url("../fonts/OpenSansSemiBoldItalic/OpenSansSemiBoldItalic.eot?#iefix")format("embedded-opentype"),
+    url("../fonts/OpenSansSemiBoldItalic/OpenSansSemiBoldItalic.woff") format("woff"),
+    url("../fonts/OpenSansSemiBoldItalic/OpenSansSemiBoldItalic.ttf") format("truetype");
+    font-style: normal;
+    font-weight: normal;
+}
+
+
+
+
+
+/*vars*/
+/*fonts*/
+$font_regular: OpenSansRegular;
+$font_light: OpenSansLight;
+$font_bold: OpenSansBold;
+$font_semibold: OpenSansSemiBold;
+
+/*font_sizes*/
+$font_size_small: 12px;
+$font_size_normal: 13px;
+$font_size_title: 16px;
+$font_size_info: 15px;
+$font_size_button: 18px;
+
+/*colors*/
+$color_black: #000000;
+$color_white: #FFFFFF;
+$color_head: #2E365C;
+$color_background: #DDDDDD;
+$color_box: #F6F6F6;
+$color_border: #D2D2D2;
+$color_label: #999999;
+$color_info: #555555;
+$color_red: #ED1A2D;
+$color_green: #00B06C;
+$color_blue: #56C7EE;
+$color_chat: #E8E8E8;
+$color_setup: #EEEEEE;
+$color_sub_border: #242B48;
+$color_info_red: #FF5063;
+$color_info_yellow: #FFB74D;
+$color_info_green: #00B06C;
+
+
+
+
+
+/*mixins*/
+@mixin border_radius($r1, $r2, $r3, $r4) {
+	-webkit-border-radius: $r1 $r2 $r3 $r4;
+	-moz-border-radius: $r1 $r2 $r3 $r4;
+	-ms-border-radius: $r1 $r2 $r3 $r4;
+	border-radius: $r1 $r2 $r3 $r4;
+}
+
+@mixin box_shadow($x, $y, $blur_radius, $spread_radius, $color) {
+	-webkit-box-shadow: $x $y $blur_radius $spread_radius $color;
+	-moz-box-shadow: $x $y $blur_radius $spread_radius $color;
+	box-shadow: $x $y $blur_radius $spread_radius $color;
+}
+
+@mixin transition($speed) {
+	transition: $speed;
+}
+
+@mixin transition_move_setup($speed) {
+	-webkit-transition: $speed ease-in-out;
+	-moz-transition: $speed ease-in-out;
+	-o-transition: $speed ease-in-out;
+	transition: $speed ease-in-out;
+}
+
+@mixin transition_move_animate($x, $y) {
+	-webkit-transform: translate($x, $y);
+	-moz-transform: translate($x, $y);
+	-o-transform: translate($x, $y);
+	-ms-transform: translate($x, $y);
+	transform: translate($x, $y);
+}
+
+
+
+
+
+/*main preparation*/
+html, body {
+	background-color: $color_background;
+	margin: 0 0 0 0;
+	padding: 0 0 0 0;
+  	font-family: $font_regular;
+	font-size: $font_size_normal;
+	line-height: ($font_size_normal - 2px);
+  	color: $color_black;
+}
+
+
+
+
+
+/*buttons*/
+.add_project_button {
+	height: 50px;
+	padding: 0 20px 0 20px;
+	background-color: $color_green;
+	border: none;
+	@include border_radius(25px, 25px, 25px, 25px);
+	@include transition(0.5s);
+	cursor: pointer;
+	
+	a {
+		font-family: $font_bold;
+		font-size: $font_size_button;
+		color: $color_white;
+		line-height: $font_size_button;
+		text-decoration: none;
+		
+		svg {
+			float: left;
+			padding: 14px 10px 0 0;
+			
+			path {
+				fill: $color_head;
+				@include transition(0.2s);
+			}
+		}
+		
+		div {
+			float: left;
+			padding: 14px 0 0 0;
+		}
+	}
+}
+.add_project_button:hover {
+	background-color: lighten($color_green, 5%);
+	
+	svg {
+		path {
+			fill: $color_white;
+		}
+	}
+}
+
+
+
+.more_button {
+	height: 36px;
+	padding: 0 15px 0 15px;
+	background-color: $color_blue;
+	font-family: $font_regular;
+	font-size: $font_size_normal;
+	color: $color_white;
+	line-height: ($font_size_normal - 2px);
+	border: none;
+	@include border_radius(18px, 18px, 18px, 18px);
+	@include transition(0.5s);
+	outline: none;
+	cursor: pointer;
+	
+	a {
+		font-family: $font_semibold;
+		font-size: $font_size_normal;
+		color: $color_white;
+		line-height: $font_size_normal;
+		text-decoration: none;
+		
+		img {
+			float: left;
+			padding: 10px 10px 0 0;
+		}
+		
+		div {
+			float: left;
+			padding: 11px 0 0 0;
+			
+			span {
+				color: $color_head;
+				padding: 0 0 0 5px;
+			}
+		}
+	}
+}
+.more_button:hover {
+	background-color: lighten($color_blue, 10%);
+	/*@include box_shadow(0, 2px, 2px, 0, #999999);*/
+}
+
+
+
+.red_button {
+	display: table;
+	height: 40px;
+	padding: 0 15px 0 15px;
+	background-color: $color_red;
+	font-family: $font_regular;
+	font-size: $font_size_info;
+	color: $color_white;
+	line-height: ($font_size_info - 2px);
+	border: none;
+	@include border_radius(5px, 5px, 5px, 5px);
+	@include transition(0.5s);
+	outline: none;
+	cursor: pointer;
+	
+	a {
+		font-family: $font_semibold;
+		font-size: $font_size_normal;
+		color: $color_white;
+		line-height: $font_size_normal;
+		text-decoration: none;
+		
+		img {
+			float: left;
+			padding: 10px 10px 0 0;
+		}
+		
+		div {
+			float: left;
+			padding: 13px 0 0 0;
+			
+			span {
+				color: $color_chat;
+				padding: 0 0 0 5px;
+			}
+		}
+	}
+}
+.red_button:hover {
+	background-color: lighten($color_red, 10%);
+	/*@include box_shadow(0, 2px, 2px, 0, #999999);*/
+}
+
+
+
+
+
+
+
+
+
+
+/*inputs*/
+.input_text {
+	position: relative;
+	
+	.wrap {
+		overflow: hidden;
+		width: auto;
+		height: 38px;
+		background-color: $color_background;
+		border: 1px solid $color_border;
+		@include border_radius(5px, 5px, 5px, 5px);
+		@include transition(0.5s);
+		
+		input {
+			box-sizing: border-box;
+			width: 100%;
+			font-family: $font_regular;
+			font-size: $font_size_info;
+			color: $color_black;
+			border: none;
+			background: none;
+			padding: 8px 10px 10px 10px;
+			outline: none;
+		}
+	}
+	
+	.focus {
+		border: 1px solid $color_blue;
+	}
+}
+
+
+
+
+
+
+
+
+
+
+/*init*/
+img {
+	border: none;
+}
+
+.cleaner {
+	clear: both;
+}
+
+
+
+
+
+
+
+
+
+
+/*head*/
+.head {
+	position: relative;
+	background-color: $color_head;
+	width: 100%;
+	min-width: 1200px;
+	height: 100px;
+	z-index: 2;
+	
+	.main {
+		float: left;
+		width: 30%;
+		min-width: 500px;
+		height: 100px;
+		
+		.logo {
+			float: left;
+			margin: 27px 0 0 40px;
+		}
+		
+		.add_project {
+			float: left;
+			margin: 25px 0 0 80px;
+		}
+	}
+	
+	.tools {
+		height: 100px;
+		
+		.notification {
+			float: right;
+			width: 200px;
+			height: 100px;
+		}
+		
+		.control {
+			float: right;
+			width: 500px;
+			height: 100px;
+			
+			.user {
+				float: right;
+				position: relative;
+				width: 274px;
+				height: 100px;
+				text-align: right;
+				border-left: 1px solid #1A2028;
+				
+				.user_email {
+					font-size: $font_size_info;
+					color: $color_white;
+					line-height: ($font_size_info - 2px);
+					padding: 22px 30px 0 0;
+				}
+				
+				.user_info {
+					padding: 20px 30px 0 0;
+					
+					.user_settings {
+						float: right;
+						
+						.user_exit {
+							float: right;
+							width: 62px;
+							height: 24px;
+							font-family: $font_semibold;
+							text-align: center;
+							background-color: $color_setup;
+							border-left: 1px solid $color_border;
+							@include border_radius(0, 3px, 3px, 0);
+							@include transition(0.5s);
+							cursor: pointer;
+							
+							div {
+								padding: 6px 0 0 0;
+							}
+						}
+						.user_exit:hover {
+							background-color: lighten($color_setup, 10%);
+						}
+						
+						.user_setup {
+							float: right;
+							width: 26px;
+							height: 24px;
+							text-align: center;
+							background-color: $color_setup;
+							@include border_radius(3px, 0, 0, 3px);
+							@include transition(0.5s);
+							cursor: pointer;
+							
+							div {
+								padding: 4px 0 0 0;
+								
+								svg {
+									path {
+										fill: $color_head;
+									}
+								}
+							}
+						}
+						.user_setup:hover {
+							background-color: lighten($color_setup, 10%);
+						}
+						
+						.active {
+							background-color: $color_box;
+							@include border_radius(3px, 0, 0, 0);
+						}
+						.active:hover {
+							background-color: $color_box;
+						}
+					}
+					
+					.user_type {
+						float: left;
+						font-size: $font_size_normal;
+						color: $color_background;
+						line-height: ($font_size_normal - 2px);
+						padding: 6px 0 0 30px;
+					}
+				}
+				
+				.user_settings_menu {
+					display: none;
+					opacity: 0.0;
+					position: absolute;
+					overflow: hidden;
+					width: 150px;
+					background-color: $color_box;
+					text-align: left;
+					right: 93px;
+					top: 69px;
+					@include box_shadow(0, 5px, 10px, 0, rgba(0,0,0,0.1));
+					@include border_radius(5px, 0, 5px, 5px);
+					
+					.menu_item {
+						width: 100%;
+						height: 30px;
+						border-bottom: 1px solid $color_border;
+						
+						a {
+							display: table;
+							text-decoration: none;
+							width: 100%;
+							height: 30px;
+							background-color: $color_box;
+							font-family: $font_semibold;
+							font-size: $font_size_small;
+							color: $color_info;
+							line-height: ($font_size_small - 2px);
+							
+							
+							@include transition(0.5s);
+							
+							.title {
+								padding: 10px 0 0 10px;
+							}
+						}
+						a:hover {
+							background-color: $color_white;
+							color: $color_blue;
+						}
+					}
+				}
+			}
+			
+			.chat {
+				float: right;
+				position: relative;
+				width: 198px;
+				height: 100px;
+				background-color: $color_head;
+				text-align: right;
+				border-left: 1px solid #1A2028;
+				@include transition(0.5s);
+				cursor: pointer;
+				
+				.title {
+					float: right;
+					font-family: $font_bold;
+					font-size: $font_size_info;
+					color: $color_white;
+					line-height: ($font_size_info - 2px);
+					padding: 42px 30px 0 15px;
+				}
+				
+				.icon {
+					float: right;
+					width: 32px;
+					height: 32px;
+					padding: 34px 0 0 0;
+					
+					svg {
+						path {
+							fill: $color_white;
+						}
+					}
+				}
+				
+				.alert {
+					position: absolute;
+					background-color: $color_red;
+					font-family: $font_semibold;
+					font-size: $font_size_title;
+					color: $color_white;
+					line-height: ($font_size_info - 2px);
+					padding: 5px 8px 5px 8px;
+					right: 30px;
+					@include border_radius(0, 0, 5px, 5px);
+				}
+			}
+			.chat:hover {
+				background-color: lighten($color_head, 10%);
+			}
+		}
+	}
+}
+
+.head_spacer {
+	display: none;
+	position: relative;
+	background-color: $color_head;
+	width: 100%;
+	min-width: 1200px;
+	height: 100px;
+	z-index: 2;
+}
+
+
+
+
+
+
+
+
+
+
+/*body*/
+.box_head {
+	width: 100%;
+	height: 80px;
+	border-bottom: 1px solid $color_border;
+	
+	.title {
+		float: left;
+		font-family: $font_bold;
+		font-size: $font_size_title;
+		color: $color_head;
+		line-height: ($font_size_title - 2px);
+		padding: 32px 0 0 30px;
+	}
+	
+	.tools {
+		float: right;
+		padding: 22px 30px 0 0;
+	}
+}
+
+
+
+.body {
+	position: relative;
+	width: 100%;
+	min-width: 1200px;
+	z-index: 1;
+	
+	.menu {
+		float: left;
+		position: relative;
+		width: 280px;
+		min-width: 280px;
+		background-color: $color_background;
+		padding: 50px 0 0 0;
+		
+		.main_menu {
+			position: fixed;
+			width: 180px;
+			margin: 0 0 0 50px;
+			overflow: hidden;
+			@include border_radius(5px, 5px, 5px, 5px);
+			
+			.menu_item {
+				width: 180px;
+				height: 60px;
+				background-color: $color_box;
+				border-bottom: 1px solid $color_border;
+				@include transition(0.2s);
+				
+				a {
+					display: table;
+					width: 180px;
+					height: 60px;
+					
+					.icon {
+						float: left;
+						width: 32px;
+						height: 32px;
+						padding: 16px 15px 0 20px;
+						
+						svg path {
+							fill: $color_head;
+							@include transition(0.2s);
+						}
+					}
+					
+					.title {
+						float: left;
+						font-family: $font_bold;
+						font-size: $font_size_title;
+						color: $color_head;
+						line-height: ($font_size_title - 2px);
+						padding: 23px 0 0 0;
+						@include transition(0.2s);
+					}
+				}
+			}
+			.menu_item:hover {
+				background-color: $color_head;
+				
+				a {
+					.title {
+						color: $color_white;
+					}
+					
+					.icon {
+						svg path {
+							fill: $color_white;
+						}
+					}
+				}
+				
+			}
+			.menu_item:last-child {
+				border-bottom: none;
+			}
+			
+			.active {
+				background-color: $color_red;
+				
+				a {
+					.title {
+						color: $color_white;
+					}
+					
+					.icon {
+						svg path {
+							fill: $color_white;
+						}
+					}
+				}
+			}
+			.active:hover {
+				background-color: $color_red;
+			}
+		}
+	}
+	
+	.content {
+		padding: 50px 50px 50px 0;
+		overflow: hidden;
+		
+		/*dashboard*/
+		.dashboard {
+			width: 100%;
+			
+			.col_1 {
+				float: left;
+				width: 50%;
+				
+				.widget_problem_projects {
+					background-color: $color_box;
+					margin: 0 15px 0 0;
+					@include border_radius(5px, 5px, 5px, 5px);
+					
+					.widget_items {
+						width: 100%;
+						overflow: hidden;
+						@include border_radius(0, 0, 5px, 5px);
+						
+						.widget_item {
+							position: relative;
+							width: 100%;
+							height: 90px;
+							background-color: $color_box;
+							border-bottom: 1px solid $color_border;
+							@include transition(0.2s);
+							
+							.name {
+								position: absolute;
+								left: 23px;
+								top: 22px;
+								
+								a {
+									font-family: $font_bold;
+									font-size: $font_size_normal;
+									color: $color_head;
+									line-height: ($font_size_normal - 2px);
+									text-decoration: none;
+									padding: 3px 6px 3px 6px;
+									border: 1px solid $color_box;
+									@include border_radius(3px, 3px, 3px, 3px);
+									@include transition(0.2s);
+								}
+								a:hover {
+									color: $color_blue;
+									border: 1px solid $color_blue;
+								}
+							}
+							
+							.status {
+								position: absolute;
+								font-family: $font_semibold;
+								font-size: $font_size_small;
+								color: $color_info;
+								line-height: ($font_size_small - 2px);
+								left: 30px;
+								bottom: 25px;
+								
+								span {
+									color: $color_label;
+								}
+							}
+							
+							.step {
+								position: absolute;
+								font-family: $font_regular;
+								font-size: $font_size_info;
+								color: $color_info;
+								line-height: ($font_size_info - 2px);
+								right: 30px;
+								top: 23px;
+							}
+							
+							.level_info {
+								position: absolute;
+								font-family: $font_regular;
+								font-size: $font_size_small;
+								color: $color_label;
+								line-height: ($font_size_small - 2px);
+								right: 30px;
+								bottom: 25px;
+								
+								span.level_high {
+									font-family: $font_semibold;
+									color: $color_info_red;
+								}
+								
+								span.level_middle {
+									font-family: $font_semibold;
+									color: $color_info_yellow;
+								}
+								
+								span.level_low {
+									font-family: $font_semibold;
+									color: $color_info_green;
+								}
+							}
+							
+							.level_marker {
+								position: absolute;
+								right: 0;
+								bottom: -1px;
+							}
+							
+							.tools {
+								position: absolute;
+								width: 250px;
+								height: 90px;
+								background-color: $color_head;
+								right: -250px;
+								top: 0;
+								@include transition_move_setup(0.5s);
+								
+								.item {
+									height: 45px;
+									border-bottom: 1px solid $color_sub_border;
+									
+									a {
+										display: table;
+										width: 250px;
+										height: 45px;
+										
+										.icon {
+											float: left;
+											width: 18px;
+											height: 16px;
+											padding: 15px 15px 0 15px;
+											opacity: 0.6;
+											@include transition(0.2s);
+										}
+										
+										.title {
+											float: left;
+											font-family: $font_semibold;
+											font-size: $font_size_normal;
+											color: $color_white;
+											line-height: ($font_size_normal - 2px);
+											padding: 17px 0 0 0;
+											opacity: 0.6;
+											@include transition(0.2s);
+										}
+									}
+									a:hover {
+										.icon {
+											opacity: 1.0;
+										}
+										
+										.title {
+											opacity: 1.0;
+										}
+									}
+								}
+							}
+						}
+						.widget_item:hover {
+							background-color: $color_white;
+							
+							.tools {
+								@include transition_move_animate(-250px, 0);
+							}
+						}
+						.widget_item:last-child {
+							border-bottom: none;
+						}
+					}
+				}
+				
+				.widget_last_messages {
+					background-color: $color_box;
+					margin: 30px 15px 0 0;
+					@include border_radius(5px, 5px, 5px, 5px);
+					
+					.widget_items {
+						width: 100%;
+						overflow: hidden;
+						@include border_radius(0, 0, 5px, 5px);
+						
+						.widget_item {
+							position: relative;
+							width: 100%;
+							height: 90px;
+							background-color: $color_box;
+							border-bottom: 1px solid $color_border;
+							@include transition(0.2s);
+							
+							.message {
+								position: absolute;
+								left: 23px;
+								top: 12px;
+								
+								.text {
+									overflow: hidden;
+									width: 330px;
+									height: 20px;
+									background-color: $color_chat;
+									padding: 8px 10px 8px 10px;
+									@include border_radius(5px, 5px, 5px, 5px);
+								
+									a {
+										display: table;
+										font-family: $font_bold;
+										font-size: $font_size_normal;
+										color: $color_head;
+										line-height: ($font_size_normal + 8px);
+										text-decoration: none;
+										padding: 0px 6px 3px 6px;
+										@include transition(0.2s);
+									}
+									a:hover {
+										color: $color_blue;
+									}
+								}
+								
+								.arrow {
+									width: 20px;
+									height: 15px;
+									padding: 0 0 0 20px;
+								}
+							}
+							
+							.project {
+								position: absolute;
+								font-family: $font_semibold;
+								font-size: $font_size_small;
+								color: $color_info;
+								line-height: ($font_size_small - 2px);
+								left: 30px;
+								bottom: 20px;
+								
+								span {
+									color: $color_label;
+								}
+								
+								a {
+									font-family: $font_semibold;
+									font-size: $font_size_small;
+									color: $color_info;
+									line-height: ($font_size_small - 2px);
+									text-decoration: none;
+									@include transition(0.2s);
+								}
+								a:hover {
+									color: $color_blue;
+								}
+							}
+							
+							.date {
+								position: absolute;
+								font-family: $font_regular;
+								font-size: $font_size_info;
+								color: $color_info;
+								line-height: ($font_size_info - 2px);
+								right: 30px;
+								top: 23px;
+							}
+							
+							.new {
+								position: absolute;
+								background-color: $color_info_red;
+								font-family: $font_regular;
+								font-size: $font_size_info;
+								color: $color_white;
+								line-height: ($font_size_info - 2px);
+								padding: 5px 8px 5px 8px;
+								right: 0;
+								bottom: 13px;
+								@include border_radius(5px, 0, 0, 5px);
+							}
+						}
+						.widget_item:hover {
+							background-color: $color_white;
+						}
+						.widget_item:last-child {
+							border-bottom: none;
+						}
+					}
+				}
+			}
+			
+			.col_2 {
+				float: left;
+				width: 50%;
+				
+				.widget_last_reports {
+					background-color: $color_box;
+					margin: 0 0 0 15px;
+					@include border_radius(5px, 5px, 5px, 5px);
+					
+					.widget_items {
+						width: 100%;
+						overflow: hidden;
+						@include border_radius(0, 0, 5px, 5px);
+						
+						.widget_item {
+							position: relative;
+							width: 100%;
+							height: 90px;
+							background-color: $color_box;
+							border-bottom: 1px solid $color_border;
+							@include transition(0.2s);
+							
+							.name {
+								position: absolute;
+								left: 23px;
+								top: 22px;
+								
+								a {
+									font-family: $font_bold;
+									font-size: $font_size_normal;
+									color: $color_head;
+									line-height: ($font_size_normal - 2px);
+									text-decoration: none;
+									padding: 3px 6px 3px 6px;
+									border: 1px solid $color_box;
+									@include border_radius(3px, 3px, 3px, 3px);
+									@include transition(0.2s);
+								}
+								a:hover {
+									color: $color_blue;
+									border: 1px solid $color_blue;
+								}
+							}
+							
+							.project {
+								position: absolute;
+								font-family: $font_semibold;
+								font-size: $font_size_small;
+								color: $color_info;
+								line-height: ($font_size_small - 2px);
+								left: 30px;
+								bottom: 25px;
+								
+								span {
+									color: $color_label;
+								}
+								
+								a {
+									font-family: $font_semibold;
+									font-size: $font_size_small;
+									color: $color_info;
+									line-height: ($font_size_small - 2px);
+									text-decoration: none;
+									@include transition(0.2s);
+								}
+								a:hover {
+									color: $color_blue;
+								}
+							}
+							
+							.date {
+								position: absolute;
+								font-family: $font_regular;
+								font-size: $font_size_info;
+								color: $color_info;
+								line-height: ($font_size_info - 2px);
+								right: 30px;
+								top: 23px;
+							}
+							
+							.level_info {
+								position: absolute;
+								font-family: $font_regular;
+								font-size: $font_size_small;
+								color: $color_label;
+								line-height: ($font_size_small - 2px);
+								right: 30px;
+								bottom: 25px;
+								
+								span.level_high {
+									font-family: $font_semibold;
+									color: $color_info_red;
+								}
+								
+								span.level_middle {
+									font-family: $font_semibold;
+									color: $color_info_yellow;
+								}
+								
+								span.level_low {
+									font-family: $font_semibold;
+									color: $color_info_green;
+								}
+							}
+							
+							.level_marker {
+								position: absolute;
+								right: 0;
+								bottom: 0;
+							}
+						}
+						.widget_item:hover {
+							background-color: $color_white;
+						}
+						.widget_item:last-child {
+							border-bottom: none;
+						}
+					}
+				}
+				
+				.widget_tasks {
+					background-color: $color_box;
+					margin: 30px 0 0 15px;
+					@include border_radius(5px, 5px, 5px, 5px);
+					
+					.widget_items {
+						width: 100%;
+						overflow: hidden;
+						@include border_radius(0, 0, 5px, 5px);
+						
+						.widget_item {
+							position: relative;
+							width: 100%;
+							height: 90px;
+							background-color: $color_box;
+							border-bottom: 1px solid $color_border;
+							@include transition(0.2s);
+							
+							.name {
+								position: absolute;
+								left: 23px;
+								top: 22px;
+								
+								a {
+									font-family: $font_bold;
+									font-size: $font_size_normal;
+									color: $color_head;
+									line-height: ($font_size_normal - 2px);
+									text-decoration: none;
+									padding: 3px 6px 3px 6px;
+									border: 1px solid $color_box;
+									@include border_radius(3px, 3px, 3px, 3px);
+									@include transition(0.2s);
+								}
+								a:hover {
+									color: $color_blue;
+									border: 1px solid $color_blue;
+								}
+							}
+							
+							.project {
+								position: absolute;
+								font-family: $font_semibold;
+								font-size: $font_size_small;
+								color: $color_info;
+								line-height: ($font_size_small - 2px);
+								left: 30px;
+								bottom: 25px;
+								
+								span {
+									color: $color_label;
+								}
+								
+								a {
+									font-family: $font_semibold;
+									font-size: $font_size_small;
+									color: $color_info;
+									line-height: ($font_size_small - 2px);
+									text-decoration: none;
+									@include transition(0.2s);
+								}
+								a:hover {
+									color: $color_blue;
+								}
+							}
+							
+							.date {
+								position: absolute;
+								font-family: $font_regular;
+								font-size: $font_size_info;
+								color: $color_info;
+								line-height: ($font_size_info - 2px);
+								right: 30px;
+								top: 23px;
+							}
+							
+							.level_info {
+								position: absolute;
+								font-family: $font_regular;
+								font-size: $font_size_small;
+								color: $color_label;
+								line-height: ($font_size_small - 2px);
+								right: 30px;
+								bottom: 25px;
+								
+								span.level_high {
+									font-family: $font_semibold;
+									color: $color_info_red;
+								}
+								
+								span.level_middle {
+									font-family: $font_semibold;
+									color: $color_info_yellow;
+								}
+								
+								span.level_low {
+									font-family: $font_semibold;
+									color: $color_info_green;
+								}
+							}
+							
+							.level_marker {
+								position: absolute;
+								right: 0;
+								bottom: 0;
+							}
+						}
+						.widget_item:hover {
+							background-color: $color_white;
+						}
+						.widget_item:last-child {
+							border-bottom: none;
+						}
+					}
+				}
+			}
+		}
+		
+		
+		
+		
+		
+		/*projects*/
+		.projects {
+			overflow: hidden;
+			width: 100%;
+			background-color: $color_box;
+			@include border_radius(5px, 5px, 5px, 5px);
+			
+			.box_search_filter {
+				height: 80px;
+				border-bottom: 1px solid $color_border;
+				
+				.search_side {
+					text-align: left; 
+					padding: 20px 210px 0 30px;
+				}
+				
+				.filter_side {
+					float: right;
+					width: 180px;
+					text-align: right;
+					padding: 20px 0 0 0;
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,185 @@
+/*icons classes rewrited because they were styled within html*/
+.icon--button_plus {
+  /*background-color:#ffffff00;*/
+  width: 20px; 
+  height: 20px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--menu_home {
+  /*background-color:#ffffff00;*/
+  width: 32px; 
+  height: 26px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--menu_projects {
+  /*background-color:#ffffff00;*/
+  width: 32px; 
+  height: 26px;
+  x: 0px;
+  y: 0px; 
+}
+
+
+.icon--menu_reports {
+  /*background-color:#ffffff00;*/
+  width: 32px; 
+  height: 26px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--menu_orders {
+  /*background-color:#ffffff00;*/
+  width: 32px; 
+  height: 26px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--menu_journal {
+  /*background-color:#ffffff00;*/
+  width: 32px; 
+  height: 26px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--menu_experts {
+  /*background-color:#ffffff00;*/
+  width: 32px; 
+  height: 26px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--menu_tasks {
+  /*background-color:#ffffff00;*/
+  width: 32px; 
+  height: 26px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--menu_plan {
+  /*background-color:#ffffff00;*/
+  width: 32px; 
+  height: 26px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--menu_acts {
+  /*background-color:#ffffff00;*/
+  width: 32px; 
+  height: 26px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--add {
+  /*background-color:#ffffff00;*/
+  width: 20px; 
+  height: 20px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--remove {
+  /*background-color:#ffffff00;*/
+  width: 16px; 
+  height: 16px;
+  x: 0px;
+  y: 0px; 
+}
+
+
+.icon--select_down {
+  /*background-color:#ffffff00;*/
+  width: 20px; 
+  height: 10px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--input_file_download {
+  /*background-color:#ffffff00;*/
+  width: 19px; 
+  height: 21px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--input_file_replace {
+  /*background-color:#ffffff00;*/
+  width: 19px; 
+  height: 21px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--input_file_delete {
+  /*background-color:#ffffff00;*/
+  width: 19px; 
+  height: 21px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--file {
+  /*background-color:#ffffff00;*/
+  width: 19px; 
+  height: 21px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--file_download_icon {
+  /*background-color:#ffffff00;*/
+  width: 18px; 
+  height: 20px;
+  x: 0px;
+  y: 0px; 
+}
+
+.icon--head_notification {
+  x: 0px;
+  y: 0px;
+  width: 32px;
+  height: 32px;
+}
+
+.icon--head_chat {
+  x: 0px;
+  y: 0px;
+  width: 32px;
+  height: 32px;
+}
+
+.icon--tool_settings {
+  x: 0px;
+  y: 0px;
+  width: 16px;
+  height: 16px;
+}
+
+.icon--button_delete {
+  background-color:#ffffff00;
+  x: 0px;
+  y: 0px;
+  width: 20px;
+  height: 20px;
+}
+
+.text_decoration_none{
+  text-decoration: none;
+}
+
+
+
+fieldset {
+  border: 0;
+}
