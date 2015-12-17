@@ -582,6 +582,13 @@ class Milestone(ProjectBasedModel):
             ))
         return Milestone.objects.bulk_create(milestones)
 
+    def get_cameral_report(self):
+        reports = self.reports.filter(type=Report.CAMERAL)
+
+        if not reports:
+            return None
+
+        return reports.last().id
 
 
 class Monitoring(ProjectBasedModel):
