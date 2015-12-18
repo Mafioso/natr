@@ -81,7 +81,6 @@ class Command(BaseCommand):
 						_doc = doc_models.Document.objects.create()
 						doc_models.GPDocument.objects.create(
 							name=u'акт',
-							number=u'0001',
 							cost_row=cost_row,
 							document=_doc,)
 

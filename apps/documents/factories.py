@@ -219,7 +219,6 @@ class GPDocument(DjangoModelFactory):
         strategy = BUILD_STRATEGY
 
     name = factory.Faker('word')
-    number = factory.LazyAttribute(lambda x: random.randint(1, 100000000))
     cost_row = factory.SubFactory('documents.factories.FactMilestoneCostRow')
     document = factory.SubFactory('documents.factories.Document')
 

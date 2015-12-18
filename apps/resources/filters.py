@@ -1,6 +1,8 @@
 import django_filters
 from django.db.models import Q
+from natr.rest_framework.filters import IntegerListFilter
 from projects import models
+from documents import models as doc_models
 
 
 class ProjectFilter(django_filters.FilterSet):
@@ -33,3 +35,16 @@ class ReportFilter(django_filters.FilterSet):
 
 	def filter_milestone(self, queryset, value):
 		return queryset.filter(milestone__number=value)
+
+
+class ListOfIdFilter(django_filters.FilterSet):
+	ids = IntegerListFilter(name='id',lookup_type='in')
+	
+	class Meta:
+	    fields = ('ids',)
+
+
+class AttachmentFilter(ListOfIdFilter):
+
+	class Meta:
+		model = doc_models.Attachment

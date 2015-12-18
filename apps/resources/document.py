@@ -2,12 +2,13 @@ import os
 import shutil
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import list_route, detail_route
-from rest_framework import viewsets, response, status
+from rest_framework import viewsets, response, status, filters
 from natr.rest_framework.decorators import patch_serializer_class
 from natr.rest_framework import serializers as natr_serializers
 from documents.serializers import *
 from documents import models as doc_models
 from projects import models as prj_models
+from .filters import AttachmentFilter
 from django.conf import settings
 
 pj = os.path.join
@@ -87,6 +88,11 @@ class AttachmentViewSet(viewsets.ModelViewSet):
 
     serializer_class = AttachmentSerializer
     queryset = Attachment.objects.all()
+
+    filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
+    filter_class = AttachmentFilter
+
+    pagination_class = None
 
     def create(self, request, *a, **kw):
         data = request.data

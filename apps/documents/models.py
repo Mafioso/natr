@@ -216,6 +216,7 @@ class Document(ProjectBasedModel):
 
     external_id = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=255)
+    number = models.IntegerField(null=True)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
     date_created = models.DateTimeField(auto_now_add=True)
     date_sign = models.DateTimeField(null=True)
@@ -653,7 +654,6 @@ class GPDocument(models.Model):
     tp = 'gp_doc'
     document = models.OneToOneField(Document, related_name='gp_document', on_delete=models.CASCADE)
     type = models.ForeignKey(GPDocumentType, related_name='gp_docs', null=True)
-    number = models.CharField(max_length=255, null=True, blank=True)
     cost_row = models.ForeignKey('FactMilestoneCostRow', null=True, related_name='gp_docs')
 
     @property 
@@ -661,7 +661,7 @@ class GPDocument(models.Model):
         return self.type.name
 
     def get_type_cap(self):
-        return self.type.name
+        return self.type and self.type.name or ''
 
 
 
