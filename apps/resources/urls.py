@@ -20,7 +20,8 @@ from .document import (
 	CostDocumentViewSet,
 	CostTypeViewSet,
 	FactMilestoneCostRowViewSet,
-	GPDocimentViewSet
+	GPDocimentViewSet,
+	GPDocumentTypeViewSet
 )
 from .journal import JournalActivityViewSet, JournalViewSet
 from .notification import NotificationViewSet, NotificationSubscriptionViewSet, NotificationCounterViewSet
@@ -43,6 +44,7 @@ router.register(r'start_description', ProjectStartDescriptionViewSet, 'start_des
 router.register(r'cost_types', CostTypeViewSet, 'cost_types')
 router.register(r'cost_row', FactMilestoneCostRowViewSet, 'cost_row')
 router.register(r'gp_docs', GPDocimentViewSet, 'gp_docs')
+router.register(r'gp_doc_types', GPDocumentTypeViewSet, 'gp_doc_type')
 
 monitoring_router = routers.NestedSimpleRouter(router, r'monitoring', lookup='monitoring')
 monitoring_router.register(r'todos', MonitoringTodoViewSet, base_name='monitoring-todos')

@@ -21,6 +21,7 @@ InnovativeProjectPasportDocument = doc_models.InnovativeProjectPasportDocument
 CostDocument = doc_models.CostDocument
 ProjectStartDescription = doc_models.ProjectStartDescription
 CostType = doc_models.CostType
+GPDocumentType = doc_models.GPDocumentType
 
 
 class DocumentViewSet(viewsets.ModelViewSet):
@@ -310,10 +311,22 @@ class GPDocimentViewSet(viewsets.ModelViewSet):
         Override get_queryset() to filter on multiple values for 'id'
         """
         queryset = self.queryset
+        project_id = self.request.query_params.get('project', None)
+        if project_id:
+            queryset = self.queryset.filter(document__project_id=project_id)
         id_value = self.request.query_params.get('id', None)
         if id_value:
             id_list = id_value.split(',')
             queryset = self.queryset.filter(id__in=id_list)
-
         return queryset
+
+class GPDocumentTypeViewSet(viewsets.ModelViewSet):
+
+    serializer_class = GPDocumentTypeSerializer
+    queryset = doc_models.GPDocumentType.objects.all()
+
+    def get_queryset(self):
+        queryset = self.queryset
+        return queryset
+
 

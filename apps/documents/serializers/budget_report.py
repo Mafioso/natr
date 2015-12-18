@@ -58,7 +58,8 @@ class GPDocumentSerializer(DocumentCompositionSerializer):
     cost_row = serializers.PrimaryKeyRelatedField(
         queryset=models.FactMilestoneCostRow.objects.all(), required=False)
     document = DocumentSerializer(required=True)
-    type = GPDocumentTypeSerializer(required=True)
+    # type = GPDocumentTypeSerializer(required=True)
+    type_cap = serializers.CharField(source='get_type_cap', read_only=True)
 
     def create(self, validated_data):
         doc = models.Document.dml.create_gp_doc(**validated_data)

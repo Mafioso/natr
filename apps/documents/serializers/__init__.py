@@ -3,6 +3,7 @@
 from .budget_report import (
     FactMilestoneCostRowSerializer,
     GPDocumentSerializer,
+    GPDocumentTypeSerializer,
     UseOfBudgetDocumentItemSerializer,
     UseOfBudgetDocumentSerializer)
 from .cost import (
@@ -32,6 +33,7 @@ from .misc import (
 budget_classes = (
     FactMilestoneCostRowSerializer,
     GPDocumentSerializer,
+    GPDocumentTypeSerializer,
     UseOfBudgetDocumentItemSerializer,
     UseOfBudgetDocumentSerializer)
 cost = (

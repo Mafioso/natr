@@ -166,7 +166,11 @@ class DocumentDMLManager(models.Manager):
     def create_doc_(self, **kwargs):
         assert 'type' in kwargs, "document type must be provided"
         attachments = kwargs.pop('attachments', [])
+        project_id = kwargs.pop('project', None)
         d = Document.objects.create(**kwargs)
+        if project_id:
+            d.project_id = project_id
+            d.save()
         if attachments:  # set relations to attachment
             for attachment in attachments:
                 attachment.document = d
@@ -639,7 +643,8 @@ class GPDocumentType(models.Model):
 
     @classmethod
     def create_default(cls):
-        return [cls.objects.create(name=gp_doc_type) for gp_doc_type in cls.DEFAULT]
+        GPDocumentType.objects.all().delete()
+        return [GPDocumentType.objects.create(name=gp_doc_type) for gp_doc_type in cls.DEFAULT]
 
 
 class GPDocument(models.Model):
@@ -653,6 +658,9 @@ class GPDocument(models.Model):
 
     @property 
     def name(self):
+        return self.type.name
+
+    def get_type_cap(self):
         return self.type.name
 
 
