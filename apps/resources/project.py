@@ -5,6 +5,7 @@ from projects.serializers import *
 from projects import models as prj_models
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
+import dateutil.parser
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -53,10 +54,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def journal(self, request, *a, **kw):
         project = self.get_object()
         activities = project.get_journal()
+
+        date_created = request.GET.get('date_created', None)
+        if date_created:
+            activities = activities.filter(date_created__gte=dateutil.parser.parse(date_created))
+
         page = self.paginate_queryset(activities)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
+
+           
         activity_ser = self.get_serializer(activities, many=True)
         return Response(activity_ser.data)
 

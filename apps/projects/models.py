@@ -6,6 +6,7 @@ __author__ = 'xepa4ep'
 import datetime
 from django.utils import timezone
 from django.db import models
+from django.core.exceptions import MultipleObjectsReturned
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
 from natr import utils
@@ -80,6 +81,10 @@ class Project(models.Model):
                 status__lt=Milestone.CLOSE)
         except Milestone.DoesNotExist:
             return None
+        except MultipleObjectsReturned:
+            return self.milestone_set.filter(
+                status__gt=Milestone.NOT_STARTED,
+                status__lt=Milestone.CLOSE).last()
 
     def take_next_milestone(self):
         return self.milestone_set.get(
