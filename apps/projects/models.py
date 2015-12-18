@@ -107,6 +107,10 @@ class Project(models.Model):
         return self.journal_set.first()
 
     @property
+    def journal_id(self):
+        return self.journal.id
+
+    @property
     def monitoring(self):
         return self.monitoring_set.first()
 
@@ -117,7 +121,7 @@ class Project(models.Model):
     @property
     def other_agreements(self):
         other_agreements = None
-        try: 
+        try:
             other_agreements = OtherAgreementsDocument.objects.get(document__project=self)
         except OtherAgreementsDocument.DoesNotExist:
             return None
@@ -433,7 +437,7 @@ class CorollaryStatByCostType(models.Model):
     savings = MoneyField(u'Экономия',
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
-    
+
 
 class Milestone(ProjectBasedModel):
 
@@ -647,5 +651,3 @@ def on_milestone_create(sender, instance, created=False, **kwargs):
     Report.build_empty(instance)
 
 post_save.connect(on_milestone_create, sender=Milestone)
-
-

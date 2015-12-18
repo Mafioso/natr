@@ -245,7 +245,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        _f = ( 'id', 'name', 'status', 'current_milestone', 'status_cap', 'agreement')
+        _f = ( 'id', 'name', 'status', 'current_milestone', 'status_cap', 'agreement', 'journal_id' )
         fields = _f
         read_only_fields = _f
 
@@ -253,7 +253,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
     current_milestone = serializers.SerializerMethodField()
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     agreement = serializers.SerializerMethodField()
-    
+
     def get_current_milestone(self, instance):
         cur_milestone = instance.current_milestone
         if cur_milestone:
@@ -309,7 +309,7 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     class Meta:
         model = Milestone
         read_only_fields = ('status_cap',)
-        
+
     reports = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(), many=True, required=False)
 
