@@ -47,6 +47,8 @@ class MilestoneSerializer(
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
+    cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
+    corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
     @classmethod
     def empty_data(cls, project, **kwargs):
