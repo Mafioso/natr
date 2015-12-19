@@ -98,6 +98,7 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         data = request.data
         tmp_file_path = data.get('file.path')
         fname = data.get('file.name')
+        attachment_id = data.get('id', None)
         _, ext = os.path.splitext(fname)
         _, remaining_path = tmp_file_path.split(settings.NGINX_TMP_UPLOAD_ROOT + '/')
         file_path = pj(settings.MEDIA_ROOT, remaining_path)
@@ -114,7 +115,11 @@ class AttachmentViewSet(viewsets.ModelViewSet):
             'extension': ext,
             'url': file_url
         }
-        item_ser = self.get_serializer(data=attachment_data)
+        if attachment_id:
+            attachment = Attachment.objects.get(pk=attachment_id)
+            item_ser = self.get_serializer(instance=attachment, data=attachment_data)
+        else:
+            item_ser = self.get_serializer(data=attachment_data)
         item_ser.is_valid(raise_exception=True)
         item_obj = item_ser.save()
         headers = self.get_success_headers(item_ser.data)
