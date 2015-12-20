@@ -33,7 +33,7 @@ class JournalActivity(ProjectBasedModel):
 	subject_name = models.CharField(u'Вопрос (тема)', max_length=2048, null=True)
 	result = models.CharField(u'Результат', max_length=2048, null=True)
 	attachments = models.ManyToManyField(
-		'documents.Attachment', verbose_name=u'Приложения', null=True, blank=True)
+		'documents.Attachment', verbose_name=u'Приложения', blank=True)
 
 	def get_activity_cap(self):
 		return JournalActivity.ACTIVITY_CAPS[self.activity_type]

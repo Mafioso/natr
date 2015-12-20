@@ -121,7 +121,7 @@ class MonitoringViewSet(viewsets.ModelViewSet):
         Update monitoring items
         """
         obj_monitoring = self.get_object()
-        obj_monitoring.update_items(**request.data)
+        obj_monitoring.update_items(**{"items": request.data})
 
         qs = obj_monitoring.todos.all()
 
