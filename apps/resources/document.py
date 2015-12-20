@@ -129,7 +129,6 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         try:
             os.remove(instance.file_path or instance.url)
-            print "REMOVE FILE: %s" % instance.file_path
         except OSError as e:
             if e.errno == 2:  # not found, delete earlier
                 pass
