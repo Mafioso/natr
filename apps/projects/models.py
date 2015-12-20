@@ -14,6 +14,7 @@ from natr.models import CostType
 from django.contrib.auth import get_user_model
 from django.utils.functional import cached_property
 from notifications.models import Notification
+from journals.models import JournalActivity
 from documents.models import (
     OtherAgreementsDocument,
     CalendarPlanDocument,
@@ -139,7 +140,7 @@ class Project(models.Model):
 
     def get_journal(self):
         if not self.journal:
-            return []
+            return JournalActivity.objects.none()
         return self.journal.activities.all()
 
     def add_document(self, spec_doc):
