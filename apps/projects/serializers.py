@@ -47,6 +47,8 @@ class MilestoneSerializer(
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
+    cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
+    corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
     @classmethod
     def empty_data(cls, project, **kwargs):
@@ -161,7 +163,6 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         # 5. create project pasport which depends on funding type
         if prj.funding_type.name == 'INDS_RES' or \
-            prj.funding_type.name == 'PATENTING' or \
             prj.funding_type.name == 'COMMERCIALIZATION':
             prj_pasport = InnovativeProjectPasportSerializer.build_empty(prj)
             prj_pasport.is_valid(raise_exception=True)
@@ -245,7 +246,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        _f = ( 'id', 'name', 'status', 'current_milestone', 'status_cap', 'agreement')
+        _f = ( 'id', 'name', 'status', 'current_milestone', 'status_cap', 'agreement', 'journal_id' )
         fields = _f
         read_only_fields = _f
 
@@ -253,7 +254,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
     current_milestone = serializers.SerializerMethodField()
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     agreement = serializers.SerializerMethodField()
-    
+
     def get_current_milestone(self, instance):
         cur_milestone = instance.current_milestone
         if cur_milestone:
@@ -309,14 +310,15 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     class Meta:
         model = Milestone
         read_only_fields = ('status_cap',)
-        
+
     reports = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(), many=True, required=False)
 
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
-
+    cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
+    corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
 
 class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):

@@ -6,6 +6,7 @@ __author__ = 'xepa4ep'
 import datetime
 from django.utils import timezone
 from django.db import models
+from django.core.exceptions import MultipleObjectsReturned
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
 from natr import utils
@@ -80,6 +81,10 @@ class Project(models.Model):
                 status__lt=Milestone.CLOSE)
         except Milestone.DoesNotExist:
             return None
+        except MultipleObjectsReturned:
+            return self.milestone_set.filter(
+                status__gt=Milestone.NOT_STARTED,
+                status__lt=Milestone.CLOSE).last()
 
     def take_next_milestone(self):
         return self.milestone_set.get(
@@ -102,6 +107,10 @@ class Project(models.Model):
         return self.journal_set.first()
 
     @property
+    def journal_id(self):
+        return self.journal.id
+
+    @property
     def monitoring(self):
         return self.monitoring_set.first()
 
@@ -112,7 +121,7 @@ class Project(models.Model):
     @property
     def other_agreements(self):
         other_agreements = None
-        try: 
+        try:
             other_agreements = OtherAgreementsDocument.objects.get(document__project=self)
         except OtherAgreementsDocument.DoesNotExist:
             return None
@@ -428,7 +437,7 @@ class CorollaryStatByCostType(models.Model):
     savings = MoneyField(u'Экономия',
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
-    
+
 
 class Milestone(ProjectBasedModel):
 
@@ -443,6 +452,7 @@ class Milestone(ProjectBasedModel):
     # STATUSES = NOT_START, START, CLOSE = range(3)
     STATUSES = NOT_STARTED, TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(8)
     STATUS_CAPS = (
+        u'не начато',
         u'оплата транша',
         u'на реализации',
         u'формирование отчета ГП',
@@ -466,6 +476,7 @@ class Milestone(ProjectBasedModel):
     planned_fundings = MoneyField(u'Сумма оплаты планируемая по календарному плану',
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
+    conclusion = models.CharField(max_length=1024, null=True, blank=True)
 
     def notification(self, cttype, ctid, notif_type):
         """Prepare notification data to send to client (user agent, mobile)."""
@@ -578,6 +589,13 @@ class Milestone(ProjectBasedModel):
             ))
         return Milestone.objects.bulk_create(milestones)
 
+    def get_cameral_report(self):
+        reports = self.reports.filter(type=Report.CAMERAL)
+
+        if not reports:
+            return None
+
+        return reports.last().id
 
 
 class Monitoring(ProjectBasedModel):
@@ -635,5 +653,3 @@ def on_milestone_create(sender, instance, created=False, **kwargs):
     Report.build_empty(instance)
 
 post_save.connect(on_milestone_create, sender=Milestone)
-
-

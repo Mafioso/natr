@@ -532,7 +532,8 @@ class CalendarPlanDocument(models.Model):
             assert isinstance(items[0], dict) or isinstance(items[0], CalendarPlanItem), 'items should be either dict or instance of CalendarPlanItem'
             if isinstance(items[0], dict):
                 for item in items:
-                    item['calendar_plan_id'] = self.id
+                    item['calendar_plan'] = self
+                    fundings = item.pop('fundings', None) #Should be deleted after bug fixing
                     updated_item = CalendarPlanItem(id=item.pop('id'), **item)
                     updated_item.save()
 
