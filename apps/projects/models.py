@@ -452,6 +452,7 @@ class Milestone(ProjectBasedModel):
     # STATUSES = NOT_START, START, CLOSE = range(3)
     STATUSES = NOT_STARTED, TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(8)
     STATUS_CAPS = (
+        u'не начато',
         u'оплата транша',
         u'на реализации',
         u'формирование отчета ГП',
@@ -475,6 +476,7 @@ class Milestone(ProjectBasedModel):
     planned_fundings = MoneyField(u'Сумма оплаты планируемая по календарному плану',
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
+    conclusion = models.CharField(max_length=1024, null=True, blank=True)
 
     def notification(self, cttype, ctid, notif_type):
         """Prepare notification data to send to client (user agent, mobile)."""

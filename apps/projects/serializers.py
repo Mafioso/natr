@@ -163,7 +163,6 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         # 5. create project pasport which depends on funding type
         if prj.funding_type.name == 'INDS_RES' or \
-            prj.funding_type.name == 'PATENTING' or \
             prj.funding_type.name == 'COMMERCIALIZATION':
             prj_pasport = InnovativeProjectPasportSerializer.build_empty(prj)
             prj_pasport.is_valid(raise_exception=True)
