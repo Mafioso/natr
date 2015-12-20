@@ -186,6 +186,19 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
         doc = models.Document.dml.create_calendar_plan(**validated_data)
         return doc
 
+    def update(self, instance, validated_data):
+        models.Document.dml.update_doc_(instance.document, **validated_data.pop('document'))
+        self.update_items(
+            instance=instance.items.all(),
+            validated_data=validated_data.pop('items'))
+        return instance
+
+    def update_items(self, instance, validated_data):
+        for item_obj, item_data in zip(instance, validated_data):
+            updated_item = models.CalendarPlanItem(id=item_obj.id, **item_data)
+            updated_item.save()
+        return instance
+
     @classmethod
     def empty_data(cls, project):
         data = DocumentCompositionSerializer.empty_data(project)

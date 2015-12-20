@@ -524,20 +524,6 @@ class CalendarPlanDocument(models.Model):
             items.append({"id": item.id})
 
         return items
-
-    def update_items(self, **kwargs):
-        items = kwargs.pop('items', [])
-        if items:
-            assert isinstance(items, list) and len(items) > 0, 'items should contain at least one CalendarPlanItem'
-            assert isinstance(items[0], dict) or isinstance(items[0], CalendarPlanItem), 'items should be either dict or instance of CalendarPlanItem'
-            if isinstance(items[0], dict):
-                for item in items:
-                    item['calendar_plan'] = self
-                    fundings = item.pop('fundings', None) #Should be deleted after bug fixing
-                    updated_item = CalendarPlanItem(id=item.pop('id'), **item)
-                    updated_item.save()
-
-        return self
         
 
 class CalendarPlanItem(models.Model):
