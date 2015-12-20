@@ -4,6 +4,7 @@
 __author__ = 'xepa4ep'
 
 import datetime
+import dateutil.parser
 from django.utils import timezone
 from django.db import models
 from django.core.exceptions import MultipleObjectsReturned
@@ -604,7 +605,8 @@ class Monitoring(ProjectBasedModel):
     def update_items(self, **kwargs):
         for item in kwargs['items']:
             if 'id' in item:
-                monitoring_todo = MonitoringTodo(id=item['id'], **item)
+                item['monitoring'] = self
+                monitoring_todo = MonitoringTodo(id=item.pop('id'), **item)
             else:
                 monitoring_todo = MonitoringTodo(monitoring=self, **item)
             monitoring_todo.save()
@@ -634,6 +636,15 @@ class MonitoringTodo(ProjectBasedModel):
             now = timezone.now()
             return (self.date_end - now).days
         return None
+
+    def save(self, *args, **kwargs):
+        if self.date_start and self.date_end:
+            date_end = dateutil.parser.parse(self.date_end) 
+            date_start = dateutil.parser.parse(self.date_start)
+            period = (date_end - date_start).days
+            self.period = period
+            
+        super(self.__class__, self).save(*args, **kwargs)
 
 
 class Comment(models.Model):
