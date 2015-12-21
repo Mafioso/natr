@@ -43,11 +43,10 @@ class Account(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     email = models.EmailField(u'email', blank=True, unique=True)
-    first_name = models.CharField(u'Имя', max_length=30, blank=True)
-    last_name = models.CharField(u'Фамилия', max_length=30, blank=True)
+    full_name = models.CharField(u'Ф.И.О.', max_length=30, blank=True)
     is_active = models.BooleanField(u'активирован', default=True)
     date_joined = models.DateTimeField(u'дата добавления', default=timezone.now)
-        
+
     objects = UserManager()
 
 
@@ -56,15 +55,11 @@ class Account(AbstractBaseUser, PermissionsMixin):
         return self.is_superuser
 
     def get_full_name(self):
-        """
-        Returns the first_name plus the last_name, with a space in between.
-        """
-        full_name = '%s %s' % (self.first_name, self.last_name)
-        return full_name.strip()
+        return self.full_name
 
     def get_short_name(self):
         "Returns the short name for the user."
-        return self.first_name
+        return self.full_name.split()[1]
 
     def get_counters(self):
         return {
@@ -77,7 +72,9 @@ class Account(AbstractBaseUser, PermissionsMixin):
 
 class NatrUser(models.Model):
 
-    DEFAULT_GROUPS = EXPERT, MANAGER, ADMIN = ('expert', 'manager', 'admin')
+    DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT = ('expert', 'manager', 'risk_expert')
+
+    number_of_projects = models.IntegerField(u'Количество проектов', null=True)
 
     account = models.OneToOneField('Account', related_name='user')
 
