@@ -10,12 +10,12 @@ from .project import (
 	CorollaryViewSet
 )
 from .document import (
-	DocumentViewSet, 
+	DocumentViewSet,
 	BasicProjectPasportDocumentViewSet,
 	InnovativeProjectPasportDocumentViewSet,
-	CalendarPlanDocumentViewSet, 
+	CalendarPlanDocumentViewSet,
 	ProjectStartDescriptionViewSet,
-	AttachmentViewSet, 
+	AttachmentViewSet,
 	UseOfBudgetDocumentViewSet,
 	CostDocumentViewSet,
 	CostTypeViewSet,
@@ -26,6 +26,7 @@ from .document import (
 from .journal import JournalActivityViewSet, JournalViewSet
 from .notification import NotificationViewSet, NotificationSubscriptionViewSet, NotificationCounterViewSet
 from .user import get_current_user
+from .natr_user import NatrUserViewSet
 
 router = DefaultRouter()
 router.register(r'documents', DocumentViewSet)
@@ -55,6 +56,7 @@ router.register(r'journal/activities', JournalActivityViewSet, 'activity')
 router.register(r'notifications', NotificationViewSet, 'notification')
 router.register(r'my-notifications', NotificationSubscriptionViewSet, 'notif_subscription')
 router.register(r'notif-counter', NotificationCounterViewSet, 'notif_counter')
+router.register(r'natr-user', NatrUserViewSet, 'natr_user')
 
 urlpatterns = [
 	url(r'', include(router.urls)),
