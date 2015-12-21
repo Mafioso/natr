@@ -14,6 +14,7 @@ class Document(DjangoModelFactory):
 
 
     external_id = factory.Faker('uuid4')
+    number = factory.LazyAttribute(lambda x: random.randint(1, 100000000))
     project = factory.SubFactory('projects.factories.Project')
 
     @factory.lazy_attribute
@@ -55,7 +56,6 @@ class AgreementDocument(DjangoModelFactory):
 
 
     document = factory.SubFactory('documents.factories.Document')
-    number = factory.LazyAttribute(lambda x: random.randint(1, 100000000))
     name = factory.Faker('sentence')
     funding = factory.LazyAttribute(lambda x: utils.fake_money())
 

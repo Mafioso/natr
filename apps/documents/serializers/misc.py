@@ -42,21 +42,9 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
         doc = models.Document.dml.create_agreement(**validated_data)
         return doc
 
-class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
-
-    class Meta:
-        model = models.OtherAgreementsDocument
-
-    document = DocumentSerializer(required=True)
-
-    def create(self, validated_data):
-        doc = models.Document.dml.create_other_agr_doc(**validated_data)
+    def update(self, instance, validated_data):
+        doc = models.Document.dml.update_agreement(instance, **validated_data)
         return doc
-
-    @classmethod
-    def empty_data(cls, project):
-        data = DocumentCompositionSerializer.empty_data(project)
-        return data
 
 class OtherAgreementItemSerializer(serializers.ModelSerializer):
 
@@ -68,6 +56,23 @@ class OtherAgreementItemSerializer(serializers.ModelSerializer):
         plan_item = models.OtherAgreementItem.objects.create(
             other_agreements_doc=other_agreements_doc, **validated_data)
         return plan_item
+
+class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.OtherAgreementsDocument
+
+    document = DocumentSerializer(required=True)
+    items = OtherAgreementItemSerializer(many=True, required=False)
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_other_agr_doc(**validated_data)
+        return doc
+
+    @classmethod
+    def empty_data(cls, project):
+        data = DocumentCompositionSerializer.empty_data(project)
+        return data
 
 
 
@@ -228,6 +233,12 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
     tax_local_fact = SerializerMoneyField(required=False)
     tax_local_plan = SerializerMoneyField(required=False)
     tax_local_avrg = SerializerMoneyField(required=False)
+    total_rlzn_fact = serializers.CharField(required=False)
+    total_rlzn_plan = serializers.CharField(required=False)
+    total_rlzn_avrg = serializers.CharField(required=False)
+    total_tax_fact = serializers.CharField(required=False)
+    total_tax_plan = serializers.CharField(required=False)
+    total_tax_avrg = serializers.CharField(required=False)
 
     def create(self, validated_data):
         doc = models.Document.dml.create_start_description(**validated_data)

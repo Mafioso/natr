@@ -17,7 +17,7 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
-    project = serializers.IntegerField(source='project_id')
+    project = serializers.IntegerField(source='project_id', required=False)
     
     def create(self, validated_data):
         return models.Document.dml.create_doc_(**validated_data)

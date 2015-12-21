@@ -30,8 +30,14 @@ class DocumentDMLManager(models.Manager):
     def create_agreement(self, **kwargs):
         return self.create_doc_with_relations(AgreementDocument, **kwargs)
 
+    def update_agreement(self, instance, **kwargs):
+        obj = instance.__class__(id=instance.id, **kwargs)
+        obj.save()
+        return self.update_doc_(instance, **kwargs)
+
     def create_basic_project_pasport(self, **kwargs):
         return self.create_doc_with_relations(BasicProjectPasportDocument, **kwargs)
+
 
     def create_innovative_project_pasport(self, **kwargs):
         doc = self.create_doc_with_relations(InnovativeProjectPasportDocument, **kwargs)
@@ -60,7 +66,13 @@ class DocumentDMLManager(models.Manager):
         return doc 
 
     def create_other_agr_doc(self, **kwargs):
-        return self.create_doc_with_relations(OtherAgreementsDocument, **kwargs)
+        items = kwargs.pop('items')
+        doc = self.create_doc_with_relations(OtherAgreementsDocument, **kwargs)
+
+        for item in items:
+            oth_ad = OtherAgreementItem(other_agreements_doc=doc, **item)
+            oth_ad.save()
+        return doc
 
     def create_start_description(self, **kwargs):
         return self.create_doc_with_relations(ProjectStartDescription, **kwargs)
@@ -235,7 +247,6 @@ class AgreementDocument(models.Model):
     tp = 'agreement'
 
     document = models.OneToOneField(Document, related_name='agreement', on_delete=models.CASCADE)
-    number = models.IntegerField(unique=True)
     name = models.CharField(u'Название договора', max_length=1024, default='')
     # funding = MoneyField(u'Сумма договора', max_digits=20, null=True, blank=True, decimal_places=2, default_currency='KZT')
     subject = models.TextField(u'Предмет договора', default='')
@@ -258,6 +269,8 @@ class OtherAgreementItem(models.Model):
 class BasicProjectPasportDocument(models.Model):
     tp = 'basicpasport'
     document = models.OneToOneField(Document, related_name='basicpasport', on_delete=models.CASCADE)
+
+    description = models.CharField(u'Описание проекта и его целей, включающее в себя новизну, уникальность, конкретное применение результатов проекта, перспективы использования и другое', max_length=1024, null=True, blank=True)
 
     result = models.IntegerField(u'Результат проекта', default=BasicProjectPasportStatuses.PATENT, 
                                                         choices=BasicProjectPasportStatuses.RESULT_OPTS,
@@ -309,6 +322,8 @@ class InnovativeProjectPasportDocument(models.Model):
     document = models.OneToOneField(Document, related_name='innovativepasport', on_delete=models.CASCADE)
 
     relevance = models.CharField(u'Актуальность проекта', max_length=140, null=True, blank=True)
+
+    description = models.CharField(u'Описание проекта и его целей, включающее в себя новизну, уникальность, конкретное применение результатов проекта, перспективы использования и другое', max_length=1024, null=True, blank=True)
 
     result = models.IntegerField(u'Ожидаемые результаты проекта', default=InnovativeProjectPasportStatuses.KNOW_HOW, 
                                                         choices=InnovativeProjectPasportStatuses.RESULT_OPTS,
@@ -589,6 +604,43 @@ class ProjectStartDescription(models.Model):
     kaz_part_fact = models.DecimalField(u'Доля Казахстанского содержания в продукции (Факт)', max_digits=20, decimal_places=2, null=True, blank=True)
     kaz_part_plan = models.DecimalField(u'Доля Казахстанского содержания в продукции (План)', max_digits=20, decimal_places=2, null=True, blank=True)
     kaz_part_avrg = models.DecimalField(u'Доля Казахстанского содержания в продукции (Средние показатели)', max_digits=20, decimal_places=2, null=True, blank=True)
+
+
+    @property 
+    def total_rlzn_fact(self):
+        rlzn_fact = self.rlzn_fact.amount if self.rlzn_fact else 0 
+        rlzn_exp_fact = self.rlzn_exp_fact.amount if self.rlzn_exp_fact else 0 
+        return rlzn_fact + rlzn_exp_fact
+
+    @property 
+    def total_rlzn_plan(self):
+        rlzn_plan = self.rlzn_plan.amount if self.rlzn_plan else 0 
+        rlzn_exp_plan = self.rlzn_exp_plan.amount if self.rlzn_exp_plan else 0 
+        return rlzn_plan + rlzn_exp_plan
+
+    @property 
+    def total_rlzn_avrg(self):
+        rlzn_avrg = self.rlzn_avrg.amount if self.rlzn_avrg else 0 
+        rlzn_exp_avrg = self.rlzn_exp_avrg.amount if self.rlzn_exp_avrg else 0 
+        return rlzn_avrg + rlzn_exp_avrg
+
+    @property 
+    def total_tax_fact(self):
+        tax_fact = self.tax_fact.amount if self.tax_fact else 0 
+        tax_local_fact = self.tax_local_fact.amount if self.tax_local_fact else 0 
+        return tax_fact + tax_local_fact
+
+    @property 
+    def total_tax_plan(self):
+        tax_plan = self.tax_plan.amount if self.tax_plan else 0 
+        tax_local_plan = self.tax_local_plan.amount if self.tax_local_plan else 0 
+        return tax_plan + tax_local_plan
+
+    @property 
+    def total_tax_avrg(self):
+        tax_avrg = self.tax_avrg.amount if self.tax_avrg else 0 
+        tax_local_avrg = self.tax_local_avrg.amount if self.tax_local_avrg else 0 
+        return tax_avrg + tax_local_avrg
 
 
 class Attachment(models.Model):

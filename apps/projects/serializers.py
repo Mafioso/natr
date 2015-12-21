@@ -125,10 +125,12 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             prj.statement = doc_models.Document.dml.create_statement(**statement_data)
 
         if aggrement_data:
+            aggrement_data['document']['project'] = prj.id
             prj.aggreement = doc_models.Document.dml.create_agreement(**aggrement_data)
 
         if other_agreements:
-            oth_agr = models.Document.dml.create_other_agr_doc(**other_agreements)
+            aggrement_data['document']['project'] = prj.id
+            prj.other_agreements = doc_models.Document.dml.create_other_agr_doc(**other_agreements)
 
         prj.save()
 
@@ -187,6 +189,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', None)
         aggrement_data = validated_data.pop('aggreement', None)
+        other_agreements = validated_data.pop('other_agreements', None)
         old_milestones = instance.number_of_milestones
         new_milestones = validated_data['number_of_milestones']
         current_milestone_data = validated_data.pop('current_milestone', None)
@@ -215,6 +218,12 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
                 instance=instance.aggreement, data=aggrement_data)
             agr_ser.is_valid(raise_exception=True)
             prj.aggreement = agr_ser.save()
+
+        if other_agreements:
+            oth_agrs_ser = OtherAgreementsDocumentSerializer(
+                instance=instance.other_agreements, data=other_agreements)
+            oth_agrs_ser.is_valid(raise_exception=True)
+            prj.other_agreements = oth_agrs_ser.save()
 
         if current_milestone_data:
             mil_ser = MilestoneSerializer(

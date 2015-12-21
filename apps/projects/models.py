@@ -69,6 +69,9 @@ class Project(models.Model):
     statement = models.OneToOneField(
         'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
 
+    other_agreements = models.OneToOneField(
+        'documents.OtherAgreementsDocument', null=True, on_delete=models.SET_NULL)
+
     # grantee = models.ForeignKey('Grantee', related_name='projects')
     # user = models.ForeignKey('User', related_name='projects')
 
