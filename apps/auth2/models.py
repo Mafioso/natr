@@ -43,7 +43,8 @@ class Account(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     email = models.EmailField(u'email', blank=True, unique=True)
-    full_name = models.CharField(u'Ф.И.О.', max_length=30, blank=True)
+    first_name = models.CharField(u'Имя', max_length=30, blank=True)
+    last_name = models.CharField(u'Фамилия', max_length=30, blank=True)
     is_active = models.BooleanField(u'активирован', default=True)
     date_joined = models.DateTimeField(u'дата добавления', default=timezone.now)
 
@@ -55,11 +56,15 @@ class Account(AbstractBaseUser, PermissionsMixin):
         return self.is_superuser
 
     def get_full_name(self):
-        return self.full_name
+        """
+        Returns the first_name plus the last_name, with a space in between.
+        """
+        full_name = '%s %s' % (self.first_name, self.last_name)
+        return full_name.strip()
 
     def get_short_name(self):
         "Returns the short name for the user."
-        return self.full_name.split()[1]
+        return self.first_name
 
     def get_counters(self):
         return {
@@ -80,7 +85,21 @@ class NatrUser(models.Model):
 
     DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT = ('expert', 'manager', 'risk_expert')
 
+    DEPARTMENTS_CAPS = (
+        u'Альтернативная энергетика и технологии энергоэффективности',
+        u'Биотехнологии',
+        u'Инфокоммуникационные технологии',
+        u'Прогрессивные технологии в агропромышленном комплексе',
+        u'Прогрессивные технологии машиностроения, включая использование новых материалов',
+        u'Прогрессивные технологии химии и нефтехимии',
+        u'Прогрессивные технологии поиска, добычи, транспортировки и переработки минерального и углеводородного сырья',
+        u'Прогрессивные технологии в горно-металлургическом комплексе',
+        u'Стройиндустрия')
+    DEPARTMENTS_OPTS = zip(range(len(DEPARTMENTS_CAPS)), DEPARTMENTS_CAPS)
+
+
     number_of_projects = models.IntegerField(u'Количество проектов', null=True)
+    department = models.IntegerField(null=True, choices=DEPARTMENTS_OPTS)
 
     account = models.OneToOneField('Account', related_name='user')
 
