@@ -13,7 +13,7 @@ class Account(DjangoModelFactory):
         strategy = BUILD_STRATEGY
 
     email = factory.Faker('email')
-    full_name = factory.Faker('first_name')
+    first_name = factory.Faker('first_name')
     password = factory.Faker('word')
 
     @classmethod
