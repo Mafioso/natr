@@ -75,6 +75,7 @@ class Account(AbstractBaseUser, PermissionsMixin):
             perms.setdefault(p.id, p)
         return perms.values()
 
+
 class NatrUser(models.Model):
 
     DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT = ('expert', 'manager', 'risk_expert')

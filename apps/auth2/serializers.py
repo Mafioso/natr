@@ -5,7 +5,6 @@ import projects.models as prj_models
 __all__ = (
 	'AccountSerializer',
 	'NatrUserSerializer',
-
 )
 
 
@@ -25,10 +24,14 @@ class AccountSerializer(serializers.ModelSerializer):
 
 	user_permissions = PermissionSerializer(many=True)
 	groups = GroupSerializer(many=True)
+	counters = serializers.SerializerMethodField()
 
 	class Meta:
 		model = models.Account
 		exclude = ('password',)
+
+	def get_counters(self, instance):
+		return instance.get_counters()
 
 
 class NatrUserSerializer(serializers.ModelSerializer):

@@ -5,6 +5,7 @@ from django.core.exceptions import ObjectDoesNotExist
 
 class AllowOnlyAuthenticated(BasePermissionComponent):
     def has_permission(self, permission, request, view):
+        print request.user
         return request.user.is_authenticated()
 
     def has_object_permission(self, permission, request, view, obj):
@@ -48,6 +49,14 @@ class DjangoModelPermissions(BasePermissionComponent, DefaultDjangoModelPermissi
         return DefaultDjangoModelPermissions.has_permission(self, request, view)
 
 
+class AdminPolicy(BaseComposedPermision):
+    def global_permission_set(self):
+        return And(AllowOnlyAuthenticated, IsAdminUser)
+
+    def object_permission_set(self):
+        return And(AllowOnlyAuthenticated, IsAdminUser)
+
+
 class PermissionDefinition(BaseComposedPermision):
 
     def global_permission_set(self):
@@ -61,9 +70,3 @@ class PermissionDefinition(BaseComposedPermision):
                                             DjangoModelPermissions,
                                             IsProjectAssignee))
 
-class AdminPolicy(BaseComposedPermision):
-    def global_permission_set(self):
-        return And(AllowOnlyAuthenticated, IsAdminUser)
-
-    def object_permission_set(self):
-        return And(AllowOnlyAuthenticated, IsAdminUser)

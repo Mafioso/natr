@@ -17,13 +17,28 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
+from django.core.urlresolvers import reverse
+from django.http import HttpResponseRedirect
 from django.views.generic import TemplateView
 # from dummy import urls as dummy_urls
 from resources import urls as resources_urls
 
 
+
+class IndexView(TemplateView):
+
+    template_name = 'index.html'
+
+    def get(self, request, *a, **kw):
+        if not request.user.is_anonymous():
+            return self.render_to_response(
+                self.get_context_data(**kw))
+        else:
+            return HttpResponseRedirect(reverse('login'))
+
+
 urlpatterns = [
-    url(r'^$', TemplateView.as_view(template_name='index.html'), name='home'),
+    url(r'^$', IndexView.as_view(template_name='index.html'), name='home'),
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^docs/', include('rest_framework_swagger.urls')),
