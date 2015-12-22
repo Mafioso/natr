@@ -48,6 +48,7 @@ class ContactDetails(models.Model):
     natr_user = models.OneToOneField(
         'auth2.NatrUser', null=True, verbose_name=u'Контактные данные')
 
+    full_name = models.CharField(u'ФИО', max_length=512, null=True)
     phone_number = models.CharField(u'Телефон', max_length=255, null=True)
     email = models.EmailField(u'Почтовый адрес, null=True')
 
