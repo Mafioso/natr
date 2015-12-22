@@ -213,6 +213,10 @@ class DocumentDMLManager(models.Manager):
         
 class Document(ProjectBasedModel):
     ## identifier in (DA 'Document automation' = СЭД 'система электронного документооборота')
+
+    class Meta:
+        filter_by_project = 'project__in'
+
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
 
     STATUS_CAPS = (
@@ -246,6 +250,9 @@ class Document(ProjectBasedModel):
 class AgreementDocument(models.Model):
     tp = 'agreement'
 
+    class Meta:
+        filter_by_project = 'document__project__in'
+
     document = models.OneToOneField(Document, related_name='agreement', on_delete=models.CASCADE)
     name = models.CharField(u'Название договора', max_length=1024, default='')
     # funding = MoneyField(u'Сумма договора', max_digits=20, null=True, blank=True, decimal_places=2, default_currency='KZT')
@@ -254,20 +261,41 @@ class AgreementDocument(models.Model):
         u'Полная стоимость работ в тенге', max_digits=20, null=True,
         decimal_places=2, default_currency='KZT')
 
+    def get_project(self):
+        return self.document.get_project()
+
 
 class OtherAgreementsDocument(models.Model):
     tp="other_agreements"
+
+    class Meta:
+        filter_by_project = 'document__project__in'
+
     document = models.OneToOneField(Document, related_name='other_agreements', on_delete=models.CASCADE)
+
+    def get_project(self):
+        return self.document.get_project()
     
 
 class OtherAgreementItem(models.Model):
+    class Meta:
+        filter_by_project = 'other_agreements_doc__document__project__in'
+
     other_agreements_doc = models.ForeignKey(OtherAgreementsDocument, related_name='items', on_delete=models.CASCADE)
     number = models.IntegerField(null=True, blank=True)
     date_sign = models.DateTimeField(null=True)
 
+    def get_project(self):
+        return self.other_agreements_doc.get_project()
+
 
 class BasicProjectPasportDocument(models.Model):
     tp = 'basicpasport'
+
+    
+    class Meta:
+        filter_by_project = 'document__project__in'
+    
     document = models.OneToOneField(Document, related_name='basicpasport', on_delete=models.CASCADE)
 
     description = models.CharField(u'Описание проекта и его целей, включающее в себя новизну, уникальность, конкретное применение результатов проекта, перспективы использования и другое', max_length=1024, null=True, blank=True)
@@ -316,9 +344,16 @@ class BasicProjectPasportDocument(models.Model):
     project_head = models.CharField(u'Руководитель проекта (Ф.И.О., должность, ученая степень, подпись)', 
                                                         max_length=1024, null=True, blank=True)
 
+    def get_project(self):
+        return self.document.get_project()
+
 
 class InnovativeProjectPasportDocument(models.Model):
     tp = 'innovativepasport'
+
+    class Meta:
+        filter_by_project = 'document__project__in'
+
     document = models.OneToOneField(Document, related_name='innovativepasport', on_delete=models.CASCADE)
 
     relevance = models.CharField(u'Актуальность проекта', max_length=140, null=True, blank=True)
@@ -382,8 +417,15 @@ class InnovativeProjectPasportDocument(models.Model):
                                                         государственном уровне (номер, дата, название)?', max_length=140, 
                                                         null=True, blank=True)
 
+    def get_project(self):
+        return self.document.get_project()
+
     #Команда проекта
 class ProjectTeamMember(models.Model):
+
+    class Meta:
+        filter_by_project = 'pasport__document__project__in'
+
     pasport = models.ForeignKey(InnovativeProjectPasportDocument, related_name='team_members', on_delete=models.CASCADE)
     full_name = models.CharField(u'Ф.И.О.', max_length=140, null=True, blank=True)
     experience = models.CharField(u'стаж работы', max_length=140, null=True, blank=True)
@@ -392,8 +434,15 @@ class ProjectTeamMember(models.Model):
     cv = models.ForeignKey('Attachment', related_name='cvs', on_delete=models.CASCADE, null=True, blank=True)
     business_skills = models.CharField(u'навыки ведения бизнеса', max_length=140, null=True, blank=True)
 
+    def get_project(self):
+        return self.pasport.get_project()
+
     #Сведения о разработчиках технологии
 class DevelopersInfo(models.Model):
+
+    class Meta:
+        filter_by_project = 'pasport__document__project__in'
+
     pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='dev_info', on_delete=models.CASCADE)
     comp_name = models.CharField(u'Наименование предприятия', max_length=140, null=True, blank=True)
     full_name = models.CharField(u'Ф.И.О.', max_length=140, null=True, blank=True)
@@ -419,9 +468,16 @@ class DevelopersInfo(models.Model):
     invest_resources = models.CharField(u'Готовы ли разработчики/исследователи вкладывать собственные \
                          ресурсы в инновационное предприятие реализующее проект коммерциализации технологий?', 
                             max_length=140, null=True, blank=True)
+
+    def get_project(self):
+        return self.pasport.get_project()
     
     #Характеристика технологии/продукта
 class TechnologyCharacteristics(models.Model):
+
+    class Meta:
+        filter_by_project = 'pasport__document__project__in'
+
     pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='tech_char', on_delete=models.CASCADE)
     name = models.CharField(u'Название технологии/продукта', max_length=140, null=True, blank=True)
     functionality = models.CharField(u'Функциональное назначение технологии', max_length=1024, null=True, blank=True)
@@ -452,9 +508,16 @@ class TechnologyCharacteristics(models.Model):
                             разрешений, сертификатов каких/либо надзорных органов для \
                             производства и продажи продукции или услуг на рынке?', 
                             max_length=1024, null=True, blank=True)
+
+    def get_project(self):
+        return self.pasport.get_project()
     
     #Оценка интеллектуальной собственности
 class IntellectualPropertyAssesment(models.Model):
+
+    class Meta:
+        filter_by_project = 'pasport__document__project__in'
+
     pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='intellectual_property', on_delete=models.CASCADE)
     authors_names = models.CharField(u'Ф.И.О. авторов технологии', max_length=140, null=True, blank=True)
     patent = models.CharField(u'Наличие патентов (предпатент, инновационный патент, Евразийский  \
@@ -477,9 +540,16 @@ class IntellectualPropertyAssesment(models.Model):
                             НИОКР? В какой форме и где охраняется эта интеллектуальная \
                             собственность и кто обладает правами на нее?', 
                             max_length=1024, null=True, blank=True)
+
+    def get_project(self):
+        return self.pasport.get_project()
     
     #Оценка степени готовности технологии
 class TechnologyReadiness(models.Model):
+
+    class Meta:
+        filter_by_project = 'pasport__document__project__in'
+
     pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='tech_readiness', on_delete=models.CASCADE)
     analogues = models.CharField(u'Наличие аналогов и заменителей', max_length=1024, null=True, blank=True)
     firms = models.CharField(u'Фирмы-производители', max_length=1024, null=True, blank=True)
@@ -507,11 +577,20 @@ class TechnologyReadiness(models.Model):
                             компаний, организаций или лиц, которые уже документально \
                             продемонстрировали интерес к технологии.', max_length=1024, null=True, blank=True)
 
+    def get_project(self):
+        return self.pasport.get_project()
+
 
 class StatementDocument(models.Model):
     tp = 'statement'
 
+    class Meta:
+        filter_by_project = 'document__project__in'
+
     document = models.OneToOneField(Document, related_name='statement', on_delete=models.CASCADE)
+
+    def get_project(self):
+        return self.document.get_project()
 
 
 class SimpleDocumentManager(models.Manager):
@@ -526,6 +605,9 @@ class SimpleDocumentManager(models.Manager):
 class CalendarPlanDocument(models.Model):
     tp = 'calendarplan'
 
+    class Meta:
+        filter_by_project = 'document__project__in'
+
     document = models.OneToOneField(Document, related_name='calendar_plan', on_delete=models.CASCADE)
 
     objects = SimpleDocumentManager()
@@ -539,12 +621,16 @@ class CalendarPlanDocument(models.Model):
             items.append({"id": item.id})
 
         return items
+
+    def get_project(self):
+        return self.document.get_project()
         
 
 class CalendarPlanItem(models.Model):
 
     class Meta:
         ordering = ['number']
+        filter_by_project = 'calendar_plan__document__project__in'
 
     number = models.IntegerField(u'Номер этапа', null=True, blank=True)
     description = models.TextField(u'Наименование работ по этапу', null=True, blank=True)
@@ -558,12 +644,18 @@ class CalendarPlanItem(models.Model):
     calendar_plan = models.ForeignKey(CalendarPlanDocument, related_name='items')
     # milestone = models.OneToOneField('Milestone', null=True, related_name='calendar_plan_item', on_delete=models.CASCADE)
 
+    def get_project(self):
+        return self.document.get_project()
+
 
 class ProjectStartDescription(models.Model):
     '''
         Показатели по состоянию на начало реализации проекта
     '''
     tp = 'startdescription'
+
+    class Meta:
+        filter_by_project = 'document__project__in'
 
     document = models.OneToOneField(Document, related_name='startdescription', on_delete=models.CASCADE)
 
@@ -642,8 +734,15 @@ class ProjectStartDescription(models.Model):
         tax_local_avrg = self.tax_local_avrg.amount if self.tax_local_avrg else 0 
         return tax_avrg + tax_local_avrg
 
+    def get_project(self):
+        return self.document.get_project()
+
 
 class Attachment(models.Model):
+
+    class Meta:
+        filter_by_project = 'document__project__in'
+
     file_path = models.CharField(max_length=270, null=True, blank=True)
     url = models.CharField(max_length=3000, null=True, blank=True)
     name = models.CharField(max_length=255, null=True, blank=True)
@@ -651,10 +750,17 @@ class Attachment(models.Model):
 
     document = models.ForeignKey('Document', null=True, related_name='attachments')
 
+    def get_project(self):
+        return self.document.get_project()
+
 
 class UseOfBudgetDocument(models.Model):
     u"""Документ использование целевых бюджетных средств"""
     tp = 'useofbudget'
+
+    class Meta:
+        filter_by_project = 'document__project__in'
+
     document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
     milestone = models.ForeignKey('projects.Milestone', verbose_name='этап', null=True)
 
@@ -666,6 +772,10 @@ class UseOfBudgetDocument(models.Model):
 
     def calc_total_expense(self):
         return sum([item.total_expense for item in self.items.all()])
+
+    def get_project(self):
+        return self.document.get_project()
+
 
 class GPDocumentType(models.Model):
     u"""
@@ -691,6 +801,10 @@ class GPDocument(models.Model):
     u"""Документ по отчету ГП, например по типу: акт, счет фактура, акт выполненных работ, который
     раскрывают смету расходов в общем."""
     tp = 'gp_doc'
+
+    class Meta:
+        filter_by_project = 'document__project__in'
+
     document = models.OneToOneField(Document, related_name='gp_document', on_delete=models.CASCADE)
     type = models.ForeignKey(GPDocumentType, related_name='gp_docs', null=True)
     cost_row = models.ForeignKey('FactMilestoneCostRow', null=True, related_name='gp_docs')
@@ -702,6 +816,8 @@ class GPDocument(models.Model):
     def get_type_cap(self):
         return self.type and self.type.name or ''
 
+    def get_project(self):
+        return self.document.get_project()
 
 
 class UseOfBudgetDocumentItemManager(models.Manager):
@@ -717,6 +833,10 @@ class UseOfBudgetDocumentItemManager(models.Manager):
 
 class UseOfBudgetDocumentItem(models.Model):
     u"""Статья расходов (факт) по бюджету гранта за этап заполняемая ГП в рамках камерального отчета."""
+    
+    class Meta:
+        filter_by_project = 'use_of_budget_doc__document__project__in'
+
     use_of_budget_doc = models.ForeignKey(UseOfBudgetDocument, related_name='items', on_delete=models.CASCADE)
 
     cost_type = models.ForeignKey('natr.CostType', verbose_name=u'Наименование статей затрат', related_name='budget_items')
@@ -729,7 +849,10 @@ class UseOfBudgetDocumentItem(models.Model):
 
     @property
     def project(self):
-        return self.use_of_budget_doc.document.project
+        return self.get_project()
+
+    def get_project(self):
+        return self.use_of_budget_doc.get_project()
 
     @property
     def milestone(self):
@@ -792,6 +915,10 @@ class UseOfBudgetDocumentItem(models.Model):
 class CostDocument(models.Model):
     u"""Документ сметы расходов (план)"""
     tp = 'costs'
+
+    class Meta:
+        filter_by_project = 'document__project__in'
+
     document = models.OneToOneField(Document, related_name='cost_document', on_delete=models.CASCADE)
 
     objects = SimpleDocumentManager()
@@ -834,7 +961,10 @@ class CostDocument(models.Model):
 
     @property
     def project(self):
-        return self.document.project
+        return self.get_project()
+
+    def get_project(self):
+        return self.document.get_project()
 
     def add_empty_row(self, cost_type):
         for m in self.project.milestone_set.all():
@@ -844,6 +974,10 @@ class CostDocument(models.Model):
 
 class MilestoneCostRow(models.Model):
     u"""Статья расходов по этапу"""
+
+    class Meta:
+        filter_by_project = 'cos_document__document__project__in'
+
     cost_document = models.ForeignKey('CostDocument', related_name='milestone_costs')
     milestone = models.ForeignKey('projects.Milestone')
     cost_type = models.ForeignKey('natr.CostType')
@@ -856,9 +990,16 @@ class MilestoneCostRow(models.Model):
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2)
 
+    def get_project(self):
+        return self.cost_document.get_project()
+
 
 class FactMilestoneCostRow(models.Model):
     u"""Расход на предприятие фактическая по этапу"""
+
+    class Meta:
+        filter_by_project = 'cost_type__project__in'
+
     name = models.CharField(max_length=1024, default='')
     cost_type = models.ForeignKey('natr.CostType', null=True, related_name='fact_cost_rows')
     milestone = models.ForeignKey('projects.Milestone')
@@ -872,7 +1013,10 @@ class FactMilestoneCostRow(models.Model):
 
     @property
     def project(self):
-        return self.milestone.project
+        return self.get_project()
+
+    def get_project(self):
+        return self.milestone.get_project()
 
     @property
     def cost_document(self):

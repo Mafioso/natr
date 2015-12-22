@@ -37,3 +37,7 @@ class NatrUserSerializer(serializers.ModelSerializer):
 			natr_user.save()
 
 		return natr_user
+
+
+class PermissionSerializer(serializers.ModelSerializer):
+	pass

@@ -1,4 +1,10 @@
 from rest_framework import serializers
+from rest_framework import viewsets
+from natr.rest_framework.policies import PermissionDefinition
+from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
+from projects import models as prj_models
+
 
 class ExcludeCurrencyFields(object):
 
@@ -20,3 +26,27 @@ class EmptyObjectDMLMixin(object):
 		assert hasattr(cls, 'empty_data') and callable(cls.empty_data), "Provide empty_data method"
 		data = cls.empty_data(project, **kwargs)
 		return cls(data=data)
+
+
+class ProjectBasedViewSet(viewsets.ModelViewSet):
+
+    permission_classes = (PermissionDefinition, )
+
+    def get_queryset(self):
+        qs = super(ProjectBasedViewSet, self).get_queryset()
+        cttype = ContentType.objects.get_for_model(self.queryset.model)
+        perm = '%s.view_%s' % (cttype.app_label, cttype.model)
+        
+        if self.request.user.is_superuser:
+            return qs
+        elif self.request.user.has_perm(perm):
+            return qs
+        else:
+            try:
+                user = self.request.user.user
+            except ObjectDoesNotExist:
+                self.permission_denied(self.request)
+            projects = prj_models.Project.objects.filter(assigned_experts=user)
+            return qs.filter(**{
+                qs.model._meta.filter_by_project: projects
+            })

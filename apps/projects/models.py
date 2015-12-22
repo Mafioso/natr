@@ -72,6 +72,8 @@ class Project(models.Model):
     other_agreements = models.OneToOneField(
         'documents.OtherAgreementsDocument', null=True, on_delete=models.SET_NULL)
 
+    assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
+
     # grantee = models.ForeignKey('Grantee', related_name='projects')
     # user = models.ForeignKey('User', related_name='projects')
 
@@ -245,6 +247,7 @@ class Report(ProjectBasedModel):
 
     class Meta:
         ordering = ['milestone__number']
+        filter_by_project = 'project__in'
 
     # STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
 
@@ -313,6 +316,11 @@ class Report(ProjectBasedModel):
 
 
 class Corollary(ProjectBasedModel):
+
+
+    class Meta:
+        filter_by_project = 'project__in'
+
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
     STATUS_CAPS = (
         u'неактивно'
@@ -419,6 +427,10 @@ class Corollary(ProjectBasedModel):
 
 
 class CorollaryStatByCostType(models.Model):
+
+    class Meta:
+        filter_by_project = 'cost_type__project__in'
+    
     corollary = models.ForeignKey('Corollary', related_name='stats')
     cost_type = models.ForeignKey('natr.CostType')
     natr_fundings = MoneyField(u'Средства гранта',
@@ -443,12 +455,16 @@ class CorollaryStatByCostType(models.Model):
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
 
+    def get_project(self):
+        self.corollary.get_project()
+
 
 class Milestone(ProjectBasedModel):
 
 
     class Meta:
         ordering = ['number']
+        filter_by_project = 'project__in'
 
 
     class AlreadyExists(Exception):
@@ -605,6 +621,10 @@ class Milestone(ProjectBasedModel):
 
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
+
+    class Meta:
+        filter_by_project = 'project__in'
+
     def update_items(self, **kwargs):
         for item in kwargs['items']:
             if 'id' in item:
@@ -622,6 +642,7 @@ class MonitoringTodo(ProjectBasedModel):
 
     class Meta:
         ordering = ('date_start', 'date_end')
+        filter_by_project = 'monitoring__project__in'
 
     monitoring = models.ForeignKey(
         'Monitoring', null=True, verbose_name=u'мониторинг', related_name='todos')
@@ -655,10 +676,17 @@ class Comment(models.Model):
     """
         Комментарий к проекту
     """
+
+    class Meta:
+        filter_by_project = 'report__project__in'
+
     report = models.ForeignKey(Report, related_name='comments')
     expert = models.ForeignKey('auth2.NatrUser', related_name='comments')
     comment_text = models.TextField(null=True)
     date_created = models.DateTimeField(auto_now_add=True)
+
+    def get_project(self):
+        self.report.get_project()
 
 
 from django.db.models.signals import post_save

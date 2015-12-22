@@ -1,6 +1,9 @@
+from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import list_route, detail_route
 from rest_framework import viewsets, response, filters
 from natr.rest_framework.decorators import patch_serializer_class
+from natr.rest_framework.policies import PermissionDefinition
+from natr.rest_framework.mixins import ProjectBasedViewSet
 from projects.serializers import *
 from projects import models as prj_models
 from journals import serializers as journal_serializers
@@ -14,7 +17,34 @@ class ProjectViewSet(viewsets.ModelViewSet):
     serializer_class = ProjectSerializer
     filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
     filter_class = ProjectFilter
+    permission_classes = (PermissionDefinition, )
 
+
+    def get_queryset(self):
+        qs = super(ProjectViewSet, self).get_queryset()
+        if self.request.user.is_superuser:
+            return qs
+        elif self.request.user.has_perm('projects.view_project'):
+            return qs
+        else:
+            try:
+                user = self.request.user.user
+            except ObjectDoesNotExist:
+                self.permission_denied(self.request)
+            return qs.filter(assigned_experts=user)
+
+
+    def create(self, request, *a, **kw):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+
+        # add default assignee as current user
+        project = serializer.instance
+        project.assignees.add(request.user)
+        
+        headers = self.get_success_headers(serializer.data)
+        return response.Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @list_route(methods=['get'], url_path='basic_info')
     @patch_serializer_class(ProjectBasicInfoSerializer)
@@ -69,9 +99,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         return Response(activity_ser.data)
 
 
-class MilestoneViewSet(viewsets.ModelViewSet):
+class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
     serializer_class = MilestoneSerializer
+    permission_classes = (PermissionDefinition, )
 
     @detail_route(methods=['get'], url_path='expanded')
     @patch_serializer_class(ExpandedMilestoneSerializer)
@@ -80,9 +111,10 @@ class MilestoneViewSet(viewsets.ModelViewSet):
         return response.Response(serializer.data)
 
 
-class MonitoringTodoViewSet(viewsets.ModelViewSet):
+class MonitoringTodoViewSet(ProjectBasedViewSet):
     queryset = prj_models.MonitoringTodo.objects.all()
     serializer_class = MonitoringTodoSerializer
+    permission_classes = (PermissionDefinition, )
 
     def list(self, request, monitoring_pk=None):
         qs = self.filter_queryset(
@@ -99,14 +131,15 @@ class MonitoringTodoViewSet(viewsets.ModelViewSet):
         return super(MonitoringTodoViewSet, self).create(request, monitoring_pk)
 
 
-class MonitoringViewSet(viewsets.ModelViewSet):
+class MonitoringViewSet(ProjectBasedViewSet):
     queryset = prj_models.Monitoring.objects.all()
     serializer_class = MonitoringSerializer
 
     @list_route(methods=['get'], url_path='recent_todos')
     @patch_serializer_class(MonitoringTodoSerializer)
     def get_recent_todos(self, request, *a, **kw):
-        qs = prj_models.MonitoringTodo.objects.all().order_by('date_end')
+        qs = prj_models.MonitoringTodo.objects.filter(
+            monitoring__in=self.get_queryset()).order_by('date_end')
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -132,7 +165,7 @@ class MonitoringViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
-class ReportViewSet(viewsets.ModelViewSet):
+class ReportViewSet(ProjectBasedViewSet):
     queryset = prj_models.Report.objects.all()
     serializer_class = ReportSerializer
 
@@ -140,11 +173,11 @@ class ReportViewSet(viewsets.ModelViewSet):
         """
         Override get_queryset() to filter on multiple values for 'id'
         """
-        queryset = self.queryset
+        queryset = super(ReportViewSet, self).get_queryset()
         id_value = self.request.query_params.get('id', None)
         if id_value:
             id_list = id_value.split(',')
-            queryset = self.queryset.filter(id__in=id_list)
+            queryset = queryset.filter(id__in=id_list)
 
         return queryset
 
@@ -183,7 +216,7 @@ class ReportViewSet(viewsets.ModelViewSet):
         return response.Response(item_ser.data, headers=headers)
 
 
-class CorollaryViewSet(viewsets.ModelViewSet):
+class CorollaryViewSet(ProjectBasedViewSet):
     queryset = prj_models.Corollary.objects.all()
     serializer_class = CorollarySerializer
 
