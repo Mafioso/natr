@@ -9,12 +9,26 @@ __all__ = (
 )
 
 
+class PermissionSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = models.Permission
+
+
+class GroupSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = models.Group
+
+
 class AccountSerializer(serializers.ModelSerializer):
+
+	user_permissions = PermissionSerializer(many=True)
+	groups = GroupSerializer(many=True)
 
 	class Meta:
 		model = models.Account
 		exclude = ('password',)
-
 
 
 class NatrUserSerializer(serializers.ModelSerializer):
@@ -37,7 +51,3 @@ class NatrUserSerializer(serializers.ModelSerializer):
 			natr_user.save()
 
 		return natr_user
-
-
-class PermissionSerializer(serializers.ModelSerializer):
-	pass

@@ -5,7 +5,7 @@ __author__ = 'xepa4ep'
 
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.db.models.signals import post_save
 
 
@@ -69,6 +69,11 @@ class Account(AbstractBaseUser, PermissionsMixin):
             }
         }
 
+    def get_all_permission_objs(self):
+        perms = {p.id: p for p in self.user_permissions.all()}
+        for p in Permission.objects.filter(group__in=self.groups.all()):
+            perms.setdefault(p.id, p)
+        return perms.values()
 
 class NatrUser(models.Model):
 

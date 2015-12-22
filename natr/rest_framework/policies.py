@@ -60,3 +60,10 @@ class PermissionDefinition(BaseComposedPermision):
                                             IsAdminUser,
                                             DjangoModelPermissions,
                                             IsProjectAssignee))
+
+class AdminPolicy(BaseComposedPermision):
+    def global_permission_set(self):
+        return And(AllowOnlyAuthenticated, IsAdminUser)
+
+    def object_permission_set(self):
+        return And(AllowOnlyAuthenticated, IsAdminUser)
