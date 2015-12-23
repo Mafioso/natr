@@ -93,8 +93,11 @@ class AttachmentViewSet(viewsets.ModelViewSet):
 
     filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
     filter_class = AttachmentFilter
-
+    permission_classes = tuple()
     pagination_class = None
+
+    def get_authenticators(self):
+        return []
 
     def create(self, request, *a, **kw):
         data = request.data
