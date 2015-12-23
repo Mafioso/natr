@@ -82,8 +82,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         model = Project
         # fields = ('organization_details',)
 
-    # def __init__(self, *args, **kwargs):
-    #   assert 'organization_details'
+    def __init__(self, *args, **kwargs):
+        self.fields['assigned_experts'].required = False
+        super(ProjectSerializer, self).__init__(*args, **kwargs)
 
     fundings = SerializerMoneyField(required=False)
     own_fundings = SerializerMoneyField(required=False)
@@ -101,6 +102,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     current_milestone = MilestoneSerializer(required=False)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
     milestone_set = MilestoneBaseInfo(many=True, required=False)
+    # assigned_experts = 
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)

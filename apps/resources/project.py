@@ -1,6 +1,6 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import list_route, detail_route
-from rest_framework import viewsets, response, filters
+from rest_framework import viewsets, response, filters, status
 from natr.rest_framework.decorators import patch_serializer_class
 from natr.rest_framework.policies import PermissionDefinition
 from natr.rest_framework.mixins import ProjectBasedViewSet
@@ -41,7 +41,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         # add default assignee as current user
         project = serializer.instance
-        project.assignees.add(request.user)
+        project.assigned_experts.add(request.user.user)
         
         headers = self.get_success_headers(serializer.data)
         return response.Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
