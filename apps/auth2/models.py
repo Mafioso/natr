@@ -16,8 +16,9 @@ def get_relevant_permissions():
     models = []
     for app_name in settings.APPS:
         models.extend(
-            get_models(
+            filter(lambda x: getattr(x._meta, 'relevant_for_permission', False), get_models(
                 get_app(app_name)))
+        )
     cttypes = ContentType.objects.get_for_models(*models).values()
     return Permission.objects.filter(content_type__in=cttypes)
 
@@ -95,6 +96,10 @@ class Account(AbstractBaseUser, PermissionsMixin):
 
 
 class NatrUser(models.Model):
+
+    class Meta:
+        relevant_for_permission = True
+        verbose_name = u'Пользователи ИСЭМ'
 
     DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT = ('expert', 'manager', 'risk_expert')
 
