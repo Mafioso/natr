@@ -55,6 +55,13 @@ class AdminPolicy(BaseComposedPermision):
     def object_permission_set(self):
         return And(AllowOnlyAuthenticated, IsAdminUser)
 
+class AuthenticatedPolicy(BaseComposedPermision):
+    def global_permission_set(self):
+        return AllowOnlyAuthenticated
+
+    def object_permission_set(self):
+        return AllowOnlyAuthenticated
+
 
 class PermissionDefinition(BaseComposedPermision):
 
