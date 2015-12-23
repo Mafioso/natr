@@ -1,6 +1,7 @@
 from rest_framework import serializers
 import auth2.models as models
 import grantee.models as grantee_models
+import projects.models as projects_models
 from natr.rest_framework.serializers import ContactDetailsSerializer
 
 __all__ = (
@@ -44,6 +45,8 @@ class NatrUserSerializer(serializers.ModelSerializer):
 
 	account = AccountSerializer(required=False)
 	contact_details = ContactDetailsSerializer(required=False)
+	projects = serializers.PrimaryKeyRelatedField(
+        queryset=projects_models.Project.objects.all(), required=False, many=True)
 
 	class Meta:
 		model = models.NatrUser
@@ -57,20 +60,24 @@ class NatrUserSerializer(serializers.ModelSerializer):
 		contact_details_data = validated_data.pop('contact_details', None)
 		department = validated_data.pop('department', None)
 		groups = validated_data.pop('groups', [])
+		projects = validated_data.pop('projects', None)
 
 		first_name, last_name = contact_details_data['full_name'].split()
 		natr_user = models.Account.objects.create_natrexpert(first_name=first_name, last_name=last_name, **account_data)
 
 		if natr_user.number_of_projects:
 			natr_user.number_of_projects = number_of_projects
-		
+
 		if department is not None:
 			natr_user.department = department
-		
-		natr_user.save()
 
 		if len(groups) > 0:
 			natr_user.add_to_groups(groups)
+
+		if len(projects) > 0:
+			natr_user.projects.add(*projects)
+
+		natr_user.save()
 
 		if contact_details_data:
 			grantee_models.ContactDetails.objects.create(natr_user=natr_user, **contact_details_data)
