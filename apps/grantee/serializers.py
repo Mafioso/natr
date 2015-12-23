@@ -102,5 +102,6 @@ class GranteeSerializer(serializers.ModelSerializer):
 			last_name=last_name,
 			organization=organization,
 			**account_data)
+		grantee_user.projects.add(project)
 
 		return grantee_user

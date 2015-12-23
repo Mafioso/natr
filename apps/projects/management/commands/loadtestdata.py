@@ -82,11 +82,11 @@ class Command(BaseCommand):
 
 	def gen_notifications(self, milestone):
 		rv = []
-		for _ in xrange(1):
+		for _ in xrange(2):
 			n = notif_factories.Notification.build()
 			n.context = milestone
 			n.save()
-			n.prepare_msg()
+			n.spray()
 			rv.append(n)
 		return rv
 

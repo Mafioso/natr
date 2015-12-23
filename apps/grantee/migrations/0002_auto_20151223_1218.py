@@ -8,9 +8,15 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('grantee', '0001_initial'),
+        ('projects', '0001_initial'),
     ]
 
     operations = [
+        migrations.AddField(
+            model_name='organization',
+            name='project',
+            field=models.OneToOneField(related_name='organization_details', null=True, to='projects.Project'),
+        ),
         migrations.AlterField(
             model_name='contactdetails',
             name='natr_user',

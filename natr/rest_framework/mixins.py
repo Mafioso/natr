@@ -42,11 +42,16 @@ class ProjectBasedViewSet(viewsets.ModelViewSet):
         elif self.request.user.has_perm(perm):
             return qs
         else:
-            try:
+            if hasattr(self.request.user, 'user'):
                 user = self.request.user.user
-            except ObjectDoesNotExist:
-                self.permission_denied(self.request)
-            projects = prj_models.Project.objects.filter(assigned_experts=user)
-            return qs.filter(**{
-                qs.model._meta.filter_by_project: projects
-            })
+                projects = prj_models.Project.objects.filter(assigned_experts=user)
+                return qs.filter(**{
+                    qs.model._meta.filter_by_project: projects
+                })
+            if hasattr(self.request.user, 'grantee'):
+                user = self.request.user.grantee
+                projects = prj_models.Project.objects.filter(assigned_grantees=user)
+                return qs.filter(**{
+                    qs.model._meta.filter_by_project: projects
+                })
+            self.permission_denied(self.request)

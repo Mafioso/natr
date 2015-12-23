@@ -28,12 +28,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         elif self.request.user.has_perm('projects.view_project'):
             return qs
         else:
-            try:
+            if hasattr(self.request.user, 'user'):
                 user = self.request.user.user
-            except ObjectDoesNotExist:
-                self.permission_denied(self.request)
-            return qs.filter(assigned_experts=user)
-
+                return qs.filter(assigned_experts=user)
+            if hasattr(self.request.user, 'grantee'):
+                user = self.request.user.grantee
+                return qs.filter(assigned_grantees=user)
+            self.permission_denied(self.request)
 
     def create(self, request, *a, **kw):
         serializer = self.get_serializer(data=request.data)
