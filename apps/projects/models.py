@@ -563,6 +563,7 @@ class Milestone(ProjectBasedModel):
     def make_current(self):
         self.status = Milestone.TRANCHE_PAY
         self.save()
+        return self
 
     def get_status_cap(self):
         return Milestone.STATUS_CAPS[self.status]
