@@ -7,7 +7,8 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, post_delete
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import get_app, get_models
 from django.conf import settings
 
@@ -141,6 +142,10 @@ class NatrUser(models.Model):
     def get_groups(self):
         return self.account.groups.all()
 
+    def add_to_groups(self, groups):
+        self.account.groups.add(*groups)
+        return self
+
 
 def assign_user_group(sender, instance, created=False, **kwargs):
     """If natr user does not belong to any group, assign expert by default."""
@@ -150,4 +155,12 @@ def assign_user_group(sender, instance, created=False, **kwargs):
         return
     instance.add_to_experts()
 
+def on_natruser_delete(sender, instance, *a, **kw):
+    try:
+        instance.account.delete()
+    except ObjectDoesNotExist:
+        return None
+
 post_save.connect(assign_user_group, sender=NatrUser)
+
+post_delete.connect(on_natruser_delete, sender=NatrUser)
