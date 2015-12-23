@@ -78,8 +78,7 @@ class Project(models.Model):
         'documents.OtherAgreementsDocument', null=True, on_delete=models.SET_NULL)
 
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
-
-    # grantee = models.ForeignKey('Grantee', related_name='projects')
+    # assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
     # user = models.ForeignKey('User', related_name='projects')
 
     def __unicode__(self):
@@ -439,7 +438,7 @@ class CorollaryStatByCostType(models.Model):
 
     class Meta:
         filter_by_project = 'cost_type__project__in'
-    
+
     corollary = models.ForeignKey('Corollary', related_name='stats')
     cost_type = models.ForeignKey('natr.CostType')
     natr_fundings = MoneyField(u'Средства гранта',
@@ -677,11 +676,11 @@ class MonitoringTodo(ProjectBasedModel):
     def save(self, *args, **kwargs):
         if self.date_start and self.date_end:
             if isinstance(self.date_start, str) and isinstance(self.date_end, str):
-                date_end = dateutil.parser.parse(self.date_end) 
+                date_end = dateutil.parser.parse(self.date_end)
                 date_start = dateutil.parser.parse(self.date_start)
                 period = (date_end - date_start).days
                 self.period = period
-                
+
         super(self.__class__, self).save(*args, **kwargs)
 
 

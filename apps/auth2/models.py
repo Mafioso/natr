@@ -11,6 +11,7 @@ from django.db.models.signals import post_save, post_delete
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import get_app, get_models
 from django.conf import settings
+from grantee.models import Grantee
 
 
 def get_relevant_permissions():
@@ -51,6 +52,10 @@ class UserManager(BaseUserManager):
     def create_natrexpert(self, email, password, **extra_fields):
         account = self._create_user(email, password, False, **extra_fields)
         return NatrUser.objects.create(account=account)
+
+    def create_grantee(self, email, password, **extra_fields):
+        account = self._create_user(email, password, False, **extra_fields)
+        return Grantee.objects.create(account=account)
 
 
 class Account(AbstractBaseUser, PermissionsMixin):
@@ -121,6 +126,9 @@ class NatrUser(models.Model):
     department = models.IntegerField(null=True, choices=DEPARTMENTS_OPTS)
 
     account = models.OneToOneField('Account', related_name='user')
+
+    def get_department_cap(self):
+		return NatrUser.DEPARTMENTS_CAPS[self.department]
 
     def add_to_experts(self):
         group = Group.objects.get(name=NatrUser.EXPERT)

@@ -4,6 +4,7 @@
 __author__ = 'xepa4ep'
 
 from django.db import models
+
 # from django.contrib.auth.models import User
 
 
@@ -46,7 +47,8 @@ class ContactDetails(models.Model):
         'Organization', null=True, on_delete=models.SET_NULL,
         related_name='contact_details')
     natr_user = models.OneToOneField(
-        'auth2.NatrUser', null=True, verbose_name=u'Контактные данные')
+        'auth2.NatrUser', null=True,
+        related_name='contact_details', verbose_name=u'Контактные данные')
 
     full_name = models.CharField(u'ФИО', max_length=512, null=True)
     phone_number = models.CharField(u'Телефон', max_length=255, null=True)

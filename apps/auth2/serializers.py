@@ -1,8 +1,7 @@
 from rest_framework import serializers
 import auth2.models as models
 import grantee.models as grantee_models
-from grantee.serializers import *
-
+from grantee.serializers import ContactDetailsSerializer
 
 __all__ = (
 	'AccountSerializer',
@@ -49,14 +48,13 @@ class NatrUserSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.NatrUser
 
+	department_cap = serializers.CharField(
+			source='get_department_cap', read_only=True)
+
 
 	def create(self, validated_data):
 		account_data = validated_data.pop('account', None)
 		contact_details_data = validated_data.pop('contact_details', None)
-
-		groups = account_data.pop('groups', [])
-
-		number_of_projects = validated_data.pop('number_of_projects', None)
 		department = validated_data.pop('department', None)
 
 		first_name, last_name = contact_details_data['full_name'].split()
@@ -73,8 +71,6 @@ class NatrUserSerializer(serializers.ModelSerializer):
 			natr_user.add_to_groups(groups)
 
 		if contact_details_data:
-			contact_email = account_data['email']
-			natr_user.contact_details_data = grantee_models.ContactDetails.objects.create(**contact_details_data)
-			natr_user.save()
+			grantee_models.ContactDetails.objects.create(natr_user=natr_user, **contact_details_data)
 
 		return natr_user
