@@ -308,6 +308,13 @@ class Report(ProjectBasedModel):
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
 
+    @property 
+    def milestone_number(self):
+        if not self.milestone:
+            return None
+
+        return self.milestone.number
+
     @classmethod
     def build_empty(cls, milestone):
         budget_doc = UseOfBudgetDocument.objects.create_empty(
