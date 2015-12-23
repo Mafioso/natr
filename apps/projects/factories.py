@@ -42,8 +42,13 @@ class ProjectWithMilestones(Project):
         if count is None:
             count = 2
 
-        make_milestone = getattr(Milestone, 'create' if create else 'build')
-        milestones = [make_milestone(project=self, status=models.Milestone.NOT_STARTED) for i in xrange(count)]
+        milestones = []
+        for _ in xrange(count):
+            make_milestone = getattr(Milestone, 'build')
+            m = Milestone.build(status=models.Milestone.NOT_STARTED)
+            m.project = self
+            m.save()
+            milestones.append(m)
         if not create:
             # Fiddle with django internals so self.product_set.all() works with build()
             self._prefetched_objects_cache = {'milestone_set': milestones}

@@ -82,8 +82,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         model = Project
         # fields = ('organization_details',)
 
-    # def __init__(self, *args, **kwargs):
-    #   assert 'organization_details'
+    def __init__(self, *args, **kwargs):
+        self.fields['assigned_experts'].required = False
+        super(ProjectSerializer, self).__init__(*args, **kwargs)
 
     fundings = SerializerMoneyField(required=False)
     own_fundings = SerializerMoneyField(required=False)
@@ -101,6 +102,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     current_milestone = MilestoneSerializer(required=False)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
     milestone_set = MilestoneBaseInfo(many=True, required=False)
+    # assigned_experts = 
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
@@ -164,8 +166,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj_cd.save(empty=True)
 
         # 5. create project pasport which depends on funding type
-        if prj.funding_type.name == 'INDS_RES' or \
-            prj.funding_type.name == 'COMMERCIALIZATION':
+        if prj.funding_type is not None and (prj.funding_type.name == 'INDS_RES' or \
+            prj.funding_type.name == 'COMMERCIALIZATION'):
             prj_pasport = InnovativeProjectPasportSerializer.build_empty(prj)
             prj_pasport.is_valid(raise_exception=True)
             prj_pasport.save()
@@ -208,17 +210,17 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             prj.funding_type = funding_type_ser.save()
 
         if statement_data:
-            statement_ser = StatementDocumentSerializer(
-                instance=instance.statement, data=statement_data)
-            statement_ser.is_valid(raise_exception=True)
-            prj.statement = statement_ser.save()
+            if instance.statement:
+                doc_models.Document.dml.update_statement(instance.statement, **statement_data)
+            else:
+                prj.statement = doc_models.Document.dml.create_statement(**statement_data)
 
         if aggrement_data:
-            agr_ser = AgreementDocumentSerializer(
-                instance=instance.aggreement, data=aggrement_data)
-            agr_ser.is_valid(raise_exception=True)
-            prj.aggreement = agr_ser.save()
-
+            if instance.aggreement:
+                doc_models.Document.dml.update_agreement(instance.aggreement, **aggrement_data)
+            else:
+                prj.agreement = doc_models.Document.dml.create_agreement(**aggrement_data)
+            
         if other_agreements:
             oth_agrs_ser = OtherAgreementsDocumentSerializer(
                 instance=instance.other_agreements, data=other_agreements)
@@ -287,6 +289,7 @@ class ReportSerializer(serializers.ModelSerializer):
     use_of_budget_doc = serializers.PrimaryKeyRelatedField(
         queryset=doc_models.UseOfBudgetDocument.objects.all(), required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    milestone_number = serializers.CharField(read_only=True)
 
 
 class CorollaryTotalsSerializer(ExcludeCurrencyFields, serializers.Serializer):

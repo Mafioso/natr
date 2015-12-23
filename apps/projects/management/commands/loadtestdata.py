@@ -8,8 +8,10 @@ from django.core.management import call_command
 from natr import utils
 from projects import factories
 from documents import factories as doc_factories, models as doc_models
-from journals import factories as journal_factories
+from journals import factories as journal_factories, models as journal_models
 from notifications import factories as notif_factories
+from auth2.models import NatrUser, Account
+
 
 class Command(BaseCommand):
 
@@ -27,26 +29,28 @@ class Command(BaseCommand):
 	def handle(self, *a, **kw):
 		if kw['replace'] is True:
 			call_command('flush')
+		call_command('createsuperuser')
+		u = NatrUser.objects.create(
+			account=Account.objects.get(email="r.kamun@gmail.com"))
 		self.gen()
 	
 	def gen(self):
 		_projects = self.gen_projects_and_related()
-		_notifs = self.gen_notifications()
+
 
 	def gen_projects_and_related(self):
 		rv = []
 		for _ in xrange(5):
-			prj = factories.ProjectWithMilestones.create()
-			num = prj.number_of_milestones
+			prj = factories.Project.create()
+			for num in xrange(prj.number_of_milestones):
+				prj.milestone_set.add(self.create_milestone(prj))
 			rv.append(prj)
-			random.choice(prj.milestone_set.all()).make_current()
-			doc = doc_factories.Document.create(
-				type=doc_models.StatementDocument.tp, project=prj)
-			statement = doc_factories.StatementDocument.create(document=doc)
-
-			doc = doc_factories.Document.create(
-				type=doc_models.AgreementDocument.tp, project=prj)
-			agr_doc = doc_factories.AgreementDocument.create(document=doc)
+			m = random.choice(prj.milestone_set.all()).make_current()
+			self.gen_notifications(m)
+			doc = self.create_doc(doc_models.StatementDocument.tp, prj)
+			statement = doc_models.StatementDocument.objects.create(document=doc)
+			doc = self.create_doc(doc_models.AgreementDocument.tp, prj)
+			agr_doc = doc_models.AgreementDocument.objects.create(document=doc)
 
 			prj.aggreement = agr_doc
 			prj.statement = statement
@@ -58,10 +62,24 @@ class Command(BaseCommand):
 			self.gen_default_gp_docs_types()
 		return rv
 
-	def gen_notifications(self):
+	def create_doc(self, tp, project):
+		doc = doc_factories.Document(type=tp)
+		doc.project = project
+		doc.save()
+		return doc
+
+	def create_milestone(self, project):
+		m = factories.Milestone()
+		m.project = project
+		m.save()
+		return m
+
+	def gen_notifications(self, milestone):
 		rv = []
-		for _ in xrange(10):
-			n = notif_factories.Notification.create()
+		for _ in xrange(1):
+			n = notif_factories.Notification.build()
+			n.context = milestone
+			n.save()
 			n.prepare_msg()
 			rv.append(n)
 		return rv
@@ -88,7 +106,12 @@ class Command(BaseCommand):
 		factories.Monitoring.create(project=project)
 
 	def gen_journal(self, project):
-		journal = journal_factories.Journal.create(project=project)
+		journal = journal_models.Journal.objects.create(project=project)
+		for _ in xrange(5):
+			act = journal_factories.JournalActivity()
+			act.journal = journal
+			act.project = project
+			act.save()
 
 	def gen_cost_doc(self, project):
 		doc = doc_factories.Document.create(project=project)
