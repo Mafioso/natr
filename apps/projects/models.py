@@ -92,7 +92,7 @@ class Project(models.Model):
                 status__gt=Milestone.NOT_STARTED,
                 status__lt=Milestone.CLOSE)
         except Milestone.DoesNotExist:
-            return None
+            return self.milestone_set.first()
         except MultipleObjectsReturned:
             return self.milestone_set.filter(
                 status__gt=Milestone.NOT_STARTED,
@@ -570,6 +570,7 @@ class Milestone(ProjectBasedModel):
     def make_current(self):
         self.status = Milestone.TRANCHE_PAY
         self.save()
+        return self
 
     def get_status_cap(self):
         return Milestone.STATUS_CAPS[self.status]

@@ -2,61 +2,56 @@
 {% load i18n %}
 {% load static from staticfiles %}
 {% block head_title %} Login page {% endblock %}
-{% block content %}
-    {{ message }}
-    <div class="login">
-        <div class="login-body">
-            <div class="login-switcher">
-                <a href="{% url 'login' %}" class="login-switcher-button active">{{ _("Sign in") }}</a>
-            </div>
-            <div class="login-form">
-            <form name="login-form" action="" method="post">
-                {% csrf_token %}
-                <div class="login-fieldset {% if form.username.errors or form.non_field_errors %}has-error{% endif %}">
-                    <label class="login-fieldset-icon" for="login-email">
-                        <figure class="icon icon--mail">
-                          <svg version="1.1">
-                            <use xlink:href="#mail"></use>
-                          </svg>
-                        </figure>
-                    </label>
+{% block css %}
+<link rel="shortcut icon" href="{% static 'images/favicon.png' %}" type="image/png">
+<link rel="stylesheet" type="text/css" href="{% static 'css/icons.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/handsontable.full.min.css' %}">
+{% endblock %}
 
-                    <input class="login-input" id="login-email" name="username" type="email" placeholder="E-mail">
-                    {% if form.username.errors %}
-                        <div class="login-error">{{ form.username.errors }}</div>
-                    {% endif %}
-                    {% if form.non_field_errors %}
-                        {% for error in form.non_field_errors %}
-                        <div class="login-error">{{ error }}</div>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-                <div class="login-fieldset {% if form.password.errors %}has-error{% endif %}">
-                    <label class="login-fieldset-icon" for="login-password">
-                        <figure class="icon icon--lock">
-                            <svg version="1.1">
-                                <use xlink:href="#lock"></use>
-                            </svg>
-                        </figure>
-                    </label>
-                    <input type="password" class="login-input" id="login-password" name="password" placeholder="Password">
-                    {% if form.password.errors %}
-                    <div class="login-error">Error message here!</div>
-                    {% endif %}
-                    <div>
-                        <a href="{% url 'password_reset' %}">{{ _("Forgot your password?") }}</a>
-                    </div>
-        <div class="login-fieldset" style="margin-top: 0;">
-          <button class="login-submit" type="submit">{{ _("Login") }}</button>
+{% block content %}
+  {{ message }}
+  <form class="body" action="." method="post">
+    <div class="user_login">
+      {% csrf_token %}
+      <div class="block_head">
+        <div class="title">Вход в систему</div>                    
+      </div>
+      <div class="block_border_bottom">                            
+        <div class="input_block_full">                            
+           <div class="input_text">
+              <div class="label">
+                Логин
+               </div>
+               <div class="wrap">
+                  <input class="login-input" id="login-email" name="username" type="email" placeholder="E-mail">
+              </div>
+           </div>
+        </div>
+        <div class="input_block_full">                            
+          <div class="input_text">
+              <div class="label">
+                Пароль 
+               </div>
+               <div class="wrap">
+                  <input type="password" class="login-input" id="login-password" name="password" placeholder="Password">
+              </div>
+          </div>
+        </div>
+        
+        <div class="project_block_part">
+          <div class="part_left">
+              <div class="filter_side">
+                  <button type="submit" class="red_button" title="Войти">
+                      <div>Войти</div>
+                  </button>
+              </div>
+          </div>
+          <div class="part_right">
+              <a href="" class="no_pas">Забыли пароль?</a>    
+          </div>
         </div>
       </div>
-    </form>
-            </div>
-
-    <div>
-        
     </div>
-
-  </div>
-</div>
+  </form>
 {% endblock %}

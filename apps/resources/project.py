@@ -1,11 +1,12 @@
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.decorators import list_route, detail_route
-from rest_framework import viewsets, response, filters
+from rest_framework import viewsets, response, filters, status
 from natr.rest_framework.decorators import patch_serializer_class
 from natr.rest_framework.policies import PermissionDefinition
 from natr.rest_framework.mixins import ProjectBasedViewSet
 from projects.serializers import *
 from projects import models as prj_models
+from documents.serializers import AttachmentSerializer
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
 import dateutil.parser
@@ -41,10 +42,22 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         # add default assignee as current user
         project = serializer.instance
-        project.assignees.add(request.user)
+        project.assigned_experts.add(request.user.user)
         
         headers = self.get_success_headers(serializer.data)
         return response.Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def retrieve(self, request, *a, **kw):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        if instance.aggreement:
+            data['aggreement']['document']['attachments'] = AttachmentSerializer(
+                instance.aggreement.document.attachments, many=True).data
+        if instance.statement:
+            data['statement']['document']['attachments'] = AttachmentSerializer(
+                instance.statement.document.attachments, many=True).data
+        return response.Response(serializer.data)
 
     @list_route(methods=['get'], url_path='basic_info')
     @patch_serializer_class(ProjectBasicInfoSerializer)
