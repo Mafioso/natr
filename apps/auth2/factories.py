@@ -13,7 +13,7 @@ class Account(DjangoModelFactory):
         strategy = BUILD_STRATEGY
 
     email = factory.Faker('email')
-    full_name = factory.Faker('first_name')
+    first_name = factory.Faker('first_name')
     password = factory.Faker('word')
 
     @classmethod
@@ -22,6 +22,3 @@ class Account(DjangoModelFactory):
         # The default would use ``manager.create(*args, **kwargs)``
         email, passwd = kwargs.pop('email'), kwargs.pop('password')
         return model_class.objects.create_user(email, passwd, **kwargs)
-
-
-
