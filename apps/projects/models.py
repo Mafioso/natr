@@ -28,6 +28,11 @@ from documents.models import (
 )
 
 class Project(models.Model):
+
+    class Meta:
+        relevant_for_permission = True
+        verbose_name = u"Проект"
+
     STATUSES = MONITOR, FINISH, BREAK = range(3)
     STATUS_CAPS = (
         u'на мониторинге',
@@ -248,6 +253,8 @@ class Report(ProjectBasedModel):
     class Meta:
         ordering = ['milestone__number']
         filter_by_project = 'project__in'
+        relevant_for_permission = True
+        verbose_name = u"Отчет"
 
     # STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
 
@@ -320,6 +327,8 @@ class Corollary(ProjectBasedModel):
 
     class Meta:
         filter_by_project = 'project__in'
+        relevant_for_permission = True
+        verbose_name = u"Заключение"
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
     STATUS_CAPS = (
@@ -465,6 +474,8 @@ class Milestone(ProjectBasedModel):
     class Meta:
         ordering = ['number']
         filter_by_project = 'project__in'
+        relevant_for_permission = True
+        verbose_name = u"Этап по проекту"
 
 
     class AlreadyExists(Exception):
@@ -624,6 +635,8 @@ class Monitoring(ProjectBasedModel):
 
     class Meta:
         filter_by_project = 'project__in'
+        relevant_for_permission = True
+        verbose_name = u"План мониторинга"
 
     def update_items(self, **kwargs):
         for item in kwargs['items']:
@@ -679,6 +692,7 @@ class Comment(models.Model):
 
     class Meta:
         filter_by_project = 'report__project__in'
+        verbose_name = 'Комментарий к заключению'
 
     report = models.ForeignKey(Report, related_name='comments')
     expert = models.ForeignKey('auth2.NatrUser', related_name='comments')

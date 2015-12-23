@@ -10,7 +10,10 @@ from natr.mixins import ProjectBasedModel
 
 class Journal(ProjectBasedModel):
 	"""Журнал мониторинга"""
-	pass
+
+	class Meta:
+		relevant_for_permission = True
+		verbose_name = u'Журнал мониторинга'
 
 
 class JournalActivity(ProjectBasedModel):

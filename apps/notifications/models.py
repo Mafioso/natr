@@ -30,6 +30,14 @@ centrifugo_client = Client(json_encoder=encoders.JSONEncoder)
 
 class Notification(models.Model):
 
+	class Meta:
+		default_permissions = ()
+		permissions = (
+			('sent_expert', u'Отпрака уведомлений для эксперта'),
+			('sent_gp', u'Отпрака уведомлений для ГП'))
+		verbose_name = u'Отправка уведомлений'
+		relevant_for_permission = True
+
 	context_type = models.ForeignKey(ContentType, null=True)
 	context_id = models.PositiveIntegerField(null=True)
 

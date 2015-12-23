@@ -9,14 +9,20 @@ __all__ = (
 	'NatrUserSerializer',
 )
 
-
 class PermissionSerializer(serializers.ModelSerializer):
+
+	content_type_name = serializers.SerializerMethodField()
 
 	class Meta:
 		model = models.Permission
 
+	def get_content_type_name(self, instance):
+		return instance.content_type.model_class()._meta.verbose_name
+
 
 class GroupSerializer(serializers.ModelSerializer):
+
+	name = serializers.CharField(required=False)
 
 	class Meta:
 		model = models.Group
