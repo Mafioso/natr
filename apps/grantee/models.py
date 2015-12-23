@@ -4,6 +4,7 @@
 __author__ = 'xepa4ep'
 
 from django.db import models
+from django.core.exceptions import ObjectDoesNotExist
 
 # from django.contrib.auth.models import User
 
@@ -58,9 +59,9 @@ class AuthorizedToInteractGrantee(models.Model):
     '''
         Контактные данные лица, уполномоченного ГП для взаимодействия с АО НАТР
     '''
-    organization = models.OneToOneField(
+    organization = models.ForeignKey(
         'Organization', null=True, on_delete=models.SET_NULL,
-        related_name='authorized_grantee')
+        related_name='authorized_grantees')
     full_name = models.CharField(u'ФИО', max_length=512, null=True)
     phone_number = models.CharField(u'Телефон', max_length=255, null=True)
     email = models.EmailField(u'Почтовый адрес', null=True)
@@ -69,3 +70,13 @@ class AuthorizedToInteractGrantee(models.Model):
 class Grantee(models.Model):
     account = models.OneToOneField('auth2.Account', null=True, verbose_name=u'Аккаунт')
     organization = models.ForeignKey('Organization', null=True)
+
+    def project(self):
+        return self.organization and self.organization.project.id or None
+
+    def contact_details(self):
+        try:
+            return self.organization.authorized_grantees.first()
+        except ObjectDoesNotExist:
+            return None
+        

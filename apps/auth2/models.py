@@ -33,6 +33,7 @@ class UserManager(BaseUserManager):
         Creates and saves a User with the given username, email and password.
         """
         now = timezone.now()
+        groups = extra_fields.pop('groups', [])
         email = self.normalize_email(email)
         user = self.model(email=email,
                           is_active=True,
@@ -40,6 +41,7 @@ class UserManager(BaseUserManager):
                           date_joined=now, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
+        user.groups.add(*groups)
         return user
 
     def create_user(self, email, password=None, **extra_fields):
@@ -53,9 +55,11 @@ class UserManager(BaseUserManager):
         account = self._create_user(email, password, False, **extra_fields)
         return NatrUser.objects.create(account=account)
 
-    def create_grantee(self, email, password, **extra_fields):
+    def create_grantee(self, email, password, organization=None, **extra_fields):
         account = self._create_user(email, password, False, **extra_fields)
-        return Grantee.objects.create(account=account)
+        return Grantee.objects.create(
+            account=account,
+            organization=organization,)
 
 
 class Account(AbstractBaseUser, PermissionsMixin):
@@ -63,8 +67,8 @@ class Account(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     email = models.EmailField(u'email', blank=True, unique=True)
-    first_name = models.CharField(u'Имя', max_length=30, blank=True)
-    last_name = models.CharField(u'Фамилия', max_length=30, blank=True)
+    first_name = models.CharField(u'Имя', max_length=30, blank=True, null=True)
+    last_name = models.CharField(u'Фамилия', max_length=30, blank=True, null=True)
     is_active = models.BooleanField(u'активирован', default=True)
     date_joined = models.DateTimeField(u'дата добавления', default=timezone.now)
 
@@ -128,7 +132,10 @@ class NatrUser(models.Model):
     account = models.OneToOneField('Account', related_name='user')
 
     def get_department_cap(self):
-		return NatrUser.DEPARTMENTS_CAPS[self.department]
+        try:
+            return NatrUser.DEPARTMENTS_CAPS[self.department]
+        except TypeError:
+            return None
 
     def add_to_experts(self):
         group = Group.objects.get(name=NatrUser.EXPERT)

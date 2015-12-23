@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from rest_framework import serializers
 import grantee.models as models
 import projects.models as prj_models
@@ -69,21 +71,36 @@ class GranteeSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.Grantee
 
-	project = serializers.PrimaryKeyRelatedField(
-		queryset=prj_models.Project.objects.all(), required=False)
+	project = serializers.IntegerField(required=False)
+
+	def validate_project(self, value):
+		if not value:
+			return value
+		try:
+			return prj_models.Project.objects.get(pk=value)
+		except prj_models.Project.DoesNotExist:
+			raise serializers.ValidationError(u"идентификатор проекта неверный")
 
 	def create(self, validated_data):
 		account_data = validated_data.pop('account', None)
 		authorized_to_interact_grantee_data = validated_data.pop('contact_details', None)
+
 		project = validated_data.pop('project', None)
 
+		contact_details = models.AuthorizedToInteractGrantee.objects.create(**authorized_to_interact_grantee_data)
 		organization = project.organization_details
-		organization_details.authorized_grantee = authorized_to_interact_grantee_data
-		organization_details.save()
-		first_name, last_name = authorized_to_interact_grantee_data['full_name'].split()
-		grantee_user = models.Account.objects.create_grantee(
+		organization.authorized_grantees.add(contact_details) 
+		organization.save()
+		name = authorized_to_interact_grantee_data['full_name'].split()
+		first_name = last_name = None
+		if len(name) == 1:
+			first_name = name[0]
+		elif len(name) > 1:
+			last_name = name[1]
+		grantee_user = auth2_models.Account.objects.create_grantee(
 			first_name=first_name,
 			last_name=last_name,
-			organization=organization, **account_data)
+			organization=organization,
+			**account_data)
 
 		return grantee_user

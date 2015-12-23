@@ -56,16 +56,18 @@ class NatrUserSerializer(serializers.ModelSerializer):
 		account_data = validated_data.pop('account', None)
 		contact_details_data = validated_data.pop('contact_details', None)
 		department = validated_data.pop('department', None)
+		groups = validated_data.pop('groups', [])
 
 		first_name, last_name = contact_details_data['full_name'].split()
 		natr_user = models.Account.objects.create_natrexpert(first_name=first_name, last_name=last_name, **account_data)
 
-		if number_of_projects:
+		if natr_user.number_of_projects:
 			natr_user.number_of_projects = number_of_projects
-			natr_user.save()
-		if department:
+		
+		if department is not None:
 			natr_user.department = department
-			natr_user.save()
+		
+		natr_user.save()
 
 		if len(groups) > 0:
 			natr_user.add_to_groups(groups)

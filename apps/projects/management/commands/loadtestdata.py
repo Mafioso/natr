@@ -11,7 +11,7 @@ from documents import factories as doc_factories, models as doc_models
 from journals import factories as journal_factories, models as journal_models
 from notifications import factories as notif_factories
 from auth2.models import NatrUser, Account
-
+from grantee import factories as grantee_factories
 
 class Command(BaseCommand):
 
@@ -31,6 +31,7 @@ class Command(BaseCommand):
 			call_command('flush')
 		call_command('createsuperuser')
 		u = NatrUser.objects.create(
+			department=0,
 			account=Account.objects.get(email="r.kamun@gmail.com"))
 		self.gen()
 	
@@ -42,6 +43,11 @@ class Command(BaseCommand):
 		rv = []
 		for _ in xrange(5):
 			prj = factories.Project.create()
+			
+			org = grantee_factories.Organization()
+			org.project = prj
+			org.save()
+
 			for num in xrange(prj.number_of_milestones):
 				prj.milestone_set.add(self.create_milestone(prj))
 			rv.append(prj)
