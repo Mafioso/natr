@@ -6,6 +6,7 @@ from natr.rest_framework.policies import PermissionDefinition
 from natr.rest_framework.mixins import ProjectBasedViewSet
 from projects.serializers import *
 from projects import models as prj_models
+from documents.serializers import AttachmentSerializer
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
 import dateutil.parser
@@ -45,6 +46,18 @@ class ProjectViewSet(viewsets.ModelViewSet):
         
         headers = self.get_success_headers(serializer.data)
         return response.Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
+    def retrieve(self, request, *a, **kw):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        data = serializer.data
+        if instance.aggreement:
+            data['aggreement']['document']['attachments'] = AttachmentSerializer(
+                instance.aggreement.document.attachments, many=True).data
+        if instance.statement:
+            data['statement']['document']['attachments'] = AttachmentSerializer(
+                instance.statement.document.attachments, many=True).data
+        return response.Response(serializer.data)
 
     @list_route(methods=['get'], url_path='basic_info')
     @patch_serializer_class(ProjectBasicInfoSerializer)

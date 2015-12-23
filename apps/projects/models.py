@@ -92,7 +92,7 @@ class Project(models.Model):
                 status__gt=Milestone.NOT_STARTED,
                 status__lt=Milestone.CLOSE)
         except Milestone.DoesNotExist:
-            return None
+            return self.milestone_set.first()
         except MultipleObjectsReturned:
             return self.milestone_set.filter(
                 status__gt=Milestone.NOT_STARTED,

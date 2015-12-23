@@ -31,9 +31,18 @@ class DocumentDMLManager(models.Manager):
         return self.create_doc_with_relations(AgreementDocument, **kwargs)
 
     def update_agreement(self, instance, **kwargs):
-        obj = instance.__class__(id=instance.id, **kwargs)
-        obj.save()
-        return self.update_doc_(instance, **kwargs)
+        doc = kwargs.pop('document')
+        for k, v in kwargs.iteritems():
+            setattr(instance, k, v)
+        instance.save()
+        return self.update_doc_(instance.document, **doc)
+
+    def update_statement(self, instance, **kwargs):
+        doc = kwargs.pop('document')
+        for k, v in kwargs.iteritems():
+            setattr(instance, k, v)
+        instance.save()
+        return self.update_doc_(instance.document, **doc)
 
     def create_basic_project_pasport(self, **kwargs):
         return self.create_doc_with_relations(BasicProjectPasportDocument, **kwargs)

@@ -210,17 +210,17 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             prj.funding_type = funding_type_ser.save()
 
         if statement_data:
-            statement_ser = StatementDocumentSerializer(
-                instance=instance.statement, data=statement_data)
-            statement_ser.is_valid(raise_exception=True)
-            prj.statement = statement_ser.save()
+            if instance.statement:
+                doc_models.Document.dml.update_statement(instance.statement, **statement_data)
+            else:
+                prj.statement = doc_models.Document.dml.create_statement(**statement_data)
 
         if aggrement_data:
-            agr_ser = AgreementDocumentSerializer(
-                instance=instance.aggreement, data=aggrement_data)
-            agr_ser.is_valid(raise_exception=True)
-            prj.aggreement = agr_ser.save()
-
+            if instance.aggreement:
+                doc_models.Document.dml.update_agreement(instance.aggreement, **aggrement_data)
+            else:
+                prj.agreement = doc_models.Document.dml.create_agreement(**aggrement_data)
+            
         if other_agreements:
             oth_agrs_ser = OtherAgreementsDocumentSerializer(
                 instance=instance.other_agreements, data=other_agreements)

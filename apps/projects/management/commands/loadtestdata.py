@@ -10,6 +10,8 @@ from projects import factories
 from documents import factories as doc_factories, models as doc_models
 from journals import factories as journal_factories, models as journal_models
 from notifications import factories as notif_factories
+from auth2.models import NatrUser, Account
+
 
 class Command(BaseCommand):
 
@@ -28,10 +30,13 @@ class Command(BaseCommand):
 		if kw['replace'] is True:
 			call_command('flush')
 		call_command('createsuperuser')
+		u = NatrUser.objects.create(
+			account=Account.objects.get(email="r.kamun@gmail.com"))
 		self.gen()
 	
 	def gen(self):
 		_projects = self.gen_projects_and_related()
+
 
 	def gen_projects_and_related(self):
 		rv = []
