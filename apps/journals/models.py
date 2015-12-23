@@ -10,7 +10,10 @@ from natr.mixins import ProjectBasedModel
 
 class Journal(ProjectBasedModel):
 	"""Журнал мониторинга"""
-	pass
+
+	class Meta:
+		relevant_for_permission = True
+		verbose_name = u'Журнал мониторинга'
 
 
 class JournalActivity(ProjectBasedModel):
@@ -37,3 +40,6 @@ class JournalActivity(ProjectBasedModel):
 
 	def get_activity_cap(self):
 		return JournalActivity.ACTIVITY_CAPS[self.activity_type]
+
+	def get_project(self):
+		return self.journal.get_project()

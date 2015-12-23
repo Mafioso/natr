@@ -1,13 +1,13 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from auth2.serializers import AccountSerializer
+from natr.rest_framework.policies import PermissionDefinition
 
 @api_view(['GET'])
-def get_current_user(request):
-	user = request.user
+@permission_classes((PermissionDefinition,))
+def get_initial_state(request):
+	user_ = AccountSerializer(instance=request.user).data
 	return Response({
-		'id': user.id,
-		'email': user.email,
-		'first_name': user.first_name,
-		'last_name': user.last_name,
-		'counters': user.get_counters()
+		'current_user': user_
 	})
+	

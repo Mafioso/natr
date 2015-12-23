@@ -4,8 +4,10 @@ import projects.models as prj_models
 
 __all__ = (
 	'OrganizationSerializer',
+	'ContactDetailsSerializer',
 
 )
+
 
 class ShareHolderSerializer(serializers.ModelSerializer):
 
@@ -60,8 +62,3 @@ class OrganizationSerializer(serializers.ModelSerializer):
 			models.AuthorizedToInteractGrantee.objects.create(organization=organization, **authorized_grantee)
 
 		return organization
-
-
-
-
-

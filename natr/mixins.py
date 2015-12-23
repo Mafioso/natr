@@ -18,3 +18,6 @@ class ProjectBasedModel(models.Model):
 
 	objects = ProjectQuerySet.as_manager()
 
+
+	def get_project(self):
+		return self.project

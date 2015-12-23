@@ -5,6 +5,7 @@ from rest_framework.decorators import list_route, detail_route
 from rest_framework import viewsets, response, status, filters
 from natr.rest_framework.decorators import patch_serializer_class
 from natr.rest_framework import serializers as natr_serializers
+from natr.rest_framework.mixins import ProjectBasedViewSet
 from documents.serializers import *
 from documents import models as doc_models
 from projects import models as prj_models
@@ -25,25 +26,26 @@ CostType = doc_models.CostType
 GPDocumentType = doc_models.GPDocumentType
 
 
-class DocumentViewSet(viewsets.ModelViewSet):
+class DocumentViewSet(ProjectBasedViewSet):
 
     serializer_class = DocumentSerializer
     queryset = Document.objects.all()
 
+
     # def create(self, request, *args, **kwargs):
 
-class BasicProjectPasportDocumentViewSet(viewsets.ModelViewSet):
+class BasicProjectPasportDocumentViewSet(ProjectBasedViewSet):
 
     serializer_class = BasicProjectPasportSerializer
     queryset = BasicProjectPasportDocument.objects.all()
 
-class InnovativeProjectPasportDocumentViewSet(viewsets.ModelViewSet):
+class InnovativeProjectPasportDocumentViewSet(ProjectBasedViewSet):
 
     serializer_class = InnovativeProjectPasportSerializer
     queryset = InnovativeProjectPasportDocument.objects.all()
 
 
-class CalendarPlanDocumentViewSet(viewsets.ModelViewSet):
+class CalendarPlanDocumentViewSet(ProjectBasedViewSet):
 
     serializer_class = CalendarPlanDocumentSerializer
     queryset = CalendarPlanDocument.objects.all()
@@ -78,7 +80,7 @@ class CalendarPlanDocumentViewSet(viewsets.ModelViewSet):
         return response.Response(obj_ser.data, headers=headers)
 
 
-class ProjectStartDescriptionViewSet(viewsets.ModelViewSet):
+class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
 
     serializer_class = ProjectStartDescriptionSerializer
     queryset = ProjectStartDescription.objects.all()  
@@ -91,8 +93,11 @@ class AttachmentViewSet(viewsets.ModelViewSet):
 
     filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
     filter_class = AttachmentFilter
-
+    permission_classes = tuple()
     pagination_class = None
+
+    def get_authenticators(self):
+        return []
 
     def create(self, request, *a, **kw):
         data = request.data
@@ -137,7 +142,7 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         return super(AttachmentViewSet, self).destroy(request, *a, **kw)
 
 
-class CostDocumentViewSet(viewsets.ModelViewSet):
+class CostDocumentViewSet(ProjectBasedViewSet):
     serializer_class = CostDocumentSerializer
     queryset = CostDocument.objects.all()
 
@@ -269,7 +274,7 @@ class CostDocumentViewSet(viewsets.ModelViewSet):
         return response.Response(rv_data, headers=headers)
 
 
-class UseOfBudgetDocumentViewSet(viewsets.ModelViewSet):
+class UseOfBudgetDocumentViewSet(ProjectBasedViewSet):
     serializer_class = UseOfBudgetDocumentSerializer
     queryset = UseOfBudgetDocument.objects.all()
 
@@ -284,7 +289,7 @@ class UseOfBudgetDocumentViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(qs, many=True)
         return response.Response(serializer.data)
 
-class CostTypeViewSet(viewsets.ModelViewSet):
+class CostTypeViewSet(ProjectBasedViewSet):
     serializer_class = natr_serializers.CostTypeSerializer
     queryset = CostType.objects.all()
 
@@ -305,13 +310,13 @@ class CostTypeViewSet(viewsets.ModelViewSet):
         return response.Response(serializer.data)
 
 
-class FactMilestoneCostRowViewSet(viewsets.ModelViewSet):
+class FactMilestoneCostRowViewSet(ProjectBasedViewSet):
     serializer_class = FactMilestoneCostRowSerializer
     queryset = doc_models.FactMilestoneCostRow.objects.all()
 
 
 
-class GPDocimentViewSet(viewsets.ModelViewSet):
+class GPDocimentViewSet(ProjectBasedViewSet):
     serializer_class = GPDocumentSerializer
     queryset = doc_models.GPDocument.objects.all()
     filter_fields = ('id')

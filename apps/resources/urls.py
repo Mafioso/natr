@@ -25,8 +25,8 @@ from .document import (
 )
 from .journal import JournalActivityViewSet, JournalViewSet
 from .notification import NotificationViewSet, NotificationSubscriptionViewSet, NotificationCounterViewSet
-from .user import get_current_user
-from .natr_user import NatrUserViewSet
+from .user import get_initial_state
+from .natr_user import NatrUserViewSet, PermissionViewSet, GroupViewSet
 
 router = DefaultRouter()
 router.register(r'documents', DocumentViewSet)
@@ -57,9 +57,11 @@ router.register(r'notifications', NotificationViewSet, 'notification')
 router.register(r'my-notifications', NotificationSubscriptionViewSet, 'notif_subscription')
 router.register(r'notif-counter', NotificationCounterViewSet, 'notif_counter')
 router.register(r'natr-user', NatrUserViewSet, 'natr_user')
+router.register(r'permissions', PermissionViewSet, 'permission')
+router.register(r'groups', GroupViewSet, 'group')
 
 urlpatterns = [
 	url(r'', include(router.urls)),
 	url(r'', include(monitoring_router.urls)),
-	url(r'current-user/$', get_current_user)
+	url(r'initial-state/$', get_initial_state)
 ]

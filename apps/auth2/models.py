@@ -5,8 +5,22 @@ __author__ = 'xepa4ep'
 
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group
+from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
+from django.db.models import get_app, get_models
+from django.conf import settings
+
+
+def get_relevant_permissions():
+    models = []
+    for app_name in settings.APPS:
+        models.extend(
+            filter(lambda x: getattr(x._meta, 'relevant_for_permission', False), get_models(
+                get_app(app_name)))
+        )
+    cttypes = ContentType.objects.get_for_models(*models).values()
+    return Permission.objects.filter(content_type__in=cttypes)
 
 
 class UserManager(BaseUserManager):
@@ -43,7 +57,8 @@ class Account(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = []
 
     email = models.EmailField(u'email', blank=True, unique=True)
-    full_name = models.CharField(u'Ф.И.О.', max_length=30, blank=True)
+    first_name = models.CharField(u'Имя', max_length=30, blank=True)
+    last_name = models.CharField(u'Фамилия', max_length=30, blank=True)
     is_active = models.BooleanField(u'активирован', default=True)
     date_joined = models.DateTimeField(u'дата добавления', default=timezone.now)
 
@@ -55,11 +70,15 @@ class Account(AbstractBaseUser, PermissionsMixin):
         return self.is_superuser
 
     def get_full_name(self):
-        return self.full_name
+        """
+        Returns the first_name plus the last_name, with a space in between.
+        """
+        full_name = '%s %s' % (self.first_name, self.last_name)
+        return full_name.strip()
 
     def get_short_name(self):
         "Returns the short name for the user."
-        return self.full_name.split()[1]
+        return self.first_name
 
     def get_counters(self):
         return {
@@ -69,12 +88,36 @@ class Account(AbstractBaseUser, PermissionsMixin):
             }
         }
 
+    def get_all_permission_objs(self):
+        perms = {p.id: p for p in self.user_permissions.all()}
+        for p in Permission.objects.filter(group__in=self.groups.all()):
+            perms.setdefault(p.id, p)
+        return perms.values()
+
 
 class NatrUser(models.Model):
 
+    class Meta:
+        relevant_for_permission = True
+        verbose_name = u'Пользователи ИСЭМ'
+
     DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT = ('expert', 'manager', 'risk_expert')
 
+    DEPARTMENTS_CAPS = (
+        u'Альтернативная энергетика и технологии энергоэффективности',
+        u'Биотехнологии',
+        u'Инфокоммуникационные технологии',
+        u'Прогрессивные технологии в агропромышленном комплексе',
+        u'Прогрессивные технологии машиностроения, включая использование новых материалов',
+        u'Прогрессивные технологии химии и нефтехимии',
+        u'Прогрессивные технологии поиска, добычи, транспортировки и переработки минерального и углеводородного сырья',
+        u'Прогрессивные технологии в горно-металлургическом комплексе',
+        u'Стройиндустрия')
+    DEPARTMENTS_OPTS = zip(range(len(DEPARTMENTS_CAPS)), DEPARTMENTS_CAPS)
+
+
     number_of_projects = models.IntegerField(u'Количество проектов', null=True)
+    department = models.IntegerField(null=True, choices=DEPARTMENTS_OPTS)
 
     account = models.OneToOneField('Account', related_name='user')
 
@@ -91,9 +134,9 @@ class NatrUser(models.Model):
         groups = self.get_groups()
         return groups.filter(name=NatrUser.MANAGER).first()
 
-    def is_admin(self):
+    def is_risk_expert(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.ADMIN).first()
+        return groups.filter(name=NatrUser.RISK_EXPERT).first()
 
     def get_groups(self):
         return self.account.groups.all()
@@ -103,7 +146,7 @@ def assign_user_group(sender, instance, created=False, **kwargs):
     """If natr user does not belong to any group, assign expert by default."""
     if not created:
         return
-    if instance.is_expert() or instance.is_manager() or instance.is_admin():
+    if instance.is_expert() or instance.is_manager() or instance.is_risk_expert():
         return
     instance.add_to_experts()
 
