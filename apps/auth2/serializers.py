@@ -30,8 +30,8 @@ class GroupSerializer(serializers.ModelSerializer):
 
 class AccountSerializer(serializers.ModelSerializer):
 
-	user_permissions = PermissionSerializer(many=True)
-	groups = GroupSerializer(many=True)
+	user_permissions = PermissionSerializer(many=True, required=False)
+	# groups = GroupSerializer(many=True)
 	counters = serializers.SerializerMethodField()
 
 	class Meta:
