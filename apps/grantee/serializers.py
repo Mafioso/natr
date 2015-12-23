@@ -3,7 +3,7 @@ import grantee.models as models
 import projects.models as prj_models
 import auth2.models as auth2_models
 from auth2.serializers import AccountSerializer
-
+from natr.rest_framework.serializers import ContactDetailsSerializer
 
 __all__ = (
 	'OrganizationSerializer',
@@ -24,13 +24,6 @@ class AuthorizedToInteractGranteeSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = models.AuthorizedToInteractGrantee
-		exclude = ('organization',)
-
-
-class ContactDetailsSerializer(serializers.ModelSerializer):
-
-	class Meta:
-		model = models.ContactDetails
 		exclude = ('organization',)
 
 
@@ -76,7 +69,8 @@ class GranteeSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.Grantee
 
-	project = serializers.PrimaryKeyRelatedField()
+	project = serializers.PrimaryKeyRelatedField(
+		queryset=prj_models.Project.objects.all(), required=False)
 
 	def create(self, validated_data):
 		account_data = validated_data.pop('account', None)

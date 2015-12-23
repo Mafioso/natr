@@ -1,7 +1,7 @@
 from rest_framework import serializers
 import auth2.models as models
 import grantee.models as grantee_models
-from grantee.serializers import ContactDetailsSerializer
+from natr.rest_framework.serializers import ContactDetailsSerializer
 
 __all__ = (
 	'AccountSerializer',
