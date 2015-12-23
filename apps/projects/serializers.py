@@ -84,6 +84,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     def __init__(self, *args, **kwargs):
         self.fields['assigned_experts'].required = False
+        self.fields['assigned_grantees'].required = False
         super(ProjectSerializer, self).__init__(*args, **kwargs)
 
     fundings = SerializerMoneyField(required=False)
