@@ -3,6 +3,8 @@ from rest_framework import viewsets, response, filters
 from natr.rest_framework.decorators import patch_serializer_class
 from natr.rest_framework.policies import AdminPolicy, PermissionDefinition
 from auth2 import serializers, models
+from projects.models import Monitoring, MonitoringTodo
+from projects.serializers import MonitoringTodoSerializer
 
 
 class NatrUserViewSet(viewsets.ModelViewSet):
@@ -43,6 +45,14 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 	def get_user_groups(self, request, *a, **kw):
 		u = self.get_object()
 		ser = serializers.GroupSerializer(instance=u.account.groups.all(), many=True)
+		return response.Response(ser.data)
+
+	@detail_route(methods=['GET'], url_path='plan')
+	def get_plan(self, request, *a, **kw):
+		u = self.get_object()
+		monitorings = Monitoring.objects.filter(project__in=u.projects.all())
+		activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
+		ser = MonitoringTodoSerializer(activities, many=True)
 		return response.Response(ser.data)
 
 
