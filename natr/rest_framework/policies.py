@@ -5,7 +5,6 @@ from django.core.exceptions import ObjectDoesNotExist
 
 class AllowOnlyAuthenticated(BasePermissionComponent):
     def has_permission(self, permission, request, view):
-        print request.user
         return request.user.is_authenticated()
 
     def has_object_permission(self, permission, request, view, obj):

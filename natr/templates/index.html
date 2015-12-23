@@ -11,7 +11,7 @@
     <link rel="stylesheet" type="text/css" href="{% static 'css/handsontable.full.min.css' %}">
   </head>
 
-  <body>
+  <body data-csrfmiddlewaretoken="{{ csrf_token }}">
     <figure style="margin: 0;">
       <svg xmlns='http://www.w3.org/2000/svg' style='display: none;'  xmlns:xlink='http://www.w3.org/1999/xlink'>
        <symbol id="tool_settings" viewbox="0 0 16 16">

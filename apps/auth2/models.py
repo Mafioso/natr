@@ -6,7 +6,20 @@ __author__ = 'xepa4ep'
 from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save
+from django.db.models import get_app, get_models
+from django.conf import settings
+
+
+def get_relevant_permissions():
+    models = []
+    for app_name in settings.APPS:
+        models.extend(
+            get_models(
+                get_app(app_name)))
+    cttypes = ContentType.objects.get_for_models(*models).values()
+    return Permission.objects.filter(content_type__in=cttypes)
 
 
 class UserManager(BaseUserManager):
@@ -116,9 +129,9 @@ class NatrUser(models.Model):
         groups = self.get_groups()
         return groups.filter(name=NatrUser.MANAGER).first()
 
-    def is_admin(self):
+    def is_risk_expert(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.ADMIN).first()
+        return groups.filter(name=NatrUser.RISK_EXPERT).first()
 
     def get_groups(self):
         return self.account.groups.all()
@@ -128,7 +141,7 @@ def assign_user_group(sender, instance, created=False, **kwargs):
     """If natr user does not belong to any group, assign expert by default."""
     if not created:
         return
-    if instance.is_expert() or instance.is_manager() or instance.is_admin():
+    if instance.is_expert() or instance.is_manager() or instance.is_risk_expert():
         return
     instance.add_to_experts()
 
