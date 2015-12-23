@@ -78,7 +78,7 @@ class Project(models.Model):
         'documents.OtherAgreementsDocument', null=True, on_delete=models.SET_NULL)
 
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
-    # assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
+    assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
     # user = models.ForeignKey('User', related_name='projects')
 
     def __unicode__(self):
@@ -214,6 +214,9 @@ class Project(models.Model):
             return None
 
         return self.start_description.id
+
+    def get_project(self):
+        return self
 
 
 class FundingType(models.Model):

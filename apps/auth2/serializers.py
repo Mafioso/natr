@@ -34,8 +34,16 @@ class AccountSerializer(serializers.ModelSerializer):
 	# groups = GroupSerializer(many=True)
 	counters = serializers.SerializerMethodField()
 
+	user_type = serializers.SerializerMethodField()
+
 	class Meta:
 		model = models.Account
+
+	def get_user_type(self, instance):
+		if hasattr(instance, 'user'):
+			return 'expert'
+		elif hasattr(instance, 'grantee'):
+			return 'grantee'
 
 	def get_counters(self, instance):
 		return instance.get_counters()

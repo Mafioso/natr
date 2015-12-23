@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-        ('projects', '0004_auto_20151222_1512'),
+        #('projects', '0004_auto_20151222_1512'),
         ('auth2', '0003_auto_20151222_1512'),
     ]
 
@@ -54,7 +54,7 @@ class Migration(migrations.Migration):
                 ('address_2', models.CharField(max_length=1024, verbose_name='\u0424\u0430\u043a\u0442\u0438\u0447\u0435\u0441\u043a\u0438\u0439 \u0430\u0434\u0440\u0435\u0441')),
                 ('requisites', models.CharField(max_length=1024, null=True, verbose_name='\u0411\u0430\u043d\u043a\u043e\u0432\u0441\u043a\u0438\u0439 \u0440\u0435\u043a\u0432\u0438\u0437\u0438\u0442\u044b')),
                 ('first_head_fio', models.CharField(max_length=512, null=True, verbose_name='\u0424\u0418\u041e \u043f\u0435\u0440\u0432\u043e\u0433\u043e \u0440\u0443\u043a\u043e\u0432\u043e\u0434\u0438\u0442\u0435\u043b\u044f')),
-                ('project', models.OneToOneField(related_name='organization_details', null=True, to='projects.Project')),
+                #('project', models.OneToOneField(related_name='organization_details', null=True, to='projects.Project')),
             ],
         ),
         migrations.CreateModel(

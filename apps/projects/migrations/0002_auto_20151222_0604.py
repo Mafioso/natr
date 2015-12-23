@@ -10,6 +10,7 @@ class Migration(migrations.Migration):
         ('auth2', '0002_auto_20151222_0410'),
         ('natr', '0001_initial'),
         ('projects', '0001_initial'),
+        ('grantee', '0001_initial'),
     ]
 
     operations = [
@@ -23,5 +24,10 @@ class Migration(migrations.Migration):
             model_name='project',
             name='assigned_experts',
             field=models.ManyToManyField(related_name='projects', to='auth2.NatrUser'),
+        ),
+        migrations.AddField(
+            model_name='project',
+            name='assigned_grantees',
+            field=models.ManyToManyField(related_name='projects', to='grantee.Grantee'),
         ),
     ]
