@@ -73,11 +73,16 @@ class CalendarPlanDocumentViewSet(ProjectBasedViewSet):
         """
         Update calendar plan items
         """
-        obj_cp = self.get_object()     
-        obj_cp.update_items(**request.data)
-        obj_ser = self.get_serializer(instance=obj_cp)
-        headers = self.get_success_headers(obj_ser.data)
-        return response.Response(obj_ser.data, headers=headers)
+        item_def = request.data
+        cpdoc = self.get_object()
+        item_def['id'] = cpdoc.id
+        
+        item_ser = self.get_serializer(instance=obj_cp, data=item_def)
+        item_ser.is_valid(raise_exception=True)
+        item_obj = item_ser.save()
+        headers = self.get_success_headers(item_ser.data)
+        return response.Response(item_ser.data, headers=headers)
+
 
 
 class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
