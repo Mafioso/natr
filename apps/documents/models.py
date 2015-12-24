@@ -87,55 +87,65 @@ class DocumentDMLManager(models.Manager):
         return self.create_doc_with_relations(ProjectStartDescription, **kwargs)
 
     def update_innovative_project_pasport(self, instance, **kwargs):
-        team_members = kwargs.pop('team_members')
-        dev_info_kw = kwargs.pop('dev_info')
-        tech_char_kw = kwargs.pop('tech_char')
-        intellectual_property_kw = kwargs.pop('intellectual_property')
-        tech_readiness_kw = kwargs.pop('tech_readiness')
+        team_members = kwargs.pop('team_members', [])
+        dev_info_kw = kwargs.pop('dev_info', {})
+        tech_char_kw = kwargs.pop('tech_char', {})
+        intellectual_property_kw = kwargs.pop('intellectual_property', {})
+        tech_readiness_kw = kwargs.pop('tech_readiness', {})
 
         team_member = None
         dev_info = None
         tech_char = None
         intellectual_property = None
         tech_readiness = None
-
         for team_member_kw in team_members:
-            try:
-                team_member = ProjectTeamMember(id=team_member_kw.get('id', -1), **team_member_kw)
-            except ProjectTeamMember.DoesNotExist:
-                team_member = ProjectTeamMember(pasport=instance, **team_member_kw)
-            finally:
-                team_member.save()
+            
+            def_ = {'pasport': instance}
+            def_.update(team_member_kw)
+            team_member, _ = ProjectTeamMember.objects.get_or_create(
+                id=team_member_kw.get('id', None), defaults=def_)
+            for k, v in team_member_kw.iteritems():
+                setattr(team_member, k, v)
+            team_member.save()
 
-        try:
-            dev_info = DevelopersInfo(id=dev_info_kw.get('id', -1), **dev_info_kw)
-        except DevelopersInfo.DoesNotExist:
-            dev_info = DevelopersInfo(pasport=instance, **dev_info_kw)
-        finally:
-            dev_info.save()
+        def_ = dev_info_kw
+        def_['pasport'] = instance
+        dev_info, created = DevelopersInfo.objects.get_or_create(
+            id=dev_info_kw.get('id', None),
+            defaults=def_)
+        for k, v in def_.iteritems():
+            setattr(dev_info, k, v)
+        dev_info.save()
 
-        try:
-            tech_char = TechnologyCharacteristics(id=tech_char_kw.get('id', -1), **tech_char_kw)
-        except TechnologyCharacteristics.DoesNotExist:
-            tech_char = TechnologyCharacteristics(pasport=instance, **tech_char_kw)
-        finally:
-            tech_char.save()
+        def_ = tech_char_kw
+        def_['pasport'] = instance
+        tech_char, created = TechnologyCharacteristics.objects.get_or_create(
+            id=tech_char_kw.get('id', None),
+            defaults=def_)
+        for k, v in def_.iteritems():
+            setattr(tech_char, k, v)
+        tech_char.save()
 
-        try:
-            intellectual_property = IntellectualPropertyAssesment(id=intellectual_property_kw.get('id', -1), **intellectual_property_kw)
-        except IntellectualPropertyAssesment.DoesNotExist:
-            intellectual_property = IntellectualPropertyAssesment(pasport=instance, **intellectual_property_kw)
-        finally:
-            intellectual_property.save()
+        
+        def_ = intellectual_property_kw
+        def_['pasport'] = instance
+        intellectual_property, _ = IntellectualPropertyAssesment.objects.get_or_create(
+            id=intellectual_property_kw.get('id', None),
+            defaults=def_)
+        for k, v in def_.iteritems():
+            setattr(intellectual_property, k, v)
+        intellectual_property.save()
+                
+        def_ = tech_readiness_kw
+        def_['pasport'] = instance
+        tech_readiness, _ = TechnologyReadiness.objects.get_or_create(
+            id=tech_readiness_kw.get('id', None),
+            defaults=def_)
+        for k, v in def_.iteritems():
+            setattr(tech_readiness, k, v)
+        tech_readiness.save()
 
-        try:
-            tech_readiness = TechnologyReadiness(id=tech_readiness_kw.get('id', -1), **tech_readiness_kw)
-        except TechnologyReadiness.DoesNotExist:
-            tech_readiness = TechnologyReadiness(pasport=instance, **tech_readiness_kw)
-        finally:
-            tech_readiness.save()
-
-        return update_doc_(instance, **kwargs)
+        return self.update_doc_(instance, **kwargs)
 
 
     def create_cost_doc(self, **kwargs):

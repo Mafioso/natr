@@ -135,6 +135,7 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
     intellectual_property = IntellectualPropertyAssesmentSerializer(required=False)
     tech_readiness = TechnologyReadinessSerializer(required=False)
 
+
     @classmethod
     def empty_data(cls, project):
         data = DocumentCompositionSerializer.empty_data(project)
@@ -145,7 +146,7 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
         return doc
 
     def update(self, instance, validated_data):
-        document = validated_data.pop('document')
+        document = validated_data.pop('document', None)
         return models.Document.dml.update_innovative_project_pasport(instance, **validated_data)
         
 
