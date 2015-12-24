@@ -104,6 +104,13 @@ class AttachmentViewSet(viewsets.ModelViewSet):
     def get_authenticators(self):
         return []
 
+    @list_route(methods=['GET'], url_path='special')
+    def special(self, request, *a, **kw):
+        attachments = Attachment.objects.filter(name='SpecialAttachment')
+        ser = self.get_serializer(instance=attachments, many=True)
+        headers = self.get_success_headers(ser.data)
+        return response.Response(ser.data, headers=headers)
+
     def create(self, request, *a, **kw):
         data = request.data
         tmp_file_path = data.get('file.path')
