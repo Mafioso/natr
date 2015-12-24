@@ -49,8 +49,8 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 
 	@detail_route(methods=['GET'], url_path='plan')
 	def get_plan(self, request, *a, **kw):
-		u = self.get_object()
-		monitorings = Monitoring.objects.filter(project__in=u.projects.all())
+		monitorings = Monitoring.objects.filter(
+			project__in=request.user.user.projects.all())
 		activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
 		ser = MonitoringTodoSerializer(activities, many=True)
 		return response.Response(ser.data)
