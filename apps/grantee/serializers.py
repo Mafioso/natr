@@ -89,7 +89,7 @@ class OrganizationSerializer(serializers.ModelSerializer):
 		# if authorized_grantee:
 		# 	models.AuthorizedToInteractGrantee.objects.create(organization=organization, **authorized_grantee)
 
-		return organization
+		return instance
 
 
 class GranteeSerializer(serializers.ModelSerializer):
