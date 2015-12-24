@@ -11,7 +11,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 
 	queryset = models.NatrUser.objects.all()
 	serializer_class = serializers.NatrUserSerializer
-	permission_classes = (AdminPolicy, )
+	permission_classes = (PermissionDefinition, )
 	pagination_class = None
 
 	@detail_route(methods=['POST'], url_path='apply_permissions')
