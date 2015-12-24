@@ -168,6 +168,8 @@ class MonitoringViewSet(ProjectBasedViewSet):
         Update monitoring items
         """
         obj_monitoring = self.get_object()
+        data = request.data
+        # data['project'] = prj_models.Project.objects.get(pk=data['project'])
         obj_monitoring.update_items(**{"items": request.data})
 
         qs = obj_monitoring.todos.all()

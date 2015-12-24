@@ -652,8 +652,10 @@ class Monitoring(ProjectBasedModel):
         for item in kwargs['items']:
             if 'id' in item:
                 item['monitoring'] = self
+                item['project'] = self.project
                 monitoring_todo = MonitoringTodo(id=item.pop('id'), **item)
             else:
+                item['project'] = self.project
                 monitoring_todo = MonitoringTodo(monitoring=self, **item)
             monitoring_todo.save()
 
