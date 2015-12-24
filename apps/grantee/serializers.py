@@ -62,6 +62,35 @@ class OrganizationSerializer(serializers.ModelSerializer):
 
 		return organization
 
+	def update(self, instance, validated_data):
+		contact_details = validated_data.pop('contact_details', None)
+		share_holders_data = validated_data.pop('share_holders', [])
+		authorized_grantee = validated_data.pop('authorized_grantee', None)
+
+		for k, v in validated_data.iteritems():
+			setattr(instance, k, v)
+		instance.save()
+
+		# if contact_details:
+		# 	for k, v in contact_details.iteritems():
+		# 		setattr(instance.contact_details, k, v)
+		# 		instance.contact_details.save()
+			# models.ContactDetails.objects.create(organization=organization, **contact_details)
+
+		# if share_holders_data:
+		# 	for k, v in contact_details.iteritems():
+		# 		setattr(instance.contact_details, k, v)
+		# 		instance.contact_details.save()
+		# 	share_holders = [
+		# 		models.ShareHolder(organization=organization, **share_holder)
+		# 		for share_holder in share_holders_data]
+		# 	models.ShareHolder.objects.bulk_create(share_holders)
+
+		# if authorized_grantee:
+		# 	models.AuthorizedToInteractGrantee.objects.create(organization=organization, **authorized_grantee)
+
+		return organization
+
 
 class GranteeSerializer(serializers.ModelSerializer):
 
