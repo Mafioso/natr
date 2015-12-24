@@ -19,7 +19,7 @@ class Journal(ProjectBasedModel):
 class JournalActivity(ProjectBasedModel):
 
 	class Meta:
-		ordering = ('-date_created',)
+		ordering = ('date_created',)
 
 	ACTIVITY_TYPES = OFFICIAL_LETTER, CALL, CHAT, MAIL = range(4)
 	ACTIVITY_CAPS = (
