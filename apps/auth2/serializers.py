@@ -70,7 +70,13 @@ class NatrUserSerializer(serializers.ModelSerializer):
 		groups = validated_data.pop('groups', [])
 		projects = validated_data.pop('projects', None)
 
-		first_name, last_name = contact_details_data['full_name'].split()
+		name_parts = contact_details_data['full_name'].split()
+		first_name = last_name = None
+		if len(name_parts) > 0:
+			first_name = name_parts[0]
+		if len(name_parts) > 1:
+			last_name = name_parts[1]
+		
 		natr_user = models.Account.objects.create_natrexpert(first_name=first_name, last_name=last_name, **account_data)
 
 		if natr_user.number_of_projects:
