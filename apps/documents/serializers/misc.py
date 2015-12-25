@@ -83,6 +83,8 @@ class BasicProjectPasportSerializer(DocumentCompositionSerializer):
         model = models.BasicProjectPasportDocument
 
     document = DocumentSerializer(required=True)
+    cost = SerializerMoneyField(required=False)
+    required_funding = SerializerMoneyField(required=False)
 
     def create(self, validated_data):
         doc = models.Document.dml.create_basic_project_pasport(**validated_data)
