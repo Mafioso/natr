@@ -56,7 +56,7 @@ class UserManager(BaseUserManager):
         account = self._create_user(email, password, False, **extra_fields)
         acc = NatrUser.objects.create(account=account)
         send_mail(
-            u'Добро пожаловать в ИСЭМ\n\n\n',
+            u'Добро пожаловать в ИСЭМ',
             u"""Здравствуйте %(name)s!
             Ваши данные для входа в ИСЭМ:\n
             email: %(email)s,\n
