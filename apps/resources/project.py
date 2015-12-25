@@ -67,9 +67,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(projects)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            if int(request.query_params.get('paginate', '1')) > 0:
+                return self.get_paginated_response(serializer.data)
         serializer = self.get_serializer(projects, many=True)
-        return Response(serializer.data)
+        return response.Response(serializer.data)
 
     @detail_route(methods=['get'], url_path='reports')
     @patch_serializer_class(ReportSerializer)
