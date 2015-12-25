@@ -96,7 +96,7 @@ class BasicProjectPasportSerializer(DocumentCompositionSerializer):
         return data
 
     def update(self, instance, validated_data):
-        document = validated_data.pop('document')
+        document = validated_data.pop('document', None)
         return models.Document.dml.update_doc_(instance, **validated_data)
 
 class ProjectTeamMemberSerializer(serializers.ModelSerializer):
