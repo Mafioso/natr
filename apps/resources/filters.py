@@ -5,7 +5,14 @@ from projects import models
 from documents import models as doc_models
 
 
-class ProjectFilter(django_filters.FilterSet):
+class ListOfIdFilter(django_filters.FilterSet):
+	ids = IntegerListFilter(name='id',lookup_type='in')
+	
+	class Meta:
+	    fields = ('ids',)
+
+
+class ProjectFilter(ListOfIdFilter):
 
 	class Meta:
 		model = models.Project
@@ -35,13 +42,6 @@ class ReportFilter(django_filters.FilterSet):
 
 	def filter_milestone(self, queryset, value):
 		return queryset.filter(milestone__number=value)
-
-
-class ListOfIdFilter(django_filters.FilterSet):
-	ids = IntegerListFilter(name='id',lookup_type='in')
-	
-	class Meta:
-	    fields = ('ids',)
 
 
 class AttachmentFilter(ListOfIdFilter):
