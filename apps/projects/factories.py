@@ -112,6 +112,7 @@ class Monitoring(DjangoModelFactory):
         strategy = BUILD_STRATEGY
 
     project = factory.SubFactory('projects.factories.Project')
+    status = factory.LazyAttribute(lambda x: models.Monitoring.BUILD)
 
     @factory.post_generation
     def todos(self, create, count, **kwargs):

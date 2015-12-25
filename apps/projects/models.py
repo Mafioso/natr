@@ -643,10 +643,26 @@ class Milestone(ProjectBasedModel):
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
 
+    STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED = range(4)
+
+    STATUS_CAPS = (
+        u'формирование',
+        u'на согласовании',
+        u'согласован',
+        u'не согласован')
+
+    STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
+    status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
+
+
     class Meta:
         filter_by_project = 'project__in'
         relevant_for_permission = True
         verbose_name = u"План мониторинга"
+
+
+    def get_status_cap(self):
+        return self.__class__.STATUS_CAPS[self.status]
 
     def update_items(self, **kwargs):
         for item in kwargs['items']:
