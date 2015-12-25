@@ -128,11 +128,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             prj.statement = doc_models.Document.dml.create_statement(**statement_data)
 
         if aggrement_data:
-            aggrement_data['document']['project'] = prj.id
+            aggrement_data['document']['project'] = prj
             prj.aggreement = doc_models.Document.dml.create_agreement(**aggrement_data)
 
         if other_agreements:
-            aggrement_data['document']['project'] = prj.id
+            aggrement_data['document']['project'] = prj
             prj.other_agreements = doc_models.Document.dml.create_other_agr_doc(**other_agreements)
 
         prj.save()
