@@ -98,8 +98,10 @@ class DocumentDMLManager(models.Manager):
         tech_char = None
         intellectual_property = None
         tech_readiness = None
+
+        doc = self.update_doc_(instance, **kwargs)
+
         for team_member_kw in team_members:
-            
             def_ = {'pasport': instance}
             def_.update(team_member_kw)
             team_member, _ = ProjectTeamMember.objects.get_or_create(
@@ -145,7 +147,7 @@ class DocumentDMLManager(models.Manager):
             setattr(tech_readiness, k, v)
         tech_readiness.save()
 
-        return self.update_doc_(instance, **kwargs)
+        return doc
 
 
     def create_cost_doc(self, **kwargs):
@@ -324,14 +326,14 @@ class BasicProjectPasportDocument(models.Model):
     result = models.IntegerField(u'Результат проекта', default=BasicProjectPasportStatuses.PATENT, 
                                                         choices=BasicProjectPasportStatuses.RESULT_OPTS,
                                                         null=True, blank=True)
-    result_statement = models.CharField(u'Результат проекта(другое)', max_length=140, null=True, blank=True)
+    result_statement = models.CharField(u'Результат проекта(другое)', max_length=1024, null=True, blank=True)
 
     inductry_application = models.CharField(u'Отрасль применения', max_length=1024, null=True, blank=True)
 
     character = models.IntegerField(u'Характер проекта', default=BasicProjectPasportStatuses.NEW_PRODUCT, 
                                                         choices=BasicProjectPasportStatuses.CHARACTER_OPTS,
                                                         null=True, blank=True)
-    character_statement = models.CharField(u'Характер проекта(другое)', max_length=140, null=True, blank=True)
+    character_statement = models.CharField(u'Характер проекта(другое)', max_length=1024, null=True, blank=True)
 
     patent_defence = models.IntegerField(u'Патентная защита основных технических решений проекта', 
                                                         default=BasicProjectPasportStatuses.REQUIRED, 
@@ -342,7 +344,7 @@ class BasicProjectPasportDocument(models.Model):
                                                         default=BasicProjectPasportStatuses.IDEA, 
                                                         choices=BasicProjectPasportStatuses.READINESS_OPTS,
                                                         null=True, blank=True)
-    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=140, 
+    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=1024, 
                                                         null=True, blank=True)
     other_agreements = models.IntegerField(u'Имеются ли договора/протоколы о намерении приобретения результатов проекта',
                                                         default=CommonStatuses.NO,
@@ -377,21 +379,21 @@ class InnovativeProjectPasportDocument(models.Model):
 
     document = models.OneToOneField(Document, related_name='innovativepasport', on_delete=models.CASCADE)
 
-    relevance = models.CharField(u'Актуальность проекта', max_length=140, null=True, blank=True)
+    relevance = models.CharField(u'Актуальность проекта', max_length=1024, null=True, blank=True)
 
     description = models.CharField(u'Описание проекта и его целей, включающее в себя новизну, уникальность, конкретное применение результатов проекта, перспективы использования и другое', max_length=1024, null=True, blank=True)
 
     result = models.IntegerField(u'Ожидаемые результаты проекта', default=InnovativeProjectPasportStatuses.KNOW_HOW, 
                                                         choices=InnovativeProjectPasportStatuses.RESULT_OPTS,
                                                         null=True, blank=True)
-    result_statement = models.CharField(u'Ожидаемые результаты проекта(другое)', max_length=140, null=True, blank=True)
+    result_statement = models.CharField(u'Ожидаемые результаты проекта(другое)', max_length=1024, null=True, blank=True)
 
     inductry_application = models.CharField(u'Отрасль применения', max_length=1024, null=True, blank=True)
 
     character = models.IntegerField(u'Характер технического результата', default=InnovativeProjectPasportStatuses.NEW_PRODUCTION, 
                                                         choices=InnovativeProjectPasportStatuses.CHARACTER_OPTS,
                                                         null=True, blank=True)
-    character_statement = models.CharField(u'Характер технического результата(другое)', max_length=140, null=True, blank=True)
+    character_statement = models.CharField(u'Характер технического результата(другое)', max_length=1024, null=True, blank=True)
 
     realization_plan = models.CharField(u'План реализации проекта', max_length=1024, null=True, blank=True)
 
@@ -403,15 +405,15 @@ class InnovativeProjectPasportDocument(models.Model):
                                                         default=InnovativeProjectPasportStatuses.RESEARCH, 
                                                         choices=InnovativeProjectPasportStatuses.READINESS_OPTS,
                                                         null=True, blank=True)
-    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=140, 
+    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=1024, 
                                                         null=True, blank=True)
     independent_test = models.IntegerField(u'Проведена ли независимая экспертиза проекта',
                                                         default=CommonStatuses.NO,
                                                         choices=CommonStatuses.YES_NO_OPTS,
                                                         null=True, blank=True)
-    independent_test_statement = models.CharField(u'Проведена ли независимая экспертиза проекта(описание)', max_length=140, 
+    independent_test_statement = models.CharField(u'Проведена ли независимая экспертиза проекта(описание)', max_length=1024, 
                                                         null=True, blank=True)
-    marketing_research = models.CharField(u'Проведено ли маркетинговое исследование?', max_length=140, 
+    marketing_research = models.CharField(u'Проведено ли маркетинговое исследование?', max_length=1024, 
                                                         null=True, blank=True)
     result_agreement = models.IntegerField(u'Имеются ли договора/протоколы о намерении \
                                                         приобретения результатов проекта',
@@ -419,9 +421,9 @@ class InnovativeProjectPasportDocument(models.Model):
                                                         choices=CommonStatuses.YES_NO_OPTS,
                                                         null=True, blank=True)
     result_agreement_statement = models.CharField(u'Имеются ли договора/протоколы о намерении \
-                                                        приобретения результатов проекта(описание)', max_length=140, 
+                                                        приобретения результатов проекта(описание)', max_length=1024, 
                                                         null=True, blank=True)
-    realization_area = models.CharField(u'Место реализации проекта', max_length=140, 
+    realization_area = models.CharField(u'Место реализации проекта', max_length=1024, 
                                                         null=True, blank=True)
     total_cost = MoneyField(u'Полная стоимость проекта',
                                                         max_digits=20, null=True,
@@ -430,12 +432,12 @@ class InnovativeProjectPasportDocument(models.Model):
                                                         max_digits=20, null=True,
                                                         decimal_places=2, default_currency='KZT')
     other_financed_source = models.CharField(u'Финансировался ли данный проект \
-                                                        из других источников (да, нет) и в каком объеме?', max_length=140, 
+                                                        из других источников (да, нет) и в каком объеме?', max_length=1024, 
                                                         null=True, blank=True)
 
     goverment_support = models.CharField(u'Были ли приняты решения Правительства Республики Казахстан по \
                                                         поддержке проекта на отраслевом, региональном или \
-                                                        государственном уровне (номер, дата, название)?', max_length=140, 
+                                                        государственном уровне (номер, дата, название)?', max_length=1024, 
                                                         null=True, blank=True)
 
     def get_project(self):
@@ -448,12 +450,12 @@ class ProjectTeamMember(models.Model):
         filter_by_project = 'pasport__document__project__in'
 
     pasport = models.ForeignKey(InnovativeProjectPasportDocument, related_name='team_members', on_delete=models.CASCADE)
-    full_name = models.CharField(u'Ф.И.О.', max_length=140, null=True, blank=True)
-    experience = models.CharField(u'стаж работы', max_length=140, null=True, blank=True)
-    qualification = models.CharField(u'квалификация', max_length=140, null=True, blank=True)
-    responsibilities = models.CharField(u'функциональные обязанности', max_length=140, null=True, blank=True)
+    full_name = models.CharField(u'Ф.И.О.', max_length=1024, null=True, blank=True)
+    experience = models.CharField(u'стаж работы', max_length=1024, null=True, blank=True)
+    qualification = models.CharField(u'квалификация', max_length=1024, null=True, blank=True)
+    responsibilities = models.CharField(u'функциональные обязанности', max_length=1024, null=True, blank=True)
     cv = models.ForeignKey('Attachment', related_name='cvs', on_delete=models.CASCADE, null=True, blank=True)
-    business_skills = models.CharField(u'навыки ведения бизнеса', max_length=140, null=True, blank=True)
+    business_skills = models.CharField(u'навыки ведения бизнеса', max_length=1024, null=True, blank=True)
 
     def get_project(self):
         return self.pasport.get_project()
@@ -465,30 +467,30 @@ class DevelopersInfo(models.Model):
         filter_by_project = 'pasport__document__project__in'
 
     pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='dev_info', on_delete=models.CASCADE)
-    comp_name = models.CharField(u'Наименование предприятия', max_length=140, null=True, blank=True)
-    full_name = models.CharField(u'Ф.И.О.', max_length=140, null=True, blank=True)
-    position = models.CharField(u'Должность', max_length=140, null=True, blank=True)
-    phone = models.CharField(u'Телефон', max_length=140, null=True, blank=True)
-    fax = models.CharField(u'Факс', max_length=140, null=True, blank=True)
-    chat_addr = models.CharField(u'Адрес для переписки', max_length=140, null=True, blank=True)
-    email = models.CharField(u'Электронная почта', max_length=140, null=True, blank=True)
+    comp_name = models.CharField(u'Наименование предприятия', max_length=1024, null=True, blank=True)
+    full_name = models.CharField(u'Ф.И.О.', max_length=1024, null=True, blank=True)
+    position = models.CharField(u'Должность', max_length=1024, null=True, blank=True)
+    phone = models.CharField(u'Телефон', max_length=1024, null=True, blank=True)
+    fax = models.CharField(u'Факс', max_length=1024, null=True, blank=True)
+    chat_addr = models.CharField(u'Адрес для переписки', max_length=1024, null=True, blank=True)
+    email = models.CharField(u'Электронная почта', max_length=1024, null=True, blank=True)
     tech_stage = models.IntegerField(u'На каком этапе Ваша технология?', 
                                                         default=InnovativeProjectPasportStatuses.FOUND_RESEARCH, 
                                                         choices=InnovativeProjectPasportStatuses.TECHNOLOGY_STAGE_OPTS,
                                                         null=True, blank=True)
     expirience = models.CharField(u'Участвовали ли разработчики/исследователи в проектах коммерциализации технологий', 
-                                                        max_length=140, null=True, blank=True)
+                                                        max_length=1024, null=True, blank=True)
     manager_team = models.CharField(u'Имеется ли или уже определена команда менеджеров проекта коммерциализации технологий с \
                         необходимым опытом практического руководства реализацией инновационных \
-                        проектов? Описать в случае наличия.', max_length=140, null=True, blank=True)
+                        проектов? Описать в случае наличия.', max_length=1024, null=True, blank=True)
     participation = models.CharField(u'Будут ли разработчики участвовать непосредственно в проекте коммерциализации технологий?', 
-                                                        max_length=140, null=True, blank=True)
+                                                        max_length=1024, null=True, blank=True)
     share_readiness = models.CharField(u'Готовы ли разработчики/исследователи поделиться долей своего инновационного предприятия \
                         или частью своей интеллектуальной  собственности в обмен на финансирование проекта \
-                        внешними инвесторами?', max_length=140, null=True, blank=True)
+                        внешними инвесторами?', max_length=1024, null=True, blank=True)
     invest_resources = models.CharField(u'Готовы ли разработчики/исследователи вкладывать собственные \
                          ресурсы в инновационное предприятие реализующее проект коммерциализации технологий?', 
-                            max_length=140, null=True, blank=True)
+                            max_length=1024, null=True, blank=True)
 
     def get_project(self):
         return self.pasport.get_project()
@@ -500,9 +502,9 @@ class TechnologyCharacteristics(models.Model):
         filter_by_project = 'pasport__document__project__in'
 
     pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='tech_char', on_delete=models.CASCADE)
-    name = models.CharField(u'Название технологии/продукта', max_length=140, null=True, blank=True)
+    name = models.CharField(u'Название технологии/продукта', max_length=1024, null=True, blank=True)
     functionality = models.CharField(u'Функциональное назначение технологии', max_length=1024, null=True, blank=True)
-    description = models.CharField(u'Полное описание технологии', max_length=140, null=True, blank=True)
+    description = models.CharField(u'Полное описание технологии', max_length=1024, null=True, blank=True)
     area = models.CharField(u'Области применения, в т.ч. перспективы применения', max_length=1024, null=True, blank=True)
     tech_params = models.CharField(u'Список, по крайней мере, 5-6 технических параметров, по которым следует оценивать технологию',
                                                      max_length=1024, null=True, blank=True)
@@ -540,21 +542,21 @@ class IntellectualPropertyAssesment(models.Model):
         filter_by_project = 'pasport__document__project__in'
 
     pasport = models.OneToOneField(InnovativeProjectPasportDocument, related_name='intellectual_property', on_delete=models.CASCADE)
-    authors_names = models.CharField(u'Ф.И.О. авторов технологии', max_length=140, null=True, blank=True)
+    authors_names = models.CharField(u'Ф.И.О. авторов технологии', max_length=1024, null=True, blank=True)
     patent = models.CharField(u'Наличие патентов (предпатент, инновационный патент, Евразийский  \
-                            патент, иностранный патент)', max_length=140, null=True, blank=True)
-    analogue_tech = models.CharField(u'Результаты патентного поиска конкурентных технологий', max_length=140, null=True, blank=True)
-    know_how = models.CharField(u'Наличие know-how', max_length=140, null=True, blank=True)
+                            патент, иностранный патент)', max_length=1024, null=True, blank=True)
+    analogue_tech = models.CharField(u'Результаты патентного поиска конкурентных технологий', max_length=1024, null=True, blank=True)
+    know_how = models.CharField(u'Наличие know-how', max_length=1024, null=True, blank=True)
     applicat_date = models.DateTimeField(u'Дата подачи заявки на патент', null=True, blank=True)
-    country_patent = models.CharField(u'Страна, в которой подана заявка на патент', max_length=140, null=True, blank=True)
+    country_patent = models.CharField(u'Страна, в которой подана заявка на патент', max_length=1024, null=True, blank=True)
     patented_date = models.DateTimeField(u'Дата выдачи патента', null=True, blank=True)
-    another_pats = models.CharField(u'Будут ли подаваться заявки на дополнительные патенты?', max_length=140, null=True, blank=True)
+    another_pats = models.CharField(u'Будут ли подаваться заявки на дополнительные патенты?', max_length=1024, null=True, blank=True)
     licence_start_date = models.DateTimeField(u'Дата начала лицензирования (если есть)', null=True, blank=True)
     licence_end_date = models.DateTimeField(u'Дата прекращения лицензирования', null=True, blank=True)
-    licensee = models.CharField(u'Предполагаемые лицензиаты', max_length=140, null=True, blank=True)
+    licensee = models.CharField(u'Предполагаемые лицензиаты', max_length=1024, null=True, blank=True)
     author = models.CharField(u'Кто является автором и владельцем интеллектуальной собственности \
                             (разработчики, исследователи, институт, заказчик, др.)?', 
-                            max_length=140, null=True, blank=True)
+                            max_length=1024, null=True, blank=True)
     other_techs = models.CharField(u'Имеется ли ранее созданная технология (например, алгоритмы для \
                             вычислений) и интеллектуальная собственность, которые были созданы \
                             вне рамок НИОКР, но используемые для получения результатов \

@@ -9,6 +9,7 @@ from natr.rest_framework.serializers import *
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from .common import DocumentCompositionSerializer, DocumentSerializer
+from collections import OrderedDict
 
 __all__ = (
     'DocumentSerializer',
@@ -107,20 +108,32 @@ class DevelopersInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.DevelopersInfo
 
+    def to_internal_value(self, data):
+        return data
+
 class TechnologyCharacteristicsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.TechnologyCharacteristics
+
+    def to_internal_value(self, data):
+        return data
 
 class IntellectualPropertyAssesmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.IntellectualPropertyAssesment
 
+    def to_internal_value(self, data):
+        return data
+
 class TechnologyReadinessSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.TechnologyReadiness
+
+    def to_internal_value(self, data):
+        return data
 
 
 class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
