@@ -287,11 +287,21 @@ class ReportSerializer(serializers.ModelSerializer):
 
     milestone = serializers.PrimaryKeyRelatedField(
         queryset=Milestone.objects.all(), required=True)
-    project = ProjectBasicInfoSerializer(required=True)
+    project = ProjectBasicInfoSerializer(required=False)
     use_of_budget_doc = serializers.PrimaryKeyRelatedField(
         queryset=doc_models.UseOfBudgetDocument.objects.all(), required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     milestone_number = serializers.CharField(read_only=True)
+    period = serializers.CharField(read_only=True)
+
+    def create(self, validated_data):
+        milestone = validated_data.pop('milestone', None)
+        report = Report.create_new(milestone, **validated_data)
+        return report
+
+    def update(self, instance, validated_data):
+        prj = super(ReportSerializer, self).update(instance, validated_data)
+        return prj
 
 
 class CorollaryTotalsSerializer(ExcludeCurrencyFields, serializers.Serializer):
