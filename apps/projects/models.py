@@ -755,6 +755,31 @@ class Comment(models.Model):
         self.report.get_project()
 
 
+class RiskCategory(models.Model):
+    """
+        Система Управления Рисками: Этап плана мониторинга
+    """
+    code = models.IntegerField(null=True)
+    title = models.CharField(max_length=500)
+
+
+class RiskDefinition(models.Model):
+    """
+        Система Управления Рисками: Список возможных типов рисков
+    """
+    category = models.ForeignKey(RiskCategory)
+    code = models.IntegerField(null=True, blank=True)
+    title = models.CharField(max_length=500, null=True, blank=True)
+    reasons = models.CharField(max_length=1000, null=True, blank=True)
+    consequences = models.CharField(max_length=1000, null=True, blank=True)
+    events = models.CharField(max_length=1000, null=True, blank=True)
+    event_status = models.CharField(max_length=1000, null=True, blank=True)
+    probability  = models.IntegerField(null=True, blank=True)
+    impact = models.IntegerField(null=True, blank=True)
+    owner = models.CharField(max_length=500, null=True, blank=True)
+    indicator = models.IntegerField(null=True, blank=True)
+
+
 from django.db.models.signals import post_save
 
 def on_milestone_create(sender, instance, created=False, **kwargs):
