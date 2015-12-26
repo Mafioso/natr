@@ -30,7 +30,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
 class AccountSerializer(serializers.ModelSerializer):
 
-	user_permissions = PermissionSerializer(many=True, required=False)
+	user_permissions = PermissionSerializer(source='get_all_permission_objs', many=True, required=False)
 	# groups = GroupSerializer(many=True)
 	counters = serializers.SerializerMethodField()
 
@@ -41,7 +41,12 @@ class AccountSerializer(serializers.ModelSerializer):
 
 	def get_user_type(self, instance):
 		if hasattr(instance, 'user'):
-			return 'expert'
+			if instance.user.is_manager():
+				return 'manager'
+			elif instance.user.is_risk_expert():
+				return 'risk_expert'
+			else:
+				return 'expert'
 		elif hasattr(instance, 'grantee'):
 			return 'grantee'
 
