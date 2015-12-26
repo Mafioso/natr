@@ -18,7 +18,15 @@ class ProjectFilter(ListOfIdFilter):
 		model = models.Project
 
 	search = django_filters.MethodFilter()
+	status = django_filters.MethodFilter()
 
+	def filter_status(self, queryset, value):
+		value = map(int,value.split('_'))
+		queryset = queryset.filter(
+			Q(status__in=value)
+			# Q(aggreement__number__startswith=value)
+		)
+		return queryset
 	def filter_search(self, queryset, value):
 		queryset = queryset.filter(
 			Q(name__icontains=value)
