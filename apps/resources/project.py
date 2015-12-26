@@ -242,3 +242,9 @@ class CorollaryViewSet(ProjectBasedViewSet):
         corollary = prj_models.Corollary.gen_by_report(request.data.get('report'))
         serializer = self.get_serializer(instance=corollary)
         return response.Response(serializer.data)
+
+
+class RiskDefinitionViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.RiskDefinition.objects.all()
+    serializer_class = RiskDefinitionSerializer
+    pagination_class = None
