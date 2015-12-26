@@ -24,7 +24,9 @@ from documents.models import (
     CostDocument,
     ProjectStartDescription,
     UseOfBudgetDocument,
-    MilestoneCostRow
+    MilestoneCostRow,
+    AgreementDocument,
+    StatementDocument
 )
 
 class Project(models.Model):
@@ -66,16 +68,16 @@ class Project(models.Model):
     funding_date = models.DateTimeField(null=True)
     number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
 
-    risk_degree = models.IntegerField(u'Степень риска', default=SMALL_R)
+    # risk_degree = models.IntegerField(u'Степень риска', default=SMALL_R)
 
-    aggreement = models.OneToOneField(
-        'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)
+    # aggreement = models.OneToOneField(
+    #     'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)
 
-    statement = models.OneToOneField(
-        'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
+    # statement = models.OneToOneField(
+    #     'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
 
-    other_agreements = models.OneToOneField(
-        'documents.OtherAgreementsDocument', null=True, on_delete=models.SET_NULL)
+    # other_agreements = models.OneToOneField(
+    #     'documents.OtherAgreementsDocument', null=True, on_delete=models.SET_NULL)
 
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
     assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
@@ -138,6 +140,53 @@ class Project(models.Model):
             return None
 
         return other_agreements
+
+    @property
+    def aggreement(self):
+        aggreement = None
+        try:
+            aggreement = AgreementDocument.objects.get(document__project=self)
+        except AgreementDocument.DoesNotExist:
+            return None
+        return aggreement
+
+    @property
+    def statement(self):
+        stm = None
+        try:
+            stm = StatementDocument.objects.get(document__project=self)
+        except StatementDocument.DoesNotExist:
+            return None
+        return stm
+
+    @property
+    def risk_degree(self):
+        try:
+            risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
+            score = risk_index.score
+            if score < 15:
+                return 0
+            if score >= 15 and score < 25:
+                return 1
+            return 2
+        except ProjectRiskIndex.DoesNotExist:
+            if self.organization_details.org_type == 0 or \
+               self.fundings.amount > 50000000 or \
+               self.total_month > 12 or \
+               self.funding_type.name != FundingType.COMMERCIALIZATION:
+                return 2
+            if self.organization_details.org_type == 1 and \
+               self.fundings.amount <= 50000000 and \
+               self.total_month == 12 and \
+               self.funding_type.name == FundingType.COMMERCIALIZATION:
+               return 1
+            return 0
+    
+    @property
+    def risks(self):
+        risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
+        return risk_index.risks.all()
+    
 
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
@@ -217,6 +266,28 @@ class Project(models.Model):
 
     def get_project(self):
         return self
+
+    def set_risk_index(self, data):
+        risk_titles = data.get('risks', '').split('||')
+        try:
+            risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
+        except ProjectRiskIndex.DoesNotExist:
+            risk_index = ProjectRiskIndex.objects.create(project=self, milestone=self.current_milestone)
+        risk_index.risks.clear()
+        risk_index.risks.add(*RiskDefinition.objects.filter(title__in=risk_titles))
+        return self
+
+
+class ProjectRiskIndex(ProjectBasedModel):
+    risks = models.ManyToManyField('RiskDefinition')
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    date_edited = models.DateTimeField(auto_now=True, blank=True)
+    milestone = models.ForeignKey('Milestone')
+
+    @property
+    def score(self):
+        return sum(map(lambda x: x.indicator, self.risks.all()))
+    
 
 
 class FundingType(models.Model):
@@ -753,6 +824,34 @@ class Comment(models.Model):
 
     def get_project(self):
         self.report.get_project()
+
+
+class RiskCategory(models.Model):
+    """
+        Система Управления Рисками: Этап плана мониторинга
+    """
+    code = models.IntegerField(null=True)
+    title = models.CharField(max_length=500)
+
+
+class RiskDefinition(models.Model):
+    """
+        Система Управления Рисками: Список возможных типов рисков
+    """
+    category = models.ForeignKey(RiskCategory)
+    code = models.IntegerField(null=True, blank=True)
+    title = models.CharField(max_length=500, null=True, blank=True)
+    reasons = models.CharField(max_length=1000, null=True, blank=True)
+    consequences = models.CharField(max_length=1000, null=True, blank=True)
+    events = models.CharField(max_length=1000, null=True, blank=True)
+    event_status = models.CharField(max_length=1000, null=True, blank=True)
+    probability  = models.IntegerField(null=True, blank=True)
+    impact = models.IntegerField(null=True, blank=True)
+    owner = models.CharField(max_length=500, null=True, blank=True)
+
+    @property
+    def indicator(self):
+        return self.probability * self.impact
 
 
 from django.db.models.signals import post_save

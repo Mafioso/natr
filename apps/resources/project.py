@@ -113,6 +113,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         activity_ser = self.get_serializer(activities, many=True)
         return Response(activity_ser.data)
 
+    @detail_route(methods=['post'], url_path='risks')
+    def risks(self, request, *a, **kw):
+        project = self.get_object()
+        project = project.set_risk_index(data=request.data)
+        serializer = self.get_serializer(project)
+        return response.Response(serializer.data)
+
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
@@ -242,3 +249,9 @@ class CorollaryViewSet(ProjectBasedViewSet):
         corollary = prj_models.Corollary.gen_by_report(request.data.get('report'))
         serializer = self.get_serializer(instance=corollary)
         return response.Response(serializer.data)
+
+
+class RiskDefinitionViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.RiskDefinition.objects.all()
+    serializer_class = RiskDefinitionSerializer
+    pagination_class = None

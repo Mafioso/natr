@@ -9,7 +9,7 @@ from grantee.serializers import *
 from documents.serializers import *
 from documents import models as doc_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition
 from auth2.models import NatrUser
 
 
@@ -24,9 +24,26 @@ __all__ = (
     'CommentSerializer',
     'CorollarySerializer',
     'CorollaryStatByCostTypeSerializer',
-    'ExpandedMilestoneSerializer'
+    'ExpandedMilestoneSerializer',
+    'RiskDefinitionSerializer',
 )
 
+
+class RiskCategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RiskCategory
+
+
+class RiskDefinitionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RiskDefinition
+
+    category = RiskCategorySerializer()
+    indicator = serializers.IntegerField(read_only=True)
+
+    
 class FundingTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -103,14 +120,16 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     current_milestone = MilestoneSerializer(required=False)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
     milestone_set = MilestoneBaseInfo(many=True, required=False)
+    risk_degree = serializers.IntegerField(required=False, read_only=True)
+    risks = RiskDefinitionSerializer(many=True, read_only=True)
     # assigned_experts = 
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
         funding_type_data = validated_data.pop('funding_type', None)
-        statement_data = validated_data.pop('statement', None)
-        aggrement_data = validated_data.pop('aggreement', None)
-        other_agreements = validated_data.pop('other_agreements', None)
+        statement_data = validated_data.pop('statement', {'document': {}})
+        aggrement_data = validated_data.pop('aggreement', {'document': {}})
+        other_agreements = validated_data.pop('other_agreements', {'document': {}})
 
         prj = Project.objects.create(**validated_data)
         prj.save()
@@ -119,21 +138,22 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             organization_details['project'] = prj.id
             organization_details = OrganizationSerializer(data=organization_details)
             organization_details.is_valid(raise_exception=True)
-            prj.organization_details = organization_details.save()
+            organization_details.save()
 
         if funding_type_data:
             prj.funding_type = FundingType.objects.create(**funding_type_data)
 
         if statement_data:
-            prj.statement = doc_models.Document.dml.create_statement(**statement_data)
+            statement_data['document']['project'] = prj
+            doc_models.Document.dml.create_statement(project=prj, **statement_data)
 
         if aggrement_data:
             aggrement_data['document']['project'] = prj
-            prj.aggreement = doc_models.Document.dml.create_agreement(**aggrement_data)
+            doc_models.Document.dml.create_agreement(project=prj, **aggrement_data)
 
         if other_agreements:
-            aggrement_data['document']['project'] = prj
-            prj.other_agreements = doc_models.Document.dml.create_other_agr_doc(**other_agreements)
+            other_agreements['document']['project'] = prj
+            doc_models.Document.dml.create_other_agr_doc(**other_agreements)
 
         prj.save()
 
@@ -190,9 +210,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         organization_details = validated_data.pop('organization_details', None)
         funding_type_data = validated_data.pop('funding_type', None)
-        statement_data = validated_data.pop('statement', None)
-        aggrement_data = validated_data.pop('aggreement', None)
-        other_agreements = validated_data.pop('other_agreements', None)
+        statement_data = validated_data.pop('statement', {'document': {}})
+        aggrement_data = validated_data.pop('aggreement', {'document': {}})
+        other_agreements = validated_data.pop('other_agreements', {'document': {}})
         old_milestones = instance.number_of_milestones
         new_milestones = validated_data['number_of_milestones']
         current_milestone_data = validated_data.pop('current_milestone', None)
@@ -211,22 +231,24 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             prj.funding_type = funding_type_ser.save()
 
         if statement_data:
+            statement_data['document']['project'] = instance
             if instance.statement:
                 doc_models.Document.dml.update_statement(instance.statement, **statement_data)
             else:
                 prj.statement = doc_models.Document.dml.create_statement(**statement_data)
 
         if aggrement_data:
+            aggrement_data['document']['project'] = instance
             if instance.aggreement:
                 doc_models.Document.dml.update_agreement(instance.aggreement, **aggrement_data)
             else:
-                prj.agreement = doc_models.Document.dml.create_agreement(**aggrement_data)
-            
+                doc_models.Document.dml.create_agreement(**aggrement_data)
         if other_agreements:
-            oth_agrs_ser = OtherAgreementsDocumentSerializer(
-                instance=instance.other_agreements, data=other_agreements)
-            oth_agrs_ser.is_valid(raise_exception=True)
-            prj.other_agreements = oth_agrs_ser.save()
+            other_agreements['document']['project'] = instance
+            if instance.other_agreements:
+                doc_models.Document.dml.update_other_agr_doc(instance.other_agreements, **other_agreements)
+            else:
+                doc_models.Document.dml.create_other_agr_doc(**other_agreements)
 
         if current_milestone_data:
             mil_ser = MilestoneSerializer(
@@ -258,7 +280,10 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        _f = ( 'id', 'name', 'status', 'current_milestone', 'status_cap', 'agreement', 'journal_id', 'risk_degree' )
+        _f = (
+            'id', 'name', 'status', 'current_milestone',
+            'status_cap', 'agreement', 'journal_id',
+            'risk_degree', 'number_of_milestones' )
         fields = _f
         read_only_fields = _f
 
@@ -266,7 +291,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
     current_milestone = serializers.SerializerMethodField()
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     agreement = serializers.SerializerMethodField()
-    risk_degree = serializers.CharField(read_only=True)
+    risk_degree = serializers.IntegerField(read_only=True)
 
     def get_current_milestone(self, instance):
         cur_milestone = instance.current_milestone
@@ -291,8 +316,8 @@ class ReportSerializer(serializers.ModelSerializer):
     use_of_budget_doc = serializers.PrimaryKeyRelatedField(
         queryset=doc_models.UseOfBudgetDocument.objects.all(), required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
-    milestone_number = serializers.CharField(read_only=True)
-    period = serializers.CharField(read_only=True)
+    milestone_number = serializers.IntegerField(read_only=True)
+    period = serializers.IntegerField(read_only=True)
 
     def create(self, validated_data):
         milestone = validated_data.pop('milestone', None)

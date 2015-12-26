@@ -10,14 +10,13 @@ class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Document
-        # exclude = ('project',)
 
     attachments = serializers.PrimaryKeyRelatedField(
         queryset=models.Attachment.objects.all(), many=True, required=False)
 
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
-    project = serializers.IntegerField(source='project_id', required=False)
+    # project = serializers.IntegerField(source='project_id', required=False)
     
     def create(self, validated_data):
         return models.Document.dml.create_doc_(**validated_data)
