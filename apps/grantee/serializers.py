@@ -58,7 +58,8 @@ class OrganizationSerializer(serializers.ModelSerializer):
 			models.ShareHolder.objects.bulk_create(share_holders)
 
 		if authorized_grantee:
-			models.AuthorizedToInteractGrantee.objects.create(organization=organization, **authorized_grantee)
+			models.AuthorizedToInteractGrantee.objects.create(
+				organization=organization, **authorized_grantee)
 
 		return organization
 

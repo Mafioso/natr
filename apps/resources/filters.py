@@ -18,7 +18,8 @@ class ProjectFilter(ListOfIdFilter):
 		model = models.Project
 
 	search = django_filters.MethodFilter()
-
+	
+	
 	def filter_search(self, queryset, value):
 		queryset = queryset.filter(
 			Q(name__icontains=value)

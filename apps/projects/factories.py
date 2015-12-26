@@ -23,7 +23,7 @@ class Project(DjangoModelFactory):
     name = factory.Faker('sentence')
     description = factory.Faker('text')
     fundings = factory.LazyAttribute(lambda x: utils.fake_money())
-
+    
     funding_type = factory.SubFactory('projects.factories.FundingType')
     # aggreement = factory.SubFactory('documents.factories.AgreementDocument')  # max recursion depth
     # statement = factory.SubFactory('documents.factories.StatementDocument')
