@@ -9,7 +9,7 @@ from grantee.serializers import *
 from documents.serializers import *
 from documents import models as doc_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition
 from auth2.models import NatrUser
 
 
@@ -24,9 +24,26 @@ __all__ = (
     'CommentSerializer',
     'CorollarySerializer',
     'CorollaryStatByCostTypeSerializer',
-    'ExpandedMilestoneSerializer'
+    'ExpandedMilestoneSerializer',
+    'RiskDefinitionSerializer',
 )
 
+
+class RiskCategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RiskCategory
+
+
+class RiskDefinitionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RiskDefinition
+
+    category = RiskCategorySerializer()
+    indicator = serializers.IntegerField(read_only=True)
+
+    
 class FundingTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -103,6 +120,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     current_milestone = MilestoneSerializer(required=False)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
     milestone_set = MilestoneBaseInfo(many=True, required=False)
+    risk_degree = serializers.IntegerField(required=False, read_only=True)
+    risks = RiskDefinitionSerializer(many=True, read_only=True)
     # assigned_experts = 
 
     def create(self, validated_data):
@@ -224,7 +243,6 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
                 doc_models.Document.dml.update_agreement(instance.aggreement, **aggrement_data)
             else:
                 doc_models.Document.dml.create_agreement(**aggrement_data)
-        
         if other_agreements:
             other_agreements['document']['project'] = instance
             if instance.other_agreements:
@@ -262,7 +280,10 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Project
-        _f = ( 'id', 'name', 'status', 'current_milestone', 'status_cap', 'agreement', 'journal_id', 'risk_degree' )
+        _f = (
+            'id', 'name', 'status', 'current_milestone',
+            'status_cap', 'agreement', 'journal_id',
+            'risk_degree', 'number_of_milestones' )
         fields = _f
         read_only_fields = _f
 
@@ -270,7 +291,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
     current_milestone = serializers.SerializerMethodField()
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     agreement = serializers.SerializerMethodField()
-    risk_degree = serializers.CharField(read_only=True)
+    risk_degree = serializers.IntegerField(read_only=True)
 
     def get_current_milestone(self, instance):
         cur_milestone = instance.current_milestone
@@ -295,8 +316,8 @@ class ReportSerializer(serializers.ModelSerializer):
     use_of_budget_doc = serializers.PrimaryKeyRelatedField(
         queryset=doc_models.UseOfBudgetDocument.objects.all(), required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
-    milestone_number = serializers.CharField(read_only=True)
-    period = serializers.CharField(read_only=True)
+    milestone_number = serializers.IntegerField(read_only=True)
+    period = serializers.IntegerField(read_only=True)
 
     def create(self, validated_data):
         milestone = validated_data.pop('milestone', None)

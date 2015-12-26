@@ -12,7 +12,7 @@ from django.conf import settings
 from natr.mixins import ProjectBasedModel
 from natr.models import CostType
 from statuses import (
-    BasicProjectPasportStatuses, 
+    BasicProjectPasportStatuses,
     InnovativeProjectPasportStatuses,
     CommonStatuses
 )
@@ -72,7 +72,7 @@ class DocumentDMLManager(models.Manager):
             tech_readiness = TechnologyReadiness(pasport=doc, **kwargs['tech_readiness'])
             tech_readiness.save()
 
-        return doc 
+        return doc
 
     def create_other_agr_doc(self, **kwargs):
         items = kwargs.pop('items', [])
@@ -90,11 +90,11 @@ class DocumentDMLManager(models.Manager):
         for k, v in kwargs.iteritems():
             setattr(instance, k, v)
         instance.save()
-        
+
         item_obj_map = {item.id: item for item in instance.items.all()}
         incoming_items_ids = {item['id'] for item in items if 'id' in item}
         old_item_ids = set(item_obj_map.keys())
-        
+
         for item in items:
             if 'id' in item:
                 assert item['id'] in item_obj_map, "OtherAgreementItem serializer should include id"
@@ -159,7 +159,7 @@ class DocumentDMLManager(models.Manager):
             setattr(tech_char, k, v)
         tech_char.save()
 
-        
+
         def_ = intellectual_property_kw
         def_['pasport'] = instance
         intellectual_property, _ = IntellectualPropertyAssesment.objects.get_or_create(
@@ -168,7 +168,7 @@ class DocumentDMLManager(models.Manager):
         for k, v in def_.iteritems():
             setattr(intellectual_property, k, v)
         intellectual_property.save()
-                
+
         def_ = tech_readiness_kw
         def_['pasport'] = instance
         tech_readiness, _ = TechnologyReadiness.objects.get_or_create(
@@ -256,8 +256,8 @@ class DocumentDMLManager(models.Manager):
     def filter_doc_(self, doc_class):
         assert hasattr(doc_class, 'tp'), 'Document %s must have \'tp\' attribute'
         return self.filter(type=doc_class.tp)
-        
-        
+
+
 class Document(ProjectBasedModel):
     ## identifier in (DA 'Document automation' = СЭД 'система электронного документооборота')
 
@@ -330,7 +330,7 @@ class OtherAgreementsDocument(models.Model):
 
     def get_project(self):
         return self.document.get_project()
-    
+
 
 class OtherAgreementItem(models.Model):
     class Meta:
@@ -347,36 +347,36 @@ class OtherAgreementItem(models.Model):
 class BasicProjectPasportDocument(models.Model):
     tp = 'basicpasport'
 
-    
+
     class Meta:
         filter_by_project = 'document__project__in'
-    
+
     document = models.OneToOneField(Document, related_name='basicpasport', on_delete=models.CASCADE)
 
     description = models.CharField(u'Описание проекта и его целей, включающее в себя новизну, уникальность, конкретное применение результатов проекта, перспективы использования и другое', max_length=1024, null=True, blank=True)
 
-    result = models.IntegerField(u'Результат проекта', default=BasicProjectPasportStatuses.PATENT, 
+    result = models.IntegerField(u'Результат проекта', default=BasicProjectPasportStatuses.PATENT,
                                                         choices=BasicProjectPasportStatuses.RESULT_OPTS,
                                                         null=True, blank=True)
     result_statement = models.CharField(u'Результат проекта(другое)', max_length=1024, null=True, blank=True)
 
     inductry_application = models.CharField(u'Отрасль применения', max_length=1024, null=True, blank=True)
 
-    character = models.IntegerField(u'Характер проекта', default=BasicProjectPasportStatuses.NEW_PRODUCT, 
+    character = models.IntegerField(u'Характер проекта', default=BasicProjectPasportStatuses.NEW_PRODUCT,
                                                         choices=BasicProjectPasportStatuses.CHARACTER_OPTS,
                                                         null=True, blank=True)
     character_statement = models.CharField(u'Характер проекта(другое)', max_length=1024, null=True, blank=True)
 
-    patent_defence = models.IntegerField(u'Патентная защита основных технических решений проекта', 
-                                                        default=BasicProjectPasportStatuses.REQUIRED, 
+    patent_defence = models.IntegerField(u'Патентная защита основных технических решений проекта',
+                                                        default=BasicProjectPasportStatuses.REQUIRED,
                                                         choices=BasicProjectPasportStatuses.DEFENCE_OPTS,
                                                         null=True, blank=True)
 
-    readiness = models.IntegerField(u'Степень готовности проекта', 
-                                                        default=BasicProjectPasportStatuses.IDEA, 
+    readiness = models.IntegerField(u'Степень готовности проекта',
+                                                        default=BasicProjectPasportStatuses.IDEA,
                                                         choices=BasicProjectPasportStatuses.READINESS_OPTS,
                                                         null=True, blank=True)
-    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=1024, 
+    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=1024,
                                                         null=True, blank=True)
     other_agreements = models.IntegerField(u'Имеются ли договора/протоколы о намерении приобретения результатов проекта',
                                                         default=CommonStatuses.NO,
@@ -389,14 +389,14 @@ class BasicProjectPasportDocument(models.Model):
                                                         max_digits=20, null=True,
                                                         decimal_places=2, default_currency='KZT')
     finance_source = models.CharField(u'Источники финансирования проекта (собственные средства, заемные \
-                                                        средства, гранты других организаций) и в каком объеме', 
+                                                        средства, гранты других организаций) и в каком объеме',
                                                         max_length=1024, null=True, blank=True)
     goverment_support = models.CharField(u'Информация о государственной поддержке проекта на отраслевом, \
                                                         региональном и республиканском уровне (номер, дата \
-                                                        и название)', 
+                                                        и название)',
                                                         max_length=1024, null=True, blank=True)
 
-    project_head = models.CharField(u'Руководитель проекта (Ф.И.О., должность, ученая степень, подпись)', 
+    project_head = models.CharField(u'Руководитель проекта (Ф.И.О., должность, ученая степень, подпись)',
                                                         max_length=1024, null=True, blank=True)
 
     def get_project(self):
@@ -415,37 +415,37 @@ class InnovativeProjectPasportDocument(models.Model):
 
     description = models.CharField(u'Описание проекта и его целей, включающее в себя новизну, уникальность, конкретное применение результатов проекта, перспективы использования и другое', max_length=1024, null=True, blank=True)
 
-    result = models.IntegerField(u'Ожидаемые результаты проекта', default=InnovativeProjectPasportStatuses.KNOW_HOW, 
+    result = models.IntegerField(u'Ожидаемые результаты проекта', default=InnovativeProjectPasportStatuses.KNOW_HOW,
                                                         choices=InnovativeProjectPasportStatuses.RESULT_OPTS,
                                                         null=True, blank=True)
     result_statement = models.CharField(u'Ожидаемые результаты проекта(другое)', max_length=1024, null=True, blank=True)
 
     inductry_application = models.CharField(u'Отрасль применения', max_length=1024, null=True, blank=True)
 
-    character = models.IntegerField(u'Характер технического результата', default=InnovativeProjectPasportStatuses.NEW_PRODUCTION, 
+    character = models.IntegerField(u'Характер технического результата', default=InnovativeProjectPasportStatuses.NEW_PRODUCTION,
                                                         choices=InnovativeProjectPasportStatuses.CHARACTER_OPTS,
                                                         null=True, blank=True)
     character_statement = models.CharField(u'Характер технического результата(другое)', max_length=1024, null=True, blank=True)
 
     realization_plan = models.CharField(u'План реализации проекта', max_length=1024, null=True, blank=True)
 
-    patent_defence = models.IntegerField(u'Патентная защита основных технических решений проекта', 
-                                                        default=InnovativeProjectPasportStatuses.REQUIRED, 
+    patent_defence = models.IntegerField(u'Патентная защита основных технических решений проекта',
+                                                        default=InnovativeProjectPasportStatuses.REQUIRED,
                                                         choices=InnovativeProjectPasportStatuses.DEFENCE_OPTS,
                                                         null=True, blank=True)
-    readiness = models.IntegerField(u'Степень готовности проекта', 
-                                                        default=InnovativeProjectPasportStatuses.RESEARCH, 
+    readiness = models.IntegerField(u'Степень готовности проекта',
+                                                        default=InnovativeProjectPasportStatuses.RESEARCH,
                                                         choices=InnovativeProjectPasportStatuses.READINESS_OPTS,
                                                         null=True, blank=True)
-    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=1024, 
+    readiness_statement = models.CharField(u'Степень готовности проекта(другое)', max_length=1024,
                                                         null=True, blank=True)
     independent_test = models.IntegerField(u'Проведена ли независимая экспертиза проекта',
                                                         default=CommonStatuses.NO,
                                                         choices=CommonStatuses.YES_NO_OPTS,
                                                         null=True, blank=True)
-    independent_test_statement = models.CharField(u'Проведена ли независимая экспертиза проекта(описание)', max_length=1024, 
+    independent_test_statement = models.CharField(u'Проведена ли независимая экспертиза проекта(описание)', max_length=1024,
                                                         null=True, blank=True)
-    marketing_research = models.CharField(u'Проведено ли маркетинговое исследование?', max_length=1024, 
+    marketing_research = models.CharField(u'Проведено ли маркетинговое исследование?', max_length=1024,
                                                         null=True, blank=True)
     result_agreement = models.IntegerField(u'Имеются ли договора/протоколы о намерении \
                                                         приобретения результатов проекта',
@@ -453,9 +453,9 @@ class InnovativeProjectPasportDocument(models.Model):
                                                         choices=CommonStatuses.YES_NO_OPTS,
                                                         null=True, blank=True)
     result_agreement_statement = models.CharField(u'Имеются ли договора/протоколы о намерении \
-                                                        приобретения результатов проекта(описание)', max_length=1024, 
+                                                        приобретения результатов проекта(описание)', max_length=1024,
                                                         null=True, blank=True)
-    realization_area = models.CharField(u'Место реализации проекта', max_length=1024, 
+    realization_area = models.CharField(u'Место реализации проекта', max_length=1024,
                                                         null=True, blank=True)
     total_cost = MoneyField(u'Полная стоимость проекта',
                                                         max_digits=20, null=True,
@@ -464,12 +464,12 @@ class InnovativeProjectPasportDocument(models.Model):
                                                         max_digits=20, null=True,
                                                         decimal_places=2, default_currency='KZT')
     other_financed_source = models.CharField(u'Финансировался ли данный проект \
-                                                        из других источников (да, нет) и в каком объеме?', max_length=1024, 
+                                                        из других источников (да, нет) и в каком объеме?', max_length=1024,
                                                         null=True, blank=True)
 
     goverment_support = models.CharField(u'Были ли приняты решения Правительства Республики Казахстан по \
                                                         поддержке проекта на отраслевом, региональном или \
-                                                        государственном уровне (номер, дата, название)?', max_length=1024, 
+                                                        государственном уровне (номер, дата, название)?', max_length=1024,
                                                         null=True, blank=True)
 
     def get_project(self):
@@ -506,27 +506,27 @@ class DevelopersInfo(models.Model):
     fax = models.CharField(u'Факс', max_length=1024, null=True, blank=True)
     chat_addr = models.CharField(u'Адрес для переписки', max_length=1024, null=True, blank=True)
     email = models.CharField(u'Электронная почта', max_length=1024, null=True, blank=True)
-    tech_stage = models.IntegerField(u'На каком этапе Ваша технология?', 
-                                                        default=InnovativeProjectPasportStatuses.FOUND_RESEARCH, 
+    tech_stage = models.IntegerField(u'На каком этапе Ваша технология?',
+                                                        default=InnovativeProjectPasportStatuses.FOUND_RESEARCH,
                                                         choices=InnovativeProjectPasportStatuses.TECHNOLOGY_STAGE_OPTS,
                                                         null=True, blank=True)
-    expirience = models.CharField(u'Участвовали ли разработчики/исследователи в проектах коммерциализации технологий', 
+    expirience = models.CharField(u'Участвовали ли разработчики/исследователи в проектах коммерциализации технологий',
                                                         max_length=1024, null=True, blank=True)
     manager_team = models.CharField(u'Имеется ли или уже определена команда менеджеров проекта коммерциализации технологий с \
                         необходимым опытом практического руководства реализацией инновационных \
                         проектов? Описать в случае наличия.', max_length=1024, null=True, blank=True)
-    participation = models.CharField(u'Будут ли разработчики участвовать непосредственно в проекте коммерциализации технологий?', 
+    participation = models.CharField(u'Будут ли разработчики участвовать непосредственно в проекте коммерциализации технологий?',
                                                         max_length=1024, null=True, blank=True)
     share_readiness = models.CharField(u'Готовы ли разработчики/исследователи поделиться долей своего инновационного предприятия \
                         или частью своей интеллектуальной  собственности в обмен на финансирование проекта \
                         внешними инвесторами?', max_length=1024, null=True, blank=True)
     invest_resources = models.CharField(u'Готовы ли разработчики/исследователи вкладывать собственные \
-                         ресурсы в инновационное предприятие реализующее проект коммерциализации технологий?', 
+                         ресурсы в инновационное предприятие реализующее проект коммерциализации технологий?',
                             max_length=1024, null=True, blank=True)
 
     def get_project(self):
         return self.pasport.get_project()
-    
+
     #Характеристика технологии/продукта
 class TechnologyCharacteristics(models.Model):
 
@@ -543,15 +543,15 @@ class TechnologyCharacteristics(models.Model):
     analogues = models.CharField(u'Сравните параметры представленной технологии и параметры \
                             конкурирующих современных разработок', max_length=1024, null=True, blank=True)
     advantages = models.CharField(u'Сравните предполагаемые преимущества представленной технологии \
-                            с современным уровнем технического развития в данной области', 
+                            с современным уровнем технического развития в данной области',
                             max_length=1024, null=True, blank=True)
     analogue_descr = models.CharField(u'Включите название и/или достаточно полное описание \
-                            конкурирующей технологии для наведения дополнительных справок', 
+                            конкурирующей технологии для наведения дополнительных справок',
                             max_length=1024, null=True, blank=True)
     adv_descr = models.CharField(u'Опишите каждое преимущество разработки по сравнению с \
-                            существующими технологиями как минимум из 5 предложений', 
+                            существующими технологиями как минимум из 5 предложений',
                             max_length=1024, null=True, blank=True)
-    area_descr = models.CharField(u'Опишите каждую область применения как минимум из 5 предложений', 
+    area_descr = models.CharField(u'Опишите каждую область применения как минимум из 5 предложений',
                             max_length=1024, null=True, blank=True)
     additional_res = models.CharField(u'Потребуются ли и в каком объеме дополнительное время, денежные \
                             средства и другие ресурсы для проведения дополнительных НИОКР с \
@@ -561,12 +561,12 @@ class TechnologyCharacteristics(models.Model):
     using_lims = models.CharField(u'Имеются ли какие/либо ограничения на эксплуатацию технологии, \
                             например, имеется ли необходимость для получения лицензий, \
                             разрешений, сертификатов каких/либо надзорных органов для \
-                            производства и продажи продукции или услуг на рынке?', 
+                            производства и продажи продукции или услуг на рынке?',
                             max_length=1024, null=True, blank=True)
 
     def get_project(self):
         return self.pasport.get_project()
-    
+
     #Оценка интеллектуальной собственности
 class IntellectualPropertyAssesment(models.Model):
 
@@ -587,18 +587,18 @@ class IntellectualPropertyAssesment(models.Model):
     licence_end_date = models.DateTimeField(u'Дата прекращения лицензирования', null=True, blank=True)
     licensee = models.CharField(u'Предполагаемые лицензиаты', max_length=1024, null=True, blank=True)
     author = models.CharField(u'Кто является автором и владельцем интеллектуальной собственности \
-                            (разработчики, исследователи, институт, заказчик, др.)?', 
+                            (разработчики, исследователи, институт, заказчик, др.)?',
                             max_length=1024, null=True, blank=True)
     other_techs = models.CharField(u'Имеется ли ранее созданная технология (например, алгоритмы для \
                             вычислений) и интеллектуальная собственность, которые были созданы \
                             вне рамок НИОКР, но используемые для получения результатов \
                             НИОКР? В какой форме и где охраняется эта интеллектуальная \
-                            собственность и кто обладает правами на нее?', 
+                            собственность и кто обладает правами на нее?',
                             max_length=1024, null=True, blank=True)
 
     def get_project(self):
         return self.pasport.get_project()
-    
+
     #Оценка степени готовности технологии
 class TechnologyReadiness(models.Model):
 
@@ -616,12 +616,12 @@ class TechnologyReadiness(models.Model):
     market_test = models.CharField(u'Проведены ли рыночные испытания инновационных продукции или \
                             услуг?', max_length=1024, null=True, blank=True)
     result_to_sale = models.CharField(u'Что будет продаваться в результате проекта: технология или \
-                            продукция/услуги, произведенные с ее применением?', 
+                            продукция/услуги, произведенные с ее применением?',
                             max_length=1024, null=True, blank=True)
     consumers = models.CharField(u'Кто целевые потребители продукции или услуг?', max_length=1024, null=True, blank=True)
     other_props = models.CharField(u'Какими дополнительными потребительскими свойствами или \
                             конкурентными преимуществами продукция или услуги обладают по \
-                            сравнению с предлагаемыми или продаваемыми на рынке?', 
+                            сравнению с предлагаемыми или продаваемыми на рынке?',
                             max_length=1024, null=True, blank=True)
     target_market = models.CharField(u'Каковы целевые рынки для продаж продукции или услуг, \
                             идентифицированные по географическому, секторальному и другим \
@@ -679,7 +679,7 @@ class CalendarPlanDocument(models.Model):
 
     def get_project(self):
         return self.document.get_project()
-        
+
 
 class CalendarPlanItem(models.Model):
 
@@ -753,40 +753,40 @@ class ProjectStartDescription(models.Model):
     kaz_part_avrg = models.DecimalField(u'Доля Казахстанского содержания в продукции (Средние показатели)', max_digits=20, decimal_places=2, null=True, blank=True)
 
 
-    @property 
+    @property
     def total_rlzn_fact(self):
-        rlzn_fact = self.rlzn_fact.amount if self.rlzn_fact else 0 
-        rlzn_exp_fact = self.rlzn_exp_fact.amount if self.rlzn_exp_fact else 0 
+        rlzn_fact = self.rlzn_fact.amount if self.rlzn_fact else 0
+        rlzn_exp_fact = self.rlzn_exp_fact.amount if self.rlzn_exp_fact else 0
         return rlzn_fact + rlzn_exp_fact
 
-    @property 
+    @property
     def total_rlzn_plan(self):
-        rlzn_plan = self.rlzn_plan.amount if self.rlzn_plan else 0 
-        rlzn_exp_plan = self.rlzn_exp_plan.amount if self.rlzn_exp_plan else 0 
+        rlzn_plan = self.rlzn_plan.amount if self.rlzn_plan else 0
+        rlzn_exp_plan = self.rlzn_exp_plan.amount if self.rlzn_exp_plan else 0
         return rlzn_plan + rlzn_exp_plan
 
-    @property 
+    @property
     def total_rlzn_avrg(self):
-        rlzn_avrg = self.rlzn_avrg.amount if self.rlzn_avrg else 0 
-        rlzn_exp_avrg = self.rlzn_exp_avrg.amount if self.rlzn_exp_avrg else 0 
+        rlzn_avrg = self.rlzn_avrg.amount if self.rlzn_avrg else 0
+        rlzn_exp_avrg = self.rlzn_exp_avrg.amount if self.rlzn_exp_avrg else 0
         return rlzn_avrg + rlzn_exp_avrg
 
-    @property 
+    @property
     def total_tax_fact(self):
-        tax_fact = self.tax_fact.amount if self.tax_fact else 0 
-        tax_local_fact = self.tax_local_fact.amount if self.tax_local_fact else 0 
+        tax_fact = self.tax_fact.amount if self.tax_fact else 0
+        tax_local_fact = self.tax_local_fact.amount if self.tax_local_fact else 0
         return tax_fact + tax_local_fact
 
-    @property 
+    @property
     def total_tax_plan(self):
-        tax_plan = self.tax_plan.amount if self.tax_plan else 0 
-        tax_local_plan = self.tax_local_plan.amount if self.tax_local_plan else 0 
+        tax_plan = self.tax_plan.amount if self.tax_plan else 0
+        tax_local_plan = self.tax_local_plan.amount if self.tax_local_plan else 0
         return tax_plan + tax_local_plan
 
-    @property 
+    @property
     def total_tax_avrg(self):
-        tax_avrg = self.tax_avrg.amount if self.tax_avrg else 0 
-        tax_local_avrg = self.tax_local_avrg.amount if self.tax_local_avrg else 0 
+        tax_avrg = self.tax_avrg.amount if self.tax_avrg else 0
+        tax_local_avrg = self.tax_local_avrg.amount if self.tax_local_avrg else 0
         return tax_avrg + tax_local_avrg
 
     def get_project(self):
@@ -866,7 +866,7 @@ class GPDocument(models.Model):
     type = models.ForeignKey(GPDocumentType, related_name='gp_docs', null=True)
     cost_row = models.ForeignKey('FactMilestoneCostRow', null=True, related_name='gp_docs')
 
-    @property 
+    @property
     def name(self):
         return self.type.name
 
@@ -890,7 +890,7 @@ class UseOfBudgetDocumentItemManager(models.Manager):
 
 class UseOfBudgetDocumentItem(models.Model):
     u"""Статья расходов (факт) по бюджету гранта за этап заполняемая ГП в рамках камерального отчета."""
-    
+
     class Meta:
         filter_by_project = 'use_of_budget_doc__document__project__in'
 
@@ -1079,7 +1079,7 @@ class FactMilestoneCostRow(models.Model):
     def cost_document(self):
         return self.project.cost_document
 
-    @property 
+    @property
     def use_of_budget_doc(self):
         return self.cost_type.use_of_budget_doc_items
 
@@ -1110,4 +1110,3 @@ def on_cost_type_create(sender, instance, created=False, **kwargs):
         budget_report.add_empty_item(instance)
 
 post_save.connect(on_cost_type_create, sender=CostType)
-
