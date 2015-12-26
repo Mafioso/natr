@@ -268,13 +268,13 @@ class Project(models.Model):
         return self
 
     def set_risk_index(self, data):
-        risk_titles = data.get('risks', '').split('||')
+        risk_ids = data.get('risks', [])
         try:
             risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
         except ProjectRiskIndex.DoesNotExist:
             risk_index = ProjectRiskIndex.objects.create(project=self, milestone=self.current_milestone)
         risk_index.risks.clear()
-        risk_index.risks.add(*RiskDefinition.objects.filter(title__in=risk_titles))
+        risk_index.risks.add(*RiskDefinition.objects.filter(id__in=risk_ids))
         return self
 
 
