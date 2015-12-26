@@ -241,7 +241,6 @@ class DocumentDMLManager(models.Manager):
         return d
 
     def update_doc_(self, instance, **kwargs):
-        print kwargs.get('attachments', [])
         incoming_attachments = [a['id'] for a in kwargs.pop('attachments', [])]
         for k, v in kwargs.iteritems():
             setattr(instance, k, v)
