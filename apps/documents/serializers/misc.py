@@ -51,6 +51,7 @@ class OtherAgreementItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.OtherAgreementItem
+        exclude = ('other_agreements_doc',)
 
     def create(self, validated_data):
         other_agreements_doc = validated_data.pop('other_agreements')
