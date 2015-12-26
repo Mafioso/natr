@@ -447,3 +447,4 @@ class RiskDefinitionSerializer(serializers.ModelSerializer):
         model = RiskDefinition
 
     category = RiskCategorySerializer()
+    indicator = serializers.IntegerField(read_only=True)
