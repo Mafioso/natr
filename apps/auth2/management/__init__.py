@@ -208,12 +208,12 @@ def add_risk_definitions(sender, **kwargs):
     ]
 
     for cat in categories:
-        RiskCategory.objects.create(**cat)
+        RiskCategory.objects.get_or_create(**cat)
 
     for rd in risk_definitions:
         category_code = rd.pop('category_code')
         c = RiskCategory.objects.get(code=category_code)
-        RiskDefinition.objects.create(category=c, **rd)
+        RiskDefinition.objects.get_or_create(category=c, **rd)
 
     
 

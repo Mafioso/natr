@@ -104,6 +104,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     current_milestone = MilestoneSerializer(required=False)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
     milestone_set = MilestoneBaseInfo(many=True, required=False)
+    risk_degree = serializers.IntegerField(required=False, read_only=True)
     # assigned_experts = 
 
     def create(self, validated_data):
