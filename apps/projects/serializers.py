@@ -28,6 +28,22 @@ __all__ = (
     'RiskDefinitionSerializer',
 )
 
+
+class RiskCategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RiskCategory
+
+
+class RiskDefinitionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RiskDefinition
+
+    category = RiskCategorySerializer()
+    indicator = serializers.IntegerField(read_only=True)
+
+    
 class FundingTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -105,6 +121,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
     milestone_set = MilestoneBaseInfo(many=True, required=False)
     risk_degree = serializers.IntegerField(required=False, read_only=True)
+    risks = RiskDefinitionSerializer(many=True, read_only=True)
     # assigned_experts = 
 
     def create(self, validated_data):
@@ -433,18 +450,3 @@ class CommentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         comment = Comment.objects.create(**validated_data)
         return comment
-
-
-class RiskCategorySerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = RiskCategory
-
-
-class RiskDefinitionSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = RiskDefinition
-
-    category = RiskCategorySerializer()
-    indicator = serializers.IntegerField(read_only=True)
