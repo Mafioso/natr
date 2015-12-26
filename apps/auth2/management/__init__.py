@@ -18,7 +18,7 @@ post_syncdb.connect(create_default_groups, sender=auth2.models)
 
 def add_view_permissions(sender, **kwargs):
     """
-    This syncdb hooks takes care of adding a view permission too all our 
+    This syncdb hooks takes care of adding a view permission too all our
     content types.
     """
     # for each of our content types
@@ -60,7 +60,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 5,
             'impact': 3,
             'owner': u'ГП, ЦАМП',
-            'indicator': 15,
+            # 'indicator': 15,
         },
         {
             'category_code': 1,
@@ -73,7 +73,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 4,
             'impact': 3,
             'owner': u'ГП',
-            'indicator': 12,
+            # 'indicator': 12,
         },
         {
             'category_code': 2,
@@ -86,7 +86,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 5,
             'impact': 7,
             'owner': u'ГП',
-            'indicator': 35,
+            # 'indicator': 35,
         },
         {
             'category_code': 2,
@@ -99,7 +99,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 4,
             'impact': 8,
             'owner': u'ГП',
-            'indicator': 32,
+            # 'indicator': 32,
         },
         {
             'category_code': 2,
@@ -112,7 +112,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 6,
             'impact': 8,
             'owner': u'',
-            'indicator': 48,
+            # 'indicator': 48,
         },
         {
             'category_code': 3,
@@ -125,7 +125,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 7,
             'impact': 6,
             'owner': u'ГП',
-            'indicator': 42,
+            # 'indicator': 42,
         },
         {
             'category_code': 3,
@@ -138,7 +138,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 7,
             'impact': 8,
             'owner': u'ГП',
-            'indicator': 56,
+            # 'indicator': 56,
         },
         {
             'category_code': 3,
@@ -151,7 +151,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 3,
             'impact': 9,
             'owner': u'ГП',
-            'indicator': 27,
+            # 'indicator': 27,
         },
         {
             'category_code': 3,
@@ -164,7 +164,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 3,
             'impact': 10,
             'owner': u'ГП',
-            'indicator': 30,
+            # 'indicator': 30,
         },
         {
             'category_code': 4,
@@ -177,7 +177,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 4,
             'impact': 4,
             'owner': u'ГП',
-            'indicator': 16,
+            # 'indicator': 16,
         },
         {
             'category_code': 4,
@@ -190,7 +190,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 3,
             'impact': 7,
             'owner': u'ГП',
-            'indicator': 21,
+            # 'indicator': 21,
         },
         {
             'category_code': 4,
@@ -203,7 +203,7 @@ def add_risk_definitions(sender, **kwargs):
             'probability': 3,
             'impact': 10,
             'owner': u'ГП',
-            'indicator': 30,
+            # 'indicator': 30,
         },
     ]
 
@@ -215,7 +215,7 @@ def add_risk_definitions(sender, **kwargs):
         c = RiskCategory.objects.get(code=category_code)
         RiskDefinition.objects.get_or_create(category=c, **rd)
 
-    
+
 
 # add risk definitions after a syncdb
 post_syncdb.connect(add_risk_definitions)
