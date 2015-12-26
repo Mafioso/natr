@@ -59,7 +59,7 @@ class CalendarPlanDocumentViewSet(ProjectBasedViewSet):
         item_def = request.data
         cpdoc = self.get_object()
         item_def['calendar_plan'] = cpdoc.id
-        
+
         item_ser = self.get_serializer(data=item_def)
         item_ser.is_valid(raise_exception=True)
         item_obj = item_ser.save()
@@ -76,7 +76,7 @@ class CalendarPlanDocumentViewSet(ProjectBasedViewSet):
         item_def = request.data
         cpdoc = self.get_object()
         item_def['id'] = cpdoc.id
-        
+
         item_ser = self.get_serializer(instance=obj_cp, data=item_def)
         item_ser.is_valid(raise_exception=True)
         item_obj = item_ser.save()
@@ -88,7 +88,7 @@ class CalendarPlanDocumentViewSet(ProjectBasedViewSet):
 class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
 
     serializer_class = ProjectStartDescriptionSerializer
-    queryset = ProjectStartDescription.objects.all()  
+    queryset = ProjectStartDescription.objects.all()
 
 
 class AttachmentViewSet(viewsets.ModelViewSet):
@@ -206,22 +206,25 @@ class CostDocumentViewSet(ProjectBasedViewSet):
         }"""
         data = request.data
         doc = self.get_object()
-        
+
         cost_type_data = data.pop('cost_type')
         cost_type_data['cost_document'] = doc.id
         cost_type_data['project'] = doc.project.id
+        cost_type_data['is_empty'] = True
         cost_type_ser = natr_serializers.CostTypeSerializer(data=cost_type_data)
         cost_type_ser.is_valid(raise_exception=True)
         cost_type_obj = cost_type_ser.save()
 
         cost_row = data.pop('cost_row')
+        if cost_row is not None:
+            doc.milestone_costs.filter(cost_type=cost_type_obj).delete()
         for cost_cell in cost_row:
             cost_cell['cost_type'] = cost_type_obj.id
             cost_cell['cost_document'] = doc.id
         cost_row_ser = self.get_serializer(data=cost_row, many=True)
         cost_row_ser.is_valid(raise_exception=True)
         cost_row_ser.save()
-        
+
         rv_data = {
             'cost_type': cost_type_ser.data,
             'cost_row': cost_row_ser.data
@@ -273,7 +276,7 @@ class CostDocumentViewSet(ProjectBasedViewSet):
         for cost_cell in cost_row_data:
             cost_cell['cost_type'] = cost_type_obj.id
             cost_cell['cost_document'] = doc.id
-        
+
         cost_row_ser = self.get_serializer(
             cost_row_instance, data=cost_row_data, many=True)
         cost_row_ser.is_valid(raise_exception=True)
@@ -296,8 +299,8 @@ class UseOfBudgetDocumentViewSet(ProjectBasedViewSet):
         """
         Get UseOfBudgetDocument items
         """
-        obj_use_of_b = self.get_object()    
-        qs = obj_use_of_b.items.all()    
+        obj_use_of_b = self.get_object()
+        qs = obj_use_of_b.items.all()
         serializer = self.get_serializer(qs, many=True)
         return response.Response(serializer.data)
 
@@ -315,7 +318,7 @@ class CostTypeViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='costs')
     @patch_serializer_class(FactMilestoneCostRowSerializer)
     def get_report_costs(self, request, *a, **kw):
-        cost_type = self.get_object() 
+        cost_type = self.get_object()
         report_id = request.GET.get('report', -1)
         # report = None
         try:
@@ -362,5 +365,3 @@ class GPDocumentTypeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = self.queryset
         return queryset
-
-
