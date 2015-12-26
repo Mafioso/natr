@@ -75,13 +75,44 @@ class DocumentDMLManager(models.Manager):
         return doc 
 
     def create_other_agr_doc(self, **kwargs):
-        items = kwargs.pop('items')
+        items = kwargs.pop('items', [])
         doc = self.create_doc_with_relations(OtherAgreementsDocument, **kwargs)
 
         for item in items:
             oth_ad = OtherAgreementItem(other_agreements_doc=doc, **item)
             oth_ad.save()
         return doc
+
+    def update_other_agr_doc(self, instance, **kwargs):
+        doc = kwargs.pop('document')
+        items = kwargs.pop('items', [])
+
+        for k, v in kwargs.iteritems():
+            setattr(instance, k, v)
+        instance.save()
+        
+        item_obj_map = {item.id: item for item in instance.items.all()}
+        incoming_items_ids = {item['id'] for item in items if 'id' in item}
+        old_item_ids = set(item_obj_map.keys())
+        
+        for item in items:
+            if 'id' in item:
+                assert item['id'] in item_obj_map, "OtherAgreementItem serializer should include id"
+                item_obj = item_obj_map.get(item['id'])
+                upd_item_(item_obj, **item)
+                # oth_item = OtherAgreementItem(other_agreements_doc=instance, **item)
+            else:
+                item_obj = OtherAgreementItem(other_agreements_doc=instance, **item)
+                item_obj.save()
+        OtherAgreementItem.objects.filter(pk__in=old_item_ids - incoming_items_ids).delete()
+
+        def upd_item_(item_obj, **kwargs):
+            for k, v in kwargs.iteritems():
+                setattr(item_obj, k, v)
+            item_obj.save()
+            return item_obj
+
+        return self.update_doc_(instance.document, **doc)
 
     def create_start_description(self, **kwargs):
         return self.create_doc_with_relations(ProjectStartDescription, **kwargs)

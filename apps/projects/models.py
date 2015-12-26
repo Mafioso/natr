@@ -24,7 +24,9 @@ from documents.models import (
     CostDocument,
     ProjectStartDescription,
     UseOfBudgetDocument,
-    MilestoneCostRow
+    MilestoneCostRow,
+    AgreementDocument,
+    StatementDocument
 )
 
 class Project(models.Model):
@@ -68,14 +70,14 @@ class Project(models.Model):
 
     risk_degree = models.IntegerField(u'Степень риска', default=SMALL_R)
 
-    aggreement = models.OneToOneField(
-        'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)
+    # aggreement = models.OneToOneField(
+    #     'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)
 
-    statement = models.OneToOneField(
-        'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
+    # statement = models.OneToOneField(
+    #     'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
 
-    other_agreements = models.OneToOneField(
-        'documents.OtherAgreementsDocument', null=True, on_delete=models.SET_NULL)
+    # other_agreements = models.OneToOneField(
+    #     'documents.OtherAgreementsDocument', null=True, on_delete=models.SET_NULL)
 
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
     assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
@@ -138,6 +140,24 @@ class Project(models.Model):
             return None
 
         return other_agreements
+
+    @property
+    def aggreement(self):
+        aggreement = None
+        try:
+            aggreement = AgreementDocument.objects.get(document__project=self)
+        except AgreementDocument.DoesNotExist:
+            return None
+        return aggreement
+
+    @property
+    def statement(self):
+        stm = None
+        try:
+            stm = StatementDocument.objects.get(document__project=self)
+        except StatementDocument.DoesNotExist:
+            return None
+        return stm
 
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
