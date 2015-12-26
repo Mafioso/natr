@@ -68,7 +68,7 @@ class Project(models.Model):
     funding_date = models.DateTimeField(null=True)
     number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
 
-    risk_degree = models.IntegerField(u'Степень риска', default=SMALL_R)
+    # risk_degree = models.IntegerField(u'Степень риска', default=SMALL_R)
 
     # aggreement = models.OneToOneField(
     #     'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)
@@ -159,6 +159,30 @@ class Project(models.Model):
             return None
         return stm
 
+    @property
+    def risk_degree(self):
+        try:
+            risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
+            score = risk_index.score
+            if score < 15:
+                return 0
+            if score >= 15 and score < 25:
+                return 1
+            return 2
+        except ProjectRiskIndex.DoesNotExist:
+            if self.organization_details.org_type == 0 or \
+               self.fundings.amount > 50000000 or \
+               self.total_month > 12 or \
+               self.funding_type.name != FundingType.COMMERCIALIZATION:
+                return 2
+            if self.organization_details.org_type == 1 and \
+               self.fundings.amount <= 50000000 or \
+               self.total_month == 12 or \
+               self.funding_type.name == FundingType.COMMERCIALIZATION:
+               return 1
+            return 0
+    
+
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
 
@@ -237,6 +261,18 @@ class Project(models.Model):
 
     def get_project(self):
         return self
+
+
+class ProjectRiskIndex(ProjectBasedModel):
+    risks = models.ManyToManyField('RiskDefinition')
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    date_edited = models.DateTimeField(auto_now=True, blank=True)
+    milestone = models.ForeignKey('Milestone')
+
+    @property
+    def score(self):
+        return sum(map(lambda x: x.indicator, self.risks.all()))
+    
 
 
 class FundingType(models.Model):
@@ -773,6 +809,34 @@ class Comment(models.Model):
 
     def get_project(self):
         self.report.get_project()
+
+
+class RiskCategory(models.Model):
+    """
+        Система Управления Рисками: Этап плана мониторинга
+    """
+    code = models.IntegerField(null=True)
+    title = models.CharField(max_length=500)
+
+
+class RiskDefinition(models.Model):
+    """
+        Система Управления Рисками: Список возможных типов рисков
+    """
+    category = models.ForeignKey(RiskCategory)
+    code = models.IntegerField(null=True, blank=True)
+    title = models.CharField(max_length=500, null=True, blank=True)
+    reasons = models.CharField(max_length=1000, null=True, blank=True)
+    consequences = models.CharField(max_length=1000, null=True, blank=True)
+    events = models.CharField(max_length=1000, null=True, blank=True)
+    event_status = models.CharField(max_length=1000, null=True, blank=True)
+    probability  = models.IntegerField(null=True, blank=True)
+    impact = models.IntegerField(null=True, blank=True)
+    owner = models.CharField(max_length=500, null=True, blank=True)
+
+    @property
+    def indicator(self):
+        return self.probability * self.impact
 
 
 from django.db.models.signals import post_save
