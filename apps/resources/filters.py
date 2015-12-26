@@ -21,8 +21,9 @@ class ProjectFilter(ListOfIdFilter):
 
 	def filter_search(self, queryset, value):
 		queryset = queryset.filter(
-			Q(name__icontains=value) |
-			Q(aggreement__number__startswith=value))
+			Q(name__icontains=value)
+			# Q(aggreement__number__startswith=value)
+		)
 		return queryset
 
 

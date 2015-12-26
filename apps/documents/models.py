@@ -300,6 +300,12 @@ class Document(ProjectBasedModel):
     def get_status_cap(self):
         return Document.STATUS_CAPS[self.status]
 
+    @classmethod
+    def build_empty(cls, project):
+        doc = cls(project=project)
+        doc.save()
+        return doc
+
 
 class AgreementDocument(models.Model):
     tp = 'agreement'

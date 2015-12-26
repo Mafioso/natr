@@ -289,10 +289,10 @@ class Report(ProjectBasedModel):
     #     u'отправлен на доработку',
     #     u'завершен')
 
-    STATUSES = BUILD, APPROVE, REWORK = range(3)
+    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
 
     STATUS_CAPS = (
-        u'неактивен'
+        u'неактивен',
         u'формирование',
         u'на проверке',
         u'утверждение',
@@ -313,7 +313,9 @@ class Report(ProjectBasedModel):
     type = models.IntegerField(null=True, choices=TYPES_OPTS, default=CAMERAL)
     date = models.DateTimeField(u'Дата отчета', null=True)
 
-    period = models.CharField(null=True, max_length=255)
+    date_start = models.DateTimeField(u'Период отчетности', null=True)
+    date_end = models.DateTimeField(u'Период отчетности', null=True)
+
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=BUILD)
 
     # max 2 reports for one milestone
@@ -341,6 +343,8 @@ class Report(ProjectBasedModel):
     def build_empty(cls, milestone):
         budget_doc = UseOfBudgetDocument.objects.create_empty(
             milestone.project, milestone=milestone)
+        budget_doc.save()
+
         r = Report(
             milestone=milestone,
             project=milestone.project,
@@ -349,6 +353,24 @@ class Report(ProjectBasedModel):
         for cost_type in r.project.costtype_set.all():
             budget_doc.add_empty_item(cost_type)
         return r
+
+    @classmethod
+    def create_new(cls, milestone, **kwargs):
+        report = cls.build_empty(milestone)
+
+        for k, v in kwargs.iteritems():
+            setattr(report, k, v)
+
+        report.save()
+
+        return report
+
+    @property
+    def period(self):
+        if self.date_start and self.date_end:
+            return (self.date_end - self.date_start).days
+
+        return None
 
 
 class Corollary(ProjectBasedModel):
