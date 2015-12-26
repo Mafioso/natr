@@ -22,11 +22,9 @@ class ProjectFilter(ListOfIdFilter):
 
 	def filter_status(self, queryset, value):
 		value = map(int,value.split('_'))
-		queryset = queryset.filter(
-			Q(status__in=value)
-			# Q(aggreement__number__startswith=value)
-		)
+		queryset = queryset.filter(status__in=value)
 		return queryset
+
 	def filter_search(self, queryset, value):
 		queryset = queryset.filter(
 			Q(name__icontains=value)

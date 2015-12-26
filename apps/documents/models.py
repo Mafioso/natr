@@ -237,12 +237,11 @@ class DocumentDMLManager(models.Manager):
             d.save()
         if attachments:  # set relations to attachment
             for attachment in attachments:
-                attachment.document = d
-                attachment.save()
+                Attachment(document=d, **attachment).save()
         return d
 
     def update_doc_(self, instance, **kwargs):
-        incoming_attachments = kwargs.pop('attachments', [])
+        incoming_attachments = [a['id'] for a in kwargs.pop('attachments', [])]
         for k, v in kwargs.iteritems():
             setattr(instance, k, v)
         instance.save()
@@ -250,12 +249,8 @@ class DocumentDMLManager(models.Manager):
         if not incoming_attachments:
             return instance
 
-        for attachment in instance.attachments.all():
-            if attachment not in incoming_attachments:
-                attachment.delete()
-        for attachment in incoming_attachments:
-            attachment.document = instance
-            attachment.save()
+        instance.attachments.clear()
+        instance.attachments = Attachment.objects.filter(pk__in=incoming_attachments)
         return instance
 
     def filter_doc_(self, doc_class):

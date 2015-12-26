@@ -74,6 +74,9 @@ class UserManager(BaseUserManager):
 
     def create_grantee(self, email, password, organization=None, **extra_fields):
         account = self._create_user(email, password, False, **extra_fields)
+        grantee = Grantee.objects.create(
+            account=account,
+            organization=organization,)
         send_mail(
             u'Добро пожаловать в Кабинет Грантополучателя',
             u"""Здравствуйте %(name)s!
@@ -89,9 +92,7 @@ class UserManager(BaseUserManager):
             [email],
             fail_silently=False
         )
-        return Grantee.objects.create(
-            account=account,
-            organization=organization,)
+        return grantee
 
 
 class Account(AbstractBaseUser, PermissionsMixin):

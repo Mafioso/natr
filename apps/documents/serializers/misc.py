@@ -8,7 +8,7 @@ from natr import models as natr_models
 from natr.rest_framework.serializers import *
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
-from .common import DocumentCompositionSerializer, DocumentSerializer
+from .common import DocumentCompositionSerializer, DocumentSerializer, AttachmentSerializer
 from collections import OrderedDict
 
 __all__ = (
@@ -27,7 +27,7 @@ __all__ = (
     'CalendarPlanDocumentSerializer',
     'CalendarPlanItemSerializer',
     'ProjectStartDescriptionSerializer',
-    'AttachmentSerializer',
+    'AttachmentSerializer'
 )
 
 
@@ -269,16 +269,6 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
     def empty_data(cls, project):
         data = DocumentCompositionSerializer.empty_data(project)
         return data
-
-
-class AttachmentSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = models.Attachment
-
-    document = serializers.PrimaryKeyRelatedField(
-        queryset=models.Document.objects.all(), required=False)
-
 
 
 

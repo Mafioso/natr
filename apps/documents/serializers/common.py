@@ -6,13 +6,23 @@ from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixi
 from documents import models
 
 
+class AttachmentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.Attachment
+
+    document = serializers.PrimaryKeyRelatedField(
+        queryset=models.Document.objects.all(), required=False)
+    id = serializers.IntegerField(required=False)
+
+
+
 class DocumentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.Document
 
-    attachments = serializers.PrimaryKeyRelatedField(
-        queryset=models.Attachment.objects.all(), many=True, required=False)
+    attachments = AttachmentSerializer(many=True, required=False)
 
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
@@ -41,3 +51,4 @@ class DocumentCompositionSerializer(EmptyObjectDMLMixin, serializers.ModelSerial
                 'project': project.id,
             },
         }
+
