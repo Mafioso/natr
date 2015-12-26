@@ -84,6 +84,8 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
     costs = FactMilestoneCostRowSerializer(many=True, required=False)
     cost_type = CostTypeSerializer(read_only=True)
 
+    def update(self, instance, validated_data):
+        return instance
     
 
 class UseOfBudgetDocumentSerializer(DocumentCompositionSerializer):

@@ -301,6 +301,13 @@ class UseOfBudgetDocumentViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(qs, many=True)
         return response.Response(serializer.data)
 
+
+class UseOfBudgetDocumentItemViewSet(viewsets.ModelViewSet):
+
+    serializer_class = UseOfBudgetDocumentItemSerializer
+    queryset = doc_models.UseOfBudgetDocumentItem.objects.all()
+    
+
 class CostTypeViewSet(ProjectBasedViewSet):
     serializer_class = natr_serializers.CostTypeSerializer
     queryset = CostType.objects.all()
