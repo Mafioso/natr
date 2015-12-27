@@ -76,6 +76,8 @@ class MilestoneSerializer(
         if milestone_changed:
             if instance.status == 1:
                 mailing.send_milestone_status_payment(instance)
+            if instance.status == 2:
+                mailing.send_milestone_status_implementation(instance)
         return instance
 
     @classmethod

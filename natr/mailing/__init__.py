@@ -50,3 +50,12 @@ def send_milestone_status_payment(milestone):
         os.path.join(os.path.abspath(settings.BASE_DIR), 'static', 'files', 'pamyatka.doc'), 'rb')
     mail.attach(os.path.basename(attachment.name), attachment.read(), 'application/msword')
     mail.send(fail_silently=False)
+
+def send_milestone_status_implementation(milestone):
+    send_mail(
+        u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
+        u"""Здравствуйте!\nТранш поступил. Статус этапа: \"На реализации\"""", 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, milestone.project.organization_details.grantee_set.all()),
+        fail_silently=False
+    )
