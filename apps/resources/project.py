@@ -258,6 +258,17 @@ class ReportViewSet(ProjectBasedViewSet):
         headers = self.get_success_headers(item_ser.data)
         return response.Response(item_ser.data, headers=headers)
 
+    @detail_route(methods=['patch'], url_path='change_status')
+    def get_report_costs(self, request, *a, **kw):
+        report = self.get_object()
+        data = request.data
+        prev_status = report.status
+        report.status = data['status'] if type(data['status']) == int else eval(data['status']) 
+        report.save()
+        report.send_status_changed_notification(prev_status, report.status, request.user)
+        serializer = self.get_serializer(instance=report)
+        return response.Response(serializer.data)
+
 
 class CorollaryViewSet(ProjectBasedViewSet):
     queryset = prj_models.Corollary.objects.all()
