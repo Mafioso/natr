@@ -22,6 +22,23 @@ class IsProjectAssignee(BasePermissionComponent):
             project = natr_user.projects.filter(pk=obj.get_project().id).first()
             return project is not None
 
+    def has_permission(self, permission, request, view):
+        try:
+            queryset = view.get_queryset()
+        except AttributeError:
+            queryset = getattr(view, 'queryset', None)
+
+        assert queryset is not None, (
+            'Cannot apply DjangoModelPermissions on a view that '
+            'does not have `.queryset` property or overrides the '
+            '`.get_queryset()` method.')
+
+        if not 'pk' in view.kwargs:
+            return False
+        obj = queryset.get(pk=view.kwargs.get('pk'))
+        project = request.user.user.projects.filter(pk=obj.get_project().id).first()
+        return project is not None
+
 
 class IsAdminUser(BasePermissionComponent):
 
@@ -88,8 +105,9 @@ class PermissionDefinition(BaseComposedPermision):
 
     def global_permission_set(self):
         return And(AllowOnlyAuthenticated, Or(
-                                            IsGPAssignee,
                                             IsAdminUser,
+                                            IsProjectAssignee,
+                                            IsGPAssignee,
                                             DjangoModelPermissions,))
 
     def object_permission_set(self):
