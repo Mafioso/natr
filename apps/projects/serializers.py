@@ -450,6 +450,16 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     def empty_data(cls, project):
         return {'project': project.id}
 
+    def update(self, instance, validated_data):
+        # if status changed we need to notify gp about that
+        # so before updating the instance we check whether monitoring status gonna be changed
+        changed = instance.status != validated_data.get('status', instance.status) 
+        instance = super(MonitoringSerializer, self).update(instance, validated_data)
+        if changed:
+            if instance.status == 2:
+                mailing.send_monitoring_plan_agreed(instance)
+        return instance
+
 
 class MonitoringTodoSerializer(serializers.ModelSerializer):
 
