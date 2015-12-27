@@ -58,8 +58,8 @@ class Command(BaseCommand):
 			doc = self.create_doc(doc_models.AgreementDocument.tp, prj)
 			agr_doc = doc_models.AgreementDocument.objects.create(document=doc)
 
-			prj.aggreement = agr_doc
-			prj.statement = statement
+			# prj.aggreement = agr_doc
+			# prj.statement = statement
 			prj.save()
 			self.gen_cost_doc(prj)
 			self.gen_monitoring(prj)
