@@ -59,3 +59,21 @@ def send_milestone_status_implementation(milestone):
         map(lambda x: x.account.email, milestone.project.organization_details.grantee_set.all()),
         fail_silently=False
     )
+
+def send_milestone_status_revision(milestone):
+    send_mail(
+        u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
+        u"""Здравствуйте!\nВаш отчет отправлен на доработку. Проверьте кабинет""", 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, milestone.project.organization_details.grantee_set.all()),
+        fail_silently=False
+    )
+
+def send_milestone_status_finished(milestone):
+    send_mail(
+        u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
+        u"""Здравствуйте!\nЭтап завершен. Сформировано заключение по этапу""", 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, milestone.project.organization_details.grantee_set.all()),
+        fail_silently=False
+    )
