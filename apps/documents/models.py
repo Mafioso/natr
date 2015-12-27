@@ -280,7 +280,7 @@ class Document(ProjectBasedModel):
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
 
     external_id = models.CharField(max_length=255, null=True, blank=True)
-    type = models.CharField(max_length=255)
+    type = models.CharField(max_length=255, null=True)
     number = models.IntegerField(null=True)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
     date_created = models.DateTimeField(auto_now_add=True)
@@ -1057,7 +1057,7 @@ class FactMilestoneCostRow(models.Model):
     class Meta:
         filter_by_project = 'cost_type__project__in'
 
-    name = models.CharField(max_length=1024, default='')
+    name = models.CharField(max_length=1024, default='', null=True)
     cost_type = models.ForeignKey('natr.CostType', null=True, related_name='fact_cost_rows')
     milestone = models.ForeignKey('projects.Milestone')
     plan_cost_row = models.ForeignKey('MilestoneCostRow', null=True)
