@@ -7,12 +7,12 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
-from django.core.mail import send_mail
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, post_delete
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import get_app, get_models
 from grantee.models import Grantee
+from natr import mailing
 
 
 def get_relevant_permissions():
@@ -55,21 +55,7 @@ class UserManager(BaseUserManager):
     def create_natrexpert(self, email, password, **extra_fields):
         account = self._create_user(email, password, False, **extra_fields)
         acc = NatrUser.objects.create(account=account)
-        send_mail(
-            u'Добро пожаловать в ИСЭМ',
-            u"""Здравствуйте %(name)s!
-            Ваши данные для входа в ИСЭМ:\n
-            email: %(email)s,\n
-            пароль: %(password)s\n\n.
-            Ссылка для входа в кабинет: http://178.88.64.87:8000""" % {
-                'name': account.get_full_name(),
-                'email': email,
-                'password': password
-            },
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False
-        )
+        mailing.send_create_natrexpert(account.get_full_name(), email, password)
         return acc
 
     def create_grantee(self, email, password, organization=None, **extra_fields):
@@ -77,21 +63,7 @@ class UserManager(BaseUserManager):
         grantee = Grantee.objects.create(
             account=account,
             organization=organization,)
-        send_mail(
-            u'Добро пожаловать в Кабинет Грантополучателя',
-            u"""Здравствуйте %(name)s!
-            Ваши данные для входа в Грантополучателя:\n
-            email: %(email)s,\n
-            пароль: %(password)s\n\n.
-            Ссылка для входа в кабинет: http://178.88.64.87:8000""" % {
-                'name': account.get_full_name(),
-                'email': email,
-                'password': password
-            },
-            settings.DEFAULT_FROM_EMAIL,
-            [email],
-            fail_silently=False
-        )
+        mailing.send_create_grantee(account.get_full_name(), email, password)
         return grantee
 
 
@@ -161,6 +133,9 @@ class NatrUser(models.Model):
     department = models.IntegerField(null=True, choices=DEPARTMENTS_OPTS)
 
     account = models.OneToOneField('Account', related_name='user')
+
+    def get_full_name(self):
+        return self.account.get_full_name()
 
     def get_department_cap(self):
         try:

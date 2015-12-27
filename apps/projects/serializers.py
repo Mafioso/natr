@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import serializers
-from natr import utils, models as natr_models
+from natr import utils, mailing, models as natr_models
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
@@ -68,6 +68,22 @@ class MilestoneSerializer(
     cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
+    def update(self, instance, validated_data):
+        # if milestone changed we need to notify gp about that
+        # so before updating the instance we check whether milestone gonna be changed
+        milestone_changed = instance.status != validated_data.get('status', instance.status) 
+        instance = super(MilestoneSerializer, self).update(instance, validated_data)
+        if milestone_changed:
+            if instance.status == 1:
+                mailing.send_milestone_status_payment(instance)
+            if instance.status == 2:
+                mailing.send_milestone_status_implementation(instance)
+            if instance.status == 5:
+                mailing.send_milestone_status_revision(instance)
+            if instance.status == 7:
+                mailing.send_milestone_status_finished(instance)
+        return instance
+
     @classmethod
     def empty_data(cls, project, **kwargs):
         kwargs.update({
@@ -126,6 +142,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     # assigned_experts = 
 
     def create(self, validated_data):
+        user = validated_data.pop('user', None)
+        assert user is not None and user.user, "natr user expected parameter should not be none"
+
         organization_details = validated_data.pop('organization_details', None)
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', {'document': {}})
@@ -164,7 +183,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         for i in xrange(prj.number_of_milestones):
             milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
             milestone_ser.is_valid(raise_exception=True)
-            milestone_ser.save()
+            milestone = milestone_ser.save()
+
+            if i == prj.number_of_milestones - 1:
+                Report.build_empty(milestone, report_type=Report.FINAL)
+
 
         # 1. create journal
         prj_journal = JournalSerializer.build_empty(prj)
@@ -203,6 +226,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj_std.is_valid(raise_exception=True)
         prj_std.save(empty=True)
 
+        prj.assigned_experts.add(user.user)
         return prj
 
     def update(self, instance, validated_data):
@@ -272,7 +296,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         for i in xrange(prj.number_of_milestones):
             milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
             milestone_ser.is_valid(raise_exception=True)
-            milestone_ser.save()
+            milestone = milestone_ser.save()
+
+            if i == prj.number_of_milestones - 1:
+                Report.build_empty(milestone, report_type=Report.FINAL)
+
         return prj
 
 
@@ -422,6 +450,16 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     def empty_data(cls, project):
         return {'project': project.id}
 
+    def update(self, instance, validated_data):
+        # if status changed we need to notify gp about that
+        # so before updating the instance we check whether monitoring status gonna be changed
+        changed = instance.status != validated_data.get('status', instance.status) 
+        instance = super(MonitoringSerializer, self).update(instance, validated_data)
+        if changed:
+            if instance.status == 2:
+                mailing.send_monitoring_plan_agreed(instance)
+        return instance
+
 
 class MonitoringTodoSerializer(serializers.ModelSerializer):
 
@@ -449,6 +487,7 @@ class CommentSerializer(serializers.ModelSerializer):
         queryset=Report.objects.all(), required=True)
     expert = serializers.PrimaryKeyRelatedField(
         queryset=NatrUser.objects.all(), required=True)
+    expert_name = serializers.CharField(read_only=True)
 
     def create(self, validated_data):
         comment = Comment.objects.create(**validated_data)
