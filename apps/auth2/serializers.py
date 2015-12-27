@@ -43,7 +43,12 @@ class AccountSerializer(serializers.ModelSerializer):
 
 	def get_user_type(self, instance):
 		if hasattr(instance, 'user'):
-			return 'expert'
+			if instance.user.is_manager():
+				return 'manager'
+			elif instance.user.is_risk_expert():
+				return 'risk_expert'
+			else:
+				return 'expert'
 		elif hasattr(instance, 'grantee'):
 			return 'grantee'
 

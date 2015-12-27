@@ -9,7 +9,7 @@ from grantee.serializers import *
 from documents.serializers import *
 from documents import models as doc_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry
 from auth2.models import NatrUser
 
 
@@ -26,8 +26,25 @@ __all__ = (
     'CorollaryStatByCostTypeSerializer',
     'ExpandedMilestoneSerializer',
     'RiskDefinitionSerializer',
+    'ProjectLogEntrySerializer',
 )
 
+
+class RiskCategorySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RiskCategory
+
+
+class RiskDefinitionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = RiskDefinition
+
+    category = RiskCategorySerializer()
+    indicator = serializers.IntegerField(read_only=True)
+
+    
 class FundingTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -105,7 +122,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
     milestone_set = MilestoneBaseInfo(many=True, required=False)
     risk_degree = serializers.IntegerField(required=False, read_only=True)
-    # assigned_experts =
+    risks = RiskDefinitionSerializer(many=True, read_only=True)
+    # assigned_experts = 
 
     def create(self, validated_data):
         organization_details = validated_data.pop('organization_details', None)
@@ -437,16 +455,7 @@ class CommentSerializer(serializers.ModelSerializer):
         return comment
 
 
-class RiskCategorySerializer(serializers.ModelSerializer):
+class ProjectLogEntrySerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = RiskCategory
-
-
-class RiskDefinitionSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = RiskDefinition
-
-    category = RiskCategorySerializer()
-    indicator = serializers.IntegerField(read_only=True)
+        model = ProjectLogEntry

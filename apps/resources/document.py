@@ -304,6 +304,22 @@ class UseOfBudgetDocumentViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(qs, many=True)
         return response.Response(serializer.data)
 
+
+class UseOfBudgetDocumentItemViewSet(viewsets.ModelViewSet):
+
+    serializer_class = UseOfBudgetDocumentItemSerializer
+    queryset = doc_models.UseOfBudgetDocumentItem.objects.all()
+
+    @detail_route(methods=['patch'], url_path='update_note')
+    def get_report_costs(self, request, *a, **kw):
+        use_of_b_item = self.get_object()
+        data = request.data
+        use_of_b_item.notes = data['notes']
+        use_of_b_item.save()
+        serializer = self.get_serializer(instance=use_of_b_item)
+        return response.Response(serializer.data)
+    
+
 class CostTypeViewSet(ProjectBasedViewSet):
     serializer_class = natr_serializers.CostTypeSerializer
     queryset = CostType.objects.all()

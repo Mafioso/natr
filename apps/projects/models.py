@@ -5,6 +5,7 @@ __author__ = 'xepa4ep'
 
 import datetime
 import dateutil.parser
+from django.conf import settings
 from django.utils import timezone
 from django.db import models
 from django.core.exceptions import MultipleObjectsReturned
@@ -16,6 +17,7 @@ from django.contrib.auth import get_user_model
 from django.utils.functional import cached_property
 from notifications.models import Notification
 from journals.models import JournalActivity
+from django.core.mail import send_mail
 from documents.models import (
     OtherAgreementsDocument,
     CalendarPlanDocument,
@@ -176,11 +178,16 @@ class Project(models.Model):
                self.funding_type.name != FundingType.COMMERCIALIZATION:
                 return 2
             if self.organization_details.org_type == 1 and \
-               self.fundings.amount <= 50000000 or \
-               self.total_month == 12 or \
+               self.fundings.amount <= 50000000 and \
+               self.total_month == 12 and \
                self.funding_type.name == FundingType.COMMERCIALIZATION:
                return 1
             return 0
+    
+    @property
+    def risks(self):
+        risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
+        return risk_index.risks.all()
     
 
     def get_status_cap(self):
@@ -262,6 +269,25 @@ class Project(models.Model):
     def get_project(self):
         return self
 
+    def set_risk_index(self, data):
+        risk_ids = data.get('risks', [])
+        try:
+            risk_index = self.projectriskindex_set.get(
+                milestone=self.current_milestone)
+        except ProjectRiskIndex.DoesNotExist:
+            risk_index = ProjectRiskIndex.objects.create(
+                project=self, milestone=self.current_milestone)
+        risks = RiskDefinition.objects.filter(id__in=risk_ids)
+        risk_index.risks.clear()
+        risk_index.risks.add(*risks)
+        ProjectLogEntry.objects.create(
+            project=self,
+            milestone=self.current_milestone,
+            type=ProjectLogEntry.CHANGE_MILESTONE_RISKS,
+            text=u'Новые риски: ' + ', '.join(map(lambda x: x.title, risks))
+        )
+        return self
+
 
 class ProjectRiskIndex(ProjectBasedModel):
     risks = models.ManyToManyField('RiskDefinition')
@@ -273,6 +299,22 @@ class ProjectRiskIndex(ProjectBasedModel):
     def score(self):
         return sum(map(lambda x: x.indicator, self.risks.all()))
     
+
+class ProjectLogEntry(ProjectBasedModel):
+    TYPE_KEYS = (
+        CHANGE_MILESTONE_RISKS, 
+    ) = (
+        'CHANGE_MILESTONE_RISKS',
+    )
+    GRANT_TYPES = (
+        u'Изменение рисков проекта',
+    )
+    GRANT_TYPES_OPTIONS = zip(TYPE_KEYS, GRANT_TYPES)
+
+    milestone = models.ForeignKey('Milestone')
+    type = models.CharField(max_length=100, null=True, blank=True, choices=GRANT_TYPES_OPTIONS)
+    text = models.CharField(max_length=1000, null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
 
 
 class FundingType(models.Model):
@@ -407,6 +449,24 @@ class Report(ProjectBasedModel):
             return (self.date_end - self.date_start).days
 
         return None
+
+    def send_status_changed_notification(self, prev_status, status, account):
+        if status == self.__class__.CHECK and prev_status != status:
+            for expert in self.project.assigned_experts.all():
+                send_mail(
+                    u'Отправлен отчет на проверку, по проекту %s'%(self.project.name),
+                    u"""Здравствуйте %(name)s!
+                    Грантополучатель %(grantee)s, отправил отчет, по проекту %(project)s, на проверку.             
+                    Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s""" % {
+                        'name': expert.account.get_full_name(),
+                        'grantee': account.get_full_name(),
+                        'project': self.project.name,
+                        'report_id': self.id
+                    },
+                    settings.DEFAULT_FROM_EMAIL,
+                    [expert.account.email],
+                    fail_silently=False
+                )
 
 
 class Corollary(ProjectBasedModel):
