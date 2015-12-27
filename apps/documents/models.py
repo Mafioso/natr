@@ -229,6 +229,7 @@ class DocumentDMLManager(models.Manager):
         doc = self.create_doc_(**ddata)
 
         spec_doc = doc_class(document=doc)
+        print kwargs
         for k, v in kwargs.iteritems():
             setattr(spec_doc, k, v)
         spec_doc.save()
