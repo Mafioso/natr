@@ -50,6 +50,9 @@ class ContactDetails(models.Model):
     natr_user = models.OneToOneField(
         'auth2.NatrUser', null=True,
         related_name='contact_details', verbose_name=u'Контактные данные')
+    grantee = models.OneToOneField(
+        'Grantee', null=True,
+        related_name='contact_details', verbose_name=u'Контактные данные')
 
     full_name = models.CharField(u'ФИО', max_length=512, null=True)
     phone_number = models.CharField(u'Телефон', max_length=255, null=True)
@@ -79,4 +82,3 @@ class Grantee(models.Model):
             return self.organization.authorized_grantees.first()
         except ObjectDoesNotExist:
             return None
-        
