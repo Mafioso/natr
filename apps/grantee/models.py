@@ -25,7 +25,7 @@ class Organization(models.Model):
     bik = models.CharField(u'БИК-ИИН', max_length=255, null=True)
     iik = models.CharField(u'ИИК', max_length=255, null=True)
     address_1 = models.CharField(u'Юридический адрес', max_length=1024, null=True)
-    address_2 = models.CharField(u'Фактический адрес', max_length=1024)
+    address_2 = models.CharField(u'Фактический адрес', max_length=1024, null=True)
     requisites = models.CharField(u'Банковский реквизиты', max_length=1024, null=True)
     first_head_fio = models.CharField(u'ФИО первого руководителя', max_length=512, null=True)
 
