@@ -2,6 +2,7 @@ from rest_framework import serializers
 import auth2.models as models
 import grantee.models as grantee_models
 import projects.models as projects_models
+from django.core.exceptions import ObjectDoesNotExist
 from natr.rest_framework.serializers import ContactDetailsSerializer
 
 __all__ = (
@@ -118,8 +119,15 @@ class NatrUserSerializer(serializers.ModelSerializer):
 			natr_user.projects.add(*projects)
 
 		if contact_details_data:
-			contact_details_obj = ContactDetailsSerializer(
-				instance=natr_user.contact_details, data=contact_details_data)
+			try:
+				contact_details_obj = ContactDetailsSerializer(
+					instance=natr_user.contact_details, data=contact_details_data)
+			except ObjectDoesNotExist:
+				grantee_models.ContactDetails.objects.create(
+					natr_user=natr_user,
+					full_name=natr_user.get_full_name())
+				contact_details_obj = ContactDetailsSerializer(
+					instance=natr_user.contact_details, data=contact_details_data)
 			contact_details_obj.is_valid(raise_exception=True)
 			natr_user.contact_details = contact_details_obj.save()
 
