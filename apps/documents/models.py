@@ -237,7 +237,8 @@ class DocumentDMLManager(models.Manager):
             d.save()
         if attachments:  # set relations to attachment
             for attachment in attachments:
-                Attachment(document=d, **attachment).save()
+                attachment['document'] = d
+                Attachment(**attachment).save()
         return d
 
     def update_doc_(self, instance, **kwargs):
@@ -250,7 +251,7 @@ class DocumentDMLManager(models.Manager):
             return instance
 
         instance.attachments.clear()
-        instance.attachments = Attachment.objects.filter(pk__in=incoming_attachments)
+        instance.attachments.add(*Attachment.objects.filter(pk__in=incoming_attachments))
         return instance
 
     def filter_doc_(self, doc_class):
