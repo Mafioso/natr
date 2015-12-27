@@ -149,6 +149,8 @@ USE_L10N = True
 
 USE_TZ = True
 
+EXCEL_REPORTS_DIR = rel(BASE_DIR, 'excel_reports')
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/

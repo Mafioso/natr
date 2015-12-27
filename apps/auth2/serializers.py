@@ -30,7 +30,9 @@ class GroupSerializer(serializers.ModelSerializer):
 
 class AccountSerializer(serializers.ModelSerializer):
 
-	user_permissions = PermissionSerializer(source='get_all_permission_objs', many=True, required=False)
+	user_permissions = PermissionSerializer(many=True, required=False)
+	password = serializers.CharField(required=False)
+	email = serializers.CharField(required=False)
 	# groups = GroupSerializer(many=True)
 	counters = serializers.SerializerMethodField()
 
@@ -81,11 +83,8 @@ class NatrUserSerializer(serializers.ModelSerializer):
 			first_name = name_parts[0]
 		if len(name_parts) > 1:
 			last_name = name_parts[1]
-		
-		natr_user = models.Account.objects.create_natrexpert(first_name=first_name, last_name=last_name, **account_data)
 
-		if natr_user.number_of_projects:
-			natr_user.number_of_projects = number_of_projects
+		natr_user = models.Account.objects.create_natrexpert(first_name=first_name, last_name=last_name, **account_data)
 
 		if department is not None:
 			natr_user.department = department
@@ -101,4 +100,45 @@ class NatrUserSerializer(serializers.ModelSerializer):
 		if contact_details_data:
 			grantee_models.ContactDetails.objects.create(natr_user=natr_user, **contact_details_data)
 
+		return natr_user
+
+	def update(self, instance, validated_data):
+		account_data = validated_data.pop('account', None)
+		contact_details_data = validated_data.pop('contact_details', None)
+		groups = validated_data.pop('groups', [])
+		projects = validated_data.pop('projects', [])
+
+		natr_user = super(NatrUserSerializer, self).update(instance, validated_data)
+
+		if len(groups) > 0:
+			natr_user.add_to_groups(groups)
+
+		natr_user.projects.clear()
+		if len(projects) > 0:
+			natr_user.projects.add(*projects)
+
+		if contact_details_data:
+			contact_details_obj = ContactDetailsSerializer(
+				instance=natr_user.contact_details, data=contact_details_data)
+			contact_details_obj.is_valid(raise_exception=True)
+			natr_user.contact_details = contact_details_obj.save()
+
+		if account_data:
+			account = natr_user.account
+
+			password = account_data.pop('password', None)
+			name_parts = contact_details_data['full_name'].split()
+			first_name = last_name = None
+			if len(name_parts) > 0:
+				account.first_name = name_parts[0]
+			if len(name_parts) > 1:
+				account.last_name = name_parts[1]
+
+			if password:
+				account.set_password(password)
+			for k, v in account_data.iteritems():
+				setattr(account, k, v)
+			account.save()
+
+		natr_user.save()
 		return natr_user

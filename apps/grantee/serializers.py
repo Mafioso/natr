@@ -96,12 +96,12 @@ class OrganizationSerializer(serializers.ModelSerializer):
 class GranteeSerializer(serializers.ModelSerializer):
 
 	account = AccountSerializer(required=False)
-	contact_details = AuthorizedToInteractGranteeSerializer(required=False)
+	contact_details = ContactDetailsSerializer(required=False)
+	project = serializers.IntegerField(required=False)
 
 	class Meta:
 		model = models.Grantee
 
-	project = serializers.IntegerField(required=False)
 
 	def validate_project(self, value):
 		if not value:
@@ -113,20 +113,18 @@ class GranteeSerializer(serializers.ModelSerializer):
 
 	def create(self, validated_data):
 		account_data = validated_data.pop('account', None)
-		authorized_to_interact_grantee_data = validated_data.pop('contact_details', None)
-
+		contact_details_data = validated_data.pop('contact_details', None)
 		project = validated_data.pop('project', None)
 
-		contact_details = models.AuthorizedToInteractGrantee.objects.create(**authorized_to_interact_grantee_data)
 		organization = project.organization_details
-		organization.authorized_grantees.add(contact_details) 
-		organization.save()
-		name = authorized_to_interact_grantee_data['full_name'].split()
+
+		name = contact_details_data['full_name'].split()
 		first_name = last_name = None
 		if len(name) == 1:
 			first_name = name[0]
 		elif len(name) > 1:
 			last_name = name[1]
+
 		grantee_user = auth2_models.Account.objects.create_grantee(
 			first_name=first_name,
 			last_name=last_name,
@@ -134,4 +132,45 @@ class GranteeSerializer(serializers.ModelSerializer):
 			**account_data)
 		grantee_user.projects.add(project)
 
+		if contact_details_data:
+			models.ContactDetails.objects.create(grantee=grantee_user, **contact_details_data)
+
 		return grantee_user
+
+	def update(self, instance, validated_data):
+		account_data = validated_data.pop('account', None)
+		contact_details_data = validated_data.pop('contact_details', None)
+		project = validated_data.pop('project', None)
+
+		grantee = super(GranteeSerializer, self).update(instance, validated_data)
+
+		if project:
+			organization = project.organization_details
+			grantee.organization = organization
+			grantee.save()
+
+		if contact_details_data:
+			contact_details_obj = ContactDetailsSerializer(
+				instance=grantee.contact_details, data=contact_details_data)
+			contact_details_obj.is_valid(raise_exception=True)
+			grantee.contact_details = contact_details_obj.save()
+
+		if account_data:
+			account = grantee.account
+
+			password = account_data.pop('password', None)
+			name_parts = authorized_to_interact_grantee_data['full_name'].split()
+			first_name = last_name = None
+			if len(name_parts) > 0:
+				account.first_name = name_parts[0]
+			if len(name_parts) > 1:
+				account.last_name = name_parts[1]
+
+			if password:
+				account.set_password(password)
+			for k, v in account_data.iteritems():
+				setattr(account, k, v)
+			account.save()
+
+		grantee.save()
+		return grantee

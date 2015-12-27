@@ -117,6 +117,13 @@ class DocumentDMLManager(models.Manager):
     def create_start_description(self, **kwargs):
         return self.create_doc_with_relations(ProjectStartDescription, **kwargs)
 
+    def update_start_description(self, instance, **kwargs):
+        for k, v in kwargs.iteritems():
+            print k, v
+            setattr(instance, k, v)
+        instance.save()
+        return instance
+
     def update_innovative_project_pasport(self, instance, **kwargs):
         team_members = kwargs.pop('team_members', [])
         dev_info_kw = kwargs.pop('dev_info', {})
@@ -806,7 +813,7 @@ class Attachment(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)
     ext = models.CharField(max_length=255, null=True, blank=True)
 
-    document = models.ForeignKey('Document', null=True, related_name='attachments')
+    document = models.ForeignKey('Document', null=True, blank=True, related_name='attachments')
 
     def get_project(self):
         return self.document.get_project()
