@@ -263,9 +263,9 @@ class ReportViewSet(ProjectBasedViewSet):
         report = self.get_object()
         data = request.data
         prev_status = report.status
-        report.status = data['status']
+        report.status = data['status'] if type(data['status']) == int else eval(data['status']) 
         report.save()
-        report.send_status_changed_notification(prev_status, report.status)
+        report.send_status_changed_notification(prev_status, report.status, request.user)
         serializer = self.get_serializer(instance=report)
         return response.Response(serializer.data)
 
