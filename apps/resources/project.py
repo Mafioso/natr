@@ -125,6 +125,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(project)
         return response.Response(serializer.data)
 
+    @detail_route(methods=['get'], url_path='log')
+    @patch_serializer_class(ProjectLogEntrySerializer)
+    def log(self, request, *a, **kw):
+        project = self.get_object()
+        query_params = request.query_params
+        filter_data = {}
+        if query_params.get('milestone_id', None):
+            filter_data['milestone_id'] = query_params.get('milestone_id')
+        if query_params.get('date_created', None):
+            filter_data['date_created__gte'] = query_params.get('date_created')
+        log = project.projectlogentry_set.filter(**filter_data).order_by('-date_created')
+        serializer = self.get_serializer(log, many=True)
+        return response.Response(serializer.data)
+
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()

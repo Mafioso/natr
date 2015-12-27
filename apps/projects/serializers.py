@@ -9,7 +9,7 @@ from grantee.serializers import *
 from documents.serializers import *
 from documents import models as doc_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry
 from auth2.models import NatrUser
 
 
@@ -26,6 +26,7 @@ __all__ = (
     'CorollaryStatByCostTypeSerializer',
     'ExpandedMilestoneSerializer',
     'RiskDefinitionSerializer',
+    'ProjectLogEntrySerializer',
 )
 
 
@@ -452,3 +453,9 @@ class CommentSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         comment = Comment.objects.create(**validated_data)
         return comment
+
+
+class ProjectLogEntrySerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProjectLogEntry

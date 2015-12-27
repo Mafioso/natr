@@ -275,8 +275,15 @@ class Project(models.Model):
         except ProjectRiskIndex.DoesNotExist:
             risk_index = ProjectRiskIndex.objects.create(
                 project=self, milestone=self.current_milestone)
+        risks = RiskDefinition.objects.filter(id__in=risk_ids)
         risk_index.risks.clear()
-        risk_index.risks.add(*RiskDefinition.objects.filter(id__in=risk_ids))
+        risk_index.risks.add(*risks)
+        ProjectLogEntry.objects.create(
+            project=self,
+            milestone=self.current_milestone,
+            type=ProjectLogEntry.CHANGE_MILESTONE_RISKS,
+            text=u'Новые риски: ' + ', '.join(map(lambda x: x.title, risks))
+        )
         return self
 
 
@@ -290,6 +297,22 @@ class ProjectRiskIndex(ProjectBasedModel):
     def score(self):
         return sum(map(lambda x: x.indicator, self.risks.all()))
     
+
+class ProjectLogEntry(ProjectBasedModel):
+    TYPE_KEYS = (
+        CHANGE_MILESTONE_RISKS, 
+    ) = (
+        'CHANGE_MILESTONE_RISKS',
+    )
+    GRANT_TYPES = (
+        u'Изменение рисков проекта',
+    )
+    GRANT_TYPES_OPTIONS = zip(TYPE_KEYS, GRANT_TYPES)
+
+    milestone = models.ForeignKey('Milestone')
+    type = models.CharField(max_length=100, null=True, blank=True, choices=GRANT_TYPES_OPTIONS)
+    text = models.CharField(max_length=1000, null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
 
 
 class FundingType(models.Model):
