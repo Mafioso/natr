@@ -289,7 +289,7 @@ class Document(ProjectBasedModel):
 
     external_id = models.CharField(max_length=255, null=True, blank=True)
     type = models.CharField(max_length=255, null=True)
-    number = models.IntegerField(null=True)
+    number = models.CharField(null=True, max_length=255)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
     date_created = models.DateTimeField(auto_now_add=True)
     date_sign = models.DateTimeField(null=True)

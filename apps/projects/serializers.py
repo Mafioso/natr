@@ -126,6 +126,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     # assigned_experts = 
 
     def create(self, validated_data):
+        user = validated_data.pop('user', None)
+        assert user is not None and user.user, "natr user expected parameter should not be none"
+
         organization_details = validated_data.pop('organization_details', None)
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', {'document': {}})
@@ -203,6 +206,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj_std.is_valid(raise_exception=True)
         prj_std.save(empty=True)
 
+        prj.assigned_experts.add(user.user)
         return prj
 
     def update(self, instance, validated_data):

@@ -50,6 +50,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
         headers = self.get_success_headers(serializer.data)
         return response.Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
     def retrieve(self, request, *a, **kw):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
