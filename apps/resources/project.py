@@ -143,6 +143,20 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(log, many=True)
         return response.Response(serializer.data)
 
+    @list_route(methods=['get'], url_path='gen_experts_report')
+    @patch_serializer_class(ProjectBasicInfoSerializer)
+    def get_experts_report(self, request, *a, **kw):
+        projects = self.filter_queryset(self.get_queryset())
+        filename = ExcelReport(projects=projects).generate_experts_report()
+        fs = filename.split('/')
+        f = open(filename, 'r')
+        os.remove(filename)
+        filename = fs[len(fs)-1]
+        r = HttpResponse(f, content_type='application/vnd.ms-excel')
+        r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+
+        return r
+
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
@@ -276,7 +290,7 @@ class ReportViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='gen_excel_report')
     def get_excel_report(self, request, *a, **kw):
         report = self.get_object()
-        filename = ExcelReport(report).generate_excel_report()
+        filename = ExcelReport(report=report).generate_excel_report()
         fs = filename.split('/')
         f = open(filename, 'r')
         os.remove(filename)
@@ -285,8 +299,6 @@ class ReportViewSet(ProjectBasedViewSet):
         r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
 
         return r
-
-        
 
 
 class CorollaryViewSet(ProjectBasedViewSet):
