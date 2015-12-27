@@ -4,6 +4,8 @@ from natr.settings import EXCEL_REPORTS_DIR
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, Border, Side, Color, colors, PatternFill
 from openpyxl.cell import get_column_letter
+import decimal
+import os
 
 
 class ExcelReport:
@@ -31,6 +33,12 @@ class ExcelReport:
                     wrap_text=True,
                     shrink_to_fit=False,
                     indent=0)
+    alignment_right=Alignment(horizontal='right',
+                    vertical='top',
+                    text_rotation=0,
+                    wrap_text=True,
+                    shrink_to_fit=False,
+                    indent=0)
     alignment_center=Alignment(horizontal='center',
                     vertical='top',
                     text_rotation=0,
@@ -52,8 +60,19 @@ class ExcelReport:
                    end_color='FFFFC001',
                    fill_type='solid')
 
-    def __init__(self, report=None):
+    greyFill = PatternFill(start_color='B3B3B3',
+                   end_color='B3B3B3',
+                   fill_type='solid')
+
+    def __init__(self, report=None, projects=None):
         self.report = report
+        self.projects = projects
+
+    def build_header_cell(self, ws, column, cell_number, string):
+        ws = self.insert_into_cell(ws, column, cell_number, string)
+        ws.alignment = self.alignment_center
+        ws.font = Font(bold=True)
+        return ws
 
     def insert_into_cell(self, ws, column, cell_number, string):
         if not string:
@@ -177,8 +196,112 @@ class ExcelReport:
             ws3 = self.insert_into_cell(ws3, 'F', row, item.documents[0].document.get_status_cap())
             ws3 = self.insert_into_cell(ws3, 'G', row, item.notes)
             row += 1
-
-        filename = EXCEL_REPORTS_DIR+'/'+u'Отчет '+str(project.aggreement.document.number)+'.xlsx'
+        file_dir = EXCEL_REPORTS_DIR
+        if not os.path.exists(EXCEL_REPORTS_DIR):
+            os.makedirs(EXCEL_REPORTS_DIR)
+        filename = EXCEL_REPORTS_DIR + '/' + u'Отчет ' + str(project.aggreement.document.number) + '.xlsx'
         wb.save(filename)
         return filename
 
+    def generate_experts_report(self):
+        projects = self.projects
+        max_milestone_num = 0
+        for project in projects:
+            if len(project.milestone_set.all())>max_milestone_num:
+                max_milestone_num = len(project.milestone_set.all())
+
+        wb = Workbook()
+        ws = wb.active
+        ws = self.insert_into_cell(ws, 'A', '1', u'Отчет по грантам 2015 года')
+        ws.merge_cells('A1:R1')
+        ws['A1'].alignment = self.alignment_center
+        ws['A1'].font = Font(bold=True)
+        ws = self.build_header_cell(ws, 'A', '2', u'№ п/п' )
+        ws = self.build_header_cell(ws, 'B', '2', u'№/дата договора' )
+        ws = self.build_header_cell(ws, 'C', '2', u'Наименование Грантополучателя' )
+        ws = self.build_header_cell(ws, 'D', '2', u'Наименование проекта' )
+        ws = self.build_header_cell(ws, 'E', '2', u'Вид гранта' )
+        ws = self.build_header_cell(ws, 'F', '2', u'Регион ' )
+        ws = self.build_header_cell(ws, 'G', '2', u'Адрес Грантополучателя' )
+        ws = self.build_header_cell(ws, 'H', '2', u'Срок реализации проекта, (мес)' )
+        ws = self.build_header_cell(ws, 'I', '2', u'Договор' )
+        for i in range(10, 10+max_milestone_num):
+            ws = self.build_header_cell(ws, get_column_letter(i), '2', u'{} транш'.format(str(i-9)) )
+        start_col = col_num = 10+max_milestone_num
+        ws = self.build_header_cell(ws, get_column_letter(col_num), '2', u'Исполнитель' )
+        col_num += 1
+        ws = self.build_header_cell(ws, get_column_letter(col_num), '2', u'Остаток денежных средств,  (тенге)' )
+        col_num += 1
+        ws = self.build_header_cell(ws, get_column_letter(col_num), '2', u'Статус ' )
+        col_num += 1
+        ws = self.build_header_cell(ws, get_column_letter(col_num), '2', u'Итого перечислен')
+        col_num += 1
+
+        row = 3
+        for project in projects:
+            ws = self.insert_into_cell(ws, 'A', row, project.id)
+            agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
+            if project.aggreement.document.date_created:
+                agreement_date = project.aggreement.document.date_created.strftime("%d/%m/%y")
+            else:
+                agreement_date = ""
+            ws = self.insert_into_cell(ws, 'B', row, str(agreement_number) + ' от ' + agreement_date)
+            if project.organization_details:
+                ws = self.insert_into_cell(ws, 'C', row, project.organization_details.name)
+            ws = self.insert_into_cell(ws, 'D', row, project.name)
+            if project.funding_type:
+                ws = self.insert_into_cell(ws, 'E', row, project.funding_type.name)
+            if project.organization_details:
+                if (project.organization_details.address_1):
+                    ws = self.insert_into_cell(ws, 'G', row, project.organization_details.address_1)
+                elif(project.organization_details.address_2):
+                    ws = self.insert_into_cell(ws, 'G', row, project.organization_details.address_2)
+            ws = self.insert_into_cell(ws, 'H', row, project.total_month)
+            sum_fundings = 0
+            if project.fundings:
+                sum_fundings += project.fundings.amount
+            if project.own_fundings:
+                sum_fundings += project.own_fundings.amount
+            ws = self.insert_into_cell(ws, 'I', row, str(sum_fundings))
+            money_sum = 0
+            for i in range(10, 10+project.milestone_set.count()):
+                money_sum += project.milestone_set.all()[i-10].fundings.amount
+                ws = self.insert_into_cell(ws, get_column_letter(i), row, str(project.milestone_set.all()[i-10].fundings.amount))
+            col_num = start_col
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")
+            col_num += 1
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(project.fundings.amount - money_sum))
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(money_sum))
+            col_num += 1
+            row += 1
+
+        ws = self.insert_into_cell(ws, 'A', row, u'Итого по договорам на мониторинге ')
+        ws.merge_cells("A{}:H{}".format(row, row))
+        ws["A{}".format(row)].alignment = self.alignment_center
+        ws["A{}".format(row)].fill = self.greyFill
+        row +=1
+        ws = self.insert_into_cell(ws, 'A', row, u'ВСЕГО по Договорам 2015 года:')
+        ws.merge_cells("A{}:H{}".format(row, row))
+        ws["A{}".format(row)].alignment = self.alignment_right
+        ws["A{}".format(row)].fill = self.greyFill
+
+        for i in range(9, col_num):
+            sum = 0
+            for j in range(2, row-1):
+                val = ws['{}{}'.format(get_column_letter(i), j)].value
+                try:                 
+                    sum += decimal.Decimal(val)
+                except:
+                    pass
+            ws = self.insert_into_cell(ws, get_column_letter(i), row, str(sum))
+
+        file_dir = EXCEL_REPORTS_DIR
+        if not os.path.exists(EXCEL_REPORTS_DIR):
+            os.makedirs(EXCEL_REPORTS_DIR)
+        filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по грантам 2015 года.xlsx'
+        wb.save(filename)
+        return filename
