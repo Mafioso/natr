@@ -34,7 +34,7 @@ class Command(BaseCommand):
 			department=0,
 			account=Account.objects.get(email="r.kamun@gmail.com"))
 		self.gen()
-	
+
 	def gen(self):
 		_projects = self.gen_projects_and_related()
 
@@ -43,7 +43,7 @@ class Command(BaseCommand):
 		rv = []
 		for _ in xrange(5):
 			prj = factories.Project.create()
-			
+
 			org = grantee_factories.Organization()
 			org.project = prj
 			org.save()
@@ -57,9 +57,6 @@ class Command(BaseCommand):
 			statement = doc_models.StatementDocument.objects.create(document=doc)
 			doc = self.create_doc(doc_models.AgreementDocument.tp, prj)
 			agr_doc = doc_models.AgreementDocument.objects.create(document=doc)
-
-			# prj.aggreement = agr_doc
-			# prj.statement = statement
 			prj.save()
 			self.gen_cost_doc(prj)
 			self.gen_monitoring(prj)

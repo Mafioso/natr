@@ -18,7 +18,7 @@ post_syncdb.connect(create_default_groups, sender=auth2.models)
 
 def add_view_permissions(sender, **kwargs):
     """
-    This syncdb hooks takes care of adding a view permission too all our 
+    This syncdb hooks takes care of adding a view permission too all our
     content types.
     """
     # for each of our content types
@@ -203,7 +203,7 @@ def add_risk_definitions(sender, **kwargs):
         c = RiskCategory.objects.get(code=category_code)
         RiskDefinition.objects.get_or_create(category=c, **rd)
 
-    
+
 
 # add risk definitions after a syncdb
 post_syncdb.connect(add_risk_definitions)

@@ -118,8 +118,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project_tupples = self.get_queryset().values_list('id','name')
         return response.Response(project_tupples)
 
-
-
+    @detail_route(methods=['post'], url_path='risks')
+    def risks(self, request, *a, **kw):
+        project = self.get_object()
+        project = project.set_risk_index(data=request.data)
+        serializer = self.get_serializer(project)
+        return response.Response(serializer.data)
 
 
 class MilestoneViewSet(ProjectBasedViewSet):

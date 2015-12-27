@@ -176,11 +176,16 @@ class Project(models.Model):
                self.funding_type.name != FundingType.COMMERCIALIZATION:
                 return 2
             if self.organization_details.org_type == 1 and \
-               self.fundings.amount <= 50000000 or \
-               self.total_month == 12 or \
+               self.fundings.amount <= 50000000 and \
+               self.total_month == 12 and \
                self.funding_type.name == FundingType.COMMERCIALIZATION:
                return 1
             return 0
+    
+    @property
+    def risks(self):
+        risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
+        return risk_index.risks.all()
     
 
     def get_status_cap(self):
@@ -260,6 +265,18 @@ class Project(models.Model):
         return self.start_description.id
 
     def get_project(self):
+        return self
+
+    def set_risk_index(self, data):
+        risk_ids = data.get('risks', [])
+        try:
+            risk_index = self.projectriskindex_set.get(
+                milestone=self.current_milestone)
+        except ProjectRiskIndex.DoesNotExist:
+            risk_index = ProjectRiskIndex.objects.create(
+                project=self, milestone=self.current_milestone)
+        risk_index.risks.clear()
+        risk_index.risks.add(*RiskDefinition.objects.filter(id__in=risk_ids))
         return self
 
 
