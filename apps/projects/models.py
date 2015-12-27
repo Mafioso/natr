@@ -190,6 +190,12 @@ class Project(models.Model):
         return risk_index.risks.all()
     
 
+    def get_grantees(self):
+        try:
+            return self.organization_details.grantee_set.all()
+        except:
+            return []
+
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
 

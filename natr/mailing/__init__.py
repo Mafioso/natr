@@ -44,7 +44,7 @@ def send_milestone_status_payment(milestone):
                 u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
                 u"""Здравствуйте!\nНачался этап №1 по вашему проекту \"%s\". Просим ознакомится с памяткой""" % milestone.project.name, 
                 settings.DEFAULT_FROM_EMAIL,
-                map(lambda x: x.account.email, milestone.project.organization_details.grantee_set.all())
+                map(lambda x: x.account.email, milestone.project.get_grantees())
             )
     attachment = open(
         os.path.join(os.path.abspath(settings.BASE_DIR), 'static', 'files', 'pamyatka.doc'), 'rb')
@@ -56,7 +56,7 @@ def send_milestone_status_implementation(milestone):
         u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
         u"""Здравствуйте!\nТранш поступил. Статус этапа: \"На реализации\"""", 
         settings.DEFAULT_FROM_EMAIL,
-        map(lambda x: x.account.email, milestone.project.organization_details.grantee_set.all()),
+        map(lambda x: x.account.email, milestone.project.get_grantees()),
         fail_silently=True
     )
 
@@ -65,7 +65,7 @@ def send_milestone_status_revision(milestone):
         u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
         u"""Здравствуйте!\nВаш отчет отправлен на доработку. Проверьте кабинет""", 
         settings.DEFAULT_FROM_EMAIL,
-        map(lambda x: x.account.email, milestone.project.organization_details.grantee_set.all()),
+        map(lambda x: x.account.email, milestone.project.get_grantees()),
         fail_silently=True
     )
 
@@ -74,7 +74,7 @@ def send_milestone_status_finished(milestone):
         u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
         u"""Здравствуйте!\nЭтап завершен. Сформировано заключение по этапу""", 
         settings.DEFAULT_FROM_EMAIL,
-        map(lambda x: x.account.email, milestone.project.organization_details.grantee_set.all()),
+        map(lambda x: x.account.email, milestone.project.get_grantees()),
         fail_silently=True
     )
 
@@ -89,7 +89,7 @@ def send_monitoring_plan_agreed(monitoring):
         u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
         u"""Здравствуйте!\nВаш план мониторинга был согласован""", 
         settings.DEFAULT_FROM_EMAIL,
-        map(lambda x: x.account.email, monitoring.project.organization_details.grantee_set.all()) + \
+        map(lambda x: x.account.email, monitoring.project.get_grantees()) + \
         map(lambda x: x.account.email, monitoring.project.assigned_experts.all()),
     )
     mail.attach_alternative(u'Здравствуйте!\nВаш план мониторинга был согласован\n\n\n'+get_monitoring_plan(monitoring), "text/html")

@@ -149,7 +149,14 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', {'document': {}})
         aggrement_data = validated_data.pop('aggreement', {'document': {}})
+        if not 'document' in aggrement_data:
+            aggrement_data.update({'document': {}})
+        if not 'document' in statement_data:
+            statement_data.update({'document': {}})
         other_agreements = validated_data.pop('other_agreements', {'document': {}})
+        if not 'document' in other_agreements:
+            other_agreements.update({'document': {}})
+        other_agreements.update({'document': {}})
 
         prj = Project.objects.create(**validated_data)
         prj.save()
@@ -237,7 +244,15 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', {'document': {}})
         aggrement_data = validated_data.pop('aggreement', {'document': {}})
+        if not 'document' in aggrement_data:
+            aggrement_data.update({'document': {}})
+        if not 'document' in statement_data:
+            statement_data.update({'document': {}})
+        
+        
         other_agreements = validated_data.pop('other_agreements', {'document': {}})
+        if not 'document' in other_agreements:
+            other_agreements.update({'document': {}})
         old_milestones = instance.number_of_milestones
         new_milestones = validated_data['number_of_milestones']
         current_milestone_data = validated_data.pop('current_milestone', None)
