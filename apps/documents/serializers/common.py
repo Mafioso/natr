@@ -14,7 +14,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
     document = serializers.PrimaryKeyRelatedField(
         queryset=models.Document.objects.all(), required=False)
     id = serializers.IntegerField(required=False)
-
+    
 
 
 class DocumentSerializer(serializers.ModelSerializer):
@@ -25,7 +25,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     attachments = AttachmentSerializer(many=True, required=False)
 
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
-
+    type = serializers.CharField(required=False)
     # project = serializers.IntegerField(source='project_id', required=False)
     
     def create(self, validated_data):

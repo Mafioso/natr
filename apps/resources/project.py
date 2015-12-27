@@ -113,6 +113,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         activity_ser = self.get_serializer(activities, many=True)
         return Response(activity_ser.data)
 
+    @list_route(methods=['get'], url_path='get_titles')
+    def list_project_titles(self, request, *a, **kw):
+        project_tupples = self.get_queryset().values_list('id','name')
+        return response.Response(project_tupples)
+
     @detail_route(methods=['post'], url_path='risks')
     def risks(self, request, *a, **kw):
         project = self.get_object()
