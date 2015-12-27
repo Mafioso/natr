@@ -425,6 +425,9 @@ class Report(ProjectBasedModel):
 
         return None
 
+    def send_status_changed_notification(self, prev_status, status):
+        return
+
 
 class Corollary(ProjectBasedModel):
 
