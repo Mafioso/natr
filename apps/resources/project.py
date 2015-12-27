@@ -113,11 +113,30 @@ class ProjectViewSet(viewsets.ModelViewSet):
         activity_ser = self.get_serializer(activities, many=True)
         return Response(activity_ser.data)
 
+    @list_route(methods=['get'], url_path='get_titles')
+    def list_project_titles(self, request, *a, **kw):
+        project_tupples = self.get_queryset().values_list('id','name')
+        return response.Response(project_tupples)
+
     @detail_route(methods=['post'], url_path='risks')
     def risks(self, request, *a, **kw):
         project = self.get_object()
         project = project.set_risk_index(data=request.data)
         serializer = self.get_serializer(project)
+        return response.Response(serializer.data)
+
+    @detail_route(methods=['get'], url_path='log')
+    @patch_serializer_class(ProjectLogEntrySerializer)
+    def log(self, request, *a, **kw):
+        project = self.get_object()
+        query_params = request.query_params
+        filter_data = {}
+        if query_params.get('milestone_id', None):
+            filter_data['milestone_id'] = query_params.get('milestone_id')
+        if query_params.get('date_created', None):
+            filter_data['date_created__gte'] = query_params.get('date_created')
+        log = project.projectlogentry_set.filter(**filter_data).order_by('-date_created')
+        serializer = self.get_serializer(log, many=True)
         return response.Response(serializer.data)
 
 
