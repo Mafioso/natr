@@ -806,7 +806,7 @@ class Attachment(models.Model):
     name = models.CharField(max_length=255, null=True, blank=True)
     ext = models.CharField(max_length=255, null=True, blank=True)
 
-    document = models.ForeignKey('Document', null=True, related_name='attachments')
+    document = models.ForeignKey('Document', null=True, blank=True, related_name='attachments')
 
     def get_project(self):
         return self.document.get_project()
