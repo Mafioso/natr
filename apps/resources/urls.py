@@ -9,6 +9,7 @@ from .project import (
 	MilestoneViewSet,
 	CorollaryViewSet,
 	RiskDefinitionViewSet,
+	CommentViewSet
 )
 from .document import (
 	DocumentViewSet,
@@ -38,6 +39,7 @@ router.register(r'calendar-plans', CalendarPlanDocumentViewSet, 'calendarplan')
 router.register(r'projects', ProjectViewSet)
 router.register(r'milestones', MilestoneViewSet, 'milestone')
 router.register(r'reports', ReportViewSet)
+router.register(r'comments', CommentViewSet)
 router.register(r'corollaries', CorollaryViewSet)
 router.register(r'attachments', AttachmentViewSet, 'attachment')
 router.register(r'use_of_budget', UseOfBudgetDocumentViewSet, 'use_of_budget')

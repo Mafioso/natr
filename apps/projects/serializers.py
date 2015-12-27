@@ -457,6 +457,7 @@ class CommentSerializer(serializers.ModelSerializer):
         queryset=Report.objects.all(), required=True)
     expert = serializers.PrimaryKeyRelatedField(
         queryset=NatrUser.objects.all(), required=True)
+    expert_name = serializers.CharField(read_only=True)
 
     def create(self, validated_data):
         comment = Comment.objects.create(**validated_data)

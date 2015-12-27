@@ -260,8 +260,25 @@ class ReportViewSet(ProjectBasedViewSet):
         headers = self.get_success_headers(item_ser.data)
         return response.Response(item_ser.data, headers=headers)
 
+    @detail_route(methods=['patch'], url_path='rework')
+    def send_to_rework(self, request, *a, **kw):
+        report = self.get_object()
+        data = request.data
+        prev_status = report.status 
+        report.status = Report.REWORK
+        report.save()
+
+        comment_ser = CommentSerializer(data=data)
+        comment_ser.is_valid(raise_exception=True)
+        comment = comment_ser.save()
+        
+        report.send_status_changed_notification(prev_status, report.status, request.user, comment)
+        serializer = self.get_serializer(instance=report)
+        headers = self.get_success_headers(serializer.data)
+        return response.Response(headers=headers)
+
     @detail_route(methods=['patch'], url_path='change_status')
-    def get_report_costs(self, request, *a, **kw):
+    def change_status(self, request, *a, **kw):
         report = self.get_object()
         data = request.data
         prev_status = report.status
@@ -269,13 +286,27 @@ class ReportViewSet(ProjectBasedViewSet):
         report.save()
         report.send_status_changed_notification(prev_status, report.status, request.user)
         serializer = self.get_serializer(instance=report)
-        return response.Response(serializer.data)
+        headers = self.get_success_headers(serializer.data)
+        return response.Response(headers=headers)
     
     @detail_route(methods=['get'], url_path='gen_excel_report')
     def get_excel_report(self, request, *a, **kw):
         report = self.get_object()
         filename = generate_excel_file(report)
         return response.Response(filename)
+
+
+    @detail_route(methods=['get'], url_path='comments')
+    @patch_serializer_class(CommentSerializer)
+    def comments(self, request, *a, **kw):
+        report = self.get_object()
+        query_params = request.query_params
+        filter_data = {}
+        if query_params.get('date_created', None):
+            filter_data['date_created__gte'] = query_params.get('date_created')
+        comments = report.comments.filter(**filter_data).order_by('-date_created')
+        serializer = self.get_serializer(comments, many=True)
+        return response.Response(serializer.data)
 
         
 
@@ -295,3 +326,8 @@ class RiskDefinitionViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskDefinition.objects.all()
     serializer_class = RiskDefinitionSerializer
     pagination_class = None
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.Comment.objects.all()
+    serializer_class = CommentSerializer
