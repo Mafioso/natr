@@ -12,7 +12,7 @@ from projects import models as prj_models
 from documents.serializers import AttachmentSerializer
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
-from projects.utils import generate_excel_report
+from projects.utils import ExcelReport
 
 
 
@@ -276,7 +276,7 @@ class ReportViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='gen_excel_report')
     def get_excel_report(self, request, *a, **kw):
         report = self.get_object()
-        filename = generate_excel_report(report)
+        filename = ExcelReport(report).generate_excel_report()
         fs = filename.split('/')
         f = open(filename, 'r')
         os.remove(filename)
