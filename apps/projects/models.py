@@ -418,7 +418,7 @@ class Report(ProjectBasedModel):
         return self.milestone.number
 
     @classmethod
-    def build_empty(cls, milestone):
+    def build_empty(cls, milestone, report_type=CAMERAL):
         budget_doc = UseOfBudgetDocument.objects.create_empty(
             milestone.project, milestone=milestone)
         budget_doc.save()
@@ -426,7 +426,8 @@ class Report(ProjectBasedModel):
         r = Report(
             milestone=milestone,
             project=milestone.project,
-            use_of_budget_doc=budget_doc)
+            use_of_budget_doc=budget_doc,
+            type=report_type)
         r.save()
         for cost_type in r.project.costtype_set.all():
             budget_doc.add_empty_item(cost_type)

@@ -164,7 +164,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         for i in xrange(prj.number_of_milestones):
             milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
             milestone_ser.is_valid(raise_exception=True)
-            milestone_ser.save()
+            milestone = milestone_ser.save()
+
+            if i == prj.number_of_milestones - 1:
+                Report.build_empty(milestone, report_type=Report.FINAL)
+
 
         # 1. create journal
         prj_journal = JournalSerializer.build_empty(prj)
@@ -272,7 +276,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         for i in xrange(prj.number_of_milestones):
             milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
             milestone_ser.is_valid(raise_exception=True)
-            milestone_ser.save()
+            milestone = milestone_ser.save()
+
+            if i == prj.number_of_milestones - 1:
+                Report.build_empty(milestone, report_type=Report.FINAL)
+
         return prj
 
 
