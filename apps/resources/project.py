@@ -260,12 +260,15 @@ class ReportViewSet(ProjectBasedViewSet):
         headers = self.get_success_headers(item_ser.data)
         return response.Response(item_ser.data, headers=headers)
 
-    @detail_route(methods=['patch'], url_path='rework')
+    @detail_route(methods=['patch'], url_path='to_rework')
     def send_to_rework(self, request, *a, **kw):
+        """
+            Send report to rework
+        """
         report = self.get_object()
         data = request.data
         prev_status = report.status 
-        report.status = Report.REWORK
+        report.status = prj_models.Report.REWORK
         report.save()
 
         comment_ser = CommentSerializer(data=data)
