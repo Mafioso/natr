@@ -1,3 +1,5 @@
+import os
+import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from rest_framework.decorators import list_route, detail_route
@@ -11,7 +13,6 @@ from documents.serializers import AttachmentSerializer
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
 from projects.utils import generate_excel_report
-import dateutil.parser
 
 
 
@@ -278,9 +279,11 @@ class ReportViewSet(ProjectBasedViewSet):
         filename = generate_excel_report(report)
         fs = filename.split('/')
         f = open(filename, 'r')
+        os.remove(filename)
         filename = fs[len(fs)-1]
         r = HttpResponse(f, content_type='application/vnd.ms-excel')
         r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+
         return r
 
         
