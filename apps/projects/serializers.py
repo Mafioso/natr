@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import serializers
-from natr import utils, models as natr_models
+from natr import utils, mailing, models as natr_models
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
@@ -67,6 +67,16 @@ class MilestoneSerializer(
     planned_fundings = SerializerMoneyField(required=False)
     cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
+
+    def update(self, instance, validated_data):
+        # if milestone changed we need to notify gp about that
+        # so before updating the instance we check whether milestone gonna be changed
+        milestone_changed = instance.status != validated_data.get('status', instance.status) 
+        instance = super(MilestoneSerializer, self).update(instance, validated_data)
+        if milestone_changed:
+            if instance.status == 1:
+                mailing.send_milestone_status_payment(instance)
+        return instance
 
     @classmethod
     def empty_data(cls, project, **kwargs):
