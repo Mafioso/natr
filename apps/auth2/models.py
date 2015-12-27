@@ -134,6 +134,9 @@ class NatrUser(models.Model):
 
     account = models.OneToOneField('Account', related_name='user')
 
+    def get_full_name(self):
+        return self.account.get_full_name()
+
     def get_department_cap(self):
         try:
             return NatrUser.DEPARTMENTS_CAPS[self.department]
