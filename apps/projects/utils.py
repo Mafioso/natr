@@ -5,6 +5,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, Border, Side, Color, colors, PatternFill
 from openpyxl.cell import get_column_letter
 import decimal
+import os
 
 
 class ExcelReport:
@@ -195,8 +196,10 @@ class ExcelReport:
             ws3 = self.insert_into_cell(ws3, 'F', row, item.documents[0].document.get_status_cap())
             ws3 = self.insert_into_cell(ws3, 'G', row, item.notes)
             row += 1
-
-        filename = EXCEL_REPORTS_DIR+'/'+u'Отчет '+str(project.aggreement.document.number)+'.xlsx'
+        file_dir = EXCEL_REPORTS_DIR
+        if not os.path.exists(EXCEL_REPORTS_DIR):
+            os.makedirs(EXCEL_REPORTS_DIR)
+        filename = EXCEL_REPORTS_DIR + '/' + u'Отчет ' + str(project.aggreement.document.number) + '.xlsx'
         wb.save(filename)
         return filename
 
@@ -296,7 +299,9 @@ class ExcelReport:
                     pass
             ws = self.insert_into_cell(ws, get_column_letter(i), row, str(sum))
 
-
+        file_dir = EXCEL_REPORTS_DIR
+        if not os.path.exists(EXCEL_REPORTS_DIR):
+            os.makedirs(EXCEL_REPORTS_DIR)
         filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по грантам 2015 года.xlsx'
         wb.save(filename)
         return filename
