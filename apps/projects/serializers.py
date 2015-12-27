@@ -78,6 +78,10 @@ class MilestoneSerializer(
                 mailing.send_milestone_status_payment(instance)
             if instance.status == 2:
                 mailing.send_milestone_status_implementation(instance)
+            if instance.status == 5:
+                mailing.send_milestone_status_revision(instance)
+            if instance.status == 7:
+                mailing.send_milestone_status_finished(instance)
         return instance
 
     @classmethod
@@ -445,6 +449,16 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     @classmethod
     def empty_data(cls, project):
         return {'project': project.id}
+
+    def update(self, instance, validated_data):
+        # if status changed we need to notify gp about that
+        # so before updating the instance we check whether monitoring status gonna be changed
+        changed = instance.status != validated_data.get('status', instance.status) 
+        instance = super(MonitoringSerializer, self).update(instance, validated_data)
+        if changed:
+            if instance.status == 2:
+                mailing.send_monitoring_plan_agreed(instance)
+        return instance
 
 
 class MonitoringTodoSerializer(serializers.ModelSerializer):
