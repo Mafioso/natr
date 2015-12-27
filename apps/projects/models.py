@@ -5,6 +5,7 @@ __author__ = 'xepa4ep'
 
 import datetime
 import dateutil.parser
+from django.conf import settings
 from django.utils import timezone
 from django.db import models
 from django.core.exceptions import MultipleObjectsReturned
@@ -16,6 +17,7 @@ from django.contrib.auth import get_user_model
 from django.utils.functional import cached_property
 from notifications.models import Notification
 from journals.models import JournalActivity
+from django.core.mail import send_mail
 from documents.models import (
     OtherAgreementsDocument,
     CalendarPlanDocument,
@@ -447,6 +449,24 @@ class Report(ProjectBasedModel):
             return (self.date_end - self.date_start).days
 
         return None
+
+    def send_status_changed_notification(self, prev_status, status, account):
+        if status == self.__class__.CHECK and prev_status != status:
+            for expert in self.project.assigned_experts.all():
+                send_mail(
+                    u'Отправлен отчет на проверку, по проекту %s'%(self.project.name),
+                    u"""Здравствуйте %(name)s!
+                    Грантополучатель %(grantee)s, отправил отчет, по проекту %(project)s, на проверку.             
+                    Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s""" % {
+                        'name': expert.account.get_full_name(),
+                        'grantee': account.get_full_name(),
+                        'project': self.project.name,
+                        'report_id': self.id
+                    },
+                    settings.DEFAULT_FROM_EMAIL,
+                    [expert.account.email],
+                    fail_silently=False
+                )
 
 
 class Corollary(ProjectBasedModel):

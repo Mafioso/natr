@@ -25,7 +25,7 @@ class Organization(models.Model):
     bik = models.CharField(u'БИК-ИИН', max_length=255, null=True)
     iik = models.CharField(u'ИИК', max_length=255, null=True)
     address_1 = models.CharField(u'Юридический адрес', max_length=1024, null=True)
-    address_2 = models.CharField(u'Фактический адрес', max_length=1024)
+    address_2 = models.CharField(u'Фактический адрес', max_length=1024, null=True)
     requisites = models.CharField(u'Банковский реквизиты', max_length=1024, null=True)
     first_head_fio = models.CharField(u'ФИО первого руководителя', max_length=512, null=True)
 
@@ -49,6 +49,9 @@ class ContactDetails(models.Model):
         related_name='contact_details')
     natr_user = models.OneToOneField(
         'auth2.NatrUser', null=True,
+        related_name='contact_details', verbose_name=u'Контактные данные')
+    grantee = models.OneToOneField(
+        'Grantee', null=True,
         related_name='contact_details', verbose_name=u'Контактные данные')
 
     full_name = models.CharField(u'ФИО', max_length=512, null=True)
@@ -79,4 +82,3 @@ class Grantee(models.Model):
             return self.organization.authorized_grantees.first()
         except ObjectDoesNotExist:
             return None
-        

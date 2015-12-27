@@ -36,7 +36,7 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
     class Meta:
         model = models.AgreementDocument
 
-    document = DocumentSerializer(required=True)
+    document = DocumentSerializer(required=False)
     funding = SerializerMoneyField(required=False)
 
     def create(self, validated_data):
@@ -64,7 +64,7 @@ class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
     class Meta:
         model = models.OtherAgreementsDocument
 
-    document = DocumentSerializer(required=True)
+    document = DocumentSerializer(required=False)
     items = OtherAgreementItemSerializer(many=True, required=False)
 
     def create(self, validated_data):
@@ -83,7 +83,7 @@ class BasicProjectPasportSerializer(DocumentCompositionSerializer):
     class Meta:
         model = models.BasicProjectPasportDocument
 
-    document = DocumentSerializer(required=True)
+    document = DocumentSerializer(required=False)
     cost = SerializerMoneyField(required=False)
     required_funding = SerializerMoneyField(required=False)
 
@@ -144,7 +144,7 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
     class Meta:
         model = models.InnovativeProjectPasportDocument
 
-    document = DocumentSerializer(required=True)
+    document = DocumentSerializer(required=False)
     team_members = ProjectTeamMemberSerializer(many=True, required=False)
     dev_info = DevelopersInfoSerializer(required=False)
     tech_char = TechnologyCharacteristicsSerializer(required=False)
@@ -171,7 +171,7 @@ class StatementDocumentSerializer(DocumentCompositionSerializer):
     class Meta:
         model = models.StatementDocument
 
-    document = DocumentSerializer(required=True)
+    document = DocumentSerializer(required=False)
 
     def create(self, validated_data):
         doc = models.Document.dml.create_statement(**validated_data)
@@ -200,7 +200,7 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
     class Meta:
         model = models.CalendarPlanDocument
 
-    document = DocumentSerializer(required=True)
+    document = DocumentSerializer(required=False)
 
     items = CalendarPlanItemSerializer(many=True, required=False)
     
@@ -233,7 +233,7 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
     class Meta:
         model = models.ProjectStartDescription
 
-    document = DocumentSerializer(required=True)
+    document = DocumentSerializer(required=False)
 
     prod_fact = SerializerMoneyField(required=False)
     prod_plan = SerializerMoneyField(required=False)
@@ -250,12 +250,12 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
     tax_local_fact = SerializerMoneyField(required=False)
     tax_local_plan = SerializerMoneyField(required=False)
     tax_local_avrg = SerializerMoneyField(required=False)
-    total_rlzn_fact = serializers.CharField(required=False)
-    total_rlzn_plan = serializers.CharField(required=False)
-    total_rlzn_avrg = serializers.CharField(required=False)
-    total_tax_fact = serializers.CharField(required=False)
-    total_tax_plan = serializers.CharField(required=False)
-    total_tax_avrg = serializers.CharField(required=False)
+    total_rlzn_fact = serializers.CharField(required=False, read_only=True)
+    total_rlzn_plan = serializers.CharField(required=False, read_only=True)
+    total_rlzn_avrg = serializers.CharField(required=False, read_only=True)
+    total_tax_fact = serializers.CharField(required=False, read_only=True)
+    total_tax_plan = serializers.CharField(required=False, read_only=True)
+    total_tax_avrg = serializers.CharField(required=False, read_only=True)
 
     def create(self, validated_data):
         doc = models.Document.dml.create_start_description(**validated_data)
@@ -263,7 +263,7 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
 
     def update(self, instance, validated_data):
         document = validated_data.pop('document')
-        return models.Document.dml.update_doc_(instance, **validated_data)
+        return models.Document.dml.update_start_description(instance, **validated_data)
 
     @classmethod
     def empty_data(cls, project):

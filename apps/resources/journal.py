@@ -3,6 +3,7 @@ from rest_framework import viewsets, response, filters
 from natr.rest_framework.decorators import patch_serializer_class
 from journals import models, serializers
 
+
 class JournalViewSet(viewsets.ModelViewSet):
 
 	queryset = models.Journal.objects.all()

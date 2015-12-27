@@ -158,11 +158,12 @@ class NatrUser(models.Model):
         u'Стройиндустрия')
     DEPARTMENTS_OPTS = zip(range(len(DEPARTMENTS_CAPS)), DEPARTMENTS_CAPS)
 
-
-    number_of_projects = models.IntegerField(u'Количество проектов', null=True)
     department = models.IntegerField(null=True, choices=DEPARTMENTS_OPTS)
 
     account = models.OneToOneField('Account', related_name='user')
+
+    def get_full_name(self):
+        return self.account.get_full_name()
 
     def get_department_cap(self):
         try:
