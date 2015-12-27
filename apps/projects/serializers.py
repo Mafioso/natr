@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import serializers
-from natr import utils, models as natr_models
+from natr import utils, mailing, models as natr_models
 from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
@@ -67,6 +67,18 @@ class MilestoneSerializer(
     planned_fundings = SerializerMoneyField(required=False)
     cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
+
+    def update(self, instance, validated_data):
+        # if milestone changed we need to notify gp about that
+        # so before updating the instance we check whether milestone gonna be changed
+        milestone_changed = instance.status != validated_data.get('status', instance.status) 
+        instance = super(MilestoneSerializer, self).update(instance, validated_data)
+        if milestone_changed:
+            if instance.status == 1:
+                mailing.send_milestone_status_payment(instance)
+            if instance.status == 2:
+                mailing.send_milestone_status_implementation(instance)
+        return instance
 
     @classmethod
     def empty_data(cls, project, **kwargs):
@@ -167,7 +179,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         for i in xrange(prj.number_of_milestones):
             milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
             milestone_ser.is_valid(raise_exception=True)
-            milestone_ser.save()
+            milestone = milestone_ser.save()
+
+            if i == prj.number_of_milestones - 1:
+                Report.build_empty(milestone, report_type=Report.FINAL)
+
 
         # 1. create journal
         prj_journal = JournalSerializer.build_empty(prj)
@@ -276,7 +292,11 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         for i in xrange(prj.number_of_milestones):
             milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
             milestone_ser.is_valid(raise_exception=True)
-            milestone_ser.save()
+            milestone = milestone_ser.save()
+
+            if i == prj.number_of_milestones - 1:
+                Report.build_empty(milestone, report_type=Report.FINAL)
+
         return prj
 
 
@@ -453,6 +473,7 @@ class CommentSerializer(serializers.ModelSerializer):
         queryset=Report.objects.all(), required=True)
     expert = serializers.PrimaryKeyRelatedField(
         queryset=NatrUser.objects.all(), required=True)
+    expert_name = serializers.CharField(read_only=True)
 
     def create(self, validated_data):
         comment = Comment.objects.create(**validated_data)

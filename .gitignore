@@ -19,6 +19,7 @@ dist/
 secrets.cfg
 .DS_Store
 .eggs
+excel_reports
 static/js
 static/assets
 static/images

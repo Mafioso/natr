@@ -1,4 +1,7 @@
+import os
+import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
+from django.http import HttpResponse
 from rest_framework.decorators import list_route, detail_route
 from rest_framework import viewsets, response, filters, status
 from natr.rest_framework.decorators import patch_serializer_class
@@ -9,8 +12,7 @@ from projects import models as prj_models
 from documents.serializers import AttachmentSerializer
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
-from projects.utils import generate_excel_file
-import dateutil.parser
+from projects.utils import ExcelReport
 
 
 
@@ -263,8 +265,28 @@ class ReportViewSet(ProjectBasedViewSet):
         headers = self.get_success_headers(item_ser.data)
         return response.Response(item_ser.data, headers=headers)
 
+    @detail_route(methods=['patch'], url_path='to_rework')
+    def send_to_rework(self, request, *a, **kw):
+        """
+            Send report to rework
+        """
+        report = self.get_object()
+        data = request.data
+        prev_status = report.status 
+        report.status = prj_models.Report.REWORK
+        report.save()
+
+        comment_ser = CommentSerializer(data=data)
+        comment_ser.is_valid(raise_exception=True)
+        comment = comment_ser.save()
+        
+        report.send_status_changed_notification(prev_status, report.status, request.user, comment)
+        serializer = self.get_serializer(instance=report)
+        headers = self.get_success_headers(serializer.data)
+        return response.Response(headers=headers)
+
     @detail_route(methods=['patch'], url_path='change_status')
-    def get_report_costs(self, request, *a, **kw):
+    def change_status(self, request, *a, **kw):
         report = self.get_object()
         data = request.data
         prev_status = report.status
@@ -272,13 +294,34 @@ class ReportViewSet(ProjectBasedViewSet):
         report.save()
         report.send_status_changed_notification(prev_status, report.status, request.user)
         serializer = self.get_serializer(instance=report)
-        return response.Response(serializer.data)
+        headers = self.get_success_headers(serializer.data)
+        return response.Response(headers=headers)
     
     @detail_route(methods=['get'], url_path='gen_excel_report')
     def get_excel_report(self, request, *a, **kw):
         report = self.get_object()
-        filename = generate_excel_file(report)
-        return response.Response(filename)
+        filename = ExcelReport(report).generate_excel_report()
+        fs = filename.split('/')
+        f = open(filename, 'r')
+        os.remove(filename)
+        filename = fs[len(fs)-1]
+        r = HttpResponse(f, content_type='application/vnd.ms-excel')
+        r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+
+        return r
+
+
+    @detail_route(methods=['get'], url_path='comments')
+    @patch_serializer_class(CommentSerializer)
+    def comments(self, request, *a, **kw):
+        report = self.get_object()
+        query_params = request.query_params
+        filter_data = {}
+        if query_params.get('date_created', None):
+            filter_data['date_created__gte'] = query_params.get('date_created')
+        comments = report.comments.filter(**filter_data).order_by('-date_created')
+        serializer = self.get_serializer(comments, many=True)
+        return response.Response(serializer.data)
 
         
 
@@ -298,3 +341,8 @@ class RiskDefinitionViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskDefinition.objects.all()
     serializer_class = RiskDefinitionSerializer
     pagination_class = None
+
+
+class CommentViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.Comment.objects.all()
+    serializer_class = CommentSerializer

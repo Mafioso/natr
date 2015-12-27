@@ -418,7 +418,7 @@ class Report(ProjectBasedModel):
         return self.milestone.number
 
     @classmethod
-    def build_empty(cls, milestone):
+    def build_empty(cls, milestone, report_type=CAMERAL):
         budget_doc = UseOfBudgetDocument.objects.create_empty(
             milestone.project, milestone=milestone)
         budget_doc.save()
@@ -426,7 +426,8 @@ class Report(ProjectBasedModel):
         r = Report(
             milestone=milestone,
             project=milestone.project,
-            use_of_budget_doc=budget_doc)
+            use_of_budget_doc=budget_doc,
+            type=report_type)
         r.save()
         for cost_type in r.project.costtype_set.all():
             budget_doc.add_empty_item(cost_type)
@@ -450,23 +451,47 @@ class Report(ProjectBasedModel):
 
         return None
 
-    def send_status_changed_notification(self, prev_status, status, account):
-        if status == self.__class__.CHECK and prev_status != status:
-            for expert in self.project.assigned_experts.all():
-                send_mail(
-                    u'Отправлен отчет на проверку, по проекту %s'%(self.project.name),
-                    u"""Здравствуйте %(name)s!
-                    Грантополучатель %(grantee)s, отправил отчет, по проекту %(project)s, на проверку.             
-                    Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s""" % {
-                        'name': expert.account.get_full_name(),
-                        'grantee': account.get_full_name(),
-                        'project': self.project.name,
-                        'report_id': self.id
-                    },
-                    settings.DEFAULT_FROM_EMAIL,
-                    [expert.account.email],
-                    fail_silently=False
-                )
+    def send_status_changed_notification(self, prev_status, status, account, comment=None):
+        if prev_status != status:
+            if status == Report.CHECK:
+                status_cap = u"проверку"
+                for expert in self.project.assigned_experts.all():
+                    send_mail(
+                        u'Отправлен отчет на %s, по проекту %s'%(status_cap, self.project.name),
+                        u"""Здравствуйте, %(name)s!
+                        Грантополучатель, %(grantee)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.             
+                        Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s""" % {
+                            'name': expert.account.get_full_name(),
+                            'grantee': account.get_full_name(),
+                            'project': self.project.name,
+                            'status_cap': status_cap,
+                            'report_id': self.id
+                        },
+                        settings.DEFAULT_FROM_EMAIL,
+                        [expert.account.email],
+                        fail_silently=False
+                    )
+
+            elif status == Report.REWORK or status == Report.APPROVE:
+                status_cap = u"доработку" if status == Report.REWORK else u"согласование"
+                for grantee in self.project.assigned_grantees.all():
+                    send_mail(
+                        u'Отправлен отчет на %s, по проекту %s'%(status_cap, self.project.name),
+                        u"""Здравствуйте, %(name)s!
+                        Эксперт, %(expert)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.
+                        Комментарий: %(comment)s             
+                        Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s """ % {
+                            'name': grantee.account.get_full_name(),
+                            'expert': account.get_full_name(),
+                            'project': self.project.name,
+                            'status_cap': status_cap,
+                            'comment': comment.comment_text if comment else "",
+                            'report_id': self.id,
+                        },
+                        settings.DEFAULT_FROM_EMAIL,
+                        [grantee.account.email],
+                        fail_silently=False
+                    )         
 
 
 class Corollary(ProjectBasedModel):
@@ -869,6 +894,10 @@ class Comment(models.Model):
 
     def get_project(self):
         self.report.get_project()
+
+    @property 
+    def expert_name(self):
+        return self.expert.account.get_full_name()
 
 
 class RiskCategory(models.Model):
