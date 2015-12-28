@@ -108,11 +108,18 @@ class ProjectTeamMemberSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         return data
 
+class TechStageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.TechStage
+
 
 class DevelopersInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.DevelopersInfo
+
+    tech_stages = serializers.PrimaryKeyRelatedField(queryset=models.TechStage.objects.all(), many=True)
 
     def to_internal_value(self, data):
         return data
@@ -229,7 +236,9 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
     @classmethod
     def empty_data(cls, project):
         data = DocumentCompositionSerializer.empty_data(project)
-        data['items'] = [{}] * project.number_of_milestones
+        data['items'] = []
+        for milestone in project.milestone_set.all():
+            data['items'].append({'number': milestone.number})
         return data
 
 
