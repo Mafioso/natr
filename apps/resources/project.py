@@ -6,7 +6,7 @@ from rest_framework.decorators import list_route, detail_route
 from rest_framework import viewsets, response, filters, status
 from natr.rest_framework.decorators import patch_serializer_class
 from natr.rest_framework.policies import PermissionDefinition
-from natr.rest_framework.mixins import ProjectBasedViewSet
+from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
 from projects.serializers import *
 from projects import models as prj_models
 from documents.serializers import AttachmentSerializer
@@ -177,6 +177,7 @@ class MonitoringTodoViewSet(ProjectBasedViewSet):
     queryset = prj_models.MonitoringTodo.objects.all()
     serializer_class = MonitoringTodoSerializer
     permission_classes = (PermissionDefinition, )
+    pagination_class = LargeResultsSetPagination
 
     def list(self, request, monitoring_pk=None):
         qs = self.filter_queryset(
@@ -196,6 +197,7 @@ class MonitoringTodoViewSet(ProjectBasedViewSet):
 class MonitoringViewSet(ProjectBasedViewSet):
     queryset = prj_models.Monitoring.objects.all()
     serializer_class = MonitoringSerializer
+    pagination_class = LargeResultsSetPagination
 
     @list_route(methods=['get'], url_path='recent_todos')
     @patch_serializer_class(MonitoringTodoSerializer)

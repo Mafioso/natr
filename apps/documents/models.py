@@ -153,11 +153,19 @@ class DocumentDMLManager(models.Manager):
                 dev_info = DevelopersInfo.objects.get(id=dev_info_kw.pop('id', None))
             except DevelopersInfo.DoesNotExist:
                 dev_info_kw['pasport'] = instance
+                tech_stages_ids = dev_info_kw.pop('tech_stages', [])
+                tech_stages = TechStage.objects.filter(id__in=tech_stages_ids)
                 dev_info = DevelopersInfo.objects.create(**dev_info_kw)
+                dev_info.tech_stages.add(*tech_stages)
+                dev_info.save()
             else:
                 dev_info_kw.pop('pasport')
+                tech_stages_ids = dev_info_kw.pop('tech_stages', [])
+                tech_stages = TechStage.objects.filter(id__in=tech_stages_ids)
                 for k, v in dev_info_kw.iteritems():
                     setattr(dev_info, k, v)
+                dev_info.tech_stages.clear()
+                dev_info.tech_stages.add(*tech_stages)
                 dev_info.save()
 
         if tech_char_kw:
@@ -602,10 +610,7 @@ class DevelopersInfo(models.Model):
     fax = models.CharField(u'Факс', max_length=1024, null=True, blank=True)
     chat_addr = models.CharField(u'Адрес для переписки', max_length=1024, null=True, blank=True)
     email = models.CharField(u'Электронная почта', max_length=1024, null=True, blank=True)
-    tech_stage = models.IntegerField(u'На каком этапе Ваша технология?',
-                                                        default=InnovativeProjectPasportStatuses.FOUND_RESEARCH,
-                                                        choices=InnovativeProjectPasportStatuses.TECHNOLOGY_STAGE_OPTS,
-                                                        null=True, blank=True)
+    tech_stages = models.ManyToManyField('TechStage') # На каком этапе Ваша технология?
     expirience = models.CharField(u'Участвовали ли разработчики/исследователи в проектах коммерциализации технологий',
                                                         max_length=1024, null=True, blank=True)
     manager_team = models.CharField(u'Имеется ли или уже определена команда менеджеров проекта коммерциализации технологий с \
@@ -622,6 +627,9 @@ class DevelopersInfo(models.Model):
 
     def get_project(self):
         return self.pasport.get_project()
+
+class TechStage(models.Model):
+    title = models.CharField(u'На каком этапе Ваша технология?', max_length=1024)
 
     #Характеристика технологии/продукта
 class TechnologyCharacteristics(models.Model):
