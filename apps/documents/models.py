@@ -441,7 +441,7 @@ class OtherAgreementItem(models.Model):
         filter_by_project = 'other_agreements_doc__document__project__in'
 
     other_agreements_doc = models.ForeignKey(OtherAgreementsDocument, related_name='items', on_delete=models.CASCADE)
-    number = models.IntegerField(null=True, blank=True)
+    number = models.CharField(null=True, blank=True, max_length=1024)
     date_sign = models.DateTimeField(null=True)
 
     def get_project(self):

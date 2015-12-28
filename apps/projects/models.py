@@ -50,7 +50,7 @@ class Project(models.Model):
         u'низкий',
         u'средний',
         u'высокий')
-    name = models.CharField(max_length=1024, null=True, blank=True)
+    name = models.CharField(max_length=2048, null=True, blank=True)
     description = models.CharField(max_length=1024, null=True, blank=True)
     innovation = models.CharField(u'Инновационность', max_length=1024, null=True, blank=True)
     grant_goal = models.CharField(u'Цель гранта', max_length=1024, null=True, blank=True)
