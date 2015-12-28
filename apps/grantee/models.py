@@ -54,6 +54,12 @@ class Organization(models.Model):
                     setattr(share_holder_obj, k, v)
             finally:
                 share_holder_obj.save()
+    @property
+    def authorized_grantee(self):
+        if self.authorized_grantees:
+            return self.authorized_grantees.last()
+
+        return None
 
 
 class ShareHolder(models.Model):
