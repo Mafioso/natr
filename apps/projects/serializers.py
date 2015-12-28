@@ -8,6 +8,7 @@ from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixi
 from grantee.serializers import *
 from documents.serializers import *
 from documents import models as doc_models
+from grantee import models as grantee_models
 from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry
 from auth2.models import NatrUser
@@ -163,9 +164,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         if organization_details:
             organization_details['project'] = prj.id
-            organization_details = OrganizationSerializer(data=organization_details)
-            organization_details.is_valid(raise_exception=True)
-            organization_details.save()
+            grantee_models.Organization.objects.create(**organization_details)
 
         if funding_type_data:
             prj.funding_type = FundingType.objects.create(**funding_type_data)
@@ -259,10 +258,14 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj = super(ProjectSerializer, self).update(instance, validated_data)
 
         if organization_details:
-            organization_details = OrganizationSerializer(
-                instance=instance.organization_details, data=organization_details)
-            organization_details.is_valid(raise_exception=True)
-            prj.organization_details = organization_details.save()
+            try:
+                instance.organization_details
+                for k, v in organization_details.iteritems():
+                    setattr(instance.organization_details, k, v)
+                instance.organization_details.save()
+            except:
+                organization_details['project'] = instance
+                grantee_models.Organization.objects.create(**organization_details)
 
         if funding_type_data:
             funding_type_ser = FundingTypeSerializer(
