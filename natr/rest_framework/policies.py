@@ -23,7 +23,7 @@ class IsProjectAssignee(BasePermissionComponent):
             return project is not None
 
     def has_permission(self, permission, request, view):
-        return len(request.user.user.projects) > 0
+        return len(request.user.user.projects.all()) > 0
 
 
 class IsAdminUser(BasePermissionComponent):
