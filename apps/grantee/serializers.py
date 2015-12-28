@@ -159,7 +159,7 @@ class GranteeSerializer(serializers.ModelSerializer):
 			account = grantee.account
 
 			password = account_data.pop('password', None)
-			name_parts = authorized_to_interact_grantee_data['full_name'].split()
+			name_parts = contact_details_data.get('full_name', '').split()
 			first_name = last_name = None
 			if len(name_parts) > 0:
 				account.first_name = name_parts[0]
