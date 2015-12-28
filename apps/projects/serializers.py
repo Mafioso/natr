@@ -7,6 +7,7 @@ from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
 from documents.serializers import *
+from django.core.exceptions import ObjectDoesNotExist
 from documents import models as doc_models
 from grantee import models as grantee_models
 from journals.serializers import *
@@ -142,6 +143,65 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     risks = RiskDefinitionSerializer(many=True, read_only=True)
     # assigned_experts = 
 
+    def create_organization(self, validated_data):
+        contact_details = validated_data.pop('contact_details', None)
+        share_holders_data = validated_data.pop('share_holders', [])
+        authorized_grantee = validated_data.pop('authorized_grantee', None)
+        organization = grantee_models.Organization(**validated_data)
+        organization.save()
+
+        if contact_details:
+            grantee_models.ContactDetails.objects.create(organization=organization, **contact_details)
+
+        if share_holders_data:
+            share_holders = [
+                grantee_models.ShareHolder(organization=organization, **share_holder)
+                for share_holder in share_holders_data]
+            grantee_models.ShareHolder.objects.bulk_create(share_holders)
+
+        if authorized_grantee:
+            grantee_models.AuthorizedToInteractGrantee.objects.create(
+                organization=organization, **authorized_grantee)
+
+        return organization
+
+    def update_organization(self, instance, validated_data):
+        contact_details = validated_data.pop('contact_details', None)
+        share_holders_data = validated_data.pop('share_holders', [])
+        authorized_grantee = validated_data.pop('authorized_grantee', None)
+
+        for k, v in validated_data.iteritems():
+            setattr(instance, k, v)
+        instance.save()
+
+        if contact_details:
+            try:
+                for k, v in instance.contact_details.iteritems():
+                    setattr(instance.contact_details, k, v)
+                instance.contact_details.save()
+            except:
+                instance.contact_details.delete()
+                grantee_models.ContactDetails.objects.create(
+                    organization=instance, **contact_details)
+
+        if share_holders_data:
+            instance.share_holders.clear()
+            share_holders = [
+                grantee_models.ShareHolder(organization=instance, **share_holder)
+                for share_holder in share_holders_data]
+            grantee_models.ShareHolder.objects.bulk_create(share_holders)
+
+        if authorized_grantee:
+            try:
+                for k, v in instance.authorized_grantee.iteritems():
+                    setattr(instance.authorized_grantee, k, v)
+                instance.authorized_grantee.save()
+            except:
+                instance.authorized_grantee.delete()
+                grantee_models.AuthorizedToInteractGrantee.objects.create(
+                    organization=instance, **authorized_grantee)
+        return instance
+
     def create(self, validated_data):
         user = validated_data.pop('user', None)
         assert user is not None and user.user, "natr user expected parameter should not be none"
@@ -163,8 +223,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj.save()
 
         if organization_details:
-            organization_details['project'] = prj.id
-            grantee_models.Organization.objects.create(**organization_details)
+            organization_details['project'] = prj
+            self.create_organization(organization_details)
 
         if funding_type_data:
             prj.funding_type = FundingType.objects.create(**funding_type_data)
@@ -259,13 +319,10 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         if organization_details:
             try:
-                instance.organization_details
-                for k, v in organization_details.iteritems():
-                    setattr(instance.organization_details, k, v)
-                instance.organization_details.save()
-            except:
+                self.update_organization(instance.organization_details, organization_details)
+            except ObjectDoesNotExist:
                 organization_details['project'] = instance
-                grantee_models.Organization.objects.create(**organization_details)
+                self.create_organization(organization_details)
 
         if funding_type_data:
             funding_type_ser = FundingTypeSerializer(
