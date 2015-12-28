@@ -222,7 +222,6 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
 
     def update_items(self, instance, validated_data):
         for item_obj, item_data in zip(instance, validated_data):
-            print item_obj, item_data
             updated_item = models.CalendarPlanItem(id=item_obj.id, **item_data)
             updated_item.save()
         return instance
