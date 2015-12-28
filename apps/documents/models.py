@@ -833,8 +833,13 @@ class UseOfBudgetDocument(models.Model):
     objects = SimpleDocumentManager()
 
     def add_empty_item(self, cost_type):
-        return UseOfBudgetDocumentItem.objects.get_or_create(
+        use_of_budget_item, created = UseOfBudgetDocumentItem.objects.get_or_create(
             use_of_budget_doc=self, cost_type=cost_type)
+        if created:
+            use_of_budget_item.save()
+
+        FactMilestoneCostRow.build_empty(self, use_of_budget_item)
+        return use_of_budget_item
 
     def calc_total_expense(self):
         return sum([item.total_expense for item in self.items.all()])
@@ -884,6 +889,13 @@ class GPDocument(models.Model):
 
     def get_project(self):
         return self.document.get_project()
+
+    @classmethod
+    def build_empty(cls, cost_row, project):
+        doc = Document.build_empty(project)
+        obj = GPDocument(cost_row=cost_row, document=doc)
+        obj.save()
+        return obj
 
 
 class UseOfBudgetDocumentItemManager(models.Manager):
@@ -1099,6 +1111,16 @@ class FactMilestoneCostRow(models.Model):
         gp_docs = [GPDocument.objects.create(**gp_doc) for gp_doc in gp_docs]
         obj.add(*gp_docs)
         return obj
+
+    @classmethod
+    def build_empty(cls, use_of_budget_doc, use_of_budget_item):
+        obj = FactMilestoneCostRow(cost_type=use_of_budget_item.cost_type,
+                                    milestone=use_of_budget_doc.milestone,
+                                    budget_item=use_of_budget_item)
+        obj.save()
+        GPDocument.build_empty(obj, use_of_budget_doc.document.project)
+        return obj
+
 
 
 from django.db.models.signals import post_save
