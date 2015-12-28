@@ -193,7 +193,10 @@ class ExcelReport:
             ws3 = self.insert_into_cell(ws3, 'C', row, str(budget_sum))
             ws3 = self.insert_into_cell(ws3, 'D', row, str(item.total_expense.amount))
             ws3 = self.insert_into_cell(ws3, 'E', row, str(budget_sum - item.total_expense.amount))
-            ws3 = self.insert_into_cell(ws3, 'F', row, item.documents[0].document.get_status_cap())
+            try:
+                ws3 = self.insert_into_cell(ws3, 'F', row, item.documents[0].document.get_status_cap())
+            except:
+                ws3 = self.insert_into_cell(ws3, 'F', row, str(0))
             ws3 = self.insert_into_cell(ws3, 'G', row, item.notes)
             row += 1
         file_dir = EXCEL_REPORTS_DIR
@@ -240,7 +243,10 @@ class ExcelReport:
         row = 3
         for project in projects:
             ws = self.insert_into_cell(ws, 'A', row, project.id)
-            agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
+            if project.aggreement: 
+                agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
+            else:
+                agreement_number = 0
             if project.aggreement.document.date_created:
                 agreement_date = project.aggreement.document.date_created.strftime("%d/%m/%y")
             else:
@@ -265,8 +271,12 @@ class ExcelReport:
             ws = self.insert_into_cell(ws, 'I', row, str(sum_fundings))
             money_sum = 0
             for i in range(10, 10+project.milestone_set.count()):
-                money_sum += project.milestone_set.all()[i-10].fundings.amount
-                ws = self.insert_into_cell(ws, get_column_letter(i), row, str(project.milestone_set.all()[i-10].fundings.amount))
+                try:
+                    money_sum += project.milestone_set.all()[i-10].fundings.amount
+                    ws = self.insert_into_cell(ws, greyFillet_column_letter(i), row, str(project.milestone_set.all()[i-10].fundings.amount))
+                except:
+                    ws = self.insert_into_cell(ws, get_column_letter(i), row, str(0))
+
             col_num = start_col
             ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")
             col_num += 1

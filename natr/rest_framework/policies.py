@@ -24,6 +24,7 @@ class IsProjectAssignee(BasePermissionComponent):
 
     def has_permission(self, permission, request, view):
         return len(request.user.user.projects.all()) > 0
+    
 
 
 class IsAdminUser(BasePermissionComponent):
@@ -91,9 +92,9 @@ class PermissionDefinition(BaseComposedPermision):
 
     def global_permission_set(self):
         return And(AllowOnlyAuthenticated, Or(
+                                            IsGPAssignee,
                                             IsAdminUser,
                                             IsProjectAssignee,
-                                            IsGPAssignee,
                                             DjangoModelPermissions,))
 
     def object_permission_set(self):
