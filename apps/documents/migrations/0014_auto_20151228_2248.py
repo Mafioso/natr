@@ -15,7 +15,12 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='gpdocument',
-            name='expences',
-            field=djmoney.models.fields.MoneyField(decimal_places=2, default=Decimal('0'), max_digits=20, blank=True, null=True, verbose_name='\u0421\u0443\u043c\u043c\u0430 ', default_currency=b'KZT'),
-        )
+            name='expences_currency',
+            field=djmoney.models.fields.CurrencyField(
+                default=b'KZT',
+                max_length=3,
+                editable=False,
+                choices=[(b'KZT', 'Tenge'), (b'USD', 'US Dollar')]),
+        ),
     ]
+
