@@ -31,7 +31,7 @@ class Command(BaseCommand):
 			call_command('flush')
 		call_command('createsuperuser')
 		u = NatrUser.objects.create(
-			department=0,
+			# department=0,
 			account=Account.objects.get(email="r.kamun@gmail.com"))
 		self.gen()
 
