@@ -6,7 +6,7 @@ from rest_framework.decorators import list_route, detail_route
 from rest_framework import viewsets, response, filters, status
 from natr.rest_framework.decorators import patch_serializer_class
 from natr.rest_framework.policies import PermissionDefinition
-from natr.rest_framework.mixins import ProjectBasedViewSet
+from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
 from projects.serializers import *
 from projects import models as prj_models
 from documents.serializers import AttachmentSerializer
@@ -42,13 +42,24 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     def create(self, request, *a, **kw):
         serializer = self.get_serializer(data=request.data)
+
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
 
         # add default assignee as current user
         project = serializer.instance
         project.assigned_experts.add(request.user.user)
-        
+        '''
+        So now i basically do one of the stupidest things you could imagine
+        in the beginning of the form you choose a date of first payment, and i 
+        automatically create that as a monitoring todo with an end date = first payment date
+        '''
+        if request.data.get(u'funding_date','') and project.monitoring:
+            date_end = request.data.get(u'funding_date','')
+            project.monitoring.update_items(
+                **{
+                    'items':[{u'date_end':date_end}]
+                })
         headers = self.get_success_headers(serializer.data)
         return response.Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
@@ -177,6 +188,7 @@ class MonitoringTodoViewSet(ProjectBasedViewSet):
     queryset = prj_models.MonitoringTodo.objects.all()
     serializer_class = MonitoringTodoSerializer
     permission_classes = (PermissionDefinition, )
+    pagination_class = LargeResultsSetPagination
 
     def list(self, request, monitoring_pk=None):
         qs = self.filter_queryset(
@@ -196,6 +208,7 @@ class MonitoringTodoViewSet(ProjectBasedViewSet):
 class MonitoringViewSet(ProjectBasedViewSet):
     queryset = prj_models.Monitoring.objects.all()
     serializer_class = MonitoringSerializer
+    pagination_class = LargeResultsSetPagination
 
     @list_route(methods=['get'], url_path='recent_todos')
     @patch_serializer_class(MonitoringTodoSerializer)
@@ -218,7 +231,14 @@ class MonitoringViewSet(ProjectBasedViewSet):
         obj_monitoring = self.get_object()
         data = request.data
         # data['project'] = prj_models.Project.objects.get(pk=data['project'])
-        obj_monitoring.update_items(**{"items": request.data})
+        last_monitoring_item = data[-1]
+        if not last_monitoring_item.get('id','') and last_monitoring_item.get('date_end'):
+            data.append({u'date_start':last_monitoring_item.get('date_end')})
+        obj_monitoring.update_items(**{"items": data})
+        '''
+        So if an monitoring item came with a date end, it should automatically create
+        a new monitoring item with a start date of that end date
+        '''
 
         qs = obj_monitoring.todos.all()
 

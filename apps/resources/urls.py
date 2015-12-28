@@ -30,7 +30,7 @@ from .document import (
 from .journal import JournalActivityViewSet, JournalViewSet
 from .notification import NotificationViewSet, NotificationSubscriptionViewSet, NotificationCounterViewSet
 from .user import get_initial_state
-from .natr_user import NatrUserViewSet, PermissionViewSet, GroupViewSet
+from .natr_user import NatrUserViewSet, PermissionViewSet, GroupViewSet, DepartmentViewSet
 from .grantee_user import GranteeUserViewSet
 
 
@@ -70,6 +70,7 @@ router.register(r'natr-user', NatrUserViewSet, 'natr_user')
 router.register(r'grantee-user', GranteeUserViewSet, 'grantee_user')
 router.register(r'permissions', PermissionViewSet, 'permission')
 router.register(r'groups', GroupViewSet, 'group')
+router.register(r'departments', DepartmentViewSet, 'department')
 
 urlpatterns = [
 	url(r'', include(router.urls)),

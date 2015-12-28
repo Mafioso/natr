@@ -57,6 +57,12 @@ class AccountSerializer(serializers.ModelSerializer):
 		return instance.get_counters()
 
 
+class DepartmentSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = models.Department
+
+
 class NatrUserSerializer(serializers.ModelSerializer):
 
 	account = AccountSerializer(required=False)
@@ -67,14 +73,10 @@ class NatrUserSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.NatrUser
 
-	department_cap = serializers.CharField(
-			source='get_department_cap', read_only=True)
-
-
 	def create(self, validated_data):
 		account_data = validated_data.pop('account', None)
 		contact_details_data = validated_data.pop('contact_details', None)
-		department = validated_data.pop('department', None)
+		departments = validated_data.pop('departments', None)
 		groups = validated_data.pop('groups', [])
 		projects = validated_data.pop('projects', None)
 
@@ -86,9 +88,9 @@ class NatrUserSerializer(serializers.ModelSerializer):
 			last_name = name_parts[1]
 
 		natr_user = models.Account.objects.create_natrexpert(first_name=first_name, last_name=last_name, **account_data)
-
-		if department is not None:
-			natr_user.department = department
+		if departments is not None:
+			natr_user.departments.clear()
+			natr_user.departments.add(*departments)
 
 		if len(groups) > 0:
 			natr_user.add_to_groups(groups)

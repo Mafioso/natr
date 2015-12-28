@@ -80,3 +80,10 @@ class GroupViewSet(viewsets.ModelViewSet):
 		group.permissions.add(*perms)
 		serializer = self.get_serializer(instance=group)
 		return response.Response(serializer.data)
+
+
+class DepartmentViewSet(viewsets.ModelViewSet):
+
+	queryset = models.Department.objects.all()
+	serializer_class = serializers.DepartmentSerializer
+	pagination_class = None
