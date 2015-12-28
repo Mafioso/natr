@@ -105,6 +105,9 @@ class ProjectTeamMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ProjectTeamMember
 
+    def to_internal_value(self, data):
+        return data
+
 
 class DevelopersInfoSerializer(serializers.ModelSerializer):
 
@@ -150,6 +153,8 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
     tech_char = TechnologyCharacteristicsSerializer(required=False)
     intellectual_property = IntellectualPropertyAssesmentSerializer(required=False)
     tech_readiness = TechnologyReadinessSerializer(required=False)
+    total_cost = SerializerMoneyField(required=False)
+    needed_cost = SerializerMoneyField(required=False)
 
 
     @classmethod

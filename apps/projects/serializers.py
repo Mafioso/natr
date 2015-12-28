@@ -210,6 +210,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', {'document': {}})
         aggrement_data = validated_data.pop('aggreement', {'document': {}})
+        
         if not 'document' in aggrement_data:
             aggrement_data.update({'document': {}})
         if not 'document' in statement_data:

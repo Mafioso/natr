@@ -9,6 +9,7 @@ from moneyed import Money
 from django.db import models
 from django.utils.functional import cached_property
 from django.conf import settings
+from dateutil import parser as date_parser
 from natr.mixins import ProjectBasedModel
 from natr.models import CostType
 from statuses import (
@@ -125,67 +126,153 @@ class DocumentDMLManager(models.Manager):
         return instance
 
     def update_innovative_project_pasport(self, instance, **kwargs):
-        team_members = kwargs.pop('team_members', [])
+        team_members_kw = kwargs.pop('team_members', [])
         dev_info_kw = kwargs.pop('dev_info', {})
         tech_char_kw = kwargs.pop('tech_char', {})
         intellectual_property_kw = kwargs.pop('intellectual_property', {})
         tech_readiness_kw = kwargs.pop('tech_readiness', {})
 
-        team_member = None
-        dev_info = None
-        tech_char = None
-        intellectual_property = None
-        tech_readiness = None
-
         doc = self.update_doc_(instance, **kwargs)
 
-        for team_member_kw in team_members:
-            def_ = {'pasport': instance}
-            def_.update(team_member_kw)
-            team_member, _ = ProjectTeamMember.objects.get_or_create(
-                id=team_member_kw.get('id', None), defaults=def_)
-            for k, v in team_member_kw.iteritems():
-                setattr(team_member, k, v)
-            team_member.save()
 
-        def_ = dev_info_kw
-        def_['pasport'] = instance
-        dev_info, created = DevelopersInfo.objects.get_or_create(
-            id=dev_info_kw.get('id', None),
-            defaults=def_)
-        for k, v in def_.iteritems():
-            setattr(dev_info, k, v)
-        dev_info.save()
+        for team_member_kw in team_members_kw:
+            print team_member_kw
+            try:
+                team_member = ProjectTeamMember.objects.get(id=team_member_kw.pop('id', None))
+            except ProjectTeamMember.DoesNotExist:
+                team_member_kw['pasport'] = instance
+                team_member = ProjectTeamMember.objects.create(**team_member_kw)
+            else:
+                team_member_kw.pop('pasport')
+                for k, v in team_member_kw.iteritems():
+                    setattr(team_member, k, v)
+                team_member.save()
+            
+        if dev_info_kw:
+            try:
+                dev_info = DevelopersInfo.objects.get(id=dev_info_kw.pop('id', None))
+            except DevelopersInfo.DoesNotExist:
+                dev_info_kw['pasport'] = instance
+                dev_info = DevelopersInfo.objects.create(**dev_info_kw)
+            else:
+                dev_info_kw.pop('pasport')
+                for k, v in dev_info_kw.iteritems():
+                    setattr(dev_info, k, v)
+                dev_info.save()
 
-        def_ = tech_char_kw
-        def_['pasport'] = instance
-        tech_char, created = TechnologyCharacteristics.objects.get_or_create(
-            id=tech_char_kw.get('id', None),
-            defaults=def_)
-        for k, v in def_.iteritems():
-            setattr(tech_char, k, v)
-        tech_char.save()
+        if tech_char_kw:
+            try:
+                tech_char = TechnologyCharacteristics.objects.get(id=tech_char_kw.pop('id', None))
+            except TechnologyCharacteristics.DoesNotExist:
+                tech_char_kw['pasport'] = instance
+                tech_char = TechnologyCharacteristics.objects.create(**tech_char_kw)
+            else:
+                tech_char_kw.pop('pasport')
+                for k, v in tech_char_kw.iteritems():
+                    setattr(tech_char, k, v)
+                tech_char.save()
 
+        if intellectual_property_kw:
+            if 'applicat_date' in intellectual_property_kw:
+                intellectual_property_kw['applicat_date'] = date_parser.parse(intellectual_property_kw['applicat_date'])
 
-        def_ = intellectual_property_kw
-        def_['pasport'] = instance
-        intellectual_property, _ = IntellectualPropertyAssesment.objects.get_or_create(
-            id=intellectual_property_kw.get('id', None),
-            defaults=def_)
-        for k, v in def_.iteritems():
-            setattr(intellectual_property, k, v)
-        intellectual_property.save()
+            if 'patented_date' in intellectual_property_kw:
+                intellectual_property_kw['patented_date'] = date_parser.parse(intellectual_property_kw['patented_date'])
 
-        def_ = tech_readiness_kw
-        def_['pasport'] = instance
-        tech_readiness, _ = TechnologyReadiness.objects.get_or_create(
-            id=tech_readiness_kw.get('id', None),
-            defaults=def_)
-        for k, v in def_.iteritems():
-            setattr(tech_readiness, k, v)
-        tech_readiness.save()
+            if 'licence_start_date' in intellectual_property_kw:
+                intellectual_property_kw['licence_start_date'] = date_parser.parse(intellectual_property_kw['licence_start_date'])
+
+            if 'licence_end_date' in intellectual_property_kw:
+                intellectual_property_kw['licence_end_date'] = date_parser.parse(intellectual_property_kw['licence_end_date'])
+
+            try:
+                intellectual_property = IntellectualPropertyAssesment.objects.get(id=intellectual_property_kw.pop('id', None))
+            except IntellectualPropertyAssesment.DoesNotExist:
+                intellectual_property_kw['pasport'] = instance
+                intellectual_property = IntellectualPropertyAssesment.objects.create(**intellectual_property_kw)
+            else:
+                intellectual_property_kw.pop('pasport')
+                for k, v in intellectual_property_kw.iteritems():
+                    setattr(intellectual_property, k, v)
+                intellectual_property.save()
+
+        if tech_readiness_kw:
+            try:
+                tech_readiness = TechnologyReadiness.objects.get(id=tech_readiness_kw.pop('id', None))
+            except TechnologyReadiness.DoesNotExist:
+                tech_readiness_kw['pasport'] = instance
+                tech_readiness = TechnologyReadiness.objects.create(**tech_readiness_kw)
+            else:
+                tech_readiness_kw.pop('pasport')
+                for k, v in tech_readiness_kw.iteritems():
+                    setattr(tech_readiness, k, v)
+                tech_readiness.save()
 
         return doc
+
+
+    # def update_innovative_project_pasport(self, instance, **kwargs):
+    #     team_members = kwargs.pop('team_members', [])
+    #     dev_info_kw = kwargs.pop('dev_info', {})
+    #     tech_char_kw = kwargs.pop('tech_char', {})
+    #     intellectual_property_kw = kwargs.pop('intellectual_property', {})
+    #     tech_readiness_kw = kwargs.pop('tech_readiness', {})
+
+    #     team_member = None
+    #     dev_info = None
+    #     tech_char = None
+    #     intellectual_property = None
+    #     tech_readiness = None
+
+    #     doc = self.update_doc_(instance, **kwargs)
+
+    #     for team_member_kw in team_members:
+    #         def_ = {'pasport': instance}
+    #         def_.update(team_member_kw)
+    #         team_member, _ = ProjectTeamMember.objects.get_or_create(
+    #             id=team_member_kw.get('id', None), defaults=def_)
+    #         for k, v in team_member_kw.iteritems():
+    #             setattr(team_member, k, v)
+    #         team_member.save()
+
+    #     def_ = dev_info_kw
+    #     def_['pasport'] = instance
+    #     dev_info, created = DevelopersInfo.objects.get_or_create(
+    #         id=dev_info_kw.get('id', None),
+    #         defaults=def_)
+    #     for k, v in def_.iteritems():
+    #         setattr(dev_info, k, v)
+    #     dev_info.save()
+
+    #     def_ = tech_char_kw
+    #     def_['pasport'] = instance
+    #     tech_char, created = TechnologyCharacteristics.objects.get_or_create(
+    #         id=tech_char_kw.get('id', None),
+    #         defaults=def_)
+    #     for k, v in def_.iteritems():
+    #         setattr(tech_char, k, v)
+    #     tech_char.save()
+
+
+    #     def_ = intellectual_property_kw
+    #     def_['pasport'] = instance
+    #     intellectual_property, _ = IntellectualPropertyAssesment.objects.get_or_create(
+    #         id=intellectual_property_kw.get('id', None),
+    #         defaults=def_)
+    #     for k, v in def_.iteritems():
+    #         setattr(intellectual_property, k, v)
+    #     intellectual_property.save()
+
+    #     def_ = tech_readiness_kw
+    #     def_['pasport'] = instance
+    #     tech_readiness, _ = TechnologyReadiness.objects.get_or_create(
+    #         id=tech_readiness_kw.get('id', None),
+    #         defaults=def_)
+    #     for k, v in def_.iteritems():
+    #         setattr(tech_readiness, k, v)
+    #     tech_readiness.save()
+
+    #     return doc
 
 
     def create_cost_doc(self, **kwargs):
