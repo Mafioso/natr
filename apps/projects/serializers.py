@@ -121,6 +121,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     def __init__(self, *args, **kwargs):
         self.fields['assigned_experts'].required = False
         self.fields['assigned_grantees'].required = False
+        self.fields['assigned_experts'].read_only = True
+        self.fields['assigned_grantees'].read_only = True
+        # self.fields['milestone_set'].read_only = True
         super(ProjectSerializer, self).__init__(*args, **kwargs)
 
     fundings = SerializerMoneyField(required=False)
@@ -136,9 +139,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     pasport_id = serializers.IntegerField(source='get_pasport_id', read_only=True, required=False)
     monitoring_id = serializers.IntegerField(source='get_monitoring_id', read_only=True, required=False)
     start_description_id = serializers.IntegerField(source='get_start_description_id', read_only=True, required=False)
-    current_milestone = MilestoneSerializer(required=False)
+    current_milestone = MilestoneSerializer(required=False, read_only=True)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
-    milestone_set = MilestoneBaseInfo(many=True, required=False)
+    milestone_set = MilestoneBaseInfo(many=True, required=False, read_only=True)
     risk_degree = serializers.IntegerField(required=False, read_only=True)
     risks = RiskDefinitionSerializer(many=True, read_only=True)
     # assigned_experts = 
@@ -299,6 +302,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         if self.partial:
             return super(ProjectSerializer, self).update(instance, validated_data)
 
+        milestone_set = validated_data.pop('milestone_set', [])
         organization_details = validated_data.pop('organization_details', None)
         funding_type_data = validated_data.pop('funding_type', None)
         statement_data = validated_data.pop('statement', {'document': {}})
@@ -312,12 +316,12 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         
         other_agreements = validated_data.pop('other_agreements', {'document': {}})
         if not 'document' in other_agreements:
-            print "OTHERAGR"
             other_agreements.update({'document': {}})
 
         old_milestones = instance.number_of_milestones
         new_milestones = validated_data['number_of_milestones']
         current_milestone_data = validated_data.pop('current_milestone', None)
+
         prj = super(ProjectSerializer, self).update(instance, validated_data)
 
         if organization_details:

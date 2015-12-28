@@ -9,7 +9,7 @@ from projects.serializers import MonitoringTodoSerializer
 
 class NatrUserViewSet(viewsets.ModelViewSet):
 
-	queryset = models.NatrUser.objects.all()
+	queryset = models.NatrUser.objects.all().select_related('account', 'contact_details').prefetch_related('projects', 'account__user_permissions', 'account__groups')
 	serializer_class = serializers.NatrUserSerializer
 	permission_classes = (PermissionDefinition, )
 	pagination_class = None
