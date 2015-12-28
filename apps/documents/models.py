@@ -974,6 +974,10 @@ class GPDocument(models.Model):
     document = models.OneToOneField(Document, related_name='gp_document', on_delete=models.CASCADE)
     type = models.ForeignKey(GPDocumentType, related_name='gp_docs', null=True)
     cost_row = models.ForeignKey('FactMilestoneCostRow', null=True, related_name='gp_docs')
+    expences = MoneyField(
+        u'Сумма ',
+        default=0, default_currency=settings.KZT,
+        max_digits=20, decimal_places=2, null=True, blank=True)
 
     @property
     def name(self):

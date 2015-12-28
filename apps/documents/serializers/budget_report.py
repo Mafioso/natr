@@ -25,6 +25,7 @@ class GPDocumentSerializer(DocumentCompositionSerializer):
     document = DocumentSerializer(required=True)
     # type = GPDocumentTypeSerializer(required=True)
     type_cap = serializers.CharField(source='get_type_cap', read_only=True)
+    expences= SerializerMoneyField(required=False)
 
     def create(self, validated_data):
         doc = models.Document.dml.create_gp_doc(**validated_data)
@@ -144,6 +145,11 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
             obj = self.create_cost_item(item)
             instance_dict[obj.id] = obj
         
+        for obj in instance:
+            if obj.gp_docs.count() == 0:
+                obj.save()
+                models.GPDocument.build_empty(obj, obj.budget_item.use_of_budget_doc.document.project)
+
         return instance_dict.values()
 
     def create_cost_item(self, validated_data):
