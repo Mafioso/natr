@@ -24,5 +24,5 @@ class Command(BaseCommand):
 
 		for title in titles:
 			tech_stage = doc_models.TechStage(title=title)
-			print u"%s: created" % title
+			#print u"%s: created" % title
 			tech_stage.save()
