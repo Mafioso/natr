@@ -108,11 +108,18 @@ class ProjectTeamMemberSerializer(serializers.ModelSerializer):
     def to_internal_value(self, data):
         return data
 
+class TechStageSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.TechStage
+
 
 class DevelopersInfoSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = models.DevelopersInfo
+
+    tech_stages = serializers.PrimaryKeyRelatedField(queryset=models.TechStage.objects.all(), many=True)
 
     def to_internal_value(self, data):
         return data
