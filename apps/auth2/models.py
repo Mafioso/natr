@@ -110,6 +110,10 @@ class Account(AbstractBaseUser, PermissionsMixin):
         return perms.values()
 
 
+class Department(models.Model):
+    name = models.CharField(max_length=200, null=True, blank=True)
+
+
 class NatrUser(models.Model):
 
     class Meta:
@@ -118,30 +122,12 @@ class NatrUser(models.Model):
 
     DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT = ('expert', 'manager', 'risk_expert')
 
-    DEPARTMENTS_CAPS = (
-        u'Альтернативная энергетика и технологии энергоэффективности',
-        u'Биотехнологии',
-        u'Инфокоммуникационные технологии',
-        u'Прогрессивные технологии в агропромышленном комплексе',
-        u'Прогрессивные технологии машиностроения, включая использование новых материалов',
-        u'Прогрессивные технологии химии и нефтехимии',
-        u'Прогрессивные технологии поиска, добычи, транспортировки и переработки минерального и углеводородного сырья',
-        u'Прогрессивные технологии в горно-металлургическом комплексе',
-        u'Стройиндустрия')
-    DEPARTMENTS_OPTS = zip(range(len(DEPARTMENTS_CAPS)), DEPARTMENTS_CAPS)
-
-    department = models.IntegerField(null=True, choices=DEPARTMENTS_OPTS)
+    departments = models.ManyToManyField(Department, blank=True)
 
     account = models.OneToOneField('Account', related_name='user')
 
     def get_full_name(self):
         return self.account.get_full_name()
-
-    def get_department_cap(self):
-        try:
-            return NatrUser.DEPARTMENTS_CAPS[self.department]
-        except TypeError:
-            return None
 
     def add_to_experts(self):
         group = Group.objects.get(name=NatrUser.EXPERT)

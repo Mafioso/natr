@@ -37,6 +37,7 @@ def add_view_permissions(sender, **kwargs):
 # check for all our view permissions after a syncdb
 post_syncdb.connect(add_view_permissions)
 
+
 def add_risk_definitions(sender, **kwargs):
     """
     This syncdb hooks takes care of adding risk definitions.
@@ -202,8 +203,6 @@ def add_risk_definitions(sender, **kwargs):
         category_code = rd.pop('category_code')
         c = RiskCategory.objects.get(code=category_code)
         RiskDefinition.objects.get_or_create(category=c, **rd)
-
-
 
 # add risk definitions after a syncdb
 post_syncdb.connect(add_risk_definitions)
