@@ -107,11 +107,17 @@ class ExcelReport:
         ws1 = self.insert_into_cell(ws1, 'A', '9', u'Номер и дата выдачи охранного документа (в случае наличия)')
 
         ws1 = self.insert_into_cell(ws1, 'B', '1', report.date)
-        ws1 = self.insert_into_cell(ws1, 'B', '2', project.organization_details.name if project is not None else "")
+        try:
+            ws1 = self.insert_into_cell(ws1, 'B', '2', project.organization_details.name)
+        except:
+            ws1 = self.insert_into_cell(ws1, 'B', '2', "")
         contract_number_date = "{0}, {1}".format(project.aggreement.document.number, project.aggreement.document.date_sign) if project is not None else ""
         ws1 = self.insert_into_cell(ws1, 'B', '3', contract_number_date)
         ws1 = self.insert_into_cell(ws1, 'B', '4', project.grant_goal if project is not None else "")
-        ws1 = self.insert_into_cell(ws1, 'B', '5', "{0} {1}".format(milestone.fundings.amount, milestone.fundings.currency) if milestone is not None else "")
+        try:
+            ws1 = self.insert_into_cell(ws1, 'B', '5', "{0} {1}".format(milestone.fundings.amount, milestone.fundings.currency))
+        except:
+            ws1 = self.insert_into_cell(ws1, 'B', '5', "")
         ws1 = self.insert_into_cell(ws1, 'B', '6', report.period if project is not None else "")
         ws1 = self.insert_into_cell(ws1, 'B', '7', report.results if project is not None else "")
 

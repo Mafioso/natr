@@ -7,6 +7,7 @@ from natr.rest_framework.decorators import patch_serializer_class
 from natr.rest_framework import serializers as natr_serializers
 from natr.rest_framework.mixins import ProjectBasedViewSet
 from documents.serializers import *
+from documents.serializers.misc import TechStageSerializer
 from documents import models as doc_models
 from projects import models as prj_models
 from .filters import AttachmentFilter
@@ -374,3 +375,8 @@ class GPDocumentTypeViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         queryset = self.queryset
         return queryset
+
+class TechStageViewSet(viewsets.ModelViewSet):
+    queryset = doc_models.TechStage.objects.all()
+    serializer_class = TechStageSerializer
+    pagination_class = None

@@ -4,6 +4,7 @@ from natr.rest_framework.policies import PermissionDefinition
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from projects import models as prj_models
+from rest_framework.pagination import PageNumberPagination
 
 
 class ExcludeCurrencyFields(object):
@@ -55,3 +56,9 @@ class ProjectBasedViewSet(viewsets.ModelViewSet):
                     qs.model._meta.filter_by_project: projects
                 })
             self.permission_denied(self.request)
+
+
+class LargeResultsSetPagination(PageNumberPagination):
+    page_size = 1000
+    page_size_query_param = 'page_size'
+    max_page_size = 10000
