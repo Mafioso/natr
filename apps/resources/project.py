@@ -290,14 +290,15 @@ class ReportViewSet(ProjectBasedViewSet):
         report.status = prj_models.Report.REWORK
         report.save()
 
-        comment_ser = CommentSerializer(data=data)
-        comment_ser.is_valid(raise_exception=True)
-        comment = comment_ser.save()
-        
+        if data.get('comment_text', None):
+            comment_ser = CommentSerializer(data=data)
+            comment_ser.is_valid(raise_exception=True)
+            comment = comment_ser.save()
+            
         report.send_status_changed_notification(prev_status, report.status, request.user, comment)
         serializer = self.get_serializer(instance=report)
         headers = self.get_success_headers(serializer.data)
-        return response.Response(headers=headers)
+        return response.Response({"report": report.id}, headers=headers)
 
     @detail_route(methods=['patch'], url_path='change_status')
     def change_status(self, request, *a, **kw):
@@ -309,7 +310,7 @@ class ReportViewSet(ProjectBasedViewSet):
         report.send_status_changed_notification(prev_status, report.status, request.user)
         serializer = self.get_serializer(instance=report)
         headers = self.get_success_headers(serializer.data)
-        return response.Response(headers=headers)
+        return response.Response({"report": report.id}, headers=headers)
     
     @detail_route(methods=['get'], url_path='gen_excel_report')
     def get_excel_report(self, request, *a, **kw):

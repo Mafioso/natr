@@ -485,13 +485,13 @@ class Report(ProjectBasedModel):
                         u'Отправлен отчет на %s, по проекту %s'%(status_cap, self.project.name),
                         u"""Здравствуйте, %(name)s!
                         Эксперт, %(expert)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.
-                        Комментарий: %(comment)s             
+                        %(comment)s             
                         Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s """ % {
                             'name': grantee.account.get_full_name(),
                             'expert': account.get_full_name(),
                             'project': self.project.name,
                             'status_cap': status_cap,
-                            'comment': comment.comment_text if comment else "",
+                            'comment': u"Комментарий: %s"%comment.comment_text if comment else "",
                             'report_id': self.id,
                         },
                         settings.DEFAULT_FROM_EMAIL,
@@ -802,6 +802,14 @@ class Milestone(ProjectBasedModel):
 
     def get_cameral_report(self):
         reports = self.reports.filter(type=Report.CAMERAL)
+
+        if not reports:
+            return None
+
+        return reports.last().id
+
+    def get_final_report(self):
+        reports = self.reports.filter(type=Report.FINAL)
 
         if not reports:
             return None

@@ -33,6 +33,28 @@ class Organization(models.Model):
         'projects.Project', null=True, on_delete=models.CASCADE,
         related_name='organization_details')
 
+    @classmethod
+    def _create(cls, **kwargs):
+        share_holders = kwargs.pop('share_holders', [])
+        organization = cls.objects.create(**kwargs)
+
+        for share_holder in share_holders:
+            share_holder['organization'] = organization
+            ShareHolder.objects.create(**share_holder)
+
+    def update_share_holders(self, **kwargs):
+        for share_holder in kwargs['share_holders']:
+            try:
+                share_holder_obj = ShareHolder.objects.get(id=share_holder.get('id', None))
+            except ObjectDoesNotExist:
+                share_holder['organization'] = self
+                share_holder_obj = ShareHolder.objects.create(**share_holder)
+            else:
+                for k, v in share_holder.iteritems():
+                    setattr(share_holder_obj, k, v)
+            finally:
+                share_holder_obj.save()
+
 
 class ShareHolder(models.Model):
     organization = models.ForeignKey(

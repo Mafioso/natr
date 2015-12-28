@@ -163,8 +163,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         prj.save()
 
         if organization_details:
-            organization_details['project'] = prj.id
-            grantee_models.Organization.objects.create(**organization_details)
+            organization_details['project'] = prj
+            grantee_models.Organization._create(**organization_details)
 
         if funding_type_data:
             prj.funding_type = FundingType.objects.create(**funding_type_data)
@@ -259,13 +259,15 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         if organization_details:
             try:
+                share_holders = organization_details.pop('share_holders', [])
                 instance.organization_details
                 for k, v in organization_details.iteritems():
                     setattr(instance.organization_details, k, v)
                 instance.organization_details.save()
+                instance.organization_details.update_share_holders(**{'share_holders': share_holders})
             except:
                 organization_details['project'] = instance
-                grantee_models.Organization.objects.create(**organization_details)
+                grantee_models.Organization._create(**organization_details)
 
         if funding_type_data:
             funding_type_ser = FundingTypeSerializer(
@@ -415,6 +417,7 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     planned_fundings = SerializerMoneyField(required=False)
     cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
+    final_report = serializers.IntegerField(source="get_final_report", read_only=True, required=False)
 
 
 class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
