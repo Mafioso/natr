@@ -265,8 +265,12 @@ class ExcelReport:
             ws = self.insert_into_cell(ws, 'I', row, str(sum_fundings))
             money_sum = 0
             for i in range(10, 10+project.milestone_set.count()):
-                money_sum += project.milestone_set.all()[i-10].fundings.amount
-                ws = self.insert_into_cell(ws, get_column_letter(i), row, str(project.milestone_set.all()[i-10].fundings.amount))
+                try:
+                    money_sum += project.milestone_set.all()[i-10].fundings.amount
+                    ws = self.insert_into_cell(ws, get_column_letter(i), row, str(project.milestone_set.all()[i-10].fundings.amount))
+                except:
+                    ws = self.insert_into_cell(ws, get_column_letter(i), row, str(0))
+
             col_num = start_col
             ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")
             col_num += 1
