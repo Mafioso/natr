@@ -222,6 +222,7 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
 
     def update_items(self, instance, validated_data):
         for item_obj, item_data in zip(instance, validated_data):
+            print item_obj, item_data
             updated_item = models.CalendarPlanItem(id=item_obj.id, **item_data)
             updated_item.save()
         return instance
@@ -229,7 +230,9 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
     @classmethod
     def empty_data(cls, project):
         data = DocumentCompositionSerializer.empty_data(project)
-        data['items'] = [{}] * project.number_of_milestones
+        data['items'] = []
+        for milestone in project.milestone_set.all():
+            data['items'].append({'number': milestone.number})
         return data
 
 
