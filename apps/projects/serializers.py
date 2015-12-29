@@ -179,11 +179,10 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         if contact_details:
             try:
-                for k, v in instance.contact_details.iteritems():
+                for k, v in contact_details.iteritems():
                     setattr(instance.contact_details, k, v)
                 instance.contact_details.save()
-            except:
-                instance.contact_details.delete()
+            except Exception as e:
                 grantee_models.ContactDetails.objects.create(
                     organization=instance, **contact_details)
 
@@ -196,11 +195,10 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         if authorized_grantee:
             try:
-                for k, v in instance.authorized_grantee.iteritems():
+                for k, v in authorized_grantee.iteritems():
                     setattr(instance.authorized_grantee, k, v)
                 instance.authorized_grantee.save()
             except:
-                instance.authorized_grantee.delete()
                 grantee_models.AuthorizedToInteractGrantee.objects.create(
                     organization=instance, **authorized_grantee)
         return instance
@@ -327,7 +325,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         if organization_details:
             try:
                 self.update_organization(instance.organization_details, organization_details)
-            except ObjectDoesNotExist:
+            except ObjectDoesNotExist as e:
                 organization_details['project'] = instance
                 self.create_organization(organization_details)
 
