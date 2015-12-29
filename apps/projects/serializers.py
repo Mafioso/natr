@@ -528,6 +528,7 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(), required=True)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    
 
     @classmethod
     def empty_data(cls, project):
@@ -554,6 +555,10 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(), required=True)
     remaining_days = serializers.IntegerField()
+    project_name = serializers.SerializerMethodField()
+
+    def get_project_name(self, instance):
+        return instance.project.name
 
     def create(self, validated_data):
         monitoring = validated_data.pop('monitoring')

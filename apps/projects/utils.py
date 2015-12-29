@@ -4,6 +4,7 @@ from natr.settings import EXCEL_REPORTS_DIR
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, Border, Side, Color, colors, PatternFill
 from openpyxl.cell import get_column_letter
+from django.core.exceptions import ObjectDoesNotExist
 import decimal
 import os
 
@@ -258,16 +259,20 @@ class ExcelReport:
             else:
                 agreement_date = ""
             ws = self.insert_into_cell(ws, 'B', row, str(agreement_number) + ' от ' + agreement_date)
-            if project.organization_details:
+            try:
                 ws = self.insert_into_cell(ws, 'C', row, project.organization_details.name)
+            except ObjectDoesNotExist:
+                ws = self.insert_into_cell(ws, 'C', row, '')
             ws = self.insert_into_cell(ws, 'D', row, project.name)
             if project.funding_type:
                 ws = self.insert_into_cell(ws, 'E', row, project.funding_type.name)
-            if project.organization_details:
-                if (project.organization_details.address_1):
+            try:
+                if project.organization_details.address_1:
                     ws = self.insert_into_cell(ws, 'G', row, project.organization_details.address_1)
-                elif(project.organization_details.address_2):
+                elif project.organization_details.address_2:
                     ws = self.insert_into_cell(ws, 'G', row, project.organization_details.address_2)
+            except ObjectDoesNotExist:
+                ws = self.insert_into_cell(ws, 'G', row, '')
             ws = self.insert_into_cell(ws, 'H', row, project.total_month)
             sum_fundings = 0
             if project.fundings:
@@ -286,8 +291,10 @@ class ExcelReport:
             col_num = start_col
             ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")
             col_num += 1
-
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(project.fundings.amount - money_sum))
+            if not project.fundings:
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(0))
+            else:
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(project.fundings.amount - money_sum))
             col_num += 1
             ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())
             col_num += 1

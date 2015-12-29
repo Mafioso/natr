@@ -104,7 +104,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @patch_serializer_class(MonitoringTodoSerializer)
     def recent_todos(self, request, *a, **kw):
         project = self.get_object()
-        todo_qs = project.get_recent_todos()
+        todo_qs = project.get_recent_todos().order_by('-date_start')
         page = self.paginate_queryset(todo_qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
