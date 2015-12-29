@@ -195,10 +195,12 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
         if authorized_grantee:
             try:
+                auth_grantee_obj = instance.authorized_grantee
                 for k, v in authorized_grantee.iteritems():
-                    setattr(instance.authorized_grantee, k, v)
-                instance.authorized_grantee.save()
-            except:
+                    setattr(auth_grantee_obj, k, v)
+                auth_grantee_obj.save()
+            except Exception as e:
+                print e
                 grantee_models.AuthorizedToInteractGrantee.objects.create(
                     organization=instance, **authorized_grantee)
         return instance
