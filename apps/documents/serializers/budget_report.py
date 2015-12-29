@@ -125,7 +125,7 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
         self.update_costs(
             instance=instance.costs.all(),
             validated_data=costs_data)
-        return instance
+        return models.UseOfBudgetDocumentItem.objects.filter(pk=instance.pk).first()
 
     def update_costs(self, instance, validated_data):
         instance_dict = {obj.id: obj for obj in instance}
