@@ -124,10 +124,11 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
         instance.save()
         self.update_costs(
             instance=instance.costs.all(),
-            validated_data=costs_data)
+            validated_data=costs_data,
+            budget_item=instance)
         return models.UseOfBudgetDocumentItem.objects.filter(pk=instance.pk).first()
 
-    def update_costs(self, instance, validated_data):
+    def update_costs(self, instance, validated_data, budget_item):
         instance_dict = {obj.id: obj for obj in instance}
         stored_ids = [item.id for item in instance]
         to_upd = {item['id']:item for item in validated_data if 'id' in item}
@@ -142,7 +143,7 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
 
         for item in to_create_data:
             gp_docs = item.pop('gp_docs', [])
-            obj = self.create_cost_item(item)
+            obj = self.create_cost_item(item, budget_item)
             instance_dict[obj.id] = obj
         
         for obj in instance:
@@ -152,9 +153,12 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
 
         return instance_dict.values()
 
-    def create_cost_item(self, validated_data):
+    def create_cost_item(self, validated_data, budget_item):
         gp_docs = validated_data.pop('gp_docs', [])
+        print "create", gp_docs
         obj = models.FactMilestoneCostRow.objects.create(**validated_data)
+        obj.budget_item = budget_item
+        obj.save()
         for gp_doc_data in gp_docs:
             # doc_data = gp_doc_data.pop('document', {'document': {}})
             # doc = models.Document.dml.create_doc_(project=obj.get_project(), **doc_data)
@@ -163,6 +167,10 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
             gp_doc_data['project'] = obj.get_project()
             doc = models.Document.dml.create_gp_doc(**gp_doc_data)
             # doc = models.Document.dml.create_gp_doc(project=obj.get_project(), cost_row=obj, **gp_doc_data)
+
+        if obj.gp_docs.count() == 0:
+                models.GPDocument.build_empty(obj, budget_item.use_of_budget_doc.document.project)
+
         return obj
 
     def update_cost_item(self, instance, validated_data):
