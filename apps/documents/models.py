@@ -20,10 +20,23 @@ from statuses import (
 import utils as doc_utils
 
 
+class SimpleDocumentManager(models.Manager):
+    r"""Используется для того чтобы создавать пустышки"""
+
+    def build_empty(self, project, **kwargs):
+        doc = Document(type=self.model.tp, project=project)
+        doc.save()
+        return self.model.objects.create(document=doc, **kwargs)
+
 
 class DocumentDMLManager(models.Manager):
 
     def create_statement(self, **kwargs):
+        prj = kwargs.pop('project', None)
+        if not kwargs or not 'document' in kwargs:
+            kwargs.update('document', {'document': {}})
+        if prj:
+            kwargs['document']['project'] = prj
         doc = self.create_doc_with_relations(StatementDocument, **kwargs)
         doc.save()
         return doc
@@ -322,9 +335,7 @@ class DocumentDMLManager(models.Manager):
         ddata = kwargs.pop('document', {})
         ddata['type'] = doc_class.tp
         doc = self.create_doc_(**ddata)
-
         spec_doc = doc_class(document=doc)
-        print kwargs
         for k, v in kwargs.iteritems():
             setattr(spec_doc, k, v)
         spec_doc.save()
@@ -503,6 +514,8 @@ class BasicProjectPasportDocument(models.Model):
     project_head = models.CharField(u'Руководитель проекта (Ф.И.О., должность, ученая степень, подпись)',
                                                         max_length=1024, null=True, blank=True)
 
+    objects = SimpleDocumentManager()
+
     def get_project(self):
         return self.document.get_project()
 
@@ -575,6 +588,8 @@ class InnovativeProjectPasportDocument(models.Model):
                                                         поддержке проекта на отраслевом, региональном или \
                                                         государственном уровне (номер, дата, название)?', max_length=1024,
                                                         null=True, blank=True)
+
+    objects = SimpleDocumentManager()
 
     def get_project(self):
         return self.document.get_project()
@@ -752,15 +767,6 @@ class StatementDocument(models.Model):
         return self.document.get_project()
 
 
-class SimpleDocumentManager(models.Manager):
-    r"""Используется для того чтобы создавать пустышки"""
-
-    def create_empty(self, project, **kwargs):
-        doc = Document(type=self.model.tp, project=project)
-        doc.save()
-        return self.model.objects.create(document=doc, **kwargs)
-
-
 class CalendarPlanDocument(models.Model):
     tp = 'calendarplan'
 
@@ -783,6 +789,14 @@ class CalendarPlanDocument(models.Model):
 
     def get_project(self):
         return self.document.get_project()
+
+    @classmethod
+    def build_empty(cls, project):
+        cp = cls.objects.build_empty(project)
+        for m in project.milestone_set.all():
+            _item = CalendarPlanItem.objects.create(
+                number=m.number, calendar_plan=cp)
+        return cp
 
 
 class CalendarPlanItem(models.Model):
@@ -856,6 +870,7 @@ class ProjectStartDescription(models.Model):
     kaz_part_plan = models.DecimalField(u'Доля Казахстанского содержания в продукции (План)', max_digits=20, decimal_places=2, null=True, blank=True)
     kaz_part_avrg = models.DecimalField(u'Доля Казахстанского содержания в продукции (Средние показатели)', max_digits=20, decimal_places=2, null=True, blank=True)
 
+    objects = SimpleDocumentManager()
 
     @property
     def total_rlzn_fact(self):
@@ -1147,6 +1162,17 @@ class CostDocument(models.Model):
         for m in self.project.milestone_set.all():
             MilestoneCostRow.objects.get_or_create(
                 cost_document=self, milestone=m, cost_type=cost_type)
+
+    @classmethod
+    def build_empty(cls, project):
+        cd = cls.objects.build_empty(project)
+        for m in project.milestone_set.all():
+            for ctype in project.costtype_set.all():
+                MilestoneCostRow.objects.create(
+                    milestone=m,
+                    cost_type=ctype,
+                    cost_document=cd)
+        return cd
 
 
 class MilestoneCostRow(models.Model):

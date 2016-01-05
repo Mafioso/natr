@@ -146,27 +146,27 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     risks = RiskDefinitionSerializer(many=True, read_only=True)
     # assigned_experts = 
 
-    def create_organization(self, validated_data):
-        contact_details = validated_data.pop('contact_details', None)
-        share_holders_data = validated_data.pop('share_holders', [])
-        authorized_grantee = validated_data.pop('authorized_grantee', None)
-        organization = grantee_models.Organization(**validated_data)
-        organization.save()
+    # def create_organization(self, validated_data):
+    #     contact_details = validated_data.pop('contact_details', None)
+    #     share_holders_data = validated_data.pop('share_holders', [])
+    #     authorized_grantee = validated_data.pop('authorized_grantee', None)
+    #     organization = grantee_models.Organization(**validated_data)
+    #     organization.save()
 
-        if contact_details:
-            grantee_models.ContactDetails.objects.create(organization=organization, **contact_details)
+    #     if contact_details:
+    #         grantee_models.ContactDetails.objects.create(organization=organization, **contact_details)
 
-        if share_holders_data:
-            share_holders = [
-                grantee_models.ShareHolder(organization=organization, **share_holder)
-                for share_holder in share_holders_data]
-            grantee_models.ShareHolder.objects.bulk_create(share_holders)
+    #     if share_holders_data:
+    #         share_holders = [
+    #             grantee_models.ShareHolder(organization=organization, **share_holder)
+    #             for share_holder in share_holders_data]
+    #         grantee_models.ShareHolder.objects.bulk_create(share_holders)
 
-        if authorized_grantee:
-            grantee_models.AuthorizedToInteractGrantee.objects.create(
-                organization=organization, **authorized_grantee)
+    #     if authorized_grantee:
+    #         grantee_models.AuthorizedToInteractGrantee.objects.create(
+    #             organization=organization, **authorized_grantee)
 
-        return organization
+    #     return organization
 
     def update_organization(self, instance, validated_data):
         contact_details = validated_data.pop('contact_details', None)
@@ -206,97 +206,98 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         return instance
 
     def create(self, validated_data):
-        user = validated_data.pop('user', None)
-        assert user is not None and user.user, "natr user expected parameter should not be none"
+        return Project.objects.create_new(**validated_data)
+        # user = validated_data.pop('user', None)
+        # assert user is not None and user.user, "natr user expected parameter should not be none"
 
-        organization_details = validated_data.pop('organization_details', None)
-        funding_type_data = validated_data.pop('funding_type', None)
-        statement_data = validated_data.pop('statement', {'document': {}})
-        aggrement_data = validated_data.pop('aggreement', {'document': {}})
-        other_agreements = validated_data.pop('other_agreements', {'document': {}})
+        # organization_details = validated_data.pop('organization_details', None)
+        # funding_type_data = validated_data.pop('funding_type', None)
+        # statement_data = validated_data.pop('statement', {'document': {}})
+        # aggrement_data = validated_data.pop('aggreement', {'document': {}})
+        # other_agreements = validated_data.pop('other_agreements', {'document': {}})
         
-        if not 'document' in aggrement_data:
-            aggrement_data.update({'document': {}})
-        if not 'document' in statement_data:
-            statement_data.update({'document': {}})
-        if not 'document' in other_agreements:
-            other_agreements.update({'document': {}})
+        # if not 'document' in aggrement_data:
+        #     aggrement_data.update({'document': {}})
+        # if not 'document' in statement_data:
+        #     statement_data.update({'document': {}})
+        # if not 'document' in other_agreements:
+        #     other_agreements.update({'document': {}})
 
-        prj = Project.objects.create(**validated_data)
-        prj.save()
+        # prj = Project.objects.create(**validated_data)
+        # prj.save()
 
-        if organization_details:
-            organization_details['project'] = prj
-            self.create_organization(organization_details)
+        # if organization_details:
+        #     organization_details['project'] = prj
+        #     self.create_organization(organization_details)
 
-        if funding_type_data:
-            prj.funding_type = FundingType.objects.create(**funding_type_data)
+        # if funding_type_data:
+        #     prj.funding_type = FundingType.objects.create(**funding_type_data)
 
-        if statement_data:
-            statement_data['document']['project'] = prj
-            doc_models.Document.dml.create_statement(project=prj, **statement_data)
+        # if statement_data:
+        #     statement_data['document']['project'] = prj
+        #     doc_models.Document.dml.create_statement(project=prj, **statement_data)
 
-        if aggrement_data:
-            aggrement_data['document']['project'] = prj
-            doc_models.Document.dml.create_agreement(project=prj, **aggrement_data)
+        # if aggrement_data:
+        #     aggrement_data['document']['project'] = prj
+        #     doc_models.Document.dml.create_agreement(project=prj, **aggrement_data)
 
-        if other_agreements:
-            other_agreements['document']['project'] = prj
-            doc_models.Document.dml.create_other_agr_doc(**other_agreements)
+        # if other_agreements:
+        #     other_agreements['document']['project'] = prj
+        #     doc_models.Document.dml.create_other_agr_doc(**other_agreements)
 
-        prj.save()
+        # prj.save()
 
-        natr_models.CostType.create_default(prj)
+        # natr_models.CostType.create_default(prj)
 
-        # 4. generate empty milestones
-        for i in xrange(prj.number_of_milestones):
-            milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
-            milestone_ser.is_valid(raise_exception=True)
-            milestone = milestone_ser.save()
+        # # 4. generate empty milestones
+        # for i in xrange(prj.number_of_milestones):
+        #     milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
+        #     milestone_ser.is_valid(raise_exception=True)
+        #     milestone = milestone_ser.save()
 
-            if i == prj.number_of_milestones - 1:
-                Report.build_empty(milestone, report_type=Report.FINAL)
+        #     if i == prj.number_of_milestones - 1:
+        #         Report.build_empty(milestone, report_type=Report.FINAL)
 
 
-        # 1. create journal
-        prj_journal = JournalSerializer.build_empty(prj)
-        prj_journal.is_valid(raise_exception=True)
-        prj_journal.save()
+        # # 1. create journal
+        # prj_journal = JournalSerializer.build_empty(prj)
+        # prj_journal.is_valid(raise_exception=True)
+        # prj_journal.save()
 
-        # 2. create monitoring
-        prj_monitoring = MonitoringSerializer.build_empty(prj)
-        prj_monitoring.is_valid(raise_exception=True)
-        prj_monitoring.save()
+        # # 2. create monitoring
+        # prj_monitoring = MonitoringSerializer.build_empty(prj)
+        # prj_monitoring.is_valid(raise_exception=True)
+        # prj_monitoring.save()
 
-        # 3. create calendar plan
-        prj_cp = CalendarPlanDocumentSerializer.build_empty(prj)
-        prj_cp.is_valid(raise_exception=True)
-        prj_cp.save()
+        # # 3. create calendar plan
+        # prj_cp = CalendarPlanDocumentSerializer.build_empty(prj)
+        # prj_cp.is_valid(raise_exception=True)
+        # prj_cp.save()
 
-        # 4. create costs document
-        prj_cd = CostDocumentSerializer.build_empty(prj)
-        prj_cd.is_valid(raise_exception=True)
-        # utils.pretty(prj_cd.errors)
-        prj_cd.save(empty=True)
+        # # 4. create costs document
+        # prj_cd = CostDocumentSerializer.build_empty(prj)
+        # prj_cd.is_valid(raise_exception=True)
+        # # utils.pretty(prj_cd.errors)
+        # prj_cd.save(empty=True)
 
-        # 5. create project pasport which depends on funding type
-        if prj.funding_type is not None and (prj.funding_type.name == 'INDS_RES' or \
-            prj.funding_type.name == 'COMMERCIALIZATION'):
-            prj_pasport = InnovativeProjectPasportSerializer.build_empty(prj)
-            prj_pasport.is_valid(raise_exception=True)
-            prj_pasport.save()
-        else:
-            prj_pasport = BasicProjectPasportSerializer.build_empty(prj)
-            prj_pasport.is_valid(raise_exception=True)
-            prj_pasport.save()
+        # # 5. create project pasport which depends on funding type
+        # if prj.funding_type is not None and (prj.funding_type.name == 'INDS_RES' or \
+        #     prj.funding_type.name == 'COMMERCIALIZATION'):
+        #     prj_pasport = InnovativeProjectPasportSerializer.build_empty(prj)
+        #     prj_pasport.is_valid(raise_exception=True)
+        #     prj_pasport.save()
+        # else:
+        #     prj_pasport = BasicProjectPasportSerializer.build_empty(prj)
+        #     prj_pasport.is_valid(raise_exception=True)
+        #     prj_pasport.save()
 
-        #create project start description
-        prj_std = ProjectStartDescriptionSerializer.build_empty(prj)
-        prj_std.is_valid(raise_exception=True)
-        prj_std.save(empty=True)
+        # #create project start description
+        # prj_std = ProjectStartDescriptionSerializer.build_empty(prj)
+        # prj_std.is_valid(raise_exception=True)
+        # prj_std.save(empty=True)
 
-        prj.assigned_experts.add(user.user)
-        return prj
+        # prj.assigned_experts.add(user.user)
+        # return prj
 
     def update(self, instance, validated_data):
         if self.partial:

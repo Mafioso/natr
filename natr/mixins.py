@@ -8,6 +8,11 @@ class ProjectQuerySet(models.QuerySet):
 			return self.filter(project__id=project)
 		return self.filter(project=project)
 
+	def build_empty(self, project, **kwargs):
+		obj = self.model(project=project, **kwargs)
+		obj.save()
+		return obj
+
 
 class ProjectBasedModel(models.Model):
 

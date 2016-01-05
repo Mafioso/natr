@@ -233,13 +233,13 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
             updated_item.save()
         return instance
 
-    @classmethod
-    def empty_data(cls, project):
-        data = DocumentCompositionSerializer.empty_data(project)
-        data['items'] = []
-        for milestone in project.milestone_set.all():
-            data['items'].append({'number': milestone.number})
-        return data
+    # @classmethod
+    # def empty_data(cls, project):
+    #     data = DocumentCompositionSerializer.empty_data(project)
+    #     data['items'] = []
+    #     for milestone in project.milestone_set.all():
+    #         data['items'].append({'number': milestone.number})
+    #     return data
 
 
 class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):

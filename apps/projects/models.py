@@ -16,9 +16,10 @@ from natr.models import CostType
 from django.contrib.auth import get_user_model
 from django.utils.functional import cached_property
 from notifications.models import Notification
-from journals.models import JournalActivity
 from django.core.mail import send_mail
+from natr.models import CostType
 from documents.models import (
+    Document,
     OtherAgreementsDocument,
     CalendarPlanDocument,
     BasicProjectPasportDocument,
@@ -28,8 +29,104 @@ from documents.models import (
     UseOfBudgetDocument,
     MilestoneCostRow,
     AgreementDocument,
-    StatementDocument
+    StatementDocument,
 )
+from journals.models import Journal, JournalActivity
+from grantee.models import Organization, ContactDetails, ShareHolder, AuthorizedToInteractGrantee
+
+
+class ProjectManager(models.Manager):
+
+    def create_organization(self, data, project=None):
+        contact_details = data.pop('contact_details', None)
+        share_holders_data = data.pop('share_holders', [])
+        authorized_grantee = data.pop('authorized_grantee', None)
+        organization = Organization(**data)
+        if project:
+            organization.project = project
+        organization.save()
+
+        if contact_details:
+            ContactDetails.objects.create(organization=organization, **contact_details)
+
+        if share_holders_data:
+            share_holders = [
+                ShareHolder(organization=organization, **share_holder)
+                for share_holder in share_holders_data]
+            ShareHolder.objects.bulk_create(share_holders)
+
+        if authorized_grantee:
+            AuthorizedToInteractGrantee.objects.create(
+                organization=organization, **authorized_grantee)
+
+        return organization
+
+    def create_new(self, **data):
+        user = data.pop('user', None)
+        assert user is not None and user.user, "natr user expected parameter should not be none"
+
+        organization_details = data.pop('organization_details', None)
+        funding_type_data = data.pop('funding_type', None)
+        
+        statement_data = data.pop('statement', {})
+        aggrement_data = data.pop('aggreement', {})
+        other_agreements = data.pop('other_agreements', {})
+
+        prj = Project.objects.create(**data)
+        prj.save()
+
+        if organization_details:
+            self.create_organization(organization_details, project=prj)
+
+        if funding_type_data:
+            prj.funding_type = FundingType.objects.create(**funding_type_data)
+
+        if statement_data:
+            Document.dml.create_statement(project=prj, **statement_data)
+
+        if aggrement_data:
+            Document.dml.create_agreement(project=prj, **aggrement_data)
+
+        if other_agreements:
+            Document.dml.create_other_agr_doc(project=prj, **other_agreements)
+
+        prj.save()
+
+        CostType.create_default(prj)
+
+        # 4. generate empty milestones
+        for i in xrange(prj.number_of_milestones):
+            m = Milestone.objects.build_empty(
+                project=prj, number=i+1)
+            if i == prj.number_of_milestones - 1:
+                Report.build_empty(m, report_type=Report.FINAL)
+
+
+        # 1. create journal
+        prj_journal = Journal.objects.build_empty(project=prj)
+    
+        # 2. create monitoring
+        prj_monitoring = Monitoring.objects.build_empty(project=prj)
+    
+        # 3. create calendar plan
+        prj_cp = CalendarPlanDocument.build_empty(project=prj)
+    
+        # 4. create costs document
+        prj_cd = CostDocument.build_empty(project=prj)
+
+        # 5. create project pasport which depends on funding type
+        if prj.funding_type is not None and prj.funding_type.name in ('INDS_RES', 'COMMERCIALIZATION'):
+            prj_pasport = InnovativeProjectPasportDocument.objects.build_empty(project=prj)
+        else:
+            prj_pasport = BasicProjectPasportDocument.objects.build_empty(project=prj)
+
+        # 6. create project start description
+        prj_std = ProjectStartDescription.objects.build_empty(project=prj)
+        
+        # 7. assign owner as assignee by default
+        prj.assigned_experts.add(user.user)
+        return prj
+
 
 class Project(models.Model):
 
@@ -69,21 +166,10 @@ class Project(models.Model):
         null=True, blank=True)
     funding_date = models.DateTimeField(null=True)
     number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
-
-    # risk_degree = models.IntegerField(u'Степень риска', default=SMALL_R)
-
-    # aggreement = models.OneToOneField(
-    #     'documents.AgreementDocument', null=True, on_delete=models.SET_NULL)
-
-    # statement = models.OneToOneField(
-    #     'documents.StatementDocument', null=True, on_delete=models.SET_NULL)
-
-    # other_agreements = models.OneToOneField(
-    #     'documents.OtherAgreementsDocument', null=True, on_delete=models.SET_NULL)
-
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
     assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
-    # user = models.ForeignKey('User', related_name='projects')
+
+    objects = ProjectManager()
 
     def __unicode__(self):
         return unicode(self.name) or u''
@@ -425,7 +511,7 @@ class Report(ProjectBasedModel):
 
     @classmethod
     def build_empty(cls, milestone, report_type=CAMERAL):
-        budget_doc = UseOfBudgetDocument.objects.create_empty(
+        budget_doc = UseOfBudgetDocument.objects.build_empty(
             milestone.project, milestone=milestone)
         budget_doc.save()
 
