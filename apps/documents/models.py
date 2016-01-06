@@ -247,7 +247,7 @@ class DocumentDMLManager(models.Manager):
         prj = kwargs.pop('project', None)
         # ensure document
         if not kwargs or not 'document' in kwargs:
-            kwargs.update('document', {'document': {}})
+            kwargs.update({'document': {}})
         if prj:
             kwargs['document']['project'] = prj
         ddata = kwargs.pop('document')
