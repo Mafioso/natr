@@ -905,6 +905,7 @@ class Monitoring(ProjectBasedModel):
 
     def update_items(self, **kwargs):
         for item in kwargs['items']:
+            project_name = item.pop('project_name', "")
             if 'id' in item:
                 item['monitoring'] = self
                 item['project'] = self.project

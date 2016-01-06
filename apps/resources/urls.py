@@ -56,6 +56,7 @@ router.register(r'gp_docs', GPDocimentViewSet, 'gp_docs')
 router.register(r'gp_doc_types', GPDocumentTypeViewSet, 'gp_doc_type')
 router.register(r'risks', RiskDefinitionViewSet, 'risk')
 router.register(r'tech_stages', TechStageViewSet, 'tech_stages')
+router.register(r'monitoring_todos', MonitoringTodoViewSet, 'monitoring_todos')
 
 monitoring_router = routers.NestedSimpleRouter(router, r'monitoring', lookup='monitoring')
 monitoring_router.register(r'todos', MonitoringTodoViewSet, base_name='monitoring-todos')
