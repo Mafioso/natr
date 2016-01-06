@@ -49,8 +49,13 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 
 	@detail_route(methods=['GET'], url_path='plan')
 	def get_plan(self, request, *a, **kw):
-		monitorings = Monitoring.objects.filter(
-			project__in=request.user.user.projects.all())
+		monitorings = []
+		if request.user.user.is_manager():
+			for natr_user in models.NatrUser.objects.filter(account__groups__name=models.NatrUser.EXPERT):
+				monitorings.extend(list(Monitoring.objects.filter(project__in=natr_user.projects.all())))
+		else:
+			monitorings = Monitoring.objects.filter(
+				project__in=request.user.user.projects.all())
 		activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
 		ser = MonitoringTodoSerializer(activities, many=True)
 		return response.Response(ser.data)
