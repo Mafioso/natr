@@ -53,17 +53,6 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
     cost_types = CostTypeSerializer(many=True, required=False)
     milestone_costs = MilestoneCostCellSerializer(many=True, required=False)
 
-    # @classmethod
-    # def empty_data(cls, project):
-    #     data = DocumentCompositionSerializer.empty_data(project)
-    #     milestone_costs = data.setdefault('milestone_costs', [])
-    #     for milestone in project.milestone_set.all():
-    #         for ctype in project.costtype_set.all():
-    #             milestone_costs.append({
-    #                 'milestone': milestone.pk,
-    #                 'cost_type': ctype.pk})
-    #     return data
-
     def create(self, validated_data):
         is_empty = validated_data.pop('empty', False)
         if is_empty:

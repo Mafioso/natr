@@ -44,11 +44,3 @@ class DocumentCompositionSerializer(EmptyObjectDMLMixin, serializers.ModelSerial
             data['document']['type'] = self.Meta.model.tp
         return super(DocumentCompositionSerializer, self).to_internal_value(data)
 
-    @classmethod
-    def empty_data(cls, project):
-        return {
-            'document': {
-                'project': project.id,
-            },
-        }
-

@@ -9,6 +9,33 @@ from django.core.exceptions import ObjectDoesNotExist
 # from django.contrib.auth.models import User
 
 
+class OrganizationManager(models.Manager):
+
+    def create_new(self, data, project=None):
+        contact_details = data.pop('contact_details', None)
+        share_holders_data = data.pop('share_holders', [])
+        authorized_grantee = data.pop('authorized_grantee', None)
+        organization = self.model(**data)
+        if project:
+            organization.project = project
+        organization.save()
+
+        if contact_details:
+            ContactDetails.objects.create(organization=organization, **contact_details)
+
+        if share_holders_data:
+            share_holders = [
+                ShareHolder(organization=organization, **share_holder)
+                for share_holder in share_holders_data]
+            ShareHolder.objects.bulk_create(share_holders)
+
+        if authorized_grantee:
+            AuthorizedToInteractGrantee.objects.create(
+                organization=organization, **authorized_grantee)
+
+        return organization
+
+
 class Organization(models.Model):
     ORG_TYPES = INDIVIDUAL, COMPANY = range(2)
 
@@ -32,6 +59,8 @@ class Organization(models.Model):
     project = models.OneToOneField(
         'projects.Project', null=True, on_delete=models.CASCADE,
         related_name='organization_details')
+
+    objects = OrganizationManager()
 
     @classmethod
     def _create(cls, **kwargs):

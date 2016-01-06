@@ -37,30 +37,6 @@ from grantee.models import Organization, ContactDetails, ShareHolder, Authorized
 
 class ProjectManager(models.Manager):
 
-    def create_organization(self, data, project=None):
-        contact_details = data.pop('contact_details', None)
-        share_holders_data = data.pop('share_holders', [])
-        authorized_grantee = data.pop('authorized_grantee', None)
-        organization = Organization(**data)
-        if project:
-            organization.project = project
-        organization.save()
-
-        if contact_details:
-            ContactDetails.objects.create(organization=organization, **contact_details)
-
-        if share_holders_data:
-            share_holders = [
-                ShareHolder(organization=organization, **share_holder)
-                for share_holder in share_holders_data]
-            ShareHolder.objects.bulk_create(share_holders)
-
-        if authorized_grantee:
-            AuthorizedToInteractGrantee.objects.create(
-                organization=organization, **authorized_grantee)
-
-        return organization
-
     def create_new(self, **data):
         user = data.pop('user', None)
         assert user is not None and user.user, "natr user expected parameter should not be none"
@@ -76,7 +52,7 @@ class ProjectManager(models.Manager):
         prj.save()
 
         if organization_details:
-            self.create_organization(organization_details, project=prj)
+            Organization.objects.create_new(organization_details, project=prj)
 
         if funding_type_data:
             prj.funding_type = FundingType.objects.create(**funding_type_data)

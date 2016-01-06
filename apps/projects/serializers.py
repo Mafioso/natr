@@ -86,12 +86,6 @@ class MilestoneSerializer(
                 mailing.send_milestone_status_finished(instance)
         return instance
 
-    @classmethod
-    def empty_data(cls, project, **kwargs):
-        kwargs.update({
-            'project': project.id})
-        return kwargs
-
 
 class MilestoneFinSummarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
@@ -438,11 +432,6 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(), required=True)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
-    
-
-    @classmethod
-    def empty_data(cls, project):
-        return {'project': project.id}
 
     def update(self, instance, validated_data):
         # if status changed we need to notify gp about that

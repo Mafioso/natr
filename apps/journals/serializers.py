@@ -18,10 +18,6 @@ class JournalSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
 			self.fields['activities'] = JournalActivitySerializer(many=True)
 		super(JournalSerializer, self).__init__(*a, **kw)
 
-	@classmethod
-	def empty_data(cls, project):
-		return {'project': project.id}
-
 
 class JournalActivitySerializer(serializers.ModelSerializer):
 

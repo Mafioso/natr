@@ -71,12 +71,6 @@ class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
         doc = models.Document.dml.create_other_agr_doc(**validated_data)
         return doc
 
-    @classmethod
-    def empty_data(cls, project):
-        data = DocumentCompositionSerializer.empty_data(project)
-        return data
-
-
 
 class BasicProjectPasportSerializer(DocumentCompositionSerializer):
 
@@ -91,14 +85,10 @@ class BasicProjectPasportSerializer(DocumentCompositionSerializer):
         doc = models.Document.dml.create_basic_project_pasport(**validated_data)
         return doc
 
-    @classmethod
-    def empty_data(cls, project):
-        data = DocumentCompositionSerializer.empty_data(project)
-        return data
-
     def update(self, instance, validated_data):
         document = validated_data.pop('document', None)
         return models.Document.dml.update_doc_(instance, **validated_data)
+
 
 class ProjectTeamMemberSerializer(serializers.ModelSerializer):
 
@@ -162,12 +152,6 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
     tech_readiness = TechnologyReadinessSerializer(required=False)
     total_cost = SerializerMoneyField(required=False)
     needed_cost = SerializerMoneyField(required=False)
-
-
-    @classmethod
-    def empty_data(cls, project):
-        data = DocumentCompositionSerializer.empty_data(project)
-        return data
 
     def create(self, validated_data):
         doc = models.Document.dml.create_innovative_project_pasport(**validated_data)
@@ -233,14 +217,6 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
             updated_item.save()
         return instance
 
-    # @classmethod
-    # def empty_data(cls, project):
-    #     data = DocumentCompositionSerializer.empty_data(project)
-    #     data['items'] = []
-    #     for milestone in project.milestone_set.all():
-    #         data['items'].append({'number': milestone.number})
-    #     return data
-
 
 class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
 
@@ -278,11 +254,3 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
     def update(self, instance, validated_data):
         document = validated_data.pop('document')
         return models.Document.dml.update_start_description(instance, **validated_data)
-
-    @classmethod
-    def empty_data(cls, project):
-        data = DocumentCompositionSerializer.empty_data(project)
-        return data
-
-
-
