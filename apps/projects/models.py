@@ -8,7 +8,7 @@ import dateutil.parser
 from django.conf import settings
 from django.utils import timezone
 from django.db import models
-from django.core.exceptions import MultipleObjectsReturned
+from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from djmoney.models.fields import MoneyField
 from natr.mixins import ProjectBasedModel
 from natr import utils
@@ -103,6 +103,81 @@ class ProjectManager(models.Manager):
         prj.assigned_experts.add(user.user)
         return prj
 
+    def update_(self, instance, **data):
+        prj = instance
+        milestone_set = data.pop('milestone_set', [])
+        orgdet_data = data.pop('organization_details', None)
+        funding_type_data = data.pop('funding_type', None)
+        statement_data = data.pop('statement', {})
+        aggrement_data = data.pop('aggreement', {})
+        other_agreements = data.pop('other_agreements', {})
+        
+        old_milestones = instance.number_of_milestones
+        new_milestones = data['number_of_milestones']
+        current_milestone_data = data.pop('current_milestone', None)
+
+        self.model.objects.filter(pk=instance.pk).update(**data)
+
+        if orgdet_data:
+            try:
+                Organization.objects.update_(instance.organization_details, **orgdet_data)
+            except ObjectDoesNotExist as e:
+                Organization.objects.create_new(orgdet_data, project=instance)
+
+        if funding_type_data:
+            FundingType.objects.filter(pk=instance.funding_type_id
+                ).update(**funding_type_data)
+
+        if statement_data:
+            if instance.statement:
+                Document.dml.update_statement(
+                    instance.statement, **statement_data)
+            else:
+                Document.dml.create_statement(
+                    project=instance, **statement_data)
+
+        if aggrement_data:
+            if instance.aggreement:
+                Document.dml.update_agreement(
+                    instance.aggreement, **aggrement_data)
+            else:
+                Document.dml.create_agreement(
+                    project=instance, **aggrement_data)
+
+        if other_agreements:
+            if instance.other_agreements:
+                Document.dml.update_other_agr_doc(instance.other_agreements, **other_agreements)
+            else:
+                Document.dml.create_other_agr_doc(**other_agreements)
+
+        if current_milestone_data:
+            Milestone.objects.filter(pk=instance.current_milestone.pk
+                ).update(**current_milestone_data)
+
+        if old_milestones == new_milestones:
+            return prj
+
+        # 3. re-generate empty milestones
+        prj.milestone_set.clear()
+        for i in xrange(new_milestones):
+            m = Milestone.objects.build_empty(
+                project=prj, number=i+1)
+            if i == new_milestones - 1:
+                Report.build_empty(m, report_type=Report.FINAL)
+
+        # 4. recreate calendar plan
+        if prj.calendar_plan:
+            prj.calendar_plan.delete()
+        
+        prj_cp = CalendarPlanDocument.build_empty(project=prj)
+        
+        # 5. recreate cost
+        if prj.cost_document:
+            prj.cost_document.delete()
+        CostDocument.build_empty(project=prj)
+
+        return prj
+
 
 class Project(models.Model):
 
@@ -167,13 +242,19 @@ class Project(models.Model):
         return self.milestone_set.get(
             number=self.current_milestone.number)
 
-    @property
+    @cached_property
     def calendar_plan(self):
-        return CalendarPlanDocument.objects.get(document__project=self)
+        try:
+            return CalendarPlanDocument.objects.get(document__project=self)
+        except ObjectDoesNotExist:
+            return None
 
-    @property
+    @cached_property
     def cost_document(self):
-        return CostDocument.objects.get(document__project=self)
+        try:
+            return CostDocument.objects.get(document__project=self)
+        except ObjectDoesNotExist:
+            return None
 
     @property
     def cost_document_id(self):
@@ -191,39 +272,41 @@ class Project(models.Model):
     def monitoring(self):
         return self.monitoring_set.first()
 
-    @property
+    @cached_property
     def start_description(self):
-        return ProjectStartDescription.objects.get(document__project=self)
+        try:
+            return ProjectStartDescription.objects.get(document__project=self)
+        except ObjectDoesNotExist:
+            return None
 
-    @property
+    @cached_property
     def other_agreements(self):
         other_agreements = None
         try:
             other_agreements = OtherAgreementsDocument.objects.get(document__project=self)
-        except OtherAgreementsDocument.DoesNotExist:
+        except ObjectDoesNotExist:
             return None
-
         return other_agreements
 
-    @property
+    @cached_property
     def aggreement(self):
         aggreement = None
         try:
             aggreement = AgreementDocument.objects.get(document__project=self)
-        except AgreementDocument.DoesNotExist:
+        except ObjectDoesNotExist:
             return None
         return aggreement
 
-    @property
+    @cached_property
     def statement(self):
         stm = None
         try:
             stm = StatementDocument.objects.get(document__project=self)
-        except StatementDocument.DoesNotExist:
+        except ObjectDoesNotExist:
             return None
         return stm
 
-    @property
+    @cached_property
     def risk_degree(self):
         try:
             risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
@@ -246,12 +329,11 @@ class Project(models.Model):
                return 1
             return 0
     
-    @property
+    @cached_property
     def risks(self):
         risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
         return risk_index.risks.all()
     
-
     def get_grantees(self):
         try:
             return self.organization_details.grantee_set.all()
@@ -298,7 +380,7 @@ class Project(models.Model):
 
         return pasport_type
 
-    @property
+    @cached_property
     def pasport(self):
         pasport = None
         try:

@@ -36,6 +36,36 @@ class OrganizationManager(models.Manager):
         return organization
 
 
+    def update_(self, instance, **data):
+        contact_details = data.pop('contact_details', None)
+        share_holders_data = data.pop('share_holders', [])
+        authorized_grantee = data.pop('authorized_grantee', None)
+
+        for k, v in data.iteritems():
+            setattr(instance, k, v)
+        instance.save()
+
+        if contact_details:
+            contact_details['organization'] = instance
+            ContactDetails.objects.update_or_create(
+                pk=instance.contact_details_id,
+                defaults=contact_details)
+        
+        if share_holders_data:
+            instance.share_holders.clear()
+            share_holders = [
+                ShareHolder(organization=instance, **share_holder)
+                for share_holder in share_holders_data]
+            ShareHolder.objects.bulk_create(share_holders)
+
+        if authorized_grantee:
+            authorized_grantee['organization'] = instance
+            AuthorizedToInteractGrantee.objects.update_or_create(
+                pk=getattr(instance, 'authorized_grantee_id', None),
+                defaults=authorized_grantee)
+        return instance
+
+
 class Organization(models.Model):
     ORG_TYPES = INDIVIDUAL, COMPANY = range(2)
 
@@ -87,8 +117,15 @@ class Organization(models.Model):
     def authorized_grantee(self):
         if self.authorized_grantees:
             return self.authorized_grantees.last()
-
         return None
+
+    @property
+    def contact_details_id(self):
+        return self.contact_details and self.contact_details.id or None
+
+    @property
+    def authorized_grantee_id(self):
+        return self.authorized_grantee and self.authorized_grantee.id or None
 
 
 class ShareHolder(models.Model):
