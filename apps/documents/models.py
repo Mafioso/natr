@@ -32,11 +32,6 @@ class SimpleDocumentManager(models.Manager):
 class DocumentDMLManager(models.Manager):
 
     def create_statement(self, **kwargs):
-        prj = kwargs.pop('project', None)
-        if not kwargs or not 'document' in kwargs:
-            kwargs.update('document', {'document': {}})
-        if prj:
-            kwargs['document']['project'] = prj
         doc = self.create_doc_with_relations(StatementDocument, **kwargs)
         doc.save()
         return doc
@@ -60,7 +55,6 @@ class DocumentDMLManager(models.Manager):
 
     def create_basic_project_pasport(self, **kwargs):
         return self.create_doc_with_relations(BasicProjectPasportDocument, **kwargs)
-
 
     def create_innovative_project_pasport(self, **kwargs):
         doc = self.create_doc_with_relations(InnovativeProjectPasportDocument, **kwargs)
@@ -332,7 +326,13 @@ class DocumentDMLManager(models.Manager):
         pass
 
     def create_doc_with_relations(self, doc_class, **kwargs):
-        ddata = kwargs.pop('document', {})
+        prj = kwargs.pop('project', None)
+        # ensure document
+        if not kwargs or not 'document' in kwargs:
+            kwargs.update('document', {'document': {}})
+        if prj:
+            kwargs['document']['project'] = prj
+        ddata = kwargs.pop('document')
         ddata['type'] = doc_class.tp
         doc = self.create_doc_(**ddata)
         spec_doc = doc_class(document=doc)
