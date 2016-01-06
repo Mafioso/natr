@@ -95,8 +95,11 @@ class ProjectTeamMemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.ProjectTeamMember
 
+    cv = AttachmentSerializer(many=False, required=False)
+
     def to_internal_value(self, data):
         return data
+
 
 class TechStageSerializer(serializers.ModelSerializer):
 

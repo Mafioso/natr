@@ -124,19 +124,18 @@ class DocumentDMLManager(models.Manager):
 
         doc = self.update_doc_(instance, **kwargs)
 
-
+        old_ids = {tm.id for tm in instance.team_members.all()}
+        incoming_ids = {tm['id'] for tm in team_members_kw if tm.get('id', None)}
+        to_delete = old_ids - incoming_ids
+        ProjectTeamMember.objects.filter(pk__in=to_delete).delete()
         for team_member_kw in team_members_kw:
-            print team_member_kw
-            try:
-                team_member = ProjectTeamMember.objects.get(id=team_member_kw.pop('id', None))
-            except ProjectTeamMember.DoesNotExist:
-                team_member_kw['pasport'] = instance
-                team_member = ProjectTeamMember.objects.create(**team_member_kw)
-            else:
-                team_member_kw.pop('pasport')
-                for k, v in team_member_kw.iteritems():
-                    setattr(team_member, k, v)
-                team_member.save()
+            cv = team_member_kw.pop('cv', {})
+            team_member_kw['pasport'] = instance
+            team_member_kw['cv_id'] = cv.get('id', None)
+            ProjectTeamMember.objects.update_or_create(
+                pk=team_member_kw.get('id', None),
+                defaults=team_member_kw)
+        
             
         if dev_info_kw:
             try:
