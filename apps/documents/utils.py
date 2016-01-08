@@ -60,6 +60,8 @@ class DocumentPrint:
     def get_template_name(self):
         if self.object.__class__.__name__ == 'ProjectStartDescription':
             return u"start_description.docx"
+        elif self.object.__class__.__name__ == 'BasicProjectPasportDocument':
+            return u"basic_pasport.docx"
 
         return None
 
@@ -79,6 +81,9 @@ class DocumentPrint:
     def get_filename(self):
         if self.object.__class__.__name__ == 'ProjectStartDescription':
             return u"Показатели эффективности по состоянию на начало проекта.docx"
+        elif self.object.__class__.__name__ == 'BasicProjectPasportDocument' or \
+            self.object.__class__.__name__ == 'InnovativeProjectPasportDocument':
+            return u"Паспорт проекта.docx"
 
         return None
 

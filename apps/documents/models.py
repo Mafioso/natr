@@ -3,7 +3,7 @@
 
 __author__ = 'xepa4ep'
 
-
+import pytils
 from djmoney.models.fields import MoneyField
 from moneyed import Money
 from django.db import models
@@ -447,6 +447,18 @@ class BasicProjectPasportDocument(models.Model):
 
     def get_project(self):
         return self.document.get_project()
+
+    def get_context(self):
+        context = self.__dict__
+        context['project'] = self.document.project.name
+        context['result'] = self.get_result_display()
+        context['character'] = self.get_character_display()
+        context['patent_defence'] = self.get_patent_defence_display()
+        context['readiness'] = self.get_readiness_display()
+        context['other_agreements'] = self.get_other_agreements_display()
+        context['cost_text'] = pytils.numeral.in_words_int(self.cost.amount)
+        context['required_funding_text'] = pytils.numeral.in_words_int(self.required_funding.amount) 
+        return context
 
 
 class InnovativeProjectPasportDocument(models.Model):

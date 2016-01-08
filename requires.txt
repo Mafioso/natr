@@ -39,6 +39,7 @@ ptyprocess==0.5
 py-moneyed==0.6.0
 python-dateutil==2.4.2
 pytz==2015.7
+pytils==0.3
 requests==2.8.1
 simplegeneric==0.8.1
 six==1.10.0

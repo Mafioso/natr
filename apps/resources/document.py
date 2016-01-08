@@ -42,6 +42,22 @@ class BasicProjectPasportDocumentViewSet(ProjectBasedViewSet):
     serializer_class = BasicProjectPasportSerializer
     queryset = BasicProjectPasportDocument.objects.all()
 
+    @detail_route(methods=['get'], url_path='gen_docx')
+    def gen_docx(self, request, *a, **kw):
+        instance = self.get_object()
+        upd_instance = doc_models.Document.dml.update_doc_(instance, **request.data)
+        upd_instance.save()
+
+        _file, filename = DocumentPrint(object=upd_instance).generate_docx()
+
+        if not _file or not filename:
+            return HttpResponse(status=400)
+
+        response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
+        return response
+
+
 class InnovativeProjectPasportDocumentViewSet(ProjectBasedViewSet):
 
     serializer_class = InnovativeProjectPasportSerializer
