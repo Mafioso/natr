@@ -150,6 +150,7 @@ USE_L10N = True
 USE_TZ = True
 
 EXCEL_REPORTS_DIR = rel(BASE_DIR, 'excel_reports')
+DOCX_TEMPLATES_DIR = rel(BASE_DIR, 'docx_templates')
 
 
 # Static files (CSS, JavaScript, Images)

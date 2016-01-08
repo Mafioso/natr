@@ -17,6 +17,7 @@ django-rest-swagger==0.3.4
 django-test-without-migrations==0.3
 djangorestframework==3.3.1
 djangorestframework-composed-permissions==0.1
+docxtpl==0.1.8
 drf-nested-routers==0.11.1
 et-xmlfile==1.0.1
 factory-boy==2.6.0

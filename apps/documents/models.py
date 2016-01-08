@@ -277,7 +277,7 @@ class DocumentDMLManager(models.Manager):
         # ensure project
         if prj:
             kwargs['document']['project'] = prj
-        doc = kwargs.pop('document')
+        doc = kwargs.pop('document', {})
         for k, v in kwargs.iteritems():
             setattr(instance, k, v)
         instance.save()
@@ -839,6 +839,21 @@ class ProjectStartDescription(models.Model):
 
     def get_project(self):
         return self.document.get_project()
+
+    def get_context(self):
+        context = self.__dict__
+
+        context['grantee'] = self.get_project().organization_details.name if self.get_project().organization_details else ""
+        context['project'] = self.get_project().name
+        context['aggreement_number'] = self.get_project().aggreement.document.number if self.get_project().aggreement else ""
+        context['aggreement_date'] = self.get_project().aggreement.document.date_sign if self.get_project().aggreement else ""
+        context['total_rlzn_fact'] = self.total_rlzn_fact
+        context['total_rlzn_plan'] = self.total_rlzn_plan
+        context['total_rlzn_avrg'] = self.total_rlzn_avrg
+        context['total_tax_fact'] = self.total_tax_fact
+        context['total_tax_plan'] = self.total_tax_plan
+        context['total_tax_avrg'] = self.total_tax_avrg
+        return context
 
 
 class Attachment(models.Model):
