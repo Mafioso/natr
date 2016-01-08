@@ -457,6 +457,7 @@ class BasicProjectPasportDocument(models.Model):
         context['readiness'] = self.get_readiness_display()
         context['other_agreements'] = self.get_other_agreements_display()
         context['cost_text'] = pytils.numeral.in_words_int(self.cost.amount)
+        context['total_month'] = self.document.project.total_month
         context['required_funding_text'] = pytils.numeral.in_words_int(self.required_funding.amount) 
         return context
 
