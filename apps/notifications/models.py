@@ -75,9 +75,12 @@ class Notification(models.Model):
 
 		notif_params = self.prepare_msg()
 
-		for uid, subscriber_id, user_channel in zip(uids, subscriber_ids, channels):
+		for uid, (subscriber_id, counter), user_channel in zip(uids, subscriber_ids, channels):
 			notif_params['ack'] = subscriber_id
-			centrifugo_client.publish(user_channel, notif_params)
+			centrifugo_client.publish(user_channel, {
+				'notification': notif_params,
+				'counter': counter
+			})
 		
 		# propogate error if it happens
 		return centrifugo_client.send()
@@ -99,7 +102,7 @@ class Notification(models.Model):
 					account=user, notification=self))
 		return (
 			[u.id for u in users],
-			[s.id for s in subscribers]
+			[(s.id, counter.counter) for s, counter in subscribers]
 		)
 
 	@property
@@ -107,6 +110,15 @@ class Notification(models.Model):
 		"""Hook property that is called by corresponding serializer.
 		Caution: Do not use this method."""
 		return self.context_id
+
+
+class NotificationSubscribtionManager(models.Manager):
+
+	def create(self, **kwargs):
+		obj = super(NotificationSubscribtionManager, self).create(**kwargs)
+		counter = NotificationCounter.get_or_create(obj.account)
+		counter.incr_counter()
+		return obj, counter
 
 
 class NotificationSubscribtion(models.Model):
@@ -119,9 +131,11 @@ class NotificationSubscribtion(models.Model):
 	STATUSES_OPTS = zip(STATUSES, STATUSES_CAPS)
 
 	account = models.ForeignKey('auth2.Account', related_name='notifications')
-	notification = models.ForeignKey('Notification', related_name='subscribtions')
+	notification = models.ForeignKey('Notification', related_name='subscribtions', on_delete=models.CASCADE)
 	status = models.IntegerField(choices=STATUSES_OPTS, default=SENT)
 	date_read = models.DateTimeField(null=True)
+
+	objects = NotificationSubscribtionManager()
 
 	def save(self, *a, **kw):
 		if self.pk is not None:
@@ -175,3 +189,35 @@ def on_user_create(sender, instance, created=False, **kwargs):
 	if not created:
 		return   # not interested
 	NotificationCounter.get_or_create(instance)
+
+
+def send_notification(notif_type, context):
+	n = Notification.objects.create(
+		notif_type=notif_type, context=context)
+	n.spray()
+	return n
+
+
+def test():
+	uids = [acc.id for acc in Account.objects.all()]
+	channels = map(utils.prepare_channel, uids)
+	for chnl in channels:
+		centrifugo_client.publish(chnl, {
+			'notification': {
+				'status': 2,
+				'date_funded': None,
+				'type': 1,
+				'context_type': 'milestone',
+				'context_id': 73,
+				'date_start': '2016-01-08T00:00:00Z',
+				'number': 2,
+				'project': 25,
+				'fundings': {'currency': 'XYZ', 'amount': 33333.22}
+			},
+			'counter': 3
+		})
+		centrifugo_client.send()
+
+if __name__ == '__main__':
+	test()
+
