@@ -32,26 +32,16 @@ class SimpleDocumentManager(models.Manager):
 class DocumentDMLManager(models.Manager):
 
     def create_statement(self, **kwargs):
-        doc = self.create_doc_with_relations(StatementDocument, **kwargs)
-        doc.save()
-        return doc
+        return self.create_doc_with_relations(StatementDocument, **kwargs)
 
     def create_agreement(self, **kwargs):
         return self.create_doc_with_relations(AgreementDocument, **kwargs)
 
     def update_agreement(self, instance, **kwargs):
-        doc = kwargs.pop('document')
-        for k, v in kwargs.iteritems():
-            setattr(instance, k, v)
-        instance.save()
-        return self.update_doc_(instance.document, **doc)
-
+        return self.update_doc_with_relations(instance, **kwargs)
+        
     def update_statement(self, instance, **kwargs):
-        doc = kwargs.pop('document')
-        for k, v in kwargs.iteritems():
-            setattr(instance, k, v)
-        instance.save()
-        return self.update_doc_(instance.document, **doc)
+        return self.update_doc_with_relations(instance, **kwargs)
 
     def create_basic_project_pasport(self, **kwargs):
         return self.create_doc_with_relations(BasicProjectPasportDocument, **kwargs)
@@ -92,12 +82,9 @@ class DocumentDMLManager(models.Manager):
         return doc
 
     def update_other_agr_doc(self, instance, **kwargs):
-        doc = kwargs.pop('document')
         items = kwargs.pop('items', [])
-
-        for k, v in kwargs.iteritems():
-            setattr(instance, k, v)
-        instance.save()
+        
+        instance = self.update_doc_with_relations(instance, **kwargs)
 
         item_obj_map = {item.id: item for item in instance.items.all()}
         incoming_items_ids = {item['id'] for item in items if 'id' in item}
@@ -120,17 +107,13 @@ class DocumentDMLManager(models.Manager):
             item_obj.save()
             return item_obj
 
-        return self.update_doc_(instance.document, **doc)
+        return instance
 
     def create_start_description(self, **kwargs):
         return self.create_doc_with_relations(ProjectStartDescription, **kwargs)
 
     def update_start_description(self, instance, **kwargs):
-        for k, v in kwargs.iteritems():
-            print k, v
-            setattr(instance, k, v)
-        instance.save()
-        return instance
+        return self.update_doc_with_relations(instance, **kwargs)
 
     def update_innovative_project_pasport(self, instance, **kwargs):
         team_members_kw = kwargs.pop('team_members', [])
@@ -141,19 +124,18 @@ class DocumentDMLManager(models.Manager):
 
         doc = self.update_doc_(instance, **kwargs)
 
-
+        old_ids = {tm.id for tm in instance.team_members.all()}
+        incoming_ids = {tm['id'] for tm in team_members_kw if tm.get('id', None)}
+        to_delete = old_ids - incoming_ids
+        ProjectTeamMember.objects.filter(pk__in=to_delete).delete()
         for team_member_kw in team_members_kw:
-            print team_member_kw
-            try:
-                team_member = ProjectTeamMember.objects.get(id=team_member_kw.pop('id', None))
-            except ProjectTeamMember.DoesNotExist:
-                team_member_kw['pasport'] = instance
-                team_member = ProjectTeamMember.objects.create(**team_member_kw)
-            else:
-                team_member_kw.pop('pasport')
-                for k, v in team_member_kw.iteritems():
-                    setattr(team_member, k, v)
-                team_member.save()
+            cv = team_member_kw.pop('cv', {})
+            team_member_kw['pasport'] = instance
+            team_member_kw['cv_id'] = cv.get('id', None)
+            ProjectTeamMember.objects.update_or_create(
+                pk=team_member_kw.get('id', None),
+                defaults=team_member_kw)
+        
             
         if dev_info_kw:
             try:
@@ -225,71 +207,6 @@ class DocumentDMLManager(models.Manager):
 
         return doc
 
-
-    # def update_innovative_project_pasport(self, instance, **kwargs):
-    #     team_members = kwargs.pop('team_members', [])
-    #     dev_info_kw = kwargs.pop('dev_info', {})
-    #     tech_char_kw = kwargs.pop('tech_char', {})
-    #     intellectual_property_kw = kwargs.pop('intellectual_property', {})
-    #     tech_readiness_kw = kwargs.pop('tech_readiness', {})
-
-    #     team_member = None
-    #     dev_info = None
-    #     tech_char = None
-    #     intellectual_property = None
-    #     tech_readiness = None
-
-    #     doc = self.update_doc_(instance, **kwargs)
-
-    #     for team_member_kw in team_members:
-    #         def_ = {'pasport': instance}
-    #         def_.update(team_member_kw)
-    #         team_member, _ = ProjectTeamMember.objects.get_or_create(
-    #             id=team_member_kw.get('id', None), defaults=def_)
-    #         for k, v in team_member_kw.iteritems():
-    #             setattr(team_member, k, v)
-    #         team_member.save()
-
-    #     def_ = dev_info_kw
-    #     def_['pasport'] = instance
-    #     dev_info, created = DevelopersInfo.objects.get_or_create(
-    #         id=dev_info_kw.get('id', None),
-    #         defaults=def_)
-    #     for k, v in def_.iteritems():
-    #         setattr(dev_info, k, v)
-    #     dev_info.save()
-
-    #     def_ = tech_char_kw
-    #     def_['pasport'] = instance
-    #     tech_char, created = TechnologyCharacteristics.objects.get_or_create(
-    #         id=tech_char_kw.get('id', None),
-    #         defaults=def_)
-    #     for k, v in def_.iteritems():
-    #         setattr(tech_char, k, v)
-    #     tech_char.save()
-
-
-    #     def_ = intellectual_property_kw
-    #     def_['pasport'] = instance
-    #     intellectual_property, _ = IntellectualPropertyAssesment.objects.get_or_create(
-    #         id=intellectual_property_kw.get('id', None),
-    #         defaults=def_)
-    #     for k, v in def_.iteritems():
-    #         setattr(intellectual_property, k, v)
-    #     intellectual_property.save()
-
-    #     def_ = tech_readiness_kw
-    #     def_['pasport'] = instance
-    #     tech_readiness, _ = TechnologyReadiness.objects.get_or_create(
-    #         id=tech_readiness_kw.get('id', None),
-    #         defaults=def_)
-    #     for k, v in def_.iteritems():
-    #         setattr(tech_readiness, k, v)
-    #     tech_readiness.save()
-
-    #     return doc
-
-
     def create_cost_doc(self, **kwargs):
         return self.create_doc_with_relations(CostDocument, **kwargs)
 
@@ -329,7 +246,7 @@ class DocumentDMLManager(models.Manager):
         prj = kwargs.pop('project', None)
         # ensure document
         if not kwargs or not 'document' in kwargs:
-            kwargs.update('document', {'document': {}})
+            kwargs.update({'document': {}})
         if prj:
             kwargs['document']['project'] = prj
         ddata = kwargs.pop('document')
@@ -354,6 +271,18 @@ class DocumentDMLManager(models.Manager):
                 attachment['document'] = d
                 Attachment(**attachment).save()
         return d
+
+    def update_doc_with_relations(self, instance, **kwargs):
+        prj = kwargs.pop('project', None)
+        # ensure project
+        if prj:
+            kwargs['document']['project'] = prj
+        doc = kwargs.pop('document')
+        for k, v in kwargs.iteritems():
+            setattr(instance, k, v)
+        instance.save()
+        self.update_doc_(instance.document, **doc)
+        return instance
 
     def update_doc_(self, instance, **kwargs):
         incoming_attachments = [a['id'] for a in kwargs.pop('attachments', [])]
@@ -814,7 +743,7 @@ class CalendarPlanItem(models.Model):
         u'Расчетная цена этапа (тенге)',
         max_digits=20, decimal_places=2, default_currency=settings.KZT)
 
-    calendar_plan = models.ForeignKey(CalendarPlanDocument, related_name='items')
+    calendar_plan = models.ForeignKey(CalendarPlanDocument, related_name='items', on_delete=models.CASCADE)
     # milestone = models.OneToOneField('Milestone', null=True, related_name='calendar_plan_item', on_delete=models.CASCADE)
 
     def get_project(self):
@@ -1254,12 +1183,8 @@ def on_cost_type_create(sender, instance, created=False, **kwargs):
     if not created:
         return
     project = instance.project
-    try:
-        cost_doc = project.cost_document
-    except CostDocument.DoesNotExist:
-        pass
-    else:
-        cost_doc.add_empty_row(instance)
+    if project.cost_document:
+        project.cost_document.add_empty_row(instance)
 
     budget_reports = UseOfBudgetDocument.objects.filter(document__project=project)
     for budget_report in budget_reports:

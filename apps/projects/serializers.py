@@ -113,11 +113,8 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         # fields = ('organization_details',)
 
     def __init__(self, *args, **kwargs):
-        self.fields['assigned_experts'].required = False
-        self.fields['assigned_grantees'].required = False
         self.fields['assigned_experts'].read_only = True
         self.fields['assigned_grantees'].read_only = True
-        # self.fields['milestone_set'].read_only = True
         super(ProjectSerializer, self).__init__(*args, **kwargs)
 
     fundings = SerializerMoneyField(required=False)
@@ -138,156 +135,14 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     milestone_set = MilestoneBaseInfo(many=True, required=False, read_only=True)
     risk_degree = serializers.IntegerField(required=False, read_only=True)
     risks = RiskDefinitionSerializer(many=True, read_only=True)
-    # assigned_experts = 
-
-    # def create_organization(self, validated_data):
-    #     contact_details = validated_data.pop('contact_details', None)
-    #     share_holders_data = validated_data.pop('share_holders', [])
-    #     authorized_grantee = validated_data.pop('authorized_grantee', None)
-    #     organization = grantee_models.Organization(**validated_data)
-    #     organization.save()
-
-    #     if contact_details:
-    #         grantee_models.ContactDetails.objects.create(organization=organization, **contact_details)
-
-    #     if share_holders_data:
-    #         share_holders = [
-    #             grantee_models.ShareHolder(organization=organization, **share_holder)
-    #             for share_holder in share_holders_data]
-    #         grantee_models.ShareHolder.objects.bulk_create(share_holders)
-
-    #     if authorized_grantee:
-    #         grantee_models.AuthorizedToInteractGrantee.objects.create(
-    #             organization=organization, **authorized_grantee)
-
-    #     return organization
-
-    def update_organization(self, instance, validated_data):
-        contact_details = validated_data.pop('contact_details', None)
-        share_holders_data = validated_data.pop('share_holders', [])
-        authorized_grantee = validated_data.pop('authorized_grantee', None)
-
-        for k, v in validated_data.iteritems():
-            setattr(instance, k, v)
-        instance.save()
-
-        if contact_details:
-            try:
-                for k, v in contact_details.iteritems():
-                    setattr(instance.contact_details, k, v)
-                instance.contact_details.save()
-            except Exception as e:
-                grantee_models.ContactDetails.objects.create(
-                    organization=instance, **contact_details)
-
-        if share_holders_data:
-            instance.share_holders.clear()
-            share_holders = [
-                grantee_models.ShareHolder(organization=instance, **share_holder)
-                for share_holder in share_holders_data]
-            grantee_models.ShareHolder.objects.bulk_create(share_holders)
-
-        if authorized_grantee:
-            try:
-                auth_grantee_obj = instance.authorized_grantee
-                for k, v in authorized_grantee.iteritems():
-                    setattr(auth_grantee_obj, k, v)
-                auth_grantee_obj.save()
-            except Exception as e:
-                print e
-                grantee_models.AuthorizedToInteractGrantee.objects.create(
-                    organization=instance, **authorized_grantee)
-        return instance
-
+    
     def create(self, validated_data):
         return Project.objects.create_new(**validated_data)
 
     def update(self, instance, validated_data):
         if self.partial:
             return super(ProjectSerializer, self).update(instance, validated_data)
-
-        milestone_set = validated_data.pop('milestone_set', [])
-        organization_details = validated_data.pop('organization_details', None)
-        funding_type_data = validated_data.pop('funding_type', None)
-        statement_data = validated_data.pop('statement', {'document': {}})
-        aggrement_data = validated_data.pop('aggreement', {'document': {}})
-
-        if not 'document' in aggrement_data:
-            aggrement_data.update({'document': {}})
-        if not 'document' in statement_data:
-            statement_data.update({'document': {}})
-        
-        
-        other_agreements = validated_data.pop('other_agreements', {'document': {}})
-        if not 'document' in other_agreements:
-            other_agreements.update({'document': {}})
-
-        old_milestones = instance.number_of_milestones
-        new_milestones = validated_data['number_of_milestones']
-        current_milestone_data = validated_data.pop('current_milestone', None)
-
-        prj = super(ProjectSerializer, self).update(instance, validated_data)
-
-        if organization_details:
-            try:
-                self.update_organization(instance.organization_details, organization_details)
-            except ObjectDoesNotExist as e:
-                organization_details['project'] = instance
-                self.create_organization(organization_details)
-
-        if funding_type_data:
-            funding_type_ser = FundingTypeSerializer(
-                instance=instance.funding_type, data=funding_type_data)
-            funding_type_ser.is_valid(raise_exception=True)
-            prj.funding_type = funding_type_ser.save()
-
-        if statement_data:
-            statement_data['document']['project'] = instance
-            if instance.statement:
-                doc_models.Document.dml.update_statement(instance.statement, **statement_data)
-            else:
-                doc_models.Document.dml.create_statement(**statement_data)
-
-        if aggrement_data:
-            aggrement_data['document']['project'] = instance
-            if instance.aggreement:
-                doc_models.Document.dml.update_agreement(instance.aggreement, **aggrement_data)
-            else:
-                doc_models.Document.dml.create_agreement(**aggrement_data)
-        if other_agreements:
-            other_agreements['document']['project'] = instance
-            if instance.other_agreements:
-                doc_models.Document.dml.update_other_agr_doc(instance.other_agreements, **other_agreements)
-            else:
-                doc_models.Document.dml.create_other_agr_doc(**other_agreements)
-
-        if current_milestone_data:
-            mil_ser = MilestoneSerializer(
-                instance=instance.current_milestone, data=current_milestone_data)
-            mil_ser.is_valid(raise_exception=True)
-            prj.current_milestone = mil_ser.save()
-
-        prj.save()
-
-        if old_milestones == new_milestones:
-            return prj
-
-        if prj.calendar_plan:
-            prj.calendar_plan.delete()
-        prj_cp = CalendarPlanDocumentSerializer.build_empty(prj)
-        prj_cp.is_valid(raise_exception=True)
-        prj_cp.save()
-
-        prj.milestone_set.clear()
-        for i in xrange(prj.number_of_milestones):
-            milestone_ser = MilestoneSerializer.build_empty(prj, number=i + 1)
-            milestone_ser.is_valid(raise_exception=True)
-            milestone = milestone_ser.save()
-
-            if i == prj.number_of_milestones - 1:
-                Report.build_empty(milestone, report_type=Report.FINAL)
-
-        return prj
+        return Project.objects.update_(instance, **validated_data)
 
 
 class ProjectBasicInfoSerializer(serializers.ModelSerializer):
