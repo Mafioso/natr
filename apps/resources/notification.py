@@ -45,16 +45,14 @@ class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
 		response = super(NotificationSubscriptionViewSet, self).list(request, *a, **kw)
 		data = []
 		for item in response.data['results']:
-			new_item = {
-				'id': item['id'],
-				'status': item['status'],
-			}
-			notif_params = item['notification'].pop('params')
-			new_item.update(item['notification'])
-			new_item.update(notif_params)
-			data.append(new_item)
+			data.append(self.build_item(item))
 		response.data['results'] = data
 		response.data['counter'] = models.NotificationCounter.get_or_create(request.user).counter
+		return response
+
+	def update(self, request, *a, **kw):
+		response = super(NotificationSubscriptionViewSet, self).update(request, *a, **kw)
+		response.data = self.build_item(response.data)
 		return response
 
 	def perform_update(self, serializer):
@@ -62,6 +60,15 @@ class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
 		new_data_dict = serializer.validated_data
 		# todo compare logic here
 		serializer.save()
+
+	def build_item(self, item):
+		new_item = {
+			'id': item['id'],
+			'status': item['status']}
+		notif_params = item['notification'].pop('params')
+		new_item.update(item['notification'])
+		new_item.update(notif_params)
+		return new_item
 
 
 class NotificationCounterViewSet(viewsets.ModelViewSet):

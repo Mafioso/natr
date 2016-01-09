@@ -16,6 +16,7 @@ __author__ = 'xepa4ep'
 import json
 from django.utils import timezone
 from django.db import models
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from adjacent import Client
@@ -65,23 +66,24 @@ class Notification(models.Model):
 	subscribers = models.ManyToManyField('auth2.Account', through='NotificationSubscribtion')
 
 	def spray(self):
-		uids, subscriber_ids = self.store_by_subscriber()
-		channels = map(utils.prepare_channel, uids)
-		if not self.params:
-			notif_params = self.context.notification(
-				self.context_type, self.context_id, self.notif_type)
-			self.params = JSONRenderer().render(notif_params)
-			self.save()
-
+		# 1 prepare message
+		default_params = {
+			'notif_type': self.notif_type,
+			'context_type': self.context_type.model,
+			'context_id': self.context_id,
+			'status': NotificationSubscribtion.SENT}
 		notif_params = self.prepare_msg()
-
-		for uid, (subscriber_id, counter), user_channel in zip(uids, subscriber_ids, channels):
-			notif_params['ack'] = subscriber_id
-			centrifugo_client.publish(user_channel, {
-				'notification': notif_params,
-				'counter': counter
+		notif_params.update(default_params)
+		# 2 spray msg
+		for uid, chnl, sid, counter in self.store_by_subscriber():
+			params = dict(**notif_params)
+			params.update({
+				'id': sid,
+				'ack': sid,
 			})
-		
+			centrifugo_client.publish(chnl, {
+				'notification': params,
+				'counter': counter})
 		# propogate error if it happens
 		return centrifugo_client.send()
 
@@ -96,15 +98,11 @@ class Notification(models.Model):
 	def store_by_subscriber(self):
 		users = self.context.notification_subscribers()
 		subscribers = []
-		for user in users:
-			subscribers.append(
-				NotificationSubscribtion.objects.create(
-					account=user, notification=self))
-		return (
-			[u.id for u in users],
-			[(s.id, counter.counter) for s, counter in subscribers]
-		)
-
+		for u in users:
+			s, counter = NotificationSubscribtion.objects.create(
+				account=u, notification=self)
+			yield (u.id, utils.prepare_channel(u.id), s.id, counter.counter)
+		
 	@property
 	def milestone(self):
 		"""Hook property that is called by corresponding serializer.
@@ -123,6 +121,9 @@ class NotificationSubscribtionManager(models.Manager):
 
 class NotificationSubscribtion(models.Model):
 
+	class Meta:
+		ordering = ['-date_created']
+
 	STATUSES = (SENT, DELIVERED, READ) = range(3)
 	STATUSES_CAPS = (
 		u'отправлено',
@@ -134,7 +135,7 @@ class NotificationSubscribtion(models.Model):
 	notification = models.ForeignKey('Notification', related_name='subscribtions', on_delete=models.CASCADE)
 	status = models.IntegerField(choices=STATUSES_OPTS, default=SENT)
 	date_read = models.DateTimeField(null=True)
-
+	date_created = models.DateTimeField(auto_now_add=True, null=True)
 	objects = NotificationSubscribtionManager()
 
 	def save(self, *a, **kw):
@@ -206,7 +207,7 @@ def test():
 			'notification': {
 				'status': 2,
 				'date_funded': None,
-				'type': 1,
+				'notif_type': 1,
 				'context_type': 'milestone',
 				'context_id': 73,
 				'date_start': '2016-01-08T00:00:00Z',

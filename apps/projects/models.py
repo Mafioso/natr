@@ -842,13 +842,10 @@ class Milestone(ProjectBasedModel):
         """Prepare notification data to send to client (user agent, mobile)."""
         assert notif_type in Notification.MILESTONE_NOTIFS, "Expected MILESTONE_NOTIFS"
         data = {
-            'context_type': cttype.model,
-            'context_id': ctid,
-            'status': self.status,
+            'milestone_status': self.status,
             'number': self.number,
             'project': self.project_id,
             'date_start': self.date_start,
-            'type': notif_type
         }
 
         if notif_type == Notification.TRANSH_PAY:

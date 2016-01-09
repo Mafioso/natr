@@ -79,8 +79,8 @@ class MilestoneSerializer(
             if instance.status == 1:
                 mailing.send_milestone_status_payment(instance)
             if instance.status == 2:
-                mailing.send_milestone_status_implementation(instance)
                 send_notification(Notification.TRANSH_PAY, instance)
+                mailing.send_milestone_status_implementation(instance)
             if instance.status == 5:
                 mailing.send_milestone_status_revision(instance)
             if instance.status == 7:
