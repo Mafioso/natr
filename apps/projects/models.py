@@ -845,6 +845,7 @@ class Milestone(ProjectBasedModel):
             'milestone_status': self.status,
             'number': self.number,
             'project': self.project_id,
+            'project_name': self.project.name,
             'date_start': self.date_start,
         }
 
