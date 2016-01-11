@@ -666,7 +666,7 @@ class Corollary(ProjectBasedModel):
         relevant_for_permission = True
         verbose_name = u"Заключение"
         permissions = (
-            ('approve', u"Утверждение документа"),
+            ('approve_corollary', u"Утверждение документа"),
         )
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
@@ -993,12 +993,13 @@ class Monitoring(ProjectBasedModel):
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
 
-
     class Meta:
         filter_by_project = 'project__in'
         relevant_for_permission = True
         verbose_name = u"План мониторинга"
-
+        permissions = (
+            ('approve_monitoring', u"Утверждение документа"),
+        )
 
     def get_status_cap(self):
         return self.__class__.STATUS_CAPS[self.status]
