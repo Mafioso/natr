@@ -8,8 +8,10 @@ import dateutil.parser
 from django.conf import settings
 from django.utils import timezone
 from django.db import models
+from django.db.models.signals import post_save
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from djmoney.models.fields import MoneyField
+from natr.models import track_data
 from natr.mixins import ProjectBasedModel, ModelDiffMixin
 from natr import utils
 from natr.models import CostType
@@ -504,6 +506,7 @@ class FundingType(models.Model):
         return self.name
 
 
+@track_data('status')
 class Report(ProjectBasedModel):
 
     class Meta:
@@ -512,19 +515,9 @@ class Report(ProjectBasedModel):
         relevant_for_permission = True
         verbose_name = u"Отчет"
 
-    # STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
-
-    # STATUS_CAPS = (
-    #     u'неактивен'
-    #     u'формирование',
-    #     u'на проверке',
-    #     u'утверждение',
-    #     u'утвержден',
-    #     u'отправлен на доработку',
-    #     u'завершен')
+    #tracker = FieldTracker(['status'])  not so usable
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
-
     STATUS_CAPS = (
         u'неактивен',
         u'формирование',
@@ -647,16 +640,34 @@ class Report(ProjectBasedModel):
                         settings.DEFAULT_FROM_EMAIL,
                         [grantee.account.email],
                         fail_silently=False
-                    )         
+                    )
+
+    @classmethod
+    def post_save(cls, sender, instance, created, **kwargs):
+        if not instance.has_changed('status'):
+            return
+        old_val = instance.old_value('status')
+        new_val = instance.status
+        milestone = instance.milestone
+        if new_val == Report.REWORK:
+            milestone.set_status(Milestone.REPORT_REWORK)
+        elif new_val == Report.CHECK:
+            milestone.set_status(Milestone.REPORT_CHECK)
+        elif new_val == Report.BUILD:
+            milestone.set_status(Milestone.REPORTING)
+        milestone.save()
 
 
+@track_data('status')
 class Corollary(ProjectBasedModel):
-
 
     class Meta:
         filter_by_project = 'project__in'
         relevant_for_permission = True
         verbose_name = u"Заключение"
+        permissions = (
+            ('approve', u"Утверждение документа"),
+        )
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
     STATUS_CAPS = (
@@ -761,6 +772,17 @@ class Corollary(ProjectBasedModel):
                 'project': report.project})
         corollary.build_stat()
         return corollary
+
+    @classmethod
+    def post_save(cls, sender, instance, created, **kwargs):
+        if not instance.has_changed('status'):
+            return
+        old_val = instance.old_value('status')
+        new_val = instance.status
+        milestone = instance.milestone
+        if new_val == Corollary.APPROVE:
+            milestone.set_status(Milestone.COROLLARY_APROVING)
+        milestone.save()
 
 
 class CorollaryStatByCostType(models.Model):
@@ -931,12 +953,9 @@ class Milestone(ProjectBasedModel):
         #assert calendar_plan.is_approved(), "Calendar plan must be in approved state in order to generate milestones"
         milestones = []
         project = project if project is not None else calendar_plan.document.project
-
         prev_milestones = project.milestone_set.all()
-
         if len(prev_milestones) and not force:
             raise cls.AlreadyExists("Milestones already generated. Set force=True, if you wish such behaviour but you loose previous one.")
-
         project.milestone_set.clear()
         for _, item in enumerate(calendar_plan.items.all()):
             milestones.append(cls(
@@ -949,18 +968,14 @@ class Milestone(ProjectBasedModel):
 
     def get_cameral_report(self):
         reports = self.reports.filter(type=Report.CAMERAL)
-
         if not reports:
             return None
-
         return reports.last().id
 
     def get_final_report(self):
         reports = self.reports.filter(type=Report.FINAL)
-
         if not reports:
             return None
-
         return reports.last().id
 
 
@@ -1093,11 +1108,13 @@ class RiskDefinition(models.Model):
         return self.probability * self.impact
 
 
-from django.db.models.signals import post_save
-
 def on_milestone_create(sender, instance, created=False, **kwargs):
     if not created:
         return
     Report.build_empty(instance)
 
 post_save.connect(on_milestone_create, sender=Milestone)
+
+post_save.connect(Report.post_save, sender=Report)
+
+post_save.connect(Corollary.post_save, sender=Corollary)
