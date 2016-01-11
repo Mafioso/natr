@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.db import models
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from djmoney.models.fields import MoneyField
-from natr.mixins import ProjectBasedModel
+from natr.mixins import ProjectBasedModel, ModelDiffMixin
 from natr import utils
 from natr.models import CostType
 from django.contrib.auth import get_user_model
@@ -339,6 +339,12 @@ class Project(models.Model):
             return self.organization_details.grantee_set.all()
         except:
             return []
+
+    @cached_property
+    def stakeholders(self):
+        experts = list(self.assigned_experts.all())
+        grantees = list(self.assigned_grantees.all())
+        return [u.account for u in experts + grantees]
 
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
@@ -836,13 +842,11 @@ class Milestone(ProjectBasedModel):
         """Prepare notification data to send to client (user agent, mobile)."""
         assert notif_type in Notification.MILESTONE_NOTIFS, "Expected MILESTONE_NOTIFS"
         data = {
-            'context_type': cttype.model,
-            'context_id': ctid,
-            'status': self.status,
+            'milestone_status': self.status,
             'number': self.number,
             'project': self.project_id,
+            'project_name': self.project.name,
             'date_start': self.date_start,
-            'notif_type': Notification.TRANSH_PAY
         }
 
         if notif_type == Notification.TRANSH_PAY:
@@ -853,8 +857,7 @@ class Milestone(ProjectBasedModel):
         return data
 
     def notification_subscribers(self):
-        # todo: implement
-        return get_user_model().objects.all()
+        return self.project.stakeholders
 
     def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():
