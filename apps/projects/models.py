@@ -1085,6 +1085,9 @@ class RiskDefinition(models.Model):
     impact = models.IntegerField(null=True, blank=True)
     owner = models.CharField(max_length=500, null=True, blank=True)
 
+    class Meta:
+        relevant_for_permission = True
+
     @property
     def indicator(self):
         return self.probability * self.impact

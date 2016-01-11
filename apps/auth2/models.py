@@ -124,7 +124,12 @@ class NatrUser(models.Model):
 
     departments = models.ManyToManyField(Department, blank=True)
 
-    account = models.OneToOneField('Account', related_name='user')
+    account = models.OneToOneField('Account', related_name='user', on_delete=models.CASCADE)
+
+    def delete(self, **kwargs):
+        acc = self.account
+        super(NatrUser, self).delete(**kwargs)
+        acc.delete()
 
     def get_full_name(self):
         return self.account.get_full_name()
@@ -153,6 +158,10 @@ class NatrUser(models.Model):
         self.account.groups.add(*groups)
         return self
 
+    @classmethod
+    def test_cascade(cls):
+        test_cascade()
+
 
 def assign_user_group(sender, instance, created=False, **kwargs):
     """If natr user does not belong to any group, assign expert by default."""
@@ -162,12 +171,23 @@ def assign_user_group(sender, instance, created=False, **kwargs):
         return
     instance.add_to_experts()
 
-def on_natruser_delete(sender, instance, *a, **kw):
-    try:
-        instance.account.delete()
-    except ObjectDoesNotExist:
-        return None
-
 post_save.connect(assign_user_group, sender=NatrUser)
 
-post_delete.connect(on_natruser_delete, sender=NatrUser)
+
+def test_cascade():
+    import random
+    email = 'aa{}@ya.ru'.format(random.randint(1, 10000000))
+    a = Account(email=email)
+    a.set_password('123')
+    a.save()
+
+    u = NatrUser.objects.create(account=a)
+    u.save()
+    uid = u.pk
+
+    a.delete()
+    try:
+        NatrUser.objects.get(pk=uid).delete()
+        assert False, 'Cascade is not working'
+    except NatrUser.DoesNotExist:
+        print 'Cascade WORKS!!!'
