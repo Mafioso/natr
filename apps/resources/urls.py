@@ -8,6 +8,7 @@ from .project import (
 	ReportViewSet,
 	MilestoneViewSet,
 	CorollaryViewSet,
+	RiskCategoryViewSet,
 	RiskDefinitionViewSet,
 	CommentViewSet
 )
@@ -54,6 +55,7 @@ router.register(r'cost_types', CostTypeViewSet, 'cost_types')
 router.register(r'cost_row', FactMilestoneCostRowViewSet, 'cost_row')
 router.register(r'gp_docs', GPDocimentViewSet, 'gp_docs')
 router.register(r'gp_doc_types', GPDocumentTypeViewSet, 'gp_doc_type')
+router.register(r'risk_categories', RiskCategoryViewSet, 'risk_categories')
 router.register(r'risks', RiskDefinitionViewSet, 'risk')
 router.register(r'tech_stages', TechStageViewSet, 'tech_stages')
 router.register(r'monitoring_todos', MonitoringTodoViewSet, 'monitoring_todos')

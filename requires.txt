@@ -1,7 +1,10 @@
 Django==1.8.6
 Faker==0.0.4
+Jinja2==2.8
+MarkupSafe==0.23
 PyYAML==3.11
 Pygments==2.0.2
+Sphinx==1.2.3
 adjacent==1.0.0
 amqp==1.4.7
 anyjson==0.3.3
@@ -12,6 +15,7 @@ cent==1.1.0
 decorator==4.0.6
 django-extensions==1.5.9
 django-filter==0.11.0
+django-filters==0.2.1
 django-money==0.7.4
 django-rest-swagger==0.3.4
 django-test-without-migrations==0.3
@@ -29,6 +33,7 @@ ipython-genutils==0.1.0
 jdcal==1.2
 kombu==3.0.29
 linecache2==1.0.0
+lxml==3.5.0
 mock==1.3.0
 openpyxl==2.3.2
 path.py==8.1.2
@@ -38,11 +43,13 @@ pickleshare==0.5
 ptyprocess==0.5
 py-moneyed==0.6.0
 python-dateutil==2.4.2
-pytz==2015.7
+python-docx==0.8.5
 pytils==0.3
+pytz==2015.7
 requests==2.8.1
 simplegeneric==0.8.1
 six==1.10.0
+sphinxcontrib-napoleon==0.4.3
 traceback2==1.4.0
 traitlets==4.0.0
 unittest2==1.1.0
