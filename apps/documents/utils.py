@@ -5,6 +5,7 @@ import decimal
 import models as doc_models
 from django.conf import settings
 from docxtpl import DocxTemplate, RichText
+from docx.shared import Pt
 from djmoney.models.fields import MoneyPatched
 from cStringIO import StringIO
 from datetime import datetime
@@ -49,6 +50,12 @@ class DocumentPrint:
 
         doc = DocxTemplate(template_path)
         context = self.get_context(**{'doc': doc})
+
+        style = doc.styles['Normal']
+        font = style.font
+        font.name = 'Times New Roman'
+        font.size = Pt(12)
+
         doc.render(context)
         _file = StringIO()
         doc.save(_file)

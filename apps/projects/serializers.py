@@ -209,6 +209,18 @@ class ReportSerializer(serializers.ModelSerializer):
         prj = super(ReportSerializer, self).update(instance, validated_data)
         return prj
 
+    def validate_docx_context(self, instance):
+        if not hasattr(instance.project, 'organization_details'):
+            return False, u"Пожалуйста, заполните поле \"Название компании\" в Реквизитах грантополучателя основных данных проекта"
+        if not instance.project.aggreement.document.date_sign:
+            return False, u"Пожалуйста, заполните поле \"Дата договора\" в основных данных проекта"
+        if not instance.project.aggreement.document.number:
+            return False, u"Пожалуйста, заполните поле \"Номер договора\" в основных данных проекта"
+        if not instance.project.funding_type:
+            return False, u"Пожалуйста, заполните поле \"Вид предоставленного гранта\" в основных данных проекта"
+
+        return True, u""
+
 
 class CorollaryTotalsSerializer(ExcludeCurrencyFields, serializers.Serializer):
     natr_fundings = SerializerMoneyField()
@@ -309,6 +321,14 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
                 mailing.send_monitoring_plan_agreed(instance)
         return instance
 
+    def validate_docx_context(self, instance):
+        for item, cnt in zip(instance.todos.all(), range(1, instance.todos.count()+1)):
+            if not item.date_start:
+                return False, u"Заполните поле \"Начало\" для мероприятия №%s"%cnt
+            if not item.date_end:
+                return False, u"Заполните поле \"Завершение\" для мероприятия №%s"%cnt
+
+        return True, u""
 
 class MonitoringTodoSerializer(serializers.ModelSerializer):
 
