@@ -52,7 +52,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project.assigned_experts.add(request.user.user)
         '''
         So now i basically do one of the stupidest things you could imagine
-        in the beginning of the form you choose a date of first payment, and i 
+        in the beginning of the form you choose a date of first payment, and i
         automatically create that as a monitoring todo with an end date = first payment date
         '''
         if request.data.get(u'funding_date','') and project.monitoring:
@@ -128,7 +128,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
 
-           
+
         activity_ser = self.get_serializer(activities, many=True)
         return Response(activity_ser.data)
 
@@ -190,7 +190,7 @@ class MilestoneViewSet(ProjectBasedViewSet):
         new_obj = serializer.instance
         if old_obj.status != new_obj.status:
             self.status_changed(old_obj, new_obj, new_obj.status)
-            
+
     def status_changed(self, old_obj, new_obj, status):
         if status == prj_models.Milestone.COROLLARY_APROVING:
             corollary = new_obj.corollary
@@ -312,7 +312,7 @@ class ReportViewSet(ProjectBasedViewSet):
         report.save()
 
         item_def = request.data
-        
+
         item_def['report'] = report.id
         item_def['expert'] = request.user.user.id
         item_ser = self.get_serializer(data=item_def)
@@ -329,7 +329,7 @@ class ReportViewSet(ProjectBasedViewSet):
         """
         report = self.get_object()
         data = request.data
-        prev_status = report.status 
+        prev_status = report.status
         report.status = prj_models.Report.REWORK
         report.save()
 
@@ -338,7 +338,7 @@ class ReportViewSet(ProjectBasedViewSet):
             comment_ser = CommentSerializer(data=data)
             comment_ser.is_valid(raise_exception=True)
             comment = comment_ser.save()
-            
+
         report.send_status_changed_notification(prev_status, report.status, request.user, comment)
         serializer = self.get_serializer(instance=report)
         headers = self.get_success_headers(serializer.data)
@@ -355,7 +355,7 @@ class ReportViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(instance=report)
         headers = self.get_success_headers(serializer.data)
         return response.Response({"report": report.id}, headers=headers)
-    
+
     @detail_route(methods=['get'], url_path='gen_excel_report')
     def get_excel_report(self, request, *a, **kw):
         report = self.get_object()
@@ -404,6 +404,11 @@ class CorollaryViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(instance=corollary)
         return response.Response(serializer.data)
 
+
+class RiskCategoryViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.RiskCategory.objects.all()
+    serializer_class = RiskCategorySerializer
+    pagination_class = None
 
 class RiskDefinitionViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskDefinition.objects.all()

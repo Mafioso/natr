@@ -27,6 +27,7 @@ __all__ = (
     'CorollarySerializer',
     'CorollaryStatByCostTypeSerializer',
     'ExpandedMilestoneSerializer',
+    'RiskCategorySerializer',
     'RiskDefinitionSerializer',
     'ProjectLogEntrySerializer',
 )
@@ -43,10 +44,19 @@ class RiskDefinitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = RiskDefinition
 
-    category = RiskCategorySerializer()
+    category = serializers.PrimaryKeyRelatedField(
+        queryset=RiskCategory.objects.all(), required=True)
     indicator = serializers.IntegerField(read_only=True)
 
-    
+    def create(self, validated_data):
+        risk = RiskDefinition.objects.create(**validated_data)
+        return risk
+
+    def update(self, instance, validated_data):
+        risk = super(RiskDefinitionSerializer, self).update(instance, validated_data)
+        return risk
+
+
 class FundingTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -73,7 +83,7 @@ class MilestoneSerializer(
     def update(self, instance, validated_data):
         # if milestone changed we need to notify gp about that
         # so before updating the instance we check whether milestone gonna be changed
-        status_changed = instance.status != validated_data.get('status', instance.status) 
+        status_changed = instance.status != validated_data.get('status', instance.status)
         instance = super(MilestoneSerializer, self).update(instance, validated_data)
         if status_changed:
             if instance.status == 1:
@@ -136,7 +146,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     milestone_set = MilestoneBaseInfo(many=True, required=False, read_only=True)
     risk_degree = serializers.IntegerField(required=False, read_only=True)
     risks = RiskDefinitionSerializer(many=True, read_only=True)
-    
+
     def create(self, validated_data):
         return Project.objects.create_new(**validated_data)
 
@@ -292,7 +302,7 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     def update(self, instance, validated_data):
         # if status changed we need to notify gp about that
         # so before updating the instance we check whether monitoring status gonna be changed
-        changed = instance.status != validated_data.get('status', instance.status) 
+        changed = instance.status != validated_data.get('status', instance.status)
         instance = super(MonitoringSerializer, self).update(instance, validated_data)
         if changed:
             if instance.status == 2:
