@@ -652,34 +652,90 @@ class Report(ProjectBasedModel):
         context['fundings'] = self.milestone.fundings
         context['milestone'] = self.milestone.number
 
+        current_row = 2
         for item, cnt in zip(self.use_of_budget_doc.items.all(), range(1, self.use_of_budget_doc.items.count()+1)):
             row = kwargs['doc'].tables[1].add_row()
+            row.cells[0].text = utils.get_stringed_value(cnt)
+            row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+            rows_to_merge = 0
+            next_cost_row = 0
+            merge_cells = []
+            current_row = current_row
             if item.costs.count() > 0:
+                first_cost = True
                 for cost in item.costs.all():
-                    if cost.gp_docs.count() > 0:
-                        first = True
-                        for gp_doc in cost.gp_docs.all():
-                            if first:
-                                row.cells[0].text = utils.get_stringed_value(cnt)
-                                row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
-                                row.cells[2].text = utils.get_stringed_value(cost.name)
-                                row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
-                                row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
-                                row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign)
-                                row.cells[6].text = utils.get_stringed_value("attachments")
-                                row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
-                                row.cells[8].text = utils.get_stringed_value(cost.costs.amount)
-                                first = False
-                    else:
-                        row.cells[0].text = utils.get_stringed_value(cnt)
-                        row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+                    if first_cost:
                         row.cells[2].text = utils.get_stringed_value(cost.name)
                         row.cells[8].text = utils.get_stringed_value(cost.costs.amount)
-            else:
-                row.cells[0].text = utils.get_stringed_value(cnt)
-                row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+                    else:
+                        sub_row = kwargs['doc'].tables[1].add_row()
+                        sub_row.cells[2].text = utils.get_stringed_value(cost.name)
+                        sub_row.cells[8].text = utils.get_stringed_value(cost.costs.amount)  
 
+                    if cost.gp_docs.count() > 0:
+                        first_gp_doc = True
+                        for gp_doc in cost.gp_docs.all():
+                            if first_gp_doc and first_cost:
+                                row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
+                                row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
+                                row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else "")
+                                row.cells[6].text = utils.get_stringed_value("attachments")
+                                row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
+                                first_gp_doc = False
+                            elif first_gp_doc and sub_row:
+                                sub_row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
+                                sub_row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
+                                sub_row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else "")
+                                sub_row.cells[6].text = utils.get_stringed_value("attachments")
+                                sub_row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
+                                first_gp_doc = False
+                            else:
+                                cost_sub_row = kwargs['doc'].tables[1].add_row()
+                                cost_sub_row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
+                                cost_sub_row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
+                                cost_sub_row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else "")
+                                cost_sub_row.cells[6].text = utils.get_stringed_value("attachments")
+                                cost_sub_row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
+                        rows_to_merge += cost.gp_docs.count()
+                        merge_cells.extend(
+                                ({
+                                    'row': current_row + next_cost_row,
+                                    'col': 2,
+                                    'rowspan': cost.gp_docs.count()
+                                },
+                                {
+                                    'row': current_row + next_cost_row,
+                                    'col': 8,
+                                    'rowspan': cost.gp_docs.count()
+                                })
+                            )
+                        next_cost_row += cost.gp_docs.count()
+                    else:
+                        rows_to_merge += 1
 
+                    first_cost = False
+
+                merge_cells.extend(
+                        ({
+                            'row': current_row,
+                            'col': 0,
+                            'rowspan': rows_to_merge
+                        },
+                        {
+                            'row': current_row,
+                            'col': 1,
+                            'rowspan': rows_to_merge
+                        })
+                    )
+                current_row = current_row + rows_to_merge
+
+                for merge_cell in merge_cells:
+                    try:
+                        a = kwargs['doc'].tables[1].cell(merge_cell['row'], merge_cell['col'])
+                        b = kwargs['doc'].tables[1].cell(merge_cell['row'] + merge_cell['rowspan'] - 1, merge_cell['col'])
+                        A = a.merge(b)
+                    except: 
+                        print "ERROR: OUT OF LIST", merge_cell
 
             row = kwargs['doc'].tables[2].add_row()
             row.cells[0].text = utils.get_stringed_value(cnt)
