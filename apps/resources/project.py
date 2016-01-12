@@ -274,6 +274,18 @@ class MonitoringViewSet(ProjectBasedViewSet):
         response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
         return response
 
+    @detail_route(methods=['get'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        monitoring = self.get_object()
+        serializer = self.get_serializer(instance=monitoring) 
+        is_valid, message = serializer.validate_docx_context(instance=monitoring)
+        
+        if not is_valid:
+            return HttpResponse({"message": message}, status=400)
+
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"monitoring": monitoring.id}, headers=headers)
+
 class ReportViewSet(ProjectBasedViewSet):
     queryset = prj_models.Report.objects.all()
     serializer_class = ReportSerializer
@@ -380,6 +392,17 @@ class ReportViewSet(ProjectBasedViewSet):
         response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
         return response
 
+    @detail_route(methods=['get'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        report = self.get_object()
+        serializer = self.get_serializer(instance=report) 
+        is_valid, message = serializer.validate_docx_context(instance=report)
+        
+        if not is_valid:
+            return HttpResponse({"message": message}, status=400)
+
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"report": report.id}, headers=headers)
 
     @detail_route(methods=['get'], url_path='comments')
     @patch_serializer_class(CommentSerializer)

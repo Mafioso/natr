@@ -645,7 +645,7 @@ class Report(ProjectBasedModel):
     def get_print_context(self, **kwargs):
         context = self.__dict__
         context['org_name'] = self.project.organization_details.name
-        context['date_sign'] = self.project.aggreement.document.date_sign
+        context['date_sign'] = self.project.aggreement.document.date_sign.strftime("%d.%m.%Y")
         context['number'] = self.project.aggreement.document.number
         context['grant_type'] = self.project.funding_type.get_name_display()
         context['grant_goal'] = self.project.grant_goal
