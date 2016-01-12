@@ -25,6 +25,7 @@ class NotificationSerializer(serializers.ModelSerializer):
 	
 	class Meta:
 		model = models.Notification
+		exclude = ('subscribers', 'id')
 
 	params = serializers.SerializerMethodField()
 	# context = NotificationContextRelatedField(queryset=models.Notification.objects.all())

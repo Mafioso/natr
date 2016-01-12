@@ -184,6 +184,19 @@ class MilestoneViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(self.get_object())
         return response.Response(serializer.data)
 
+    def perform_update(self, serializer):
+        old_obj = self.get_object()
+        serializer.save()
+        new_obj = serializer.instance
+        if old_obj.status != new_obj.status:
+            self.status_changed(old_obj, new_obj, new_obj.status)
+            
+    def status_changed(self, old_obj, new_obj, status):
+        if status == prj_models.Milestone.COROLLARY_APROVING:
+            corollary = new_obj.corollary
+            corollary.status = prj_models.Corollary.APPROVE
+            corollary.save()
+
 
 class MonitoringTodoViewSet(ProjectBasedViewSet):
     queryset = prj_models.MonitoringTodo.objects.all()
@@ -285,7 +298,6 @@ class ReportViewSet(ProjectBasedViewSet):
         """
         report = self.get_object()
         serializer = self.get_serializer(report.project)
-
         return response.Response(serializer.data)
 
 
@@ -300,10 +312,9 @@ class ReportViewSet(ProjectBasedViewSet):
         report.save()
 
         item_def = request.data
-        cpdoc = self.get_object()
+        
         item_def['report'] = report.id
-        item_def['expert'] = auth2.models.NatrUser.objects.get(account=request.user).id
-
+        item_def['expert'] = request.user.user.id
         item_ser = self.get_serializer(data=item_def)
         item_ser.is_valid(raise_exception=True)
         item_obj = item_ser.save()
@@ -323,6 +334,7 @@ class ReportViewSet(ProjectBasedViewSet):
         report.save()
 
         if data.get('comment_text', None):
+            data['expert'] = request.user.user.id
             comment_ser = CommentSerializer(data=data)
             comment_ser.is_valid(raise_exception=True)
             comment = comment_ser.save()
@@ -337,7 +349,7 @@ class ReportViewSet(ProjectBasedViewSet):
         report = self.get_object()
         data = request.data
         prev_status = report.status
-        report.status = data['status'] if type(data['status']) == int else eval(data['status']) 
+        report.status = int(data['status'])
         report.save()
         report.send_status_changed_notification(prev_status, report.status, request.user)
         serializer = self.get_serializer(instance=report)

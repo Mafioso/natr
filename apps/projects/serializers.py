@@ -13,7 +13,7 @@ from grantee import models as grantee_models
 from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry
 from auth2.models import NatrUser
-
+from notifications.models import send_notification, Notification
 
 __all__ = (
     'FundingTypeSerializer',
@@ -73,12 +73,13 @@ class MilestoneSerializer(
     def update(self, instance, validated_data):
         # if milestone changed we need to notify gp about that
         # so before updating the instance we check whether milestone gonna be changed
-        milestone_changed = instance.status != validated_data.get('status', instance.status) 
+        status_changed = instance.status != validated_data.get('status', instance.status) 
         instance = super(MilestoneSerializer, self).update(instance, validated_data)
-        if milestone_changed:
+        if status_changed:
             if instance.status == 1:
                 mailing.send_milestone_status_payment(instance)
             if instance.status == 2:
+                send_notification(Notification.TRANSH_PAY, instance)
                 mailing.send_milestone_status_implementation(instance)
             if instance.status == 5:
                 mailing.send_milestone_status_revision(instance)
