@@ -48,7 +48,7 @@ class DocumentPrint:
         template_path = os.path.join(settings.DOCX_TEMPLATES_DIR, template_name)
 
         doc = DocxTemplate(template_path)
-        context = self.get_context()
+        context = self.get_context(**{'doc': doc})
         doc.render(context)
         _file = StringIO()
         doc.save(_file)
@@ -62,11 +62,15 @@ class DocumentPrint:
             return u"start_description.docx"
         elif self.object.__class__.__name__ == 'BasicProjectPasportDocument':
             return u"basic_pasport.docx"
+        elif self.object.__class__.__name__ == 'Report':
+            return u"report.docx"
+        elif self.object.__class__.__name__ == 'Monitoring':
+            return u"monitoring.docx"
 
         return None
 
-    def get_context(self):
-        context = self.object.get_context()
+    def get_context(self, **kwargs):
+        context = self.object.get_print_context(**kwargs)
 
         for k, v in context.iteritems():
             if v.__class__ == datetime:
@@ -84,6 +88,10 @@ class DocumentPrint:
         elif self.object.__class__.__name__ == 'BasicProjectPasportDocument' or \
             self.object.__class__.__name__ == 'InnovativeProjectPasportDocument':
             return u"Паспорт проекта.docx"
+        elif self.object.__class__.__name__ == 'Report':
+            return u"Отчет по проекту.docx"
+        elif self.object.__class__.__name__ == 'Monitoring':
+            return u"План мониторинга.docx"
 
         return None
 

@@ -54,4 +54,9 @@ def pretty(d, indent=0):
 
         return ''
 
+def get_stringed_value(value):
+    if not value:
+        return ""
+
+    return '%s'%value
 

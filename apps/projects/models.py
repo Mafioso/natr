@@ -8,9 +8,11 @@ import dateutil.parser
 from django.conf import settings
 from django.utils import timezone
 from django.db import models
+from django.db.models.signals import post_save
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
 from djmoney.models.fields import MoneyField
-from natr.mixins import ProjectBasedModel
+from natr.models import track_data
+from natr.mixins import ProjectBasedModel, ModelDiffMixin
 from natr import utils
 from natr.models import CostType
 from django.contrib.auth import get_user_model
@@ -340,6 +342,12 @@ class Project(models.Model):
         except:
             return []
 
+    @cached_property
+    def stakeholders(self):
+        experts = list(self.assigned_experts.all())
+        grantees = list(self.assigned_grantees.all())
+        return [u.account for u in experts + grantees]
+
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
 
@@ -498,6 +506,7 @@ class FundingType(models.Model):
         return self.name
 
 
+@track_data('status')
 class Report(ProjectBasedModel):
 
     class Meta:
@@ -506,19 +515,9 @@ class Report(ProjectBasedModel):
         relevant_for_permission = True
         verbose_name = u"Отчет"
 
-    # STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
-
-    # STATUS_CAPS = (
-    #     u'неактивен'
-    #     u'формирование',
-    #     u'на проверке',
-    #     u'утверждение',
-    #     u'утвержден',
-    #     u'отправлен на доработку',
-    #     u'завершен')
+    #tracker = FieldTracker(['status'])  not so usable
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
-
     STATUS_CAPS = (
         u'неактивен',
         u'формирование',
@@ -643,14 +642,83 @@ class Report(ProjectBasedModel):
                         fail_silently=False
                     )
 
+    def get_print_context(self, **kwargs):
+        context = self.__dict__
+        context['org_name'] = self.project.organization_details.name
+        context['date_sign'] = self.project.aggreement.document.date_sign
+        context['number'] = self.project.aggreement.document.number
+        context['grant_type'] = self.project.funding_type.get_name_display()
+        context['grant_goal'] = self.project.grant_goal
+        context['fundings'] = self.milestone.fundings
+        context['milestone'] = self.milestone.number
 
+        for item, cnt in zip(self.use_of_budget_doc.items.all(), range(1, self.use_of_budget_doc.items.count()+1)):
+            row = kwargs['doc'].tables[1].add_row()
+            if item.costs.count() > 0:
+                for cost in item.costs.all():
+                    if cost.gp_docs.count() > 0:
+                        first = True
+                        for gp_doc in cost.gp_docs.all():
+                            if first:
+                                row.cells[0].text = utils.get_stringed_value(cnt)
+                                row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+                                row.cells[2].text = utils.get_stringed_value(cost.name)
+                                row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
+                                row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
+                                row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign)
+                                row.cells[6].text = utils.get_stringed_value("attachments")
+                                row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
+                                row.cells[8].text = utils.get_stringed_value(cost.costs.amount)
+                                first = False
+                    else:
+                        row.cells[0].text = utils.get_stringed_value(cnt)
+                        row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+                        row.cells[2].text = utils.get_stringed_value(cost.name)
+                        row.cells[8].text = utils.get_stringed_value(cost.costs.amount)
+            else:
+                row.cells[0].text = utils.get_stringed_value(cnt)
+                row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+
+
+
+            row = kwargs['doc'].tables[2].add_row()
+            row.cells[0].text = utils.get_stringed_value(cnt)
+            row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+            row.cells[2].text = utils.get_stringed_value(item.total_budget.amount)
+            row.cells[3].text = utils.get_stringed_value(item.total_expense.amount)
+            row.cells[4].text = utils.get_stringed_value(item.remain_budget.amount)
+            row.cells[5].text = utils.get_stringed_value("attachments")
+            row.cells[6].text = utils.get_stringed_value(item.notes)
+
+        return context
+
+
+    @classmethod
+    def post_save(cls, sender, instance, created, **kwargs):
+        if not instance.has_changed('status'):
+            return
+        old_val = instance.old_value('status')
+        new_val = instance.status
+        milestone = instance.milestone
+        if new_val == Report.REWORK:
+            milestone.set_status(Milestone.REPORT_REWORK)
+        elif new_val == Report.CHECK:
+            milestone.set_status(Milestone.REPORT_CHECK)
+        elif new_val == Report.BUILD:
+            milestone.set_status(Milestone.REPORTING)
+        milestone.save()
+
+
+@track_data('status')
 class Corollary(ProjectBasedModel):
-
 
     class Meta:
         filter_by_project = 'project__in'
         relevant_for_permission = True
         verbose_name = u"Заключение"
+        permissions = (
+            ('approve_corollary', u"Утверждение документа"),
+        )
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
     STATUS_CAPS = (
@@ -756,6 +824,17 @@ class Corollary(ProjectBasedModel):
         corollary.build_stat()
         return corollary
 
+    @classmethod
+    def post_save(cls, sender, instance, created, **kwargs):
+        if not instance.has_changed('status'):
+            return
+        old_val = instance.old_value('status')
+        new_val = instance.status
+        milestone = instance.milestone
+        if new_val == Corollary.APPROVE:
+            milestone.set_status(Milestone.COROLLARY_APROVING)
+        milestone.save()
+
 
 class CorollaryStatByCostType(models.Model):
 
@@ -836,13 +915,11 @@ class Milestone(ProjectBasedModel):
         """Prepare notification data to send to client (user agent, mobile)."""
         assert notif_type in Notification.MILESTONE_NOTIFS, "Expected MILESTONE_NOTIFS"
         data = {
-            'context_type': cttype.model,
-            'context_id': ctid,
-            'status': self.status,
+            'milestone_status': self.status,
             'number': self.number,
             'project': self.project_id,
+            'project_name': self.project.name,
             'date_start': self.date_start,
-            'notif_type': Notification.TRANSH_PAY
         }
 
         if notif_type == Notification.TRANSH_PAY:
@@ -853,8 +930,7 @@ class Milestone(ProjectBasedModel):
         return data
 
     def notification_subscribers(self):
-        # todo: implement
-        return get_user_model().objects.all()
+        return self.project.stakeholders
 
     def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():
@@ -928,12 +1004,9 @@ class Milestone(ProjectBasedModel):
         #assert calendar_plan.is_approved(), "Calendar plan must be in approved state in order to generate milestones"
         milestones = []
         project = project if project is not None else calendar_plan.document.project
-
         prev_milestones = project.milestone_set.all()
-
         if len(prev_milestones) and not force:
             raise cls.AlreadyExists("Milestones already generated. Set force=True, if you wish such behaviour but you loose previous one.")
-
         project.milestone_set.clear()
         for _, item in enumerate(calendar_plan.items.all()):
             milestones.append(cls(
@@ -946,18 +1019,14 @@ class Milestone(ProjectBasedModel):
 
     def get_cameral_report(self):
         reports = self.reports.filter(type=Report.CAMERAL)
-
         if not reports:
             return None
-
         return reports.last().id
 
     def get_final_report(self):
         reports = self.reports.filter(type=Report.FINAL)
-
         if not reports:
             return None
-
         return reports.last().id
 
 
@@ -975,12 +1044,13 @@ class Monitoring(ProjectBasedModel):
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
 
-
     class Meta:
         filter_by_project = 'project__in'
         relevant_for_permission = True
         verbose_name = u"План мониторинга"
-
+        permissions = (
+            ('approve_monitoring', u"Утверждение документа"),
+        )
 
     def get_status_cap(self):
         return self.__class__.STATUS_CAPS[self.status]
@@ -998,6 +1068,19 @@ class Monitoring(ProjectBasedModel):
             monitoring_todo.save()
 
         return self.todos.all()
+
+    def get_print_context(self, **kwargs):
+        for item, cnt in zip(self.todos.all(), range(1, self.todos.count()+1)):
+            row = kwargs['doc'].tables[0].add_row()
+            row.cells[0].text = utils.get_stringed_value(cnt)
+            row.cells[1].text = utils.get_stringed_value(item.event_name)
+            row.cells[2].text = utils.get_stringed_value(self.project.name)
+            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y"))
+            row.cells[4].text = utils.get_stringed_value(item.period)
+            row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y"))
+            row.cells[6].text = utils.get_stringed_value(item.remaining_days)
+            row.cells[7].text = utils.get_stringed_value(item.report_type)
+        return self.__dict__
 
 
 class MonitoringTodo(ProjectBasedModel):
@@ -1082,12 +1165,13 @@ class RiskDefinition(models.Model):
     impact = models.IntegerField(null=True, blank=True)
     owner = models.CharField(max_length=500, null=True, blank=True)
 
+    class Meta:
+        relevant_for_permission = True
+
     @property
     def indicator(self):
         return self.probability * self.impact
 
-
-from django.db.models.signals import post_save
 
 def on_milestone_create(sender, instance, created=False, **kwargs):
     if not created:
@@ -1095,3 +1179,7 @@ def on_milestone_create(sender, instance, created=False, **kwargs):
     Report.build_empty(instance)
 
 post_save.connect(on_milestone_create, sender=Milestone)
+
+post_save.connect(Report.post_save, sender=Report)
+
+post_save.connect(Corollary.post_save, sender=Corollary)

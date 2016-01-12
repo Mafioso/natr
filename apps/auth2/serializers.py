@@ -31,7 +31,7 @@ class GroupSerializer(serializers.ModelSerializer):
 
 class AccountSerializer(serializers.ModelSerializer):
 
-	user_permissions = PermissionSerializer(many=True, required=False)
+	user_permissions = PermissionSerializer(source='get_all_permission_objs', many=True, required=False)
 	password = serializers.CharField(required=False)
 	email = serializers.CharField(required=False)
 	# groups = GroupSerializer(many=True)

@@ -27,6 +27,11 @@ Launching Software
 1. Celery: `celery -A natr worker -l debug`
 
 
+## Configure Centrifugo under OSX
+
+1. In case of OSX execute this bash script:
+
+`route -n add -net 172.16.0.0./12 192.168.99.100`
 
 ## Using Docker
 

@@ -1,0 +1,1 @@
+default_app_config = 'auth2.apps.Auth2Config'
