@@ -45,7 +45,7 @@ class ProjectManager(models.Manager):
 
         organization_details = data.pop('organization_details', None)
         funding_type_data = data.pop('funding_type', None)
-        
+
         statement_data = data.pop('statement', {})
         aggrement_data = data.pop('aggreement', {})
         other_agreements = data.pop('other_agreements', {})
@@ -82,13 +82,13 @@ class ProjectManager(models.Manager):
 
         # 1. create journal
         prj_journal = Journal.objects.build_empty(project=prj)
-    
+
         # 2. create monitoring
         prj_monitoring = Monitoring.objects.build_empty(project=prj)
-    
+
         # 3. create calendar plan
         prj_cp = CalendarPlanDocument.build_empty(project=prj)
-    
+
         # 4. create costs document
         prj_cd = CostDocument.build_empty(project=prj)
 
@@ -100,7 +100,7 @@ class ProjectManager(models.Manager):
 
         # 6. create project start description
         prj_std = ProjectStartDescription.objects.build_empty(project=prj)
-        
+
         # 7. assign owner as assignee by default
         prj.assigned_experts.add(user.user)
         return prj
@@ -113,7 +113,7 @@ class ProjectManager(models.Manager):
         statement_data = data.pop('statement', {})
         aggrement_data = data.pop('aggreement', {})
         other_agreements = data.pop('other_agreements', {})
-        
+
         old_milestones = instance.number_of_milestones
         new_milestones = data['number_of_milestones']
         current_milestone_data = data.pop('current_milestone', None)
@@ -170,9 +170,9 @@ class ProjectManager(models.Manager):
         # 4. recreate calendar plan
         if prj.calendar_plan:
             prj.calendar_plan.delete()
-        
+
         prj_cp = CalendarPlanDocument.build_empty(project=prj)
-        
+
         # 5. recreate cost
         if prj.cost_document:
             prj.cost_document.delete()
@@ -330,12 +330,12 @@ class Project(models.Model):
                self.funding_type.name == FundingType.COMMERCIALIZATION:
                return 1
             return 0
-    
+
     @cached_property
     def risks(self):
         risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
         return risk_index.risks.all()
-    
+
     def get_grantees(self):
         try:
             return self.organization_details.grantee_set.all()
@@ -456,11 +456,11 @@ class ProjectRiskIndex(ProjectBasedModel):
     @property
     def score(self):
         return sum(map(lambda x: x.indicator, self.risks.all()))
-    
+
 
 class ProjectLogEntry(ProjectBasedModel):
     TYPE_KEYS = (
-        CHANGE_MILESTONE_RISKS, 
+        CHANGE_MILESTONE_RISKS,
     ) = (
         'CHANGE_MILESTONE_RISKS',
     )
@@ -489,7 +489,7 @@ class FundingType(models.Model):
                                         'PATENTING', 'COMMERCIALIZATION', 'FOREIGN_PROFS',
                                         'CONSULTING', 'INTRO_TECH')
     GRANT_TYPES = (
-        u'Приобретение технологий', 
+        u'Приобретение технологий',
         u'Проведение промышленных исследований',
         u'Повышение квалификации инженерно-технического персонала за рубежом', #without pasport
         u'Поддержку деятельности по производству высокотехнологичной продукции на начальном этапе развития',
@@ -559,7 +559,7 @@ class Report(ProjectBasedModel):
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
 
-    @property 
+    @property
     def milestone_number(self):
         if not self.milestone:
             return None
@@ -608,7 +608,7 @@ class Report(ProjectBasedModel):
                     send_mail(
                         u'Отправлен отчет на %s, по проекту %s'%(status_cap, self.project.name),
                         u"""Здравствуйте, %(name)s!
-                        Грантополучатель, %(grantee)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.             
+                        Грантополучатель, %(grantee)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.
                         Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s""" % {
                             'name': expert.account.get_full_name(),
                             'grantee': account.get_full_name(),
@@ -628,7 +628,7 @@ class Report(ProjectBasedModel):
                         u'Отправлен отчет на %s, по проекту %s'%(status_cap, self.project.name),
                         u"""Здравствуйте, %(name)s!
                         Эксперт, %(expert)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.
-                        %(comment)s             
+                        %(comment)s
                         Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s """ % {
                             'name': grantee.account.get_full_name(),
                             'expert': account.get_full_name(),
@@ -640,7 +640,7 @@ class Report(ProjectBasedModel):
                         settings.DEFAULT_FROM_EMAIL,
                         [grantee.account.email],
                         fail_silently=False
-                    )         
+                    )
 
     def get_print_context(self, **kwargs):
         context = self.__dict__
@@ -1166,7 +1166,7 @@ class MonitoringTodo(ProjectBasedModel):
     def save(self, *args, **kwargs):
         if self.date_start and self.date_end:
             if isinstance(self.date_start, basestring) and isinstance(self.date_end, basestring):
-                date_end = dateutil.parser.parse(self.date_end) 
+                date_end = dateutil.parser.parse(self.date_end)
                 date_start = dateutil.parser.parse(self.date_start)
                 period = (date_end - date_start).days
                 self.period = period
@@ -1193,7 +1193,7 @@ class Comment(models.Model):
     def get_project(self):
         self.report.get_project()
 
-    @property 
+    @property
     def expert_name(self):
         return self.expert.account.get_full_name()
 
