@@ -43,6 +43,7 @@ pytils==0.3
 requests==2.8.1
 simplegeneric==0.8.1
 six==1.10.0
+suds==0.4
 traceback2==1.4.0
 traitlets==4.0.0
 unittest2==1.1.0
