@@ -20,6 +20,7 @@ from django.utils.functional import cached_property
 from notifications.models import Notification
 from django.core.mail import send_mail
 from natr.models import CostType
+import integrations.documentolog as documentolog
 from documents.utils import store_from_temp, DocumentPrint
 from documents.models import (
     Document,
@@ -1047,6 +1048,7 @@ class Monitoring(ProjectBasedModel):
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
     attachment = models.ForeignKey('documents.Attachment', null=True)
+    ext_doc_id = models.CharField(max_length=256, null=True)
 
     class Meta:
         filter_by_project = 'project__in'
@@ -1086,11 +1088,12 @@ class Monitoring(ProjectBasedModel):
             row.cells[7].text = utils.get_stringed_value(item.report_type)
         return dict(**self.__dict__)
 
-    def build_printed(self):
+    def build_printed(self, force_save=False):
         temp_file, temp_fname = DocumentPrint(object=self).generate_docx()
         attachment_dict = store_from_temp(temp_file, temp_fname)
         self.attachment = Attachment.objects.create(**attachment_dict)
-        self.save()
+        if force_save:
+            self.save()
         return self
 
     @classmethod
@@ -1099,11 +1102,18 @@ class Monitoring(ProjectBasedModel):
             return
         old_val = instance.old_value('status')
         new_val = instance.status
-        # if not new_val == Monitoring.APPROVE:
-        #     return
-        # if old_val == new_val:
-        #     return
-        instance.build_printed()
+        if not new_val == Monitoring.APPROVE or new_val > Monitoring.APPROVE:
+            return
+        if instance.ext_doc_id:
+            return
+        instance.build_printed(force_save=False)
+        ext_doc_id = documentolog.create_document(
+            'plan_monitoring',
+            project_name=instance.project.name,
+            document_title=u'План мониторинга',
+            attachments=[instance.attachment])
+        instance.ext_doc_id = ext_doc_id
+        instance.save()
 
 
 class MonitoringTodo(ProjectBasedModel):

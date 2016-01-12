@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Django settings for natr project.
 
@@ -272,3 +274,16 @@ EMAIL_HOST_USER = 'test.ko@almasales.com'
 EMAIL_HOST_PASSWORD = '123qweasd'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # DEFAULT_TO_EMAIL = 'to email'
+
+DOCUMENTOLOG_URL = 'http://kik.doc24.kz'
+DOCUMENTOLOG_CREATE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/create?wsdl'
+DOCUMENTOLOG_EDIT_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/edit?wsdl'
+DOCUMENTOLOG_MOVE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/move?wsdl'
+DOCUMENTOLOG_WSDL_USERNAME = 'documentolog'
+DOCUMENTOLOG_WSDL_PASSWORD = 'secret'
+DOCUMENTOLOG_DOCUMENTS = {
+    'plan_monitoring': {
+        'title': u'План_мониторинга',
+        'uuid': '430c493c-dabf-43dc-9e95-568cf65501f4',
+    },
+}
