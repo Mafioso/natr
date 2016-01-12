@@ -410,6 +410,7 @@ class RiskCategoryViewSet(viewsets.ModelViewSet):
     serializer_class = RiskCategorySerializer
     pagination_class = None
 
+
 class RiskDefinitionViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskDefinition.objects.all()
     serializer_class = RiskDefinitionSerializer
