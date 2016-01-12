@@ -448,7 +448,7 @@ class BasicProjectPasportDocument(models.Model):
     def get_project(self):
         return self.document.get_project()
 
-    def get_context(self):
+    def get_print_context(self, **kwargs):
         context = self.__dict__
         context['project'] = self.document.project.name
         context['result'] = self.get_result_display()
@@ -853,7 +853,7 @@ class ProjectStartDescription(models.Model):
     def get_project(self):
         return self.document.get_project()
 
-    def get_context(self):
+    def get_print_context(self, **kwargs):
         context = self.__dict__
 
         context['grantee'] = self.get_project().organization_details.name if self.get_project().organization_details else ""
@@ -1020,7 +1020,7 @@ class UseOfBudgetDocumentItem(models.Model):
         u"""Сумма бюджетных стредств по смете"""
         total = sum([
             cost_cell is not None and cost_cell.own_costs.amount
-            for cost_cell in self.get_milestone_costs(self.milestone).all()
+            for cost_cell in self.cost_document.get_milestone_costs(self.milestone).all()
         ])
         return Money(amount=total, currency=settings.KZT)
 

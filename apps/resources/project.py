@@ -13,6 +13,7 @@ from documents.serializers import AttachmentSerializer
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
 from projects.utils import ExcelReport
+from documents.utils import DocumentPrint
 
 
 
@@ -249,6 +250,17 @@ class MonitoringViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
+    @detail_route(methods=['get'], url_path='gen_docx')
+    def gen_docx(self, request, *a, **kw):
+        _file, filename = DocumentPrint(object=self.get_object()).generate_docx()
+
+        if not _file or not filename:
+            return HttpResponse(status=400)
+
+        response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
+        return response
+
 class ReportViewSet(ProjectBasedViewSet):
     queryset = prj_models.Report.objects.all()
     serializer_class = ReportSerializer
@@ -345,6 +357,17 @@ class ReportViewSet(ProjectBasedViewSet):
 
         return r
 
+    @detail_route(methods=['get'], url_path='gen_docx')
+    def gen_docx(self, request, *a, **kw):
+        _file, filename = DocumentPrint(object=self.get_object()).generate_docx()
+
+        if not _file or not filename:
+            return HttpResponse(status=400)
+
+        response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
+        return response
+
 
     @detail_route(methods=['get'], url_path='comments')
     @patch_serializer_class(CommentSerializer)
@@ -358,7 +381,6 @@ class ReportViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(comments, many=True)
         return response.Response(serializer.data)
 
-        
 
 class CorollaryViewSet(ProjectBasedViewSet):
     queryset = prj_models.Corollary.objects.all()

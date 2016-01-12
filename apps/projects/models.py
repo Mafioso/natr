@@ -643,6 +643,56 @@ class Report(ProjectBasedModel):
                         fail_silently=False
                     )         
 
+    def get_print_context(self, **kwargs):
+        context = self.__dict__
+        context['org_name'] = self.project.organization_details.name
+        context['date_sign'] = self.project.aggreement.document.date_sign
+        context['number'] = self.project.aggreement.document.number
+        context['grant_type'] = self.project.funding_type.get_name_display()
+        context['grant_goal'] = self.project.grant_goal
+        context['fundings'] = self.milestone.fundings
+        context['milestone'] = self.milestone.number
+
+        for item, cnt in zip(self.use_of_budget_doc.items.all(), range(1, self.use_of_budget_doc.items.count()+1)):
+            row = kwargs['doc'].tables[1].add_row()
+            if item.costs.count() > 0:
+                for cost in item.costs.all():
+                    if cost.gp_docs.count() > 0:
+                        first = True
+                        for gp_doc in cost.gp_docs.all():
+                            if first:
+                                row.cells[0].text = utils.get_stringed_value(cnt)
+                                row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+                                row.cells[2].text = utils.get_stringed_value(cost.name)
+                                row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
+                                row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
+                                row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign)
+                                row.cells[6].text = utils.get_stringed_value("attachments")
+                                row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
+                                row.cells[8].text = utils.get_stringed_value(cost.costs.amount)
+                                first = False
+                    else:
+                        row.cells[0].text = utils.get_stringed_value(cnt)
+                        row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+                        row.cells[2].text = utils.get_stringed_value(cost.name)
+                        row.cells[8].text = utils.get_stringed_value(cost.costs.amount)
+            else:
+                row.cells[0].text = utils.get_stringed_value(cnt)
+                row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+
+
+
+            row = kwargs['doc'].tables[2].add_row()
+            row.cells[0].text = utils.get_stringed_value(cnt)
+            row.cells[1].text = utils.get_stringed_value(item.cost_type.name)
+            row.cells[2].text = utils.get_stringed_value(item.total_budget.amount)
+            row.cells[3].text = utils.get_stringed_value(item.total_expense.amount)
+            row.cells[4].text = utils.get_stringed_value(item.remain_budget.amount)
+            row.cells[5].text = utils.get_stringed_value("attachments")
+            row.cells[6].text = utils.get_stringed_value(item.notes)
+
+        return context
+
 
 class Corollary(ProjectBasedModel):
 
@@ -998,6 +1048,19 @@ class Monitoring(ProjectBasedModel):
             monitoring_todo.save()
 
         return self.todos.all()
+
+    def get_print_context(self, **kwargs):
+        for item, cnt in zip(self.todos.all(), range(1, self.todos.count()+1)):
+            row = kwargs['doc'].tables[0].add_row()
+            row.cells[0].text = utils.get_stringed_value(cnt)
+            row.cells[1].text = utils.get_stringed_value(item.event_name)
+            row.cells[2].text = utils.get_stringed_value(self.project.name)
+            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y"))
+            row.cells[4].text = utils.get_stringed_value(item.period)
+            row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y"))
+            row.cells[6].text = utils.get_stringed_value(item.remaining_days)
+            row.cells[7].text = utils.get_stringed_value(item.report_type)
+        return self.__dict__
 
 
 class MonitoringTodo(ProjectBasedModel):
