@@ -880,6 +880,8 @@ class Attachment(models.Model):
     url = models.CharField(max_length=3000, null=True, blank=True)
     name = models.CharField(max_length=255, null=True, blank=True)
     ext = models.CharField(max_length=255, null=True, blank=True)
+    md5 = models.CharField(max_length=255, null=True, blank=True)
+    size = models.IntegerField('size in bytes', null=True, blank=True)
 
     document = models.ForeignKey('Document', null=True, blank=True, related_name='attachments')
 

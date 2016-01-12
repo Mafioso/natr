@@ -20,8 +20,10 @@ from django.utils.functional import cached_property
 from notifications.models import Notification
 from django.core.mail import send_mail
 from natr.models import CostType
+from documents.utils import store_from_temp, DocumentPrint
 from documents.models import (
     Document,
+    Attachment,
     OtherAgreementsDocument,
     CalendarPlanDocument,
     BasicProjectPasportDocument,
@@ -1030,6 +1032,7 @@ class Milestone(ProjectBasedModel):
         return reports.last().id
 
 
+@track_data('status')
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
 
@@ -1043,6 +1046,7 @@ class Monitoring(ProjectBasedModel):
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
+    attachment = models.ForeignKey('documents.Attachment', null=True)
 
     class Meta:
         filter_by_project = 'project__in'
@@ -1080,7 +1084,26 @@ class Monitoring(ProjectBasedModel):
             row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y"))
             row.cells[6].text = utils.get_stringed_value(item.remaining_days)
             row.cells[7].text = utils.get_stringed_value(item.report_type)
-        return self.__dict__
+        return dict(**self.__dict__)
+
+    def build_printed(self):
+        temp_file, temp_fname = DocumentPrint(object=self).generate_docx()
+        attachment_dict = store_from_temp(temp_file, temp_fname)
+        self.attachment = Attachment.objects.create(**attachment_dict)
+        self.save()
+        return self
+
+    @classmethod
+    def post_save(cls, sender, instance, **kwargs):
+        if not instance.has_changed('status'):
+            return
+        old_val = instance.old_value('status')
+        new_val = instance.status
+        # if not new_val == Monitoring.APPROVE:
+        #     return
+        # if old_val == new_val:
+        #     return
+        instance.build_printed()
 
 
 class MonitoringTodo(ProjectBasedModel):
@@ -1183,3 +1206,5 @@ post_save.connect(on_milestone_create, sender=Milestone)
 post_save.connect(Report.post_save, sender=Report)
 
 post_save.connect(Corollary.post_save, sender=Corollary)
+
+post_save.connect(Monitoring.post_save, sender=Monitoring)

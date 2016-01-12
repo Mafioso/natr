@@ -10,7 +10,7 @@ from natr.rest_framework.mixins import ProjectBasedViewSet
 from documents.serializers import *
 from documents.serializers.misc import TechStageSerializer
 from documents import models as doc_models
-from documents.utils import DocumentPrint
+from documents.utils import DocumentPrint, store_file
 from projects import models as prj_models
 from .filters import AttachmentFilter
 from django.conf import settings
@@ -145,31 +145,12 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         return response.Response(ser.data, headers=headers)
 
     def create(self, request, *a, **kw):
-        data = request.data
-        tmp_file_path = data.get('file.path')
-        fname = data.get('file.name')
-        attachment_id = data.get('id', None)
-        _, ext = os.path.splitext(fname)
-        _, remaining_path = tmp_file_path.split(settings.NGINX_TMP_UPLOAD_ROOT + '/')
-        file_path = pj(settings.MEDIA_ROOT, remaining_path)
-        full_file_path = pj(file_path, fname)
-        if not os.path.exists(pj(file_path)):
-            os.makedirs(file_path)
-        shutil.move(tmp_file_path, full_file_path)
-        file_url = pj(
-            settings.MEDIA_URL_NO_TRAILING_SLASH,
-            full_file_path.split(settings.MEDIA_ROOT + '/')[1])
-        attachment_data = {
-            'file_path': full_file_path,
-            'name': fname,
-            'extension': ext,
-            'url': file_url
-        }
+        attachment_id, attachment_dict = store_file(request.data)
         if attachment_id:
             attachment = Attachment.objects.get(pk=attachment_id)
-            item_ser = self.get_serializer(instance=attachment, data=attachment_data)
+            item_ser = self.get_serializer(instance=attachment, data=attachment_dict)
         else:
-            item_ser = self.get_serializer(data=attachment_data)
+            item_ser = self.get_serializer(data=attachment_dict)
         item_ser.is_valid(raise_exception=True)
         item_obj = item_ser.save()
         headers = self.get_success_headers(item_ser.data)

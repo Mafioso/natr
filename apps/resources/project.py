@@ -266,13 +266,16 @@ class MonitoringViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='gen_docx')
     def gen_docx(self, request, *a, **kw):
         _file, filename = DocumentPrint(object=self.get_object()).generate_docx()
-
+        instance = self.get_object()
+        instance.build_printed()
         if not _file or not filename:
             return HttpResponse(status=400)
-
-        response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
+        response = HttpResponse(
+            _file.getvalue(),
+            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response['Content-Disposition'] = 'attachment; filename=%s' % instance.attachment.name
         return response
+
 
 class ReportViewSet(ProjectBasedViewSet):
     queryset = prj_models.Report.objects.all()
