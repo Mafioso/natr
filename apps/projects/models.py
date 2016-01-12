@@ -1133,7 +1133,7 @@ class Monitoring(ProjectBasedModel):
             row.cells[2].text = utils.get_stringed_value(self.project.name)
             row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y"))
             row.cells[4].text = utils.get_stringed_value(item.period)
-            row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y"))
+            row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
             row.cells[6].text = utils.get_stringed_value(item.remaining_days)
             row.cells[7].text = utils.get_stringed_value(item.report_type)
         return self.__dict__
