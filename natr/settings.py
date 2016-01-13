@@ -77,7 +77,8 @@ APPS = (
     'journals',
     'resources',
     'auth2',
-    'notifications'
+    'notifications',
+    'integrations'
 )
 
 INSTALLED_APPS = (
@@ -281,9 +282,15 @@ DOCUMENTOLOG_EDIT_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/edit?wsdl'
 DOCUMENTOLOG_MOVE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/move?wsdl'
 DOCUMENTOLOG_WSDL_USERNAME = 'documentolog'
 DOCUMENTOLOG_WSDL_PASSWORD = 'secret'
+DOCUMENTOLOG_LOGIN = 'admin@kik.doc24.kz'
+DOCUMENTOLOG_PASSWORD = '123456Qw'
+DOCUMENTOLOG_LOGIN_URL = DOCUMENTOLOG_URL + '/user/login'
 DOCUMENTOLOG_DOCUMENTS = {
     'plan_monitoring': {
         'title': u'План_мониторинга',
         'uuid': '430c493c-dabf-43dc-9e95-568cf65501f4',
     },
 }
+
+DOCUMENTOLOG_USER = 'info@documentolog.kz'
+DOCUMENTOLOG_TOKEN = '12345678QAZxswe'

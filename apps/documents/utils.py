@@ -143,6 +143,19 @@ def store_from_temp(temp_file, fname):
         'size': os.path.getsize(file_path)
     }
 
+def replace_from_temp(temp_file, file_path):
+    if(isinstance(temp_file, basestring)):
+        temp_file = to_buf(temp_file)
+    with open(file_path, 'w') as fd:
+        temp_file.seek(0)
+        shutil.copyfileobj(temp_file, fd)
+
+
+def to_buf(content):
+    _buf = StringIO()
+    _buf.write(content)
+    return _buf
+
 
 def md5(file_path):
     hash = hashlib.md5()

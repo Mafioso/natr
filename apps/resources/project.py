@@ -2,10 +2,12 @@ import os
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
-from rest_framework.decorators import list_route, detail_route
+from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
-from natr.rest_framework.decorators import patch_serializer_class
+from natr.rest_framework.decorators import patch_serializer_class, ignore_permissions
 from natr.rest_framework.policies import PermissionDefinition
+from natr.rest_framework.authentication import TokenAuthentication
 from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
 from projects.serializers import *
 from projects import models as prj_models
@@ -266,15 +268,24 @@ class MonitoringViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='gen_docx')
     def gen_docx(self, request, *a, **kw):
         _file, filename = DocumentPrint(object=self.get_object()).generate_docx()
-        instance = self.get_object()
-        instance.build_printed()
+
         if not _file or not filename:
             return HttpResponse(status=400)
-        response = HttpResponse(
-            _file.getvalue(),
-            content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-        response['Content-Disposition'] = 'attachment; filename=%s' % instance.attachment.name
+
+        response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
         return response
+
+    @detail_route(methods=['get'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        monitoring = self.get_object()
+        serializer = self.get_serializer(instance=monitoring) 
+        is_valid, message = serializer.validate_docx_context(instance=monitoring)
+        if not is_valid:
+            return HttpResponse({"message": message}, status=status.HTTP_204_NO_CONTENT)
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"monitoring": monitoring.id}, headers=headers)
+
 
 
 class ReportViewSet(ProjectBasedViewSet):
@@ -383,6 +394,17 @@ class ReportViewSet(ProjectBasedViewSet):
         response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
         return response
 
+    @detail_route(methods=['get'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        report = self.get_object()
+        serializer = self.get_serializer(instance=report) 
+        is_valid, message = serializer.validate_docx_context(instance=report)
+        
+        if not is_valid:
+            return HttpResponse({"message": message}, status=400)
+
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"report": report.id}, headers=headers)
 
     @detail_route(methods=['get'], url_path='comments')
     @patch_serializer_class(CommentSerializer)

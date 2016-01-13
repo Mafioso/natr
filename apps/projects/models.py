@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.db import models
 from django.db.models.signals import post_save
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.contrib.contenttypes.fields import GenericRelation
+from model_utils.fields import MonitorField
 from djmoney.models.fields import MoneyField
 from natr.models import track_data
 from natr.mixins import ProjectBasedModel, ModelDiffMixin
@@ -21,6 +23,7 @@ from notifications.models import Notification
 from django.core.mail import send_mail
 from natr.models import CostType
 import integrations.documentolog as documentolog
+from integrations.models import SEDEntity
 from documents.utils import store_from_temp, DocumentPrint
 from documents.models import (
     Document,
@@ -1047,8 +1050,11 @@ class Monitoring(ProjectBasedModel):
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
+    # ext_doc_id = models.CharField(max_length=256, null=True)
+    approved_date = MonitorField(monitor='status', when=[APPROVED])
+    sed = GenericRelation(SEDEntity, content_type_field='context_type')
     attachment = models.ForeignKey('documents.Attachment', null=True)
-    ext_doc_id = models.CharField(max_length=256, null=True)
+    
 
     class Meta:
         filter_by_project = 'project__in'
@@ -1060,6 +1066,15 @@ class Monitoring(ProjectBasedModel):
 
     def get_status_cap(self):
         return self.__class__.STATUS_CAPS[self.status]
+
+    def set_approved(self):
+        self.set_status(Monitoring.APPROVED)
+        self.save()
+
+    def set_status(self, status):
+        assert status in Monitoring.STATUSES, 'such status does not exist'
+        self.status = status
+        self.save()
 
     def update_items(self, **kwargs):
         for item in kwargs['items']:
@@ -1096,6 +1111,9 @@ class Monitoring(ProjectBasedModel):
             self.save()
         return self
 
+    def update_printed(self, force_save=False):
+        pass
+
     @classmethod
     def post_save(cls, sender, instance, **kwargs):
         if not instance.has_changed('status'):
@@ -1104,15 +1122,15 @@ class Monitoring(ProjectBasedModel):
         new_val = instance.status
         if not new_val == Monitoring.APPROVE or new_val > Monitoring.APPROVE:
             return
-        if instance.ext_doc_id:
+        sed = instance.sed.last()
+        if sed and sed.ext_doc_id:
             return
         instance.build_printed(force_save=False)
-        ext_doc_id = documentolog.create_document(
-            'plan_monitoring',
+        SEDEntity.pin_to_sed(
+            'plan_monitoring', instance,
             project_name=instance.project.name,
             document_title=u'План мониторинга',
             attachments=[instance.attachment])
-        instance.ext_doc_id = ext_doc_id
         instance.save()
 
 
