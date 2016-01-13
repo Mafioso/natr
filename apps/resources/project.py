@@ -427,6 +427,13 @@ class CorollaryViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(instance=corollary)
         return response.Response(serializer.data)
 
+    @detail_route(methods=['post'], url_path='change_status')
+    def change_status(self, request, *a, **kw):
+        corollary = self.get_object()
+        corollary.status = request.data['status']
+        corollary.save()
+
+        return response.Response({"milestone_id": corollary.milestone.id}, status=200)
 
 class RiskCategoryViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskCategory.objects.all()
