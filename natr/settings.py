@@ -75,7 +75,8 @@ APPS = (
     'journals',
     'resources',
     'auth2',
-    'notifications'
+    'notifications',
+    'mioadp',
 )
 
 INSTALLED_APPS = (
@@ -177,7 +178,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'natr.rest_framework.authentication.DummyAuthentication',
         'rest_framework.authentication.BasicAuthentication',
-        
+
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
@@ -252,7 +253,7 @@ SHELL_PLUS_PRE_IMPORTS = (
     ('resources.serializers', '*'),
     ('documents.serializers', '*'),
     ('grantee.serializers', '*'),
-       
+
 )
 
 KZT = 'KZT'

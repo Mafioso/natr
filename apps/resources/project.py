@@ -10,6 +10,7 @@ from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagin
 from projects.serializers import *
 from projects import models as prj_models
 from documents.serializers import AttachmentSerializer
+from mioadp.serializers import ArticleLinkSerializer
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
 from projects.utils import ExcelReport
@@ -101,6 +102,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
             'reports': report_ser.data,
         })
 
+    @detail_route(methods=['get'], url_path='reports')
+    @patch_serializer_class(ReportSerializer)
+    def reports(self, request, *a, **kw):
+        project = self.get_object()
+        report_qs = ReportFilter(request.GET, project.get_reports())
+        report_ser = self.get_serializer(report_qs, many=True)
+        return response.Response({
+            'reports': report_ser.data,
+        })
+
     @detail_route(methods=['get'], url_path='recent_todos')
     @patch_serializer_class(MonitoringTodoSerializer)
     def recent_todos(self, request, *a, **kw):
@@ -142,6 +153,14 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         project = project.set_risk_index(data=request.data)
         serializer = self.get_serializer(project)
+        return response.Response(serializer.data)
+
+    @detail_route(methods=['get'], url_path='article_links')
+    @patch_serializer_class(ArticleLinkSerializer)
+    def list_article_links(self, request, *a, **kw):
+        project = self.get_object()
+        article_links = project.articlelink_set.order_by('-date_created')
+        serializer = self.get_serializer(article_links, many=True)
         return response.Response(serializer.data)
 
     @detail_route(methods=['get'], url_path='log')
@@ -277,9 +296,9 @@ class MonitoringViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='validate_docx_context')
     def validate_docx_context(self, request, *a, **kw):
         monitoring = self.get_object()
-        serializer = self.get_serializer(instance=monitoring) 
+        serializer = self.get_serializer(instance=monitoring)
         is_valid, message = serializer.validate_docx_context(instance=monitoring)
-        
+
         if not is_valid:
             return HttpResponse({"message": message}, status=400)
 
@@ -395,9 +414,9 @@ class ReportViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='validate_docx_context')
     def validate_docx_context(self, request, *a, **kw):
         report = self.get_object()
-        serializer = self.get_serializer(instance=report) 
+        serializer = self.get_serializer(instance=report)
         is_valid, message = serializer.validate_docx_context(instance=report)
-        
+
         if not is_valid:
             return HttpResponse({"message": message}, status=400)
 
