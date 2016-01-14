@@ -11,6 +11,7 @@ __all__ = (
 	'OrganizationSerializer',
 	'GranteeSerializer',
 	'ContactDetailsSerializer',
+	'AuthorizedToInteractGranteeSerializer',
 )
 
 
