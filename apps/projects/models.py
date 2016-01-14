@@ -1135,7 +1135,7 @@ class Monitoring(ProjectBasedModel):
     # ext_doc_id = models.CharField(max_length=256, null=True)
     approved_date = MonitorField(monitor='status', when=[APPROVED])
     sed = GenericRelation(SEDEntity, content_type_field='context_type')
-    attachment = models.ForeignKey('documents.Attachment', null=True)
+    attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
     
 
     class Meta:
