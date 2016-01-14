@@ -91,10 +91,12 @@ INSTALLED_APPS = (
     'rest_framework',
     'django_extensions',
     'rest_framework_swagger',
-    'test_without_migrations'
+    'test_without_migrations',
+    'corsheaders'
 ) + APPS
 
 MIDDLEWARE_CLASSES = (
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -294,3 +296,14 @@ DOCUMENTOLOG_DOCUMENTS = {
 
 DOCUMENTOLOG_USER = 'info@documentolog.kz'
 DOCUMENTOLOG_TOKEN = '12345678QAZxswe'
+
+CORS_ORIGIN_WHITELIST = (
+    'kik.doc24.kz',
+)
+
+CORS_ALLOW_HEADERS = (
+    'authorization',
+)
+
+CORS_EXPOSE_HEADERS = ()
+CORS_PREFLIGHT_MAX_AGE = 86400

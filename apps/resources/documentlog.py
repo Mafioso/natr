@@ -18,7 +18,7 @@ class DocumentologViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, )
     authentication_classes = (TokenAuthentication, )
 
-    @list_route(methods=['get'], url_path='complete_approve')
+    @list_route(methods=['get', 'options'], url_path='complete_approve')
     def complete_approve(self, request, *a, **kw):
         ext_doc_id = self.request.query_params.get('ext_doc_id', None)
         file_url = self.request.query_params.get('file_url', None)
