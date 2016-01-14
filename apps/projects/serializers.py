@@ -78,6 +78,7 @@ class MilestoneSerializer(
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
     cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
+    final_report = serializers.IntegerField(source="get_final_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
     def update(self, instance, validated_data):
