@@ -2,10 +2,12 @@ import os
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
-from rest_framework.decorators import list_route, detail_route
+from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
-from natr.rest_framework.decorators import patch_serializer_class
+from natr.rest_framework.decorators import patch_serializer_class, ignore_permissions
 from natr.rest_framework.policies import PermissionDefinition
+from natr.rest_framework.authentication import TokenAuthentication
 from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
 from projects.serializers import *
 from projects import models as prj_models
@@ -279,10 +281,8 @@ class MonitoringViewSet(ProjectBasedViewSet):
         monitoring = self.get_object()
         serializer = self.get_serializer(instance=monitoring) 
         is_valid, message = serializer.validate_docx_context(instance=monitoring)
-        
         if not is_valid:
-            return HttpResponse({"message": message}, status=400)
-
+            return HttpResponse({"message": message}, status=status.HTTP_204_NO_CONTENT)
         headers = self.get_success_headers(serializer.data)
         return response.Response({"monitoring": monitoring.id}, headers=headers)
 

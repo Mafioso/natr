@@ -9,3 +9,12 @@ def patch_serializer_class(serializer_class):
             return rv
         return wrapper
     return decorator
+
+
+def ignore_permissions(fn):
+
+    def wrapper(view, request, *a, **kw):
+        view._ignore_permissions = True
+        return fn(view, request, *a, **kw)
+    
+    return wrapper

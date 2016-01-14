@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.db import models
 from django.db.models.signals import post_save
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.contrib.contenttypes.fields import GenericRelation
+from model_utils.fields import MonitorField
 from djmoney.models.fields import MoneyField
 from natr.models import track_data
 from natr.mixins import ProjectBasedModel, ModelDiffMixin
@@ -20,8 +22,12 @@ from django.utils.functional import cached_property
 from notifications.models import Notification
 from django.core.mail import send_mail
 from natr.models import CostType
+import integrations.documentolog as documentolog
+from integrations.models import SEDEntity
+from documents.utils import store_from_temp, DocumentPrint
 from documents.models import (
     Document,
+    Attachment,
     OtherAgreementsDocument,
     CalendarPlanDocument,
     BasicProjectPasportDocument,
@@ -1109,6 +1115,7 @@ class Milestone(ProjectBasedModel):
             instance.cameral_report.set_building()
 
 
+@track_data('status')
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
 
@@ -1122,6 +1129,11 @@ class Monitoring(ProjectBasedModel):
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
+    # ext_doc_id = models.CharField(max_length=256, null=True)
+    approved_date = MonitorField(monitor='status', when=[APPROVED])
+    sed = GenericRelation(SEDEntity, content_type_field='context_type')
+    attachment = models.ForeignKey('documents.Attachment', null=True)
+    
 
     class Meta:
         filter_by_project = 'project__in'
@@ -1133,6 +1145,15 @@ class Monitoring(ProjectBasedModel):
 
     def get_status_cap(self):
         return self.__class__.STATUS_CAPS[self.status]
+
+    def set_approved(self):
+        self.set_status(Monitoring.APPROVED)
+        self.save()
+
+    def set_status(self, status):
+        assert status in Monitoring.STATUSES, 'such status does not exist'
+        self.status = status
+        self.save()
 
     def update_items(self, **kwargs):
         for item in kwargs['items']:
@@ -1159,7 +1180,37 @@ class Monitoring(ProjectBasedModel):
             row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
             row.cells[6].text = utils.get_stringed_value(item.remaining_days)
             row.cells[7].text = utils.get_stringed_value(item.report_type)
-        return self.__dict__
+        return dict(**self.__dict__)
+
+    def build_printed(self, force_save=False):
+        temp_file, temp_fname = DocumentPrint(object=self).generate_docx()
+        attachment_dict = store_from_temp(temp_file, temp_fname)
+        self.attachment = Attachment.objects.create(**attachment_dict)
+        if force_save:
+            self.save()
+        return self
+
+    def update_printed(self, force_save=False):
+        pass
+
+    @classmethod
+    def post_save(cls, sender, instance, **kwargs):
+        if not instance.has_changed('status'):
+            return
+        old_val = instance.old_value('status')
+        new_val = instance.status
+        if not new_val == Monitoring.APPROVE or new_val > Monitoring.APPROVE:
+            return
+        sed = instance.sed.last()
+        if sed and sed.ext_doc_id:
+            return
+        instance.build_printed(force_save=False)
+        SEDEntity.pin_to_sed(
+            'plan_monitoring', instance,
+            project_name=instance.project.name,
+            document_title=u'План мониторинга',
+            attachments=[instance.attachment])
+        instance.save()
 
 
 class MonitoringTodo(ProjectBasedModel):
@@ -1259,9 +1310,8 @@ def on_milestone_create(sender, instance, created=False, **kwargs):
     Report.build_empty(instance)
 
 post_save.connect(on_milestone_create, sender=Milestone)
-
 post_save.connect(Report.post_save, sender=Report)
-
 post_save.connect(Corollary.post_save, sender=Corollary)
-
 post_save.connect(Milestone.post_save, sender=Milestone)
+post_save.connect(Monitoring.post_save, sender=Monitoring)
+
