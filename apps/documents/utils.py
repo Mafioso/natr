@@ -28,9 +28,15 @@ def translate(text):
     return text.translate(tr)
 
 def format_time(value):
+    if not value:
+        return ""
+        
     return value.strftime("%d.%m.%Y")
 
 def format_money(value):
+    if not value:
+        return ""
+
     d = decimal.Decimal(value.amount)
     return '%.2f' % d
 

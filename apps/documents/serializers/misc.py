@@ -89,6 +89,15 @@ class BasicProjectPasportSerializer(DocumentCompositionSerializer):
         document = validated_data.pop('document', None)
         return models.Document.dml.update_doc_(instance, **validated_data)
 
+    def validate_docx_context(self, instance):
+        if not instance.cost:
+            return False, u"Пожалуйста, заполните \"Полная стоимость работ в тенге\".";
+        if not instance.required_funding:
+            return False, u"Пожалуйста, заполните \"Требуемое финансирование в тенге\".";
+
+
+        return True, u""
+
 
 class ProjectTeamMemberSerializer(serializers.ModelSerializer):
 
@@ -257,3 +266,15 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
     def update(self, instance, validated_data):
         document = validated_data.pop('document')
         return models.Document.dml.update_start_description(instance, **validated_data)
+
+    def validate_docx_context(self, instance):
+        if not hasattr(instance.document.project, 'organization_details'):
+            return False, u"Пожалуйста, заполните поле \"Название компании\" в Реквизитах грантополучателя основных данных проекта"
+        if not instance.document.project.aggreement.document.date_sign:
+            return False, u"Пожалуйста, заполните поле \"Дата договора\" в основных данных проекта"
+        if not instance.document.project.aggreement.document.number:
+            return False, u"Пожалуйста, заполните поле \"Номер договора\" в основных данных проекта"
+        if not instance.document.project.funding_type:
+            return False, u"Пожалуйста, заполните поле \"Вид предоставленного гранта\" в основных данных проекта"
+
+        return True, u""

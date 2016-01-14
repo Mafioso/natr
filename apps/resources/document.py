@@ -57,6 +57,23 @@ class BasicProjectPasportDocumentViewSet(ProjectBasedViewSet):
         response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
         return response
 
+    @detail_route(methods=['post'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        instance = self.get_object()
+
+        item_ser = self.get_serializer(instance=instance, data=request.data)
+        item_ser.is_valid(raise_exception=True)
+        item_obj = item_ser.save()
+
+        is_valid, message = item_ser.validate_docx_context(instance=item_obj)
+        
+        if not is_valid:
+            return HttpResponse({"message": message}, status=400)
+
+        headers = self.get_success_headers(item_ser.data)
+        return response.Response(item_ser.data, headers=headers)
+
+
 
 class InnovativeProjectPasportDocumentViewSet(ProjectBasedViewSet):
 
@@ -112,10 +129,8 @@ class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='gen_docx')
     def gen_docx(self, request, *a, **kw):
         instance = self.get_object()
-        upd_instance = doc_models.Document.dml.update_start_description(instance, **request.data)
-        upd_instance.save()
-
-        _file, filename = DocumentPrint(object=upd_instance).generate_docx()
+        
+        _file, filename = DocumentPrint(object=instance).generate_docx()
 
         if not _file or not filename:
             return HttpResponse(status=400)
@@ -123,6 +138,22 @@ class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
         response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
         return response
+
+    @detail_route(methods=['post'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        instance = self.get_object()
+
+        item_ser = self.get_serializer(instance=instance, data=request.data)
+        item_ser.is_valid(raise_exception=True)
+        item_obj = item_ser.save()
+
+        is_valid, message = item_ser.validate_docx_context(instance=item_obj)
+        
+        if not is_valid:
+            return HttpResponse({"message": message}, status=400)
+
+        headers = self.get_success_headers(item_ser.data)
+        return response.Response(item_ser.data, headers=headers)
 
 class AttachmentViewSet(viewsets.ModelViewSet):
 

@@ -673,7 +673,6 @@ class TechnologyReadiness(models.Model):
     target_cons = models.CharField(u'Основная потребительская группа данной продукции', max_length=1024, null=True, blank=True)
     advantages = models.CharField(u'Основное преимущество вашей технологии по сравнению с данным \
                             производителем', max_length=1024, null=True, blank=True)
-    attractiveness = models.CharField(u'Оценка рыночной привлекательности проекта', max_length=1024, null=True, blank=True)
     market_test = models.CharField(u'Проведены ли рыночные испытания инновационных продукции или \
                             услуг?', max_length=1024, null=True, blank=True)
     result_to_sale = models.CharField(u'Что будет продаваться в результате проекта: технология или \
