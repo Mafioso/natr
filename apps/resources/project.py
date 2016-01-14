@@ -15,7 +15,7 @@ from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
 from projects.utils import ExcelReport
 from documents.utils import DocumentPrint
-
+from mioadp.models import ArticleLink
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -155,13 +155,21 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(project)
         return response.Response(serializer.data)
 
-    @detail_route(methods=['get'], url_path='article_links')
+    @detail_route(methods=['GET', 'POST'], url_path='article_links')
     @patch_serializer_class(ArticleLinkSerializer)
     def list_article_links(self, request, *a, **kw):
         project = self.get_object()
-        article_links = project.articlelink_set.order_by('-date_created')
-        serializer = self.get_serializer(article_links, many=True)
-        return response.Response(serializer.data)
+
+        if request.method == 'GET':
+            article_links = project.articlelink_set.order_by('-date_created')
+            serializer = self.get_serializer(article_links, many=True)
+            return response.Response(serializer.data)
+
+        if request.method == 'POST':
+            url = request.data.get('url', None)
+            ArticleLink.create_from_link(url)
+            print url
+            return response.Response(status=status.HTTP_204_NO_CONTENT)
 
     @detail_route(methods=['get'], url_path='log')
     @patch_serializer_class(ProjectLogEntrySerializer)
