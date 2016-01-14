@@ -520,6 +520,9 @@ class Report(ProjectBasedModel):
         filter_by_project = 'project__in'
         relevant_for_permission = True
         verbose_name = u"Отчет"
+        permissions = (
+            ('approve_report', u"Утверждение документа"),
+        )
 
     #tracker = FieldTracker(['status'])  not so usable
 
