@@ -10,7 +10,7 @@ from natr.rest_framework.mixins import ProjectBasedViewSet
 from documents.serializers import *
 from documents.serializers.misc import TechStageSerializer
 from documents import models as doc_models
-from documents.utils import DocumentPrint
+from documents.utils import DocumentPrint, store_file
 from projects import models as prj_models
 from .filters import AttachmentFilter
 from django.conf import settings
@@ -56,6 +56,23 @@ class BasicProjectPasportDocumentViewSet(ProjectBasedViewSet):
         response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
         return response
+
+    @detail_route(methods=['post'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        instance = self.get_object()
+
+        item_ser = self.get_serializer(instance=instance, data=request.data)
+        item_ser.is_valid(raise_exception=True)
+        item_obj = item_ser.save()
+
+        is_valid, message = item_ser.validate_docx_context(instance=item_obj)
+        
+        if not is_valid:
+            return HttpResponse({"message": message}, status=400)
+
+        headers = self.get_success_headers(item_ser.data)
+        return response.Response(item_ser.data, headers=headers)
+
 
 
 class InnovativeProjectPasportDocumentViewSet(ProjectBasedViewSet):
@@ -112,10 +129,8 @@ class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='gen_docx')
     def gen_docx(self, request, *a, **kw):
         instance = self.get_object()
-        upd_instance = doc_models.Document.dml.update_start_description(instance, **request.data)
-        upd_instance.save()
-
-        _file, filename = DocumentPrint(object=upd_instance).generate_docx()
+        
+        _file, filename = DocumentPrint(object=instance).generate_docx()
 
         if not _file or not filename:
             return HttpResponse(status=400)
@@ -123,6 +138,22 @@ class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
         response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
         return response
+
+    @detail_route(methods=['post'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        instance = self.get_object()
+
+        item_ser = self.get_serializer(instance=instance, data=request.data)
+        item_ser.is_valid(raise_exception=True)
+        item_obj = item_ser.save()
+
+        is_valid, message = item_ser.validate_docx_context(instance=item_obj)
+        
+        if not is_valid:
+            return HttpResponse({"message": message}, status=400)
+
+        headers = self.get_success_headers(item_ser.data)
+        return response.Response(item_ser.data, headers=headers)
 
 class AttachmentViewSet(viewsets.ModelViewSet):
 
@@ -145,31 +176,12 @@ class AttachmentViewSet(viewsets.ModelViewSet):
         return response.Response(ser.data, headers=headers)
 
     def create(self, request, *a, **kw):
-        data = request.data
-        tmp_file_path = data.get('file.path')
-        fname = data.get('file.name')
-        attachment_id = data.get('id', None)
-        _, ext = os.path.splitext(fname)
-        _, remaining_path = tmp_file_path.split(settings.NGINX_TMP_UPLOAD_ROOT + '/')
-        file_path = pj(settings.MEDIA_ROOT, remaining_path)
-        full_file_path = pj(file_path, fname)
-        if not os.path.exists(pj(file_path)):
-            os.makedirs(file_path)
-        shutil.move(tmp_file_path, full_file_path)
-        file_url = pj(
-            settings.MEDIA_URL_NO_TRAILING_SLASH,
-            full_file_path.split(settings.MEDIA_ROOT + '/')[1])
-        attachment_data = {
-            'file_path': full_file_path,
-            'name': fname,
-            'extension': ext,
-            'url': file_url
-        }
+        attachment_id, attachment_dict = store_file(request.data)
         if attachment_id:
             attachment = Attachment.objects.get(pk=attachment_id)
-            item_ser = self.get_serializer(instance=attachment, data=attachment_data)
+            item_ser = self.get_serializer(instance=attachment, data=attachment_dict)
         else:
-            item_ser = self.get_serializer(data=attachment_data)
+            item_ser = self.get_serializer(data=attachment_dict)
         item_ser.is_valid(raise_exception=True)
         item_obj = item_ser.save()
         headers = self.get_success_headers(item_ser.data)

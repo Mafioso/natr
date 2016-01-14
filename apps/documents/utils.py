@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import os
 import decimal
+import hashlib
+import shutil
 import models as doc_models
 from django.conf import settings
 from docxtpl import DocxTemplate, RichText
@@ -9,6 +11,9 @@ from docx.shared import Pt
 from djmoney.models.fields import MoneyPatched
 from cStringIO import StringIO
 from datetime import datetime
+
+pj = os.path.join
+
 
 def get_default_gp_type():
     doc_types = doc_models.GPDocumentType.objects.filter(name=u"договор")
@@ -28,9 +33,15 @@ def translate(text):
     return text.translate(tr)
 
 def format_time(value):
+    if not value:
+        return ""
+        
     return value.strftime("%d.%m.%Y")
 
 def format_money(value):
+    if not value:
+        return ""
+
     d = decimal.Decimal(value.amount)
     return '%.2f' % d
 
@@ -61,7 +72,6 @@ class DocumentPrint:
         doc.save(_file)
         length = _file.tell()
         _file.seek(0)
-
         return _file, filename
 
     def get_template_name(self):
@@ -102,4 +112,80 @@ class DocumentPrint:
 
         return None
 
-     
+
+def store_file(data):
+    tmp_file_path = data.get('file.path')
+    fname = data.get('file.name')
+    attachment_id = data.get('id', None)
+    _, ext = os.path.splitext(fname)
+    _, remaining_path = tmp_file_path.split(settings.NGINX_TMP_UPLOAD_ROOT + '/')
+    file_path = pj(settings.MEDIA_ROOT, remaining_path)
+    full_file_path = pj(file_path, fname)
+    if not os.path.exists(pj(file_path)):
+        os.makedirs(file_path)
+    shutil.move(tmp_file_path, full_file_path)
+    file_url = pj(
+        settings.MEDIA_URL_NO_TRAILING_SLASH,
+        full_file_path.split(settings.MEDIA_ROOT + '/')[1])
+    attachment_data = {
+        'file_path': full_file_path,
+        'name': fname,
+        'ext': ext,
+        'url': file_url,
+        'md5': data.get('file.md5'),
+        'size': data.get('file.size'),
+    }
+    return data.get('id', None), attachment_data
+
+
+def store_from_temp(temp_file, fname):
+    file_path = pj(settings.MEDIA_ROOT, fname)
+    _, ext = os.path.splitext(fname)
+    with open(file_path, 'wb+') as fd:
+        temp_file.seek(0)
+        shutil.copyfileobj(temp_file, fd)
+    file_url = pj(
+        settings.MEDIA_URL_NO_TRAILING_SLASH,
+        file_path.split(settings.MEDIA_ROOT + '/')[1])
+    return {
+        'file_path': file_path,
+        'name': fname,
+        'ext': ext,
+        'url': file_url,
+        'md5': md5(file_path),
+        'size': os.path.getsize(file_path)
+    }
+
+def replace_from_temp(temp_file, file_path):
+    if(isinstance(temp_file, basestring)):
+        temp_file = to_buf(temp_file)
+    with open(file_path, 'w') as fd:
+        temp_file.seek(0)
+        shutil.copyfileobj(temp_file, fd)
+
+
+def to_buf(content):
+    _buf = StringIO()
+    _buf.write(content)
+    return _buf
+
+
+def md5(file_path):
+    hash = hashlib.md5()
+    with open(file_path, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash.update(chunk)
+    return hash.hexdigest()
+
+
+def process_file(path):
+    with open(path, "rb") as f:
+        encoded_content = base64.b64encode(f.read())
+    size = os.path.getsize(path)
+    return u"""<item name="%s" mime_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document" size="%s" md5sum="%s">%s</item>""" % (
+            path_leaf(path), size, md5(path), encoded_content,
+    )
+
+def path_leaf(path):
+    head, tail = ntpath.split(path)
+    return tail or ntpath.basename(head)

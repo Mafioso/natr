@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 """
 Django settings for natr project.
 
@@ -44,13 +46,13 @@ def FileSettings(path):
     return Holder
 
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def rel(*x):
     return os.path.join(os.path.abspath(BASE_DIR), *x)
 
 sys.path.insert(0, rel('apps'))
-
+sys.path.insert(0, rel('natr_spider'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -77,6 +79,7 @@ APPS = (
     'auth2',
     'notifications',
     'mioadp',
+    'integrations'
 )
 
 INSTALLED_APPS = (
@@ -89,10 +92,12 @@ INSTALLED_APPS = (
     'rest_framework',
     'django_extensions',
     'rest_framework_swagger',
-    'test_without_migrations'
+    'test_without_migrations',
+    'corsheaders'
 ) + APPS
 
 MIDDLEWARE_CLASSES = (
+    'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -105,10 +110,14 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'natr.urls'
 
+CONFIG_DIR = rel(BASE_DIR, 'conf')
+CONFIG_TEMPLATE_DIR = rel(CONFIG_DIR, 'templates')
+
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [rel('templates',), ],
+        'DIRS': [rel('templates',), CONFIG_TEMPLATE_DIR ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -116,7 +125,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'adjacent.context_processors.main',
+                'natr.context_processors.centrifugo',
                 'notifications.context_processors.main'
             ],
         },
@@ -221,6 +230,7 @@ LOGGING = {
     }
 }
 
+
 ADMINS = (('Rustem', 'r.kamun@gmail.com'),
           ('Yernar', 'mailubai@gmail.com'),)
 
@@ -261,9 +271,11 @@ USD = 'USD'
 CURRENCIES = (KZT, USD)
 
 NOTIFICATION_CHANNEL = 'notification'
+DOCKER_HOST = '192.168.99.100'
 CENTRIFUGO_HOST = os.getenv('CENTRIFUGO_PORT_8001_TCP_ADDR', 'centrifugo.natr.kz')
 CENTRIFUGO_PORT = os.getenv('CENTRIFUGO_PORT_8001_TCP_PORT', 8001)
 CENTRIFUGE_ADDRESS = 'http://{}:{}'.format(CENTRIFUGO_HOST, CENTRIFUGO_PORT)
+CENTRIFUGE_EXTERNAL_ADDRESS = 'http://{}:{}'.format(DOCKER_HOST, CENTRIFUGO_PORT)
 CENTRIFUGE_SECRET = 'secret'
 
 EMAIL_USE_TLS = True
@@ -273,3 +285,33 @@ EMAIL_HOST_USER = 'test.ko@almasales.com'
 EMAIL_HOST_PASSWORD = '123qweasd'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 # DEFAULT_TO_EMAIL = 'to email'
+
+DOCUMENTOLOG_URL = 'http://kik.doc24.kz'
+DOCUMENTOLOG_CREATE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/create?wsdl'
+DOCUMENTOLOG_EDIT_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/edit?wsdl'
+DOCUMENTOLOG_MOVE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/move?wsdl'
+DOCUMENTOLOG_WSDL_USERNAME = 'documentolog'
+DOCUMENTOLOG_WSDL_PASSWORD = 'secret'
+DOCUMENTOLOG_LOGIN = 'admin@kik.doc24.kz'
+DOCUMENTOLOG_PASSWORD = '123456Qw'
+DOCUMENTOLOG_LOGIN_URL = DOCUMENTOLOG_URL + '/user/login'
+DOCUMENTOLOG_DOCUMENTS = {
+    'plan_monitoring': {
+        'title': u'План_мониторинга',
+        'uuid': '430c493c-dabf-43dc-9e95-568cf65501f4',
+    },
+}
+
+DOCUMENTOLOG_USER = 'info@documentolog.kz'
+DOCUMENTOLOG_TOKEN = '12345678QAZxswe'
+
+CORS_ORIGIN_WHITELIST = (
+    'kik.doc24.kz',
+)
+
+CORS_ALLOW_HEADERS = (
+    'authorization',
+)
+
+CORS_EXPOSE_HEADERS = ()
+CORS_PREFLIGHT_MAX_AGE = 86400

@@ -26,7 +26,7 @@ class ArticleLink(ProjectBasedModel):
 
 	@classmethod
 	def create_from_link(cls, link):
-		print get_project_settings()
+		print get_project_settings().__dict__
 		process = CrawlerProcess(get_project_settings())
 		# 'followall' is the name of one of the spiders of the project.
 		process.crawl('tengrinews.kz')

@@ -2,10 +2,12 @@ import os
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
-from rest_framework.decorators import list_route, detail_route
+from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
-from natr.rest_framework.decorators import patch_serializer_class
+from natr.rest_framework.decorators import patch_serializer_class, ignore_permissions
 from natr.rest_framework.policies import PermissionDefinition
+from natr.rest_framework.authentication import TokenAuthentication
 from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
 from projects.serializers import *
 from projects import models as prj_models
@@ -308,8 +310,7 @@ class MonitoringViewSet(ProjectBasedViewSet):
         is_valid, message = serializer.validate_docx_context(instance=monitoring)
 
         if not is_valid:
-            return HttpResponse({"message": message}, status=400)
-
+            return HttpResponse({"message": message}, status=status.HTTP_204_NO_CONTENT)
         headers = self.get_success_headers(serializer.data)
         return response.Response({"monitoring": monitoring.id}, headers=headers)
 
@@ -321,8 +322,14 @@ class ReportViewSet(ProjectBasedViewSet):
         """
         Override get_queryset() to filter on multiple values for 'id'
         """
-        queryset = super(ReportViewSet, self).get_queryset()
         id_value = self.request.query_params.get('id', None)
+        is_active = self.request.query_params.get('isActive', 0)
+
+        queryset = super(ReportViewSet, self).get_queryset()
+        
+        if is_active == 1:
+            queryset = queryset.filter(status__gt=prj_models.Report.NOT_ACTIVE)
+
         if id_value:
             id_list = id_value.split(',')
             queryset = queryset.filter(id__in=id_list)
@@ -454,6 +461,13 @@ class CorollaryViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(instance=corollary)
         return response.Response(serializer.data)
 
+    @detail_route(methods=['post'], url_path='change_status')
+    def change_status(self, request, *a, **kw):
+        corollary = self.get_object()
+        corollary.status = request.data['status']
+        corollary.save()
+
+        return response.Response({"milestone_id": corollary.milestone.id}, status=200)
 
 class RiskCategoryViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskCategory.objects.all()
