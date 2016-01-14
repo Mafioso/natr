@@ -254,7 +254,7 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
         read_only_fields = ('status_cap',)
 
     reports = serializers.PrimaryKeyRelatedField(
-        queryset=Project.objects.all(), many=True, required=False)
+        queryset=Report.all_active(), many=True, required=False)
 
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)

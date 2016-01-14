@@ -44,7 +44,7 @@ def FileSettings(path):
     return Holder
 
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def rel(*x):
     return os.path.join(os.path.abspath(BASE_DIR), *x)
@@ -104,10 +104,14 @@ MIDDLEWARE_CLASSES = (
 
 ROOT_URLCONF = 'natr.urls'
 
+CONFIG_DIR = rel(BASE_DIR, 'conf')
+CONFIG_TEMPLATE_DIR = rel(CONFIG_DIR, 'templates')
+
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [rel('templates',), ],
+        'DIRS': [rel('templates',), CONFIG_TEMPLATE_DIR ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -115,7 +119,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'adjacent.context_processors.main',
+                'natr.context_processors.centrifugo',
                 'notifications.context_processors.main'
             ],
         },
@@ -220,6 +224,7 @@ LOGGING = {
     }
 }
 
+
 ADMINS = (('Rustem', 'r.kamun@gmail.com'),
           ('Yernar', 'mailubai@gmail.com'),)
 
@@ -260,9 +265,11 @@ USD = 'USD'
 CURRENCIES = (KZT, USD)
 
 NOTIFICATION_CHANNEL = 'notification'
+DOCKER_HOST = '192.168.99.100'
 CENTRIFUGO_HOST = os.getenv('CENTRIFUGO_PORT_8001_TCP_ADDR', 'centrifugo.natr.kz')
 CENTRIFUGO_PORT = os.getenv('CENTRIFUGO_PORT_8001_TCP_PORT', 8001)
 CENTRIFUGE_ADDRESS = 'http://{}:{}'.format(CENTRIFUGO_HOST, CENTRIFUGO_PORT)
+CENTRIFUGE_EXTERNAL_ADDRESS = 'http://{}:{}'.format(DOCKER_HOST, CENTRIFUGO_PORT)
 CENTRIFUGE_SECRET = 'secret'
 
 EMAIL_USE_TLS = True

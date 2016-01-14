@@ -295,6 +295,7 @@ class ReportViewSet(ProjectBasedViewSet):
         Override get_queryset() to filter on multiple values for 'id'
         """
         queryset = super(ReportViewSet, self).get_queryset()
+        queryset = queryset.filter(status__gt=prj_models.Report.NOT_ACTIVE)
         id_value = self.request.query_params.get('id', None)
         if id_value:
             id_list = id_value.split(',')

@@ -352,7 +352,7 @@ class Project(models.Model):
         return Project.STATUS_CAPS[self.status]
 
     def get_reports(self):
-        return Report.objects.by_project(self)
+        return Report.objects.by_project(self).filter(status__gt=Report.NOT_ACTIVE)
 
     def get_recent_todos(self):
         return MonitoringTodo.objects.by_project(self)
@@ -559,6 +559,13 @@ class Report(ProjectBasedModel):
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
 
+    def set_building(self):
+        self.set_status(Report.BUILD)
+
+    def set_status(self, status):
+        self.status = status
+        self.save()
+
     @property
     def milestone_number(self):
         if not self.milestone:
@@ -576,7 +583,8 @@ class Report(ProjectBasedModel):
             milestone=milestone,
             project=milestone.project,
             use_of_budget_doc=budget_doc,
-            type=report_type)
+            type=report_type,
+            status=Report.NOT_ACTIVE)
         r.save()
         for cost_type in r.project.costtype_set.all():
             budget_doc.add_empty_item(cost_type)
@@ -760,9 +768,14 @@ class Report(ProjectBasedModel):
             milestone.set_status(Milestone.REPORT_REWORK)
         elif new_val == Report.CHECK:
             milestone.set_status(Milestone.REPORT_CHECK)
-        elif new_val == Report.BUILD:
-            milestone.set_status(Milestone.REPORTING)
+        # elif new_val == Report.BUILD:
+        #     milestone.set_status(Milestone.REPORTING)
         milestone.save()
+
+
+    @classmethod
+    def all_active(cls):
+        return Report.objects.filter(status__gt=Report.NOT_ACTIVE)
 
 
 @track_data('status')
@@ -925,6 +938,7 @@ class CorollaryStatByCostType(models.Model):
         self.corollary.get_project()
 
 
+@track_data('status')
 class Milestone(ProjectBasedModel):
 
 
@@ -1085,6 +1099,15 @@ class Milestone(ProjectBasedModel):
             return None
         return reports.last().id
 
+    @classmethod
+    def post_save(cls, sender, instance, **kwargs):
+        if not instance.has_changed('status'):
+            return
+        old_val = instance.old_value('status')
+        new_val = instance.status
+        if new_val == Milestone.TRANCHE_PAY:
+            instance.cameral_report.set_building()
+
 
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
@@ -1176,6 +1199,7 @@ class MonitoringTodo(ProjectBasedModel):
         super(self.__class__, self).save(*args, **kwargs)
 
 
+
 class Comment(models.Model):
     """
         Комментарий к проекту
@@ -1239,3 +1263,5 @@ post_save.connect(on_milestone_create, sender=Milestone)
 post_save.connect(Report.post_save, sender=Report)
 
 post_save.connect(Corollary.post_save, sender=Corollary)
+
+post_save.connect(Milestone.post_save, sender=Milestone)
