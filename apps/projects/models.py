@@ -167,6 +167,11 @@ class ProjectManager(models.Manager):
             return prj
 
         # 3. re-generate empty milestones
+        for milestone in prj.milestone_set.all():
+            for report in milestone.reports.all():
+                report.delete()
+
+
         prj.milestone_set.clear()
         for i in xrange(new_milestones):
             m = Milestone.objects.build_empty(
@@ -556,7 +561,7 @@ class Report(ProjectBasedModel):
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=BUILD)
 
     # max 2 reports for one milestone
-    milestone = models.ForeignKey('Milestone', related_name='reports')
+    milestone = models.ForeignKey('Milestone', related_name='reports', on_delete=models.CASCADE)
     # project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
     # additional links, without strong needs
 
