@@ -44,7 +44,7 @@ class ReportFilter(django_filters.FilterSet):
 
 	user = django_filters.MethodFilter()
 
-	status_gt = django_filters.MethodFilter()
+	status__gt = django_filters.MethodFilter()
 
 	id__in = django_filters.MethodFilter()
 
@@ -67,7 +67,7 @@ class ReportFilter(django_filters.FilterSet):
 
 		return self.model.objects.none()
 
-	def filter_status_gt(self, queryset, value):
+	def filter_status__gt(self, queryset, value):
 		return queryset.filter(status__gt=value)
 
 	def filter_id__in(self, queryset, value):

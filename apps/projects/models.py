@@ -1103,15 +1103,16 @@ class Milestone(ProjectBasedModel):
         return Milestone.objects.bulk_create(milestones)
 
     def get_cameral_report(self):
-        reports = self.reports.filter(type=Report.CAMERAL)
+        reports = self.reports.filter(type=Report.CAMERAL, status__gt=Report.NOT_ACTIVE)
         if not reports:
             return None
         return reports.last().id
 
     def get_final_report(self):
-        reports = self.reports.filter(type=Report.FINAL)
+        reports = self.reports.filter(type=Report.FINAL, status__gt=Report.NOT_ACTIVE)
         if not reports:
             return None
+
         return reports.last().id
 
     @classmethod
