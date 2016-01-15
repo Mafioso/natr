@@ -129,7 +129,8 @@ class ProjectManager(models.Manager):
         if orgdet_data:
             try:
                 Organization.objects.update_(instance.organization_details, **orgdet_data)
-            except ObjectDoesNotExist as e:
+            except Organization.DoesNotExist as e:
+                print 'Error: ', e.message
                 Organization.objects.create_new(orgdet_data, project=instance)
 
         if funding_type_data:
