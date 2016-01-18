@@ -387,6 +387,49 @@ class OtherAgreementItem(models.Model):
     def get_project(self):
         return self.other_agreements_doc.get_project()
 
+class ProtectionDocument(models.Model):
+    tp='protectiondocument'
+    document = models.OneToOneField(Document, related_name='protectiondocuments', on_delete=models.CASCADE)
+
+    @property
+    def name(self):
+        return self.document.name
+
+    @name.setter
+    def name(self, value):
+        self.document.name = value
+
+    @property 
+    def number(self):
+        return self.document.number
+
+    @number.setter
+    def number(self, value):
+        self.document.number = value
+
+    @property
+    def date_sign(self):
+        return self.document.date_sign
+
+    @date_sign.setter
+    def date_sign(self, value):
+        self.document.date_sign = date_parser.parse(value)
+
+    @classmethod
+    def build_empty(cls, project):
+        doc = Document.build_empty(project=project)
+        instance = cls(document=doc)
+        instance.save()
+        return instance
+
+    def update(self, **kw):
+        for k, v in kw.iteritems():
+            if hasattr(self, k):
+                setattr(self, k, v)
+
+        return self
+
+
 
 class BasicProjectPasportDocument(models.Model):
     tp = 'basicpasport'

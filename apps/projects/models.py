@@ -29,6 +29,7 @@ from documents.models import (
     Document,
     Attachment,
     OtherAgreementsDocument,
+    ProtectionDocument,
     CalendarPlanDocument,
     BasicProjectPasportDocument,
     InnovativeProjectPasportDocument,
@@ -569,7 +570,8 @@ class Report(ProjectBasedModel):
         'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
         verbose_name=u'Отчет об использовании целевых бюджетных средств')
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
-    results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)
+    results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)    
+    protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
 
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
@@ -1319,6 +1321,12 @@ def on_milestone_create(sender, instance, created=False, **kwargs):
         return
     Report.build_empty(instance)
 
+def on_report_created(sender, instance, created=False, **kwargs):
+    if not created:
+        return
+    ProtectionDocument.build_empty(instance.project)
+
+post_save.connect(on_report_created, sender=Report)
 post_save.connect(on_milestone_create, sender=Milestone)
 post_save.connect(Report.post_save, sender=Report)
 post_save.connect(Corollary.post_save, sender=Corollary)
