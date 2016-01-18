@@ -297,11 +297,10 @@ class ReportViewSet(ProjectBasedViewSet):
         id_value = self.request.query_params.get('id', None)
         is_active = self.request.query_params.get('isActive', None)
         queryset = super(ReportViewSet, self).get_queryset()
-
-        qs_filter_args = {
-            "user": self.request.user
-        }
-        
+        qs_filter_args = {}
+        if not self.request.user.is_superuser:
+            qs_filter_args["user"] = self.request.user
+            
         if is_active:
             qs_filter_args["status__gt"] = prj_models.Report.NOT_ACTIVE
 
