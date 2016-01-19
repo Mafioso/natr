@@ -7,7 +7,7 @@ from documents import models as doc_models
 
 class ListOfIdFilter(django_filters.FilterSet):
 	ids = IntegerListFilter(name='id',lookup_type='in')
-	
+
 	class Meta:
 		fields = ('ids',)
 
@@ -19,10 +19,16 @@ class ProjectFilter(ListOfIdFilter):
 
 	search = django_filters.MethodFilter()
 	status = django_filters.MethodFilter()
+	has_grantee = django_filters.MethodFilter()
 
 	def filter_status(self, queryset, value):
 		value = map(int,value.split('_'))
 		queryset = queryset.filter(status__in=value)
+		return queryset
+
+	def filter_has_grantee(self, queryset, value):
+		if value == 'true':
+			queryset = queryset.filter(assigned_grantees__exact=None)
 		return queryset
 
 	def filter_search(self, queryset, value):
