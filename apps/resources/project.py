@@ -16,6 +16,7 @@ from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
 from projects.utils import ExcelReport
 from documents.utils import DocumentPrint
+from natr import mailing
 
 
 
@@ -438,8 +439,18 @@ class CorollaryViewSet(ProjectBasedViewSet):
     @detail_route(methods=['post'], url_path='change_status')
     def change_status(self, request, *a, **kw):
         corollary = self.get_object()
+        changed = corollary.status != request.data.get('status', corollary.status)
         corollary.status = request.data['status']
         corollary.save()
+
+        if changed:
+            if corollary.status == prj_models.Corollary.APPROVED:
+                mailing.send_corollary_approved(corollary)
+            elif corollary.status == prj_models.Corollary.REWORK:
+                user = None
+                if request and hasattr(request, "user"):
+                    user = request.user
+                mailing.send_corollary_to_rework(corollary, user)
 
         return response.Response({"milestone_id": corollary.milestone.id}, status=200)
 

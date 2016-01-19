@@ -157,3 +157,31 @@ def send_monitoring_plan_was_send_to_rework(monitoring, user=None):
     )
     mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
     mail.send(fail_silently=True)
+
+def send_corollary_approved(corollary):
+    send_mail(
+        u'Заключение по проекту \"%s\" утверждено.' % corollary.project.name,
+        u"""Здравствуйте!\nЗаключение по проекту \"%s\" утверждено.""" % corollary.project.name, 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
+        fail_silently=True
+    )
+
+def send_corollary_to_rework(corollary, user=None):
+    message_text = u"Заключение, по проекту \"%s\", было отправлено на доработку" % corollary.project.name
+    if user:
+        user_type = ""
+        if hasattr(user, 'user'):
+            user_type = u"Руководитель"
+        elif hasattr(user, 'grantee'):
+            user_type = u"Грантополучатель"
+
+        message_text = user_type + u" " +user.get_full_name()+u" отправил(а) заключение, по проекту \"%s\", на доработку."%corollary.project.name  
+
+    send_mail(
+        u'Заключение по проекту \"%s\" было отправлено на доработку.' % corollary.project.name,
+        message_text, 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
+        fail_silently=True
+    )
