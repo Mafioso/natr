@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from rest_framework import serializers
 import auth2.models as models
 import grantee.models as grantee_models
@@ -73,6 +75,14 @@ class NatrUserSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = models.NatrUser
+
+	def validate_projects(self, value):
+		if not value:
+			return value
+		try:
+			return projects_models.Project.objects.filter(pk__in=map(lambda x: x.get('id'), value))
+		except projects_models.Project.DoesNotExist:
+			raise serializers.ValidationError(u"идентификатор проекта неверный")
 
 	def create(self, validated_data):
 		account_data = validated_data.pop('account', None)
