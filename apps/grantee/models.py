@@ -50,7 +50,7 @@ class OrganizationManager(models.Manager):
             ContactDetails.objects.update_or_create(
                 pk=instance.contact_details_id,
                 defaults=contact_details)
-        
+
         if share_holders_data:
             instance.share_holders.clear()
             share_holders = [
@@ -165,7 +165,7 @@ class AuthorizedToInteractGrantee(models.Model):
 
 
 class Grantee(models.Model):
-    account = models.OneToOneField('auth2.Account', null=True, verbose_name=u'Аккаунт')
+    account = models.OneToOneField('auth2.Account', null=True, verbose_name=u'Аккаунт', on_delete=models.CASCADE)
     organization = models.ForeignKey('Organization', null=True)
 
     def project(self):
