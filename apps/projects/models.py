@@ -810,7 +810,7 @@ class Corollary(ProjectBasedModel):
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
     STATUS_CAPS = (
-        u'неактивно'
+        u'неактивно',
         u'формирование',
         u'на проверке',
         u'утверждение',
@@ -1106,13 +1106,21 @@ class Milestone(ProjectBasedModel):
             ))
         return Milestone.objects.bulk_create(milestones)
 
-    def get_report(self):
+    @property
+    def report(self):
         reports = self.reports
         
         if not reports:
             return None
 
-        return reports.last().id
+        return reports.last()
+
+    def get_report(self):
+        report = self.report        
+        if not report:
+            return None
+
+        return report.id
 
     def get_final_report(self):
         reports = self.reports.filter(type=Report.FINAL, status__gt=Report.NOT_ACTIVE)
@@ -1128,7 +1136,7 @@ class Milestone(ProjectBasedModel):
         old_val = instance.old_value('status')
         new_val = instance.status
         if new_val == Milestone.TRANCHE_PAY:
-            instance.cameral_report.set_building()
+            instance.report.set_building()
 
 
 @track_data('status')
