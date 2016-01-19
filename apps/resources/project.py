@@ -169,9 +169,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         if request.method == 'POST':
             url = request.data.get('url', None)
-            ArticleLink.create_from_link(url)
-            print url
-            return response.Response(status=status.HTTP_204_NO_CONTENT)
+            article = ArticleLink.create_from_link(project, url)
+
+            serializer = self.get_serializer(article)
+            return response.Response(serializer.data)
 
     @detail_route(methods=['get'], url_path='log')
     @patch_serializer_class(ProjectLogEntrySerializer)
@@ -328,7 +329,7 @@ class ReportViewSet(ProjectBasedViewSet):
         qs_filter_args = {}
         if not self.request.user.is_superuser:
             qs_filter_args["user"] = self.request.user
-            
+
         if is_active:
             qs_filter_args["status__gt"] = prj_models.Report.NOT_ACTIVE
 
