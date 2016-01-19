@@ -10,7 +10,7 @@ from .project import (
 	CorollaryViewSet,
 	RiskCategoryViewSet,
 	RiskDefinitionViewSet,
-	CommentViewSet
+	CommentViewSet,
 )
 from .document import (
 	DocumentViewSet,
@@ -33,6 +33,7 @@ from .notification import NotificationViewSet, NotificationSubscriptionViewSet, 
 from .user import get_initial_state
 from .natr_user import NatrUserViewSet, PermissionViewSet, GroupViewSet, DepartmentViewSet
 from .grantee_user import GranteeUserViewSet
+# from .mioadps import ArticleLinkViewSet
 from .documentlog import DocumentologViewSet
 
 
@@ -75,6 +76,7 @@ router.register(r'grantee-user', GranteeUserViewSet, 'grantee_user')
 router.register(r'permissions', PermissionViewSet, 'permission')
 router.register(r'groups', GroupViewSet, 'group')
 router.register(r'departments', DepartmentViewSet, 'department')
+# router.register(r'article_links', ArticleLinkViewSet, 'article_link')
 router.register(r'documentolog', DocumentologViewSet, 'documentolog')
 
 urlpatterns = [

@@ -52,7 +52,7 @@ def rel(*x):
     return os.path.join(os.path.abspath(BASE_DIR), *x)
 
 sys.path.insert(0, rel('apps'))
-
+sys.path.insert(0, rel('natr_spider'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.8/howto/deployment/checklist/
@@ -78,6 +78,7 @@ APPS = (
     'resources',
     'auth2',
     'notifications',
+    'mioadp',
     'integrations'
 )
 
@@ -186,7 +187,7 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'natr.rest_framework.authentication.DummyAuthentication',
         'rest_framework.authentication.BasicAuthentication',
-        
+
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
@@ -262,7 +263,7 @@ SHELL_PLUS_PRE_IMPORTS = (
     ('resources.serializers', '*'),
     ('documents.serializers', '*'),
     ('grantee.serializers', '*'),
-       
+
 )
 
 KZT = 'KZT'
@@ -315,3 +316,11 @@ CORS_ALLOW_HEADERS = (
 
 CORS_EXPOSE_HEADERS = ()
 CORS_PREFLIGHT_MAX_AGE = 86400
+
+# scrapy
+SCRAPY_SETTINGS = {
+    'BOT_NAME': 'natr_spider',
+    'SPIDER_MODULES': 'natr_spider.spiders',
+    'NEWSPIDER_MODULE': 'natr_spider.spiders'
+}
+
