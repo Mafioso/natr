@@ -18,3 +18,4 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(to='documents.Attachment', null=True),
         ),
     ]
+# ('milestone', models.ForeignKey(to='projects.Milestone')),  

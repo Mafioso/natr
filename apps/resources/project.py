@@ -33,8 +33,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         qs = super(ProjectViewSet, self).get_queryset()
         if self.request.user.is_superuser:
             return qs
-        elif self.request.user.has_perm('projects.view_project'):
-            return qs
+        # elif self.request.user.has_perm('projects.view_project'):
+        #     return qs
         else:
             if hasattr(self.request.user, 'user'):
                 user = self.request.user.user
@@ -99,7 +99,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def reports(self, request, *a, **kw):
         project = self.get_object()
         report_qs = ReportFilter(request.GET, project.get_reports())
-        report_ser = self.get_serializer(report_qs, many=True)
+        report_ser = self.get_serializer(report_qs.qs, many=True)
         return response.Response({
             'reports': report_ser.data,
         })
@@ -323,18 +323,20 @@ class ReportViewSet(ProjectBasedViewSet):
         Override get_queryset() to filter on multiple values for 'id'
         """
         id_value = self.request.query_params.get('id', None)
-        is_active = self.request.query_params.get('isActive', 0)
-
+        is_active = self.request.query_params.get('isActive', None)
         queryset = super(ReportViewSet, self).get_queryset()
-        
-        if is_active == 1:
-            queryset = queryset.filter(status__gt=prj_models.Report.NOT_ACTIVE)
+        qs_filter_args = {}
+        if not self.request.user.is_superuser:
+            qs_filter_args["user"] = self.request.user
+            
+        if is_active:
+            qs_filter_args["status__gt"] = prj_models.Report.NOT_ACTIVE
 
         if id_value:
-            id_list = id_value.split(',')
-            queryset = queryset.filter(id__in=id_list)
+            qs_filter_args["id__in"] = id_value.split(',')
 
-        return queryset
+        filtered_qs = ReportFilter(qs_filter_args, queryset)
+        return filtered_qs.qs
 
     @detail_route(methods=['get'], url_path='project')
     @patch_serializer_class(ProjectSerializer)

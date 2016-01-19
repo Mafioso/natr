@@ -54,14 +54,14 @@ client.MethodSelector = MethodSelector
 client.SoapClient = SoapClient
 
 
-def activate_foreign_keys(sender, connection, **kwargs):
-    """Enable integrity constraint with sqlite."""
-    if connection.vendor == 'sqlite':
-        cursor = connection.cursor()
-        cursor.execute('PRAGMA foreign_keys=ON')
+# def activate_foreign_keys(sender, connection, **kwargs):
+#     """Enable integrity constraint with sqlite."""
+#     if connection.vendor == 'sqlite':
+#         cursor = connection.cursor()
+#         cursor.execute('PRAGMA foreign_keys=ON;')
 
-connection_created.connect(activate_foreign_keys)
+# connection_created.connect(activate_foreign_keys)
 
-# intentionally create connection for signal to be catched
-if not connection.connection:
-    connection.cursor()
+# # intentionally create connection for signal to be catched
+# if not connection.connection:
+#     connection.cursor()

@@ -7,9 +7,9 @@ from documents import models as doc_models
 
 class ListOfIdFilter(django_filters.FilterSet):
 	ids = IntegerListFilter(name='id',lookup_type='in')
-	
+
 	class Meta:
-	    fields = ('ids',)
+		fields = ('ids',)
 
 
 class ProjectFilter(ListOfIdFilter):
@@ -19,10 +19,16 @@ class ProjectFilter(ListOfIdFilter):
 
 	search = django_filters.MethodFilter()
 	status = django_filters.MethodFilter()
+	has_grantee = django_filters.MethodFilter()
 
 	def filter_status(self, queryset, value):
 		value = map(int,value.split('_'))
 		queryset = queryset.filter(status__in=value)
+		return queryset
+
+	def filter_has_grantee(self, queryset, value):
+		if value == 'true':
+			queryset = queryset.filter(assigned_grantees__exact=None)
 		return queryset
 
 	def filter_search(self, queryset, value):
@@ -42,6 +48,12 @@ class ReportFilter(django_filters.FilterSet):
 
 	milestone = django_filters.MethodFilter()
 
+	user = django_filters.MethodFilter()
+
+	status__gt = django_filters.MethodFilter()
+
+	id__in = django_filters.MethodFilter()
+
 	def filter_search(self, queryset, value):
 		return queryset.filter(
 			Q(project__name__icontains=value)
@@ -49,6 +61,23 @@ class ReportFilter(django_filters.FilterSet):
 
 	def filter_milestone(self, queryset, value):
 		return queryset.filter(milestone__number=value)
+
+	def filter_user(self, queryset, value):
+		if hasattr(value, 'user'):
+			user = value.user
+			return queryset.filter(project__assigned_experts=user)
+
+		if hasattr(value, 'grantee'):
+			user = value.grantee
+			return queryset.filter(project__assigned_grantees=user)
+
+		return self.model.objects.none()
+
+	def filter_status__gt(self, queryset, value):
+		return queryset.filter(status__gt=value)
+
+	def filter_id__in(self, queryset, value):
+		return queryset.filter(id__in=value)
 
 
 class AttachmentFilter(ListOfIdFilter):

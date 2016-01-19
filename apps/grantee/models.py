@@ -50,7 +50,7 @@ class OrganizationManager(models.Manager):
             ContactDetails.objects.update_or_create(
                 pk=instance.contact_details_id,
                 defaults=contact_details)
-        
+
         if share_holders_data:
             instance.share_holders.clear()
             share_holders = [
@@ -121,11 +121,18 @@ class Organization(models.Model):
 
     @property
     def contact_details_id(self):
-        return self.contact_details and self.contact_details.id or None
+        try:
+            return self.contact_details.id
+        except ObjectDoesNotExist:
+            return None
 
     @property
     def authorized_grantee_id(self):
-        return self.authorized_grantee and self.authorized_grantee.id or None
+        try:
+            self.authorized_grantee.id
+        except ObjectDoesNotExist:
+            return None
+        
 
 
 class ShareHolder(models.Model):
@@ -165,7 +172,7 @@ class AuthorizedToInteractGrantee(models.Model):
 
 
 class Grantee(models.Model):
-    account = models.OneToOneField('auth2.Account', null=True, verbose_name=u'Аккаунт')
+    account = models.OneToOneField('auth2.Account', null=True, verbose_name=u'Аккаунт', on_delete=models.CASCADE)
     organization = models.ForeignKey('Organization', null=True)
 
     def project(self):
