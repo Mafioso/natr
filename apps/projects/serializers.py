@@ -78,8 +78,7 @@ class MilestoneSerializer(
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
-    cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
-    final_report = serializers.IntegerField(source="get_final_report", read_only=True, required=False)
+    report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
     def update(self, instance, validated_data):
@@ -266,9 +265,8 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
-    cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
+    report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
-    final_report = serializers.IntegerField(source="get_final_report", read_only=True, required=False)
 
 
 class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
