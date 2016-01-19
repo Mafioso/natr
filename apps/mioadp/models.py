@@ -4,10 +4,11 @@
 
 from django.db import models
 from natr.mixins import ProjectBasedModel
-
+from django.conf import settings
 from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
+# from scrapy.utils.project import get_project_settings
 
+process = CrawlerProcess(settings.SCRAPY_SETTINGS)
 
 class ArticleLink(ProjectBasedModel):
 	"""Превью по ссылке публикации"""
@@ -26,8 +27,7 @@ class ArticleLink(ProjectBasedModel):
 
 	@classmethod
 	def create_from_link(cls, link):
-		print get_project_settings().__dict__
-		process = CrawlerProcess(get_project_settings())
+		
 		# 'followall' is the name of one of the spiders of the project.
 		process.crawl('tengrinews.kz')
 		process.start() # the script will block here until the crawling is finished

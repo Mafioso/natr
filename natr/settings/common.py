@@ -315,3 +315,11 @@ CORS_ALLOW_HEADERS = (
 
 CORS_EXPOSE_HEADERS = ()
 CORS_PREFLIGHT_MAX_AGE = 86400
+
+# scrapy
+SCRAPY_SETTINGS = {
+    'BOT_NAME': 'natr_spider',
+    'SPIDER_MODULES': 'natr_spider.spiders',
+    'NEWSPIDER_MODULE': 'natr_spider.spiders'
+}
+
