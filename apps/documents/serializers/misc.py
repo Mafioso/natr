@@ -16,6 +16,7 @@ __all__ = (
     'AgreementDocumentSerializer',
     'OtherAgreementsDocumentSerializer',
     'OtherAgreementItemSerializer',
+    'ProtectionDocumentSerializer',
     'BasicProjectPasportSerializer',
     'InnovativeProjectPasportSerializer',
     'ProjectTeamMemberSerializer',
@@ -70,6 +71,24 @@ class OtherAgreementsDocumentSerializer(DocumentCompositionSerializer):
     def create(self, validated_data):
         doc = models.Document.dml.create_other_agr_doc(**validated_data)
         return doc
+
+class ProtectionDocumentSerializer(DocumentCompositionSerializer):
+
+    class Meta:
+        model = models.ProtectionDocument
+
+    document = DocumentSerializer(required=False)
+    name = serializers.CharField(required=False)
+    number = serializers.CharField(required=False)
+    date_sign = serializers.CharField(required=False)
+
+    def create(self, validated_data):
+        doc = models.Document.dml.create_doc_(**validated_data)
+        return doc
+
+    def update(self, instance, validated_data):
+        document = validated_data.pop('document', None)
+        return models.Document.dml.update_doc_(instance, **validated_data)
 
 
 class BasicProjectPasportSerializer(DocumentCompositionSerializer):

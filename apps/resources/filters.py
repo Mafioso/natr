@@ -9,7 +9,7 @@ class ListOfIdFilter(django_filters.FilterSet):
 	ids = IntegerListFilter(name='id',lookup_type='in')
 	
 	class Meta:
-	    fields = ('ids',)
+		fields = ('ids',)
 
 
 class ProjectFilter(ListOfIdFilter):
@@ -42,6 +42,12 @@ class ReportFilter(django_filters.FilterSet):
 
 	milestone = django_filters.MethodFilter()
 
+	user = django_filters.MethodFilter()
+
+	status__gt = django_filters.MethodFilter()
+
+	id__in = django_filters.MethodFilter()
+
 	def filter_search(self, queryset, value):
 		return queryset.filter(
 			Q(project__name__icontains=value)
@@ -49,6 +55,23 @@ class ReportFilter(django_filters.FilterSet):
 
 	def filter_milestone(self, queryset, value):
 		return queryset.filter(milestone__number=value)
+
+	def filter_user(self, queryset, value):
+		if hasattr(value, 'user'):
+			user = value.user
+			return queryset.filter(project__assigned_experts=user)
+
+		if hasattr(value, 'grantee'):
+			user = value.grantee
+			return queryset.filter(project__assigned_grantees=user)
+
+		return self.model.objects.none()
+
+	def filter_status__gt(self, queryset, value):
+		return queryset.filter(status__gt=value)
+
+	def filter_id__in(self, queryset, value):
+		return queryset.filter(id__in=value)
 
 
 class AttachmentFilter(ListOfIdFilter):

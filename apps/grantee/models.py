@@ -121,11 +121,18 @@ class Organization(models.Model):
 
     @property
     def contact_details_id(self):
-        return self.contact_details and self.contact_details.id or None
+        try:
+            return self.contact_details.id
+        except ObjectDoesNotExist:
+            return None
 
     @property
     def authorized_grantee_id(self):
-        return self.authorized_grantee and self.authorized_grantee.id or None
+        try:
+            self.authorized_grantee.id
+        except ObjectDoesNotExist:
+            return None
+        
 
 
 class ShareHolder(models.Model):

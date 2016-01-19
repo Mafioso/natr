@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.db import models
 from django.db.models.signals import post_save
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
+from django.contrib.contenttypes.fields import GenericRelation
+from model_utils.fields import MonitorField
 from djmoney.models.fields import MoneyField
 from natr.models import track_data
 from natr.mixins import ProjectBasedModel, ModelDiffMixin
@@ -20,9 +22,14 @@ from django.utils.functional import cached_property
 from notifications.models import Notification
 from django.core.mail import send_mail
 from natr.models import CostType
+import integrations.documentolog as documentolog
+from integrations.models import SEDEntity
+from documents.utils import store_from_temp, DocumentPrint
 from documents.models import (
     Document,
+    Attachment,
     OtherAgreementsDocument,
+    ProtectionDocument,
     CalendarPlanDocument,
     BasicProjectPasportDocument,
     InnovativeProjectPasportDocument,
@@ -74,10 +81,11 @@ class ProjectManager(models.Manager):
 
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
-            m = Milestone.objects.build_empty(
-                project=prj, number=i+1)
             if i == prj.number_of_milestones - 1:
                 Report.build_empty(m, report_type=Report.FINAL)
+            else:
+                m = Milestone.objects.build_empty(
+                        project=prj, number=i+1)
 
 
         # 1. create journal
@@ -123,7 +131,8 @@ class ProjectManager(models.Manager):
         if orgdet_data:
             try:
                 Organization.objects.update_(instance.organization_details, **orgdet_data)
-            except ObjectDoesNotExist as e:
+            except Organization.DoesNotExist as e:
+                print 'Error: ', e.message
                 Organization.objects.create_new(orgdet_data, project=instance)
 
         if funding_type_data:
@@ -160,12 +169,18 @@ class ProjectManager(models.Manager):
             return prj
 
         # 3. re-generate empty milestones
+        for milestone in prj.milestone_set.all():
+            for report in milestone.reports.all():
+                report.delete()
+
+
         prj.milestone_set.clear()
         for i in xrange(new_milestones):
-            m = Milestone.objects.build_empty(
-                project=prj, number=i+1)
             if i == new_milestones - 1:
                 Report.build_empty(m, report_type=Report.FINAL)
+            else:
+                m = Milestone.objects.build_empty(
+                    project=prj, number=i+1)
 
         # 4. recreate calendar plan
         if prj.calendar_plan:
@@ -514,6 +529,9 @@ class Report(ProjectBasedModel):
         filter_by_project = 'project__in'
         relevant_for_permission = True
         verbose_name = u"Отчет"
+        permissions = (
+            ('approve_report', u"Утверждение документа"),
+        )
 
     #tracker = FieldTracker(['status'])  not so usable
 
@@ -546,7 +564,7 @@ class Report(ProjectBasedModel):
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=BUILD)
 
     # max 2 reports for one milestone
-    milestone = models.ForeignKey('Milestone', related_name='reports')
+    milestone = models.ForeignKey('Milestone', related_name='reports', on_delete=models.CASCADE)
     # project_documents_entry = models.OneToOneField('ProjectDocumentsEntry', null=True, on_delete=models.CASCADE)
     # additional links, without strong needs
 
@@ -554,7 +572,8 @@ class Report(ProjectBasedModel):
         'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
         verbose_name=u'Отчет об использовании целевых бюджетных средств')
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
-    results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)
+    results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)    
+    protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
 
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
@@ -791,7 +810,7 @@ class Corollary(ProjectBasedModel):
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
     STATUS_CAPS = (
-        u'неактивно'
+        u'неактивно',
         u'формирование',
         u'на проверке',
         u'утверждение',
@@ -1087,16 +1106,27 @@ class Milestone(ProjectBasedModel):
             ))
         return Milestone.objects.bulk_create(milestones)
 
-    def get_cameral_report(self):
-        reports = self.reports.filter(type=Report.CAMERAL)
+    @property
+    def report(self):
+        reports = self.reports
+        
         if not reports:
             return None
-        return reports.last().id
+
+        return reports.last()
+
+    def get_report(self):
+        report = self.report        
+        if not report:
+            return None
+
+        return report.id
 
     def get_final_report(self):
-        reports = self.reports.filter(type=Report.FINAL)
+        reports = self.reports.filter(type=Report.FINAL, status__gt=Report.NOT_ACTIVE)
         if not reports:
             return None
+
         return reports.last().id
 
     @classmethod
@@ -1106,22 +1136,31 @@ class Milestone(ProjectBasedModel):
         old_val = instance.old_value('status')
         new_val = instance.status
         if new_val == Milestone.TRANCHE_PAY:
-            instance.cameral_report.set_building()
+            instance.report.set_building()
 
 
+@track_data('status')
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
 
-    STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED = range(4)
+    STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED, ON_GRANTEE_APPROVE, GRANTEE_APPROVED, ON_REWORK = range(7)
 
     STATUS_CAPS = (
         u'формирование',
-        u'на согласовании',
-        u'согласован',
-        u'не согласован')
+        u'на согласовании руководством',
+        u'утвержден',
+        u'не согласован',
+        u'на согласовании ГП',
+        u'утвержден ГП',
+        u'на доработке')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
+    # ext_doc_id = models.CharField(max_length=256, null=True)
+    approved_date = MonitorField(monitor='status', when=[APPROVED])
+    sed = GenericRelation(SEDEntity, content_type_field='context_type')
+    attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
+    
 
     class Meta:
         filter_by_project = 'project__in'
@@ -1133,6 +1172,15 @@ class Monitoring(ProjectBasedModel):
 
     def get_status_cap(self):
         return self.__class__.STATUS_CAPS[self.status]
+
+    def set_approved(self):
+        self.set_status(Monitoring.APPROVED)
+        self.save()
+
+    def set_status(self, status):
+        assert status in Monitoring.STATUSES, 'such status does not exist'
+        self.status = status
+        self.save()
 
     def update_items(self, **kwargs):
         for item in kwargs['items']:
@@ -1159,7 +1207,37 @@ class Monitoring(ProjectBasedModel):
             row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
             row.cells[6].text = utils.get_stringed_value(item.remaining_days)
             row.cells[7].text = utils.get_stringed_value(item.report_type)
-        return self.__dict__
+        return dict(**self.__dict__)
+
+    def build_printed(self, force_save=False):
+        temp_file, temp_fname = DocumentPrint(object=self).generate_docx()
+        attachment_dict = store_from_temp(temp_file, temp_fname)
+        self.attachment = Attachment.objects.create(**attachment_dict)
+        if force_save:
+            self.save()
+        return self
+
+    def update_printed(self, force_save=False):
+        pass
+
+    @classmethod
+    def post_save(cls, sender, instance, **kwargs):
+        if not instance.has_changed('status'):
+            return
+        old_val = instance.old_value('status')
+        new_val = instance.status
+        if not new_val == Monitoring.APPROVE or new_val == Monitoring.APPROVED:
+            return
+        sed = instance.sed.last()
+        if sed and sed.ext_doc_id:
+            return
+        instance.build_printed(force_save=False)
+        SEDEntity.pin_to_sed(
+            'plan_monitoring', instance,
+            project_name=instance.project.name,
+            document_title=u'План мониторинга',
+            attachments=[instance.attachment])
+        instance.save()
 
 
 class MonitoringTodo(ProjectBasedModel):
@@ -1258,10 +1336,15 @@ def on_milestone_create(sender, instance, created=False, **kwargs):
         return
     Report.build_empty(instance)
 
+def on_report_created(sender, instance, created=False, **kwargs):
+    if not created:
+        return
+    ProtectionDocument.build_empty(instance.project)
+
+post_save.connect(on_report_created, sender=Report)
 post_save.connect(on_milestone_create, sender=Milestone)
-
 post_save.connect(Report.post_save, sender=Report)
-
 post_save.connect(Corollary.post_save, sender=Corollary)
-
 post_save.connect(Milestone.post_save, sender=Milestone)
+post_save.connect(Monitoring.post_save, sender=Monitoring)
+

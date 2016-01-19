@@ -2,10 +2,12 @@ import os
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
-from rest_framework.decorators import list_route, detail_route
+from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes
+from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
-from natr.rest_framework.decorators import patch_serializer_class
+from natr.rest_framework.decorators import patch_serializer_class, ignore_permissions
 from natr.rest_framework.policies import PermissionDefinition
+from natr.rest_framework.authentication import TokenAuthentication
 from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
 from projects.serializers import *
 from projects import models as prj_models
@@ -30,8 +32,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         qs = super(ProjectViewSet, self).get_queryset()
         if self.request.user.is_superuser:
             return qs
-        elif self.request.user.has_perm('projects.view_project'):
-            return qs
+        # elif self.request.user.has_perm('projects.view_project'):
+        #     return qs
         else:
             if hasattr(self.request.user, 'user'):
                 user = self.request.user.user
@@ -96,7 +98,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def reports(self, request, *a, **kw):
         project = self.get_object()
         report_qs = ReportFilter(request.GET, project.get_reports())
-        report_ser = self.get_serializer(report_qs, many=True)
+        report_ser = self.get_serializer(report_qs.qs, many=True)
         return response.Response({
             'reports': report_ser.data,
         })
@@ -279,10 +281,8 @@ class MonitoringViewSet(ProjectBasedViewSet):
         monitoring = self.get_object()
         serializer = self.get_serializer(instance=monitoring) 
         is_valid, message = serializer.validate_docx_context(instance=monitoring)
-        
         if not is_valid:
-            return HttpResponse({"message": message}, status=400)
-
+            return HttpResponse({"message": message}, status=status.HTTP_204_NO_CONTENT)
         headers = self.get_success_headers(serializer.data)
         return response.Response({"monitoring": monitoring.id}, headers=headers)
 
@@ -294,14 +294,21 @@ class ReportViewSet(ProjectBasedViewSet):
         """
         Override get_queryset() to filter on multiple values for 'id'
         """
-        queryset = super(ReportViewSet, self).get_queryset()
-        queryset = queryset.filter(status__gt=prj_models.Report.NOT_ACTIVE)
         id_value = self.request.query_params.get('id', None)
-        if id_value:
-            id_list = id_value.split(',')
-            queryset = queryset.filter(id__in=id_list)
+        is_active = self.request.query_params.get('isActive', None)
+        queryset = super(ReportViewSet, self).get_queryset()
+        qs_filter_args = {}
+        if not self.request.user.is_superuser:
+            qs_filter_args["user"] = self.request.user
+            
+        if is_active:
+            qs_filter_args["status__gt"] = prj_models.Report.NOT_ACTIVE
 
-        return queryset
+        if id_value:
+            qs_filter_args["id__in"] = id_value.split(',')
+
+        filtered_qs = ReportFilter(qs_filter_args, queryset)
+        return filtered_qs.qs
 
     @detail_route(methods=['get'], url_path='project')
     @patch_serializer_class(ProjectSerializer)

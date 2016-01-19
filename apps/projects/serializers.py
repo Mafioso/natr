@@ -7,6 +7,7 @@ from natr.rest_framework.fields import SerializerMoneyField
 from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from grantee.serializers import *
 from documents.serializers import *
+from documents.serializers.misc import ProtectionDocumentSerializer
 from django.core.exceptions import ObjectDoesNotExist
 from documents import models as doc_models
 from grantee import models as grantee_models
@@ -77,7 +78,7 @@ class MilestoneSerializer(
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
-    cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
+    report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
     def update(self, instance, validated_data):
@@ -200,6 +201,7 @@ class ReportSerializer(serializers.ModelSerializer):
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     milestone_number = serializers.IntegerField(read_only=True)
     period = serializers.IntegerField(read_only=True)
+    protection_document = ProtectionDocumentSerializer(required=False)
 
     def create(self, validated_data):
         milestone = validated_data.pop('milestone', None)
@@ -207,8 +209,12 @@ class ReportSerializer(serializers.ModelSerializer):
         return report
 
     def update(self, instance, validated_data):
-        prj = super(ReportSerializer, self).update(instance, validated_data)
-        return prj
+        if 'protection_document' in validated_data:
+            protection_document = validated_data.pop('protection_document')
+            instance.protection_document.update(**protection_document)
+
+        report = super(ReportSerializer, self).update(instance, validated_data)
+        return report
 
     def validate_docx_context(self, instance):
         if not hasattr(instance.project, 'organization_details'):
@@ -260,9 +266,8 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
-    cameral_report = serializers.IntegerField(source="get_cameral_report", read_only=True, required=False)
+    report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
-    final_report = serializers.IntegerField(source="get_final_report", read_only=True, required=False)
 
 
 class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
