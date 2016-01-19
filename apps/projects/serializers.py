@@ -326,6 +326,17 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
         if changed:
             if instance.status == 2:
                 mailing.send_monitoring_plan_agreed(instance)
+            elif instance.status == Monitoring.ON_GRANTEE_APPROVE:
+                mailing.send_monitoring_plan_gp_approve(instance)
+            elif instance.status == Monitoring.GRANTEE_APPROVED:
+                mailing.send_monitoring_plan_approved_by_gp(instance)
+            elif instance.status == Monitoring.ON_REWORK:
+                user = None
+                request = self.context.get("request")
+                if request and hasattr(request, "user"):
+                    user = request.user
+                mailing.send_monitoring_plan_was_send_to_rework(instance, user)
+
         return instance
 
     def validate_docx_context(self, instance):
