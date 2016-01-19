@@ -81,10 +81,11 @@ class ProjectManager(models.Manager):
 
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
-            m = Milestone.objects.build_empty(
-                project=prj, number=i+1)
             if i == prj.number_of_milestones - 1:
                 Report.build_empty(m, report_type=Report.FINAL)
+            else:
+                m = Milestone.objects.build_empty(
+                        project=prj, number=i+1)
 
 
         # 1. create journal
@@ -175,10 +176,11 @@ class ProjectManager(models.Manager):
 
         prj.milestone_set.clear()
         for i in xrange(new_milestones):
-            m = Milestone.objects.build_empty(
-                project=prj, number=i+1)
             if i == new_milestones - 1:
                 Report.build_empty(m, report_type=Report.FINAL)
+            else:
+                m = Milestone.objects.build_empty(
+                    project=prj, number=i+1)
 
         # 4. recreate calendar plan
         if prj.calendar_plan:
@@ -808,7 +810,7 @@ class Corollary(ProjectBasedModel):
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
     STATUS_CAPS = (
-        u'неактивно'
+        u'неактивно',
         u'формирование',
         u'на проверке',
         u'утверждение',
@@ -1104,11 +1106,21 @@ class Milestone(ProjectBasedModel):
             ))
         return Milestone.objects.bulk_create(milestones)
 
-    def get_cameral_report(self):
-        reports = self.reports.filter(type=Report.CAMERAL, status__gt=Report.NOT_ACTIVE)
+    @property
+    def report(self):
+        reports = self.reports
+        
         if not reports:
             return None
-        return reports.last().id
+
+        return reports.last()
+
+    def get_report(self):
+        report = self.report        
+        if not report:
+            return None
+
+        return report.id
 
     def get_final_report(self):
         reports = self.reports.filter(type=Report.FINAL, status__gt=Report.NOT_ACTIVE)
@@ -1124,20 +1136,23 @@ class Milestone(ProjectBasedModel):
         old_val = instance.old_value('status')
         new_val = instance.status
         if new_val == Milestone.TRANCHE_PAY:
-            instance.cameral_report.set_building()
+            instance.report.set_building()
 
 
 @track_data('status')
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
 
-    STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED = range(4)
+    STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED, ON_GRANTEE_APPROVE, GRANTEE_APPROVED, ON_REWORK = range(7)
 
     STATUS_CAPS = (
         u'формирование',
-        u'на согласовании',
-        u'согласован',
-        u'не согласован')
+        u'на согласовании руководством',
+        u'утвержден',
+        u'не согласован',
+        u'на согласовании ГП',
+        u'утвержден ГП',
+        u'на доработке')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
@@ -1211,7 +1226,7 @@ class Monitoring(ProjectBasedModel):
             return
         old_val = instance.old_value('status')
         new_val = instance.status
-        if not new_val == Monitoring.APPROVE or new_val > Monitoring.APPROVE:
+        if not new_val == Monitoring.APPROVE or new_val == Monitoring.APPROVED:
             return
         sed = instance.sed.last()
         if sed and sed.ext_doc_id:
