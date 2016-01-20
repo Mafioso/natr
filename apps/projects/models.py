@@ -159,7 +159,7 @@ class ProjectManager(models.Manager):
             if instance.other_agreements:
                 Document.dml.update_other_agr_doc(instance.other_agreements, **other_agreements)
             else:
-                Document.dml.create_other_agr_doc(**other_agreements)
+                Document.dml.create_other_agr_doc(project=prj, **other_agreements)
 
         if current_milestone_data:
             Milestone.objects.filter(pk=instance.current_milestone.pk
