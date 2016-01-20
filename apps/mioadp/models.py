@@ -42,8 +42,12 @@ class ArticleLink(ProjectBasedModel):
 		if _parser is None:
 			_parser = parsers.default
 
-		data = _parser(soup)
+		try:
+			data = _parser(soup)
+		except Exception as e:
+			data = parsers.default(soup)
+
 		if data.get('source') is None:
-			data['source'] = hostname
+			data['source'] = url.hostname
 		article = ArticleLink.objects.create(project=project, url=link, **data)
 		return article
