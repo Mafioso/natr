@@ -1,3 +1,5 @@
+#
+
 def _extractString(tag):
     return tag.find(string=True)
 
@@ -30,9 +32,12 @@ def nurKz(soap):
 
 def default(soap):
     def getDescriptionUsingMeta():
-        d = soap.find('meta', attrs={'name': 'description'}).get('content')
-        if d:
-            return d;
+        try:
+            d = soap.find('meta', attrs={'name': 'description'}).get('content')
+            if d:
+                return d;
+        except Exception as e:
+            pass
 
         for s in ["twitter:description", "og:description"]:
             try:
@@ -57,15 +62,30 @@ def default(soap):
         for s in ["al:ios:app_name", "al:android:app_name", "twitter:app:name:iphone", "og:site_name"]:
             try:
                 ret = soap.find('meta', attrs={'property': s}).get('content')
-                if ret:
+                if ret is not None:
                     return ret
             except Exception as e:
                 pass
         return None
 
+    def getTitle():
+        funcs = {
+            'getFromTitleTag': lambda: soap.title.string,
+            'getFromHeaderTags': lambda: soap.find(['h1', 'h2', 'h3', 'h4'], string=True).string,
+            'getFromMeta': getTitleUsingMeta
+        }
+        for func_name, func in funcs.iteritems():
+            try:
+                title = func()
+            except Exception as e:
+                title = None
+            if title is not None:
+                return title
+        return None
+
     return {
         'source': getSourceUsingMeta(),
         'date_created': None,
-        'title': getTitleUsingMeta() or soap.find(['h1', 'h2', 'h3', 'h4'], string=True).string or soap.title.string,
+        'title': getTitle(),
         'body': getDescriptionUsingMeta()
     }

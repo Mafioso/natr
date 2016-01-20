@@ -12,13 +12,13 @@ from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagin
 from projects.serializers import *
 from projects import models as prj_models
 from documents.serializers import AttachmentSerializer
+from mioadp.models import ArticleLink
 from mioadp.serializers import ArticleLinkSerializer
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter
 from projects.utils import ExcelReport
 from documents.utils import DocumentPrint
 from natr import mailing
-from mioadp.models import ArticleLink
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
