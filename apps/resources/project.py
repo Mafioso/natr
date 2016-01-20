@@ -258,8 +258,10 @@ class MonitoringViewSet(ProjectBasedViewSet):
     @list_route(methods=['get'], url_path='recent_todos')
     @patch_serializer_class(MonitoringTodoSerializer)
     def get_recent_todos(self, request, *a, **kw):
+        projects = self.request.user.user.projects.all()
+        ms = self.get_queryset().filter(project__in=projects)
         qs = prj_models.MonitoringTodo.objects.filter(
-            monitoring__in=self.get_queryset()).order_by('date_end')
+            monitoring__in=ms).order_by('date_end')
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

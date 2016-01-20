@@ -30,7 +30,8 @@ def get_authenticated_client(url):
     if settings.DEBUG:
         logging.basicConfig(level=logging.INFO)
         logging.getLogger('suds.client').setLevel(logging.DEBUG)
-    client = Client(url=url,
+    client = Client(url=settings.DOCUMENTOLOG_CREATE_WSDL,
+                    location='http://192.168.126.3/ws/workflow/create',
                     username=settings.DOCUMENTOLOG_WSDL_USERNAME,
                     password=settings.DOCUMENTOLOG_WSDL_PASSWORD)
     return client

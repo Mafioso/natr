@@ -1,0 +1,61 @@
+media:
+  image: busybox:ubuntu-14.04
+  command: mkdir -p /uploads/{tmp,media} && /bin/true
+  volumes:
+    - /uploads
+    - /db
+
+rabbitmq:
+  image: rabbitmq:3.5.4-management
+  ports:
+    - "15672:15672"
+    - "5672:5672"
+  environment:
+    - RABBITMQ_DEFAULT_VHOST='/'
+    - RABBITMQ_USER_PASSWD=guest:guest
+
+
+app:
+  image: anguis/natr_app:latest
+  command: python manage.py runserver 0.0.0.0:8000
+  volumes:
+    - .:/natr
+  ports:
+    - "8000:8000"
+  volumes_from:
+    - media
+  links:
+    - rabbitmq
+    - centrifugo
+  environment:
+    - DJANGO_SETTINGS_MODULE=natr.settings.qa
+
+nginx:
+  image: anguis/nginx:1.9.4
+  entrypoint: /sbin/entrypoint.sh
+  ports:
+    - "9000:80"
+  volumes:
+    - ./conf/nginx:/etc/nginx/sites-enabled
+  volumes_from:
+    - media
+  restart: always
+  links:
+    - app
+
+centrifugo:
+  image: fzambia/centrifugo:latest
+  command: centrifugo -c config.json -w --port=8001  --log_level=debug --debug --insecure --address=0.0.0.0
+  ports:
+    - "8001:8001"
+  volumes:
+    - ./conf/centrifugo.json:/centrifugo/config.json   # centrifugo -c config.json -w /opt/centrifugo/web
+
+# celery:
+#   image: anguis/natr_app:latest
+#   working_dir: /natr
+#   command: celery -A natr worker -l debug --concurrency=2
+#   volumes:
+#     - .:/natr
+#   links:
+#     - rabbitmq

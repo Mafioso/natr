@@ -170,7 +170,7 @@ class AttachmentViewSet(viewsets.ModelViewSet):
 
     @list_route(methods=['GET'], url_path='special')
     def special(self, request, *a, **kw):
-        attachments = Attachment.objects.filter(name='SpecialAttachment')
+        attachments = Attachment.objects.filter(name__icontains='specialattachment')
         ser = self.get_serializer(instance=attachments, many=True)
         headers = self.get_success_headers(ser.data)
         return response.Response(ser.data, headers=headers)

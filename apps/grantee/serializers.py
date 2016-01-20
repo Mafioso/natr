@@ -109,6 +109,7 @@ class GranteeSerializer(serializers.ModelSerializer):
 		#XXX:: fix it by making ManyToMany between `grantee` and `organization_details`
 		def hasOrgDetails(project):
 			return hasattr(project, 'organization_details')
+		
 		project = filter(hasOrgDetails, projects)[0]
 		organization = project.organization_details
 
