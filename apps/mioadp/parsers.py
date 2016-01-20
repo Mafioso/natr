@@ -83,9 +83,32 @@ def default(soap):
                 return title
         return None
 
+    def getDescriptionFromParagraphs():
+        paragraph_tags = soap\
+                            .find('p', string=True)\
+                            .find_next_sibling('p', string=True)
+        paragraphs = map(_extractString, paragraph_tags)
+        return '\n'.join(paragraphs)
+
+    def getDescription():
+        funcs = {
+            'getDescriptionUsingMeta': getDescriptionUsingMeta,
+            'getFromParagraphs': getDescriptionFromParagraphs
+        }
+        for func_name, func in funcs.iteritems():
+            try:
+                title = func()
+            except Exception as e:
+                print e
+                title = None
+            if title is not None:
+                return title
+        return None
+
+
     return {
         'source': getSourceUsingMeta(),
         'date_created': None,
         'title': getTitle(),
-        'body': getDescriptionUsingMeta()
+        'body': getDescription()
     }
