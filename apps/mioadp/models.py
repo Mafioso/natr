@@ -21,6 +21,8 @@ class ArticleLink(ProjectBasedModel):
 	title = models.TextField(u'Заголовок', null=True)
 	body = models.TextField(u'Основной текст', null=True)
 
+	date_created = models.DateTimeField(auto_now_add=True, blank=True)
+
 	class Meta:
 		ordering = ('date_created',)
 		relevant_for_permission = True
