@@ -94,3 +94,94 @@ def send_monitoring_plan_agreed(monitoring):
     )
     mail.attach_alternative(u'Здравствуйте!\nВаш план мониторинга был согласован\n\n\n'+get_monitoring_plan(monitoring), "text/html")
     mail.send(fail_silently=True)
+
+def send_monitoring_plan_gp_approve(monitoring):
+    def get_monitoring_plan(monitoring):
+        table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
+        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y'), y.period, y.date_end.strftime('%d %m %Y'), y.report_type),
+                monitoring.todos.all(), u'')
+        return table
+
+    mail_text = u"""Здравствуйте!\nПлан мониторинга был отправлен вам на согласование. \n
+            Для утверждения плана перейдите по ссылке: http://178.88.64.87:8000/#/project/%s/monitoring_plan"""%monitoring.project.id
+
+    mail = EmailMultiAlternatives(
+        u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
+        mail_text, 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, monitoring.project.get_grantees()),
+    )
+    mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
+    mail.send(fail_silently=True)
+
+def send_monitoring_plan_approved_by_gp(monitoring):
+    def get_monitoring_plan(monitoring):
+        table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
+        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y'), y.period, y.date_end.strftime('%d %m %Y'), y.report_type),
+                monitoring.todos.all(), u'')
+        return table
+    mail_text = u"""Здравствуйте!\nПлан мониторинга был согласован грантополучателем. \n
+            Для отправки на согласование руководству перейдите по ссылке: http://178.88.64.87:8000/#/projects/edit/%s/monitoring"""%monitoring.project.id
+    mail = EmailMultiAlternatives(
+        u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
+        mail_text, 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, monitoring.project.assigned_experts.all())
+    )
+    mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
+    mail.send(fail_silently=True) 
+
+def send_monitoring_plan_was_send_to_rework(monitoring, user=None):
+    def get_monitoring_plan(monitoring):
+        table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
+        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y'), y.period, y.date_end.strftime('%d %m %Y'), y.report_type),
+                monitoring.todos.all(), u'')
+        return table
+    user_info = "План мониторинга был отправлен на доработку"
+    if user:
+        user_type = ""
+        if hasattr(user, 'user'):
+            user_type = u"Руководитель"
+        elif hasattr(user, 'grantee'):
+            user_type = u"Грантополучатель"
+
+        user_info = user_type + u" " +user.get_full_name()+u" отправил(а) план мониторинга на доработку."
+
+    mail_text = u"""Здравствуйте!\n%s. \n
+            Для редактирования плана перейдите по ссылке: http://178.88.64.87:8000/#/project/%s/monitoring_plan"""%(user_info, monitoring.project.id)
+    mail = EmailMultiAlternatives(
+        u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
+        mail_text, 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, monitoring.project.assigned_experts.all())
+    )
+    mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
+    mail.send(fail_silently=True)
+
+def send_corollary_approved(corollary):
+    send_mail(
+        u'Заключение по проекту \"%s\" утверждено.' % corollary.project.name,
+        u"""Здравствуйте!\nЗаключение по проекту \"%s\" утверждено.""" % corollary.project.name, 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
+        fail_silently=True
+    )
+
+def send_corollary_to_rework(corollary, user=None):
+    message_text = u"Заключение, по проекту \"%s\", было отправлено на доработку" % corollary.project.name
+    if user:
+        user_type = ""
+        if hasattr(user, 'user'):
+            user_type = u"Руководитель"
+        elif hasattr(user, 'grantee'):
+            user_type = u"Грантополучатель"
+
+        message_text = user_type + u" " +user.get_full_name()+u" отправил(а) заключение, по проекту \"%s\", на доработку."%corollary.project.name  
+
+    send_mail(
+        u'Заключение по проекту \"%s\" было отправлено на доработку.' % corollary.project.name,
+        message_text, 
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
+        fail_silently=True
+    )

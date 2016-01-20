@@ -5,12 +5,11 @@ import grantee.models as models
 import projects.models as prj_models
 import auth2.models as auth2_models
 from auth2.serializers import AccountSerializer
-from natr.rest_framework.serializers import ContactDetailsSerializer
+from natr.rest_framework.serializers import ContactDetailsSerializer, AuthorizedToInteractGranteeSerializer, ProjectNameSerializer
 
 __all__ = (
 	'OrganizationSerializer',
 	'GranteeSerializer',
-	'ContactDetailsSerializer',
 )
 
 
@@ -18,14 +17,6 @@ class ShareHolderSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = models.ShareHolder
-		exclude = ('organization',)
-
-
-
-class AuthorizedToInteractGranteeSerializer(serializers.ModelSerializer):
-
-	class Meta:
-		model = models.AuthorizedToInteractGrantee
 		exclude = ('organization',)
 
 
@@ -97,25 +88,28 @@ class GranteeSerializer(serializers.ModelSerializer):
 
 	account = AccountSerializer(required=False)
 	contact_details = ContactDetailsSerializer(required=False)
-	project = serializers.IntegerField(required=False)
+	projects = ProjectNameSerializer(required=False, many=True)
 
 	class Meta:
 		model = models.Grantee
 
-
-	def validate_project(self, value):
+	def validate_projects(self, value):
 		if not value:
 			return value
 		try:
-			return prj_models.Project.objects.get(pk=value)
+			return prj_models.Project.objects.filter(pk__in=map(lambda x: x.get('id'), value))
 		except prj_models.Project.DoesNotExist:
 			raise serializers.ValidationError(u"идентификатор проекта неверный")
 
 	def create(self, validated_data):
 		account_data = validated_data.pop('account', None)
 		contact_details_data = validated_data.pop('contact_details', None)
-		project = validated_data.pop('project', None)
+		projects = validated_data.pop('projects', None)
 
+		#XXX:: fix it by making ManyToMany between `grantee` and `organization_details`
+		def hasOrgDetails(project):
+			return hasattr(project, 'organization_details')
+		project = filter(hasOrgDetails, projects)[0]
 		organization = project.organization_details
 
 		name = contact_details_data['full_name'].split()
@@ -130,7 +124,7 @@ class GranteeSerializer(serializers.ModelSerializer):
 			last_name=last_name,
 			organization=organization,
 			**account_data)
-		grantee_user.projects.add(project)
+		grantee_user.projects.add(*projects)
 
 		if contact_details_data:
 			models.ContactDetails.objects.create(grantee=grantee_user, **contact_details_data)

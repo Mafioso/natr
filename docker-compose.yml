@@ -17,7 +17,7 @@ rabbitmq:
 
 app:
   image: anguis/natr_app:latest
-  command: python manage.py runserver 0.0.0.0:8000
+  command: uwsgi --ini uwsgi.ini --static-map /static=static
   volumes:
     - .:/natr
   ports:
@@ -27,6 +27,8 @@ app:
   links:
     - rabbitmq
     - centrifugo
+  environment:
+    - DJANGO_SETTINGS_MODULE=natr.settings.dev
 
 nginx:
   image: anguis/nginx:1.9.4

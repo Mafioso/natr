@@ -1,9 +1,11 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from rest_framework import serializers
 import auth2.models as models
 import grantee.models as grantee_models
 import projects.models as projects_models
 from django.core.exceptions import ObjectDoesNotExist
-from natr.rest_framework.serializers import ContactDetailsSerializer
+from natr.rest_framework.serializers import ContactDetailsSerializer, ProjectNameSerializer
 
 __all__ = (
 	'AccountSerializer',
@@ -67,11 +69,20 @@ class NatrUserSerializer(serializers.ModelSerializer):
 
 	account = AccountSerializer(required=False)
 	contact_details = ContactDetailsSerializer(required=False)
-	projects = serializers.PrimaryKeyRelatedField(
-        queryset=projects_models.Project.objects.all(), required=False, many=True)
+	# projects = serializers.PrimaryKeyRelatedField(
+    #     queryset=projects_models.Project.objects.all(), required=False, many=True)
+	projects = ProjectNameSerializer(required=False, many=True)
 
 	class Meta:
 		model = models.NatrUser
+
+	def validate_projects(self, value):
+		if not value:
+			return value
+		try:
+			return projects_models.Project.objects.filter(pk__in=map(lambda x: x.get('id'), value))
+		except projects_models.Project.DoesNotExist:
+			raise serializers.ValidationError(u"идентификатор проекта неверный")
 
 	def create(self, validated_data):
 		account_data = validated_data.pop('account', None)
