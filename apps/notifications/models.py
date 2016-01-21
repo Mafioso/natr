@@ -43,12 +43,19 @@ class Notification(models.Model):
 	context_id = models.PositiveIntegerField(null=True)
 
 	TRANSH_PAY = 1
+	MONITORING_TODO_EVENT = 2
 
 	MILESTONE_NOTIFS = (
 		TRANSH_PAY,
 	)
 	MILESTONE_NOTIFS_CAPS = (
-		u'оплата транша'
+		u'оплата транша',
+	)
+	MONITORING_NOTIFS = (
+		MONITORING_TODO_EVENT,
+	)
+	MONITORING_NOTIFS_CAPS = (
+		u'мероприятия мониторина',
 	)
 
 	NOTIF_TYPES_CAPS = zip(
@@ -108,6 +115,12 @@ class Notification(models.Model):
 		"""Hook property that is called by corresponding serializer.
 		Caution: Do not use this method."""
 		return self.context_id
+
+
+	@classmethod
+	def build(cls, tp, context):
+		return Notification.objects.create(
+			notif_type=tp, context=context)
 
 
 class NotificationSubscribtionManager(models.Manager):

@@ -1,32 +1,30 @@
 from django.db import models
 from django.forms.models import model_to_dict
 
-
 class ProjectQuerySet(models.QuerySet):
 
-	def by_project(self, project):
-		if isinstance(project, int):
-			return self.filter(project__id=project)
-		return self.filter(project=project)
+    def by_project(self, project):
+        if isinstance(project, int):
+            return self.filter(project__id=project)
+        return self.filter(project=project)
 
-	def build_empty(self, project, **kwargs):
-		obj = self.model(project=project, **kwargs)
-		obj.save()
-		return obj
+    def build_empty(self, project, **kwargs):
+        obj = self.model(project=project, **kwargs)
+        obj.save()
+        return obj
 
 
 class ProjectBasedModel(models.Model):
 
-	class Meta:
-		abstract = True
+    class Meta:
+        abstract = True
 
-	project = models.ForeignKey('projects.Project', null=True)
+    project = models.ForeignKey('projects.Project', null=True)
 
-	objects = ProjectQuerySet.as_manager()
+    objects = ProjectQuerySet.as_manager()
 
-
-	def get_project(self):
-		return self.project
+    def get_project(self):
+        return self.project
 
 
 class ModelDiffMixin(object):
@@ -70,5 +68,5 @@ class ModelDiffMixin(object):
     @property
     def _dict(self):
         return model_to_dict(
-        	self,
-        	fields=[field.name for field in self._meta.fields])
+            self,
+            fields=[field.name for field in self._meta.fields])

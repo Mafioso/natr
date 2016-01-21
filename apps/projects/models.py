@@ -1161,6 +1161,7 @@ class Monitoring(ProjectBasedModel):
     sed = GenericRelation(SEDEntity, content_type_field='context_type')
     attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
     
+    UPCOMING_RNG = (-1000, +3)
 
     class Meta:
         filter_by_project = 'project__in'
@@ -1239,6 +1240,17 @@ class Monitoring(ProjectBasedModel):
             attachments=[instance.attachment])
         instance.save()
 
+    @classmethod
+    def get_upcoming_events(cls):
+        r"""Return all upcoming events"""
+        dt = timezone.now()
+        left_mrg = utils.begin_of(
+            dt + datetime.timedelta(days=cls.UPCOMING_RNG[0]))
+        right_mrg = utils.end_of(
+            dt + datetime.timedelta(days=cls.UPCOMING_RNG[1]))
+        return MonitoringTodo.objects.filter(
+            date_end__range=(left_mrg, right_mrg))
+
 
 class MonitoringTodo(ProjectBasedModel):
     """Мероприятие по мониторингу"""
@@ -1276,6 +1288,23 @@ class MonitoringTodo(ProjectBasedModel):
                 self.period = period
         super(self.__class__, self).save(*args, **kwargs)
 
+    def notification(self, cttype, ctid, notif_type):
+        """Prepare notification data to send to client (user agent, mobile)."""
+        assert notif_type in Notification.MONITORING_NOTIFS, "Expected MILESTONE_NOTIFS"
+        data = {
+            'event_name': self.event_name,
+            'date_start': self.date_start,
+            'date_end': self.date_end,
+            'period': self.period,
+            'report_type': self.report_type,
+            'project': self.project.id,
+            'project_name': self.project.name,
+            'monitoring': self.monitoring_id
+        }
+        return data
+
+    def notification_subscribers(self):
+        return [exp.account for exp in self.project.assigned_experts.all()]
 
 
 class Comment(models.Model):

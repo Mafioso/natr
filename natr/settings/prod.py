@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from .common import *
 
 
@@ -7,7 +8,6 @@ HOST = '178.88.64.87'
 DOCKER_HOST = '178.88.64.87'
 CENTRIFUGO_PORT = os.getenv('CENTRIFUGO_PORT_8001_TCP_PORT', 8001)
 CENTRIFUGE_EXTERNAL_ADDRESS = 'http://{}:{}'.format(DOCKER_HOST, CENTRIFUGO_PORT)
-
 
 DOCUMENTOLOG_URL = 'http://portal.natd.gov.kz'
 DOCUMENTOLOG_CREATE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/create?wsdl'
@@ -30,4 +30,5 @@ DOCUMENTOLOG_TOKEN = '12345678QAZxswe'
 
 CORS_ORIGIN_WHITELIST = (
     'portal.natd.gov.kz',
+    '195.12.114.15'
 )
