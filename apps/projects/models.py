@@ -1161,7 +1161,7 @@ class Monitoring(ProjectBasedModel):
     sed = GenericRelation(SEDEntity, content_type_field='context_type')
     attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
     
-    UPCOMING_RNG = (-3, +3)
+    UPCOMING_RNG = (-1000, +3)
 
     class Meta:
         filter_by_project = 'project__in'
