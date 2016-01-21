@@ -16,7 +16,7 @@ from documents.utils import store_from_temp
 class Command(BaseCommand):
 
     help = (
-         u'Create empty FactMilestoneCostRow with empty GPDocuments for UseOfBudgetDocumentItems with empty fields.'
+         u'Create Fake files'
     )
 
     FAKE_DIR = os.path.join(os.path.dirname(__file__), 'fake_files')
