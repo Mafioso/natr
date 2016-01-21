@@ -86,7 +86,7 @@ def default(soap):
     def getDescriptionFromParagraphs():
         paragraph_tags = soap\
                             .find('p', string=True)\
-                            .find_next_sibling('p', string=True)
+                            .find_next_siblings('p', string=True, recursive=False, limit=3)
         paragraphs = map(_extractString, paragraph_tags)
         return '\n'.join(paragraphs)
 
