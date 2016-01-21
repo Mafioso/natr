@@ -60,11 +60,13 @@ class ProjectManager(models.Manager):
         prj = Project.objects.create(**data)
         prj.save()
 
-        if organization_details:
-            Organization.objects.create_new(organization_details, project=prj)
+        # # if organization_details:
+        # now is required by default
+        Organization.objects.create_new(organization_details, project=prj)
 
-        if funding_type_data:
-            prj.funding_type = FundingType.objects.create(**funding_type_data)
+        # # if funding_type_data:
+        # now is required by default
+        prj.funding_type = FundingType.objects.create(**funding_type_data)
 
         if statement_data:
             Document.dml.create_statement(project=prj, **statement_data)
@@ -572,7 +574,7 @@ class Report(ProjectBasedModel):
         'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
         verbose_name=u'Отчет об использовании целевых бюджетных средств')
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
-    results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)    
+    results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)
     protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
 
     def get_status_cap(self):
@@ -697,7 +699,7 @@ class Report(ProjectBasedModel):
                     else:
                         sub_row = kwargs['doc'].tables[1].add_row()
                         sub_row.cells[2].text = utils.get_stringed_value(cost.name)
-                        sub_row.cells[8].text = utils.get_stringed_value(cost.costs.amount)  
+                        sub_row.cells[8].text = utils.get_stringed_value(cost.costs.amount)
 
                     if cost.gp_docs.count() > 0:
                         first_gp_doc = True
@@ -761,7 +763,7 @@ class Report(ProjectBasedModel):
                         a = kwargs['doc'].tables[1].cell(merge_cell['row'], merge_cell['col'])
                         b = kwargs['doc'].tables[1].cell(merge_cell['row'] + merge_cell['rowspan'] - 1, merge_cell['col'])
                         A = a.merge(b)
-                    except: 
+                    except:
                         print "ERROR: OUT OF LIST", merge_cell
 
             row = kwargs['doc'].tables[2].add_row()
@@ -1109,14 +1111,14 @@ class Milestone(ProjectBasedModel):
     @property
     def report(self):
         reports = self.reports
-        
+
         if not reports:
             return None
 
         return reports.last()
 
     def get_report(self):
-        report = self.report        
+        report = self.report
         if not report:
             return None
 
@@ -1160,7 +1162,7 @@ class Monitoring(ProjectBasedModel):
     approved_date = MonitorField(monitor='status', when=[APPROVED])
     sed = GenericRelation(SEDEntity, content_type_field='context_type')
     attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
-    
+
     UPCOMING_RNG = (-1000, +3)
 
     class Meta:
@@ -1376,4 +1378,3 @@ post_save.connect(Report.post_save, sender=Report)
 post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)
 post_save.connect(Monitoring.post_save, sender=Monitoring)
-
