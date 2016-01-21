@@ -258,7 +258,10 @@ class MonitoringViewSet(ProjectBasedViewSet):
     @list_route(methods=['get'], url_path='recent_todos')
     @patch_serializer_class(MonitoringTodoSerializer)
     def get_recent_todos(self, request, *a, **kw):
-        projects = self.request.user.user.projects.all()
+        if hasattr(self.request.user, 'user'):
+            projects = self.request.user.user.projects.all()
+        else:
+            projects = self.request.user.grantee.projects.all()
         ms = self.get_queryset().filter(project__in=projects)
         qs = prj_models.MonitoringTodo.objects.filter(
             monitoring__in=ms).order_by('date_end')

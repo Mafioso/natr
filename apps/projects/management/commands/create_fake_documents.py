@@ -31,12 +31,14 @@ class Command(BaseCommand):
             'ProjectRegistry.xlsx',
             'Risks.xlsx'
         ])
+        Attachment.objects.filter(name__icontains=self.FAKE_ATTACHMENT_NAME).delete()
 
         for name in names:
             with open(os.path.join(self.FAKE_DIR, name)) as fd:
+                print os.path.join(self.FAKE_DIR, name)
                 buf = StringIO.StringIO()
                 buf.seek(0)
-                shutil.copyfileobj(buf, fd)
+                shutil.copyfileobj(fd, buf)
                 attachmend_dict = store_from_temp(buf, self.FAKE_ATTACHMENT_NAME + "_" + name)
                 Attachment.objects.create(**attachmend_dict)
                 buf.close()
