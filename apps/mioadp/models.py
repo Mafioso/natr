@@ -13,7 +13,7 @@ import parsers
 
 
 class ArticleLink(ProjectBasedModel):
-	"""Превью по ссылке публикации"""
+	"""МИОАДП: Ссылки на публикации"""
 
 	url = models.CharField(u'Ссылка', max_length=2048)
 	source = models.CharField(u'Источник (TengriNews.kz, ..)', max_length=300)
@@ -30,11 +30,17 @@ class ArticleLink(ProjectBasedModel):
 
 	@classmethod
 	def create_from_link(cls, project, link):
-		url = urlparse(link)
-		hostname = url.hostname.split('.')[-2] # 'finance.nur.kz' -> 'nur'
+		try:
+			url = urlparse(link)
+			hostname = url.hostname.split('.')[-2] # 'finance.nur.kz' -> 'nur
+		except Exception as e:
+			return None
 
-		html = urlopen(url.geturl())
-		soup = BeautifulSoup(html.read(), "lxml")
+		try:
+			html = urlopen(url.geturl())
+			soup = BeautifulSoup(html.read(), "lxml")
+		except Exception as e:
+			return None
 
 		_parser = None
 		if hostname == 'tengrinews':

@@ -171,6 +171,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if request.method == 'POST':
             url = request.data.get('url', None)
             article = ArticleLink.create_from_link(project, url)
+            if article is None:
+                return response.Response(None, status=status.HTTP_400_BAD_REQUEST)
 
             serializer = self.get_serializer(article)
             return response.Response(serializer.data)
