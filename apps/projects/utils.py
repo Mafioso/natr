@@ -258,7 +258,7 @@ class ExcelReport:
                 agreement_date = project.aggreement.document.date_created.strftime("%d/%m/%y")
             else:
                 agreement_date = ""
-            ws = self.insert_into_cell(ws, 'B', row, str(agreement_number) + ' от ' + agreement_date)
+            ws = self.insert_into_cell(ws, 'B', row, str(agreement_number) + ' ot ' + agreement_date)
             try:
                 ws = self.insert_into_cell(ws, 'C', row, project.organization_details.name)
             except ObjectDoesNotExist:
