@@ -254,7 +254,7 @@ class ExcelReport:
                 agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
             else:
                 agreement_number = 0
-            if project.aggreement.hasattr('document') and project.aggreement.document.date_created:
+            if hasattr(project.aggreement, 'document') and project.aggreement.document.date_created:
                 agreement_date = project.aggreement.document.date_created.strftime("%d/%m/%y")
             else:
                 agreement_date = ""
