@@ -40,13 +40,12 @@ class Command(BaseCommand):
                 report = project.report_set.last()
                 try:
                     report = project.report_set.get(report_type=2)
-                    new_report = Report.build_empty(m, report_type=2)
                 except:
                     report = Report.build_empty(m, report_type=2)
                     print "INFO: Final Report(id: %s) was build Milestone(id: %s)"%(report.id, m.id)
                 else:
-                    report.type = 0
-                    print "INFO: Final Report(id: %s) type changed"%(report.id)
+                    report.milestone = m
+                    print "INFO: Report(id: %s) changed"%(report.id)
                 finally:
                     report.save()
 
