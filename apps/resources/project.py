@@ -238,8 +238,11 @@ class MonitoringTodoViewSet(ProjectBasedViewSet):
     pagination_class = LargeResultsSetPagination
 
     def list(self, request, monitoring_pk=None):
+        milestone_id = request.GET.get('milestone_id', None)
         qs = self.filter_queryset(
             self.get_queryset().filter(monitoring_id=monitoring_pk))
+        if milestone_id:
+            qs = qs.filter(event_type__name=prj_models.MonitoringEventType.DEFAULT[1])
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

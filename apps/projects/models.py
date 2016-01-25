@@ -1191,6 +1191,10 @@ class Monitoring(ProjectBasedModel):
             if 'id' in item:
                 item['monitoring'] = self
                 item['project'] = self.project
+                try:
+                    item['event_type'] = MonitoringEventType.objects.get(id=item.get('event_type', None))
+                except:
+                    item.pop('event_type')
                 monitoring_todo = MonitoringTodo(id=item.pop('id'), **item)
             else:
                 item['project'] = self.project
@@ -1261,10 +1265,20 @@ class MonitoringTodo(ProjectBasedModel):
         ordering = ('date_start', 'date_end')
         filter_by_project = 'monitoring__project__in'
 
+    
+    STATUSES = NOT_STARTED, STARTED, AKT_BUILDING, COMPLETED = range(4)
+    STATUS_CAPS = (
+        u'не начато',
+        u'начато',
+        u'формирование акта',
+        u'завершено')
+    STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
+
     monitoring = models.ForeignKey(
         'Monitoring', null=True, verbose_name=u'мониторинг', related_name='todos')
 
-    event_name = models.CharField(u'мероприятие мониторинга', max_length=2048, null=True)
+    status = models.IntegerField(default=NOT_STARTED, choices=STATUS_OPTS)
+    event_type = models.ForeignKey('projects.MonitoringEventType', null=True, blank=True)
     date_start = models.DateTimeField(u'дата начала', null=True)
     date_end = models.DateTimeField(u'дата завершения', null=True)
     period = models.IntegerField(u'период (дней)', null=True)   # автозаполняемое
@@ -1277,6 +1291,19 @@ class MonitoringTodo(ProjectBasedModel):
             now = timezone.now()
             return (self.date_end - now).days
         return None
+
+    @property
+    def event_name(self):
+        return self.event_type.name or None
+
+    @event_name.setter
+    def event_name(self, value):
+        event_type, created = MonitoringEventType.objects.get_or_create(name=value)
+        self.event_type = event_type
+        self.save()
+
+    def get_status_cap(self):
+        return MonitoringTodo.STATUS_CAPS[self.status]
 
     def save(self, *args, **kwargs):
         if self.date_start and self.date_end:
@@ -1308,6 +1335,22 @@ class MonitoringTodo(ProjectBasedModel):
     def notification_subscribers(self):
         return [exp.account for exp in self.project.assigned_experts.all()]
 
+class MonitoringEventType(models.Model):
+    u"""
+        Тип мониторинга: Камеральный, Выездной, Постгрантовый
+    """
+    DEFAULT = (
+        u'Камеральный мониторинг', 
+        u'Выездной мониторинг',
+        u'Постгрантовый мониторинг'
+    )
+
+    name = models.CharField(u'мероприятие мониторинга', max_length=255, null=True, blank=True)
+
+    @classmethod
+    def create_default(cls):
+        MonitoringEventType.objects.all().delete()
+        return [MonitoringEventType.objects.create(name=m_type) for m_type in cls.DEFAULT]
 
 class Comment(models.Model):
     """
