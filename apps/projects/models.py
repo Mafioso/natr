@@ -84,11 +84,13 @@ class ProjectManager(models.Manager):
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
             if i == prj.number_of_milestones - 1:
+                m = Milestone.objects.build_empty(
+                        project=prj, number=i+1)
                 Report.build_empty(m, report_type=Report.FINAL)
             else:
                 m = Milestone.objects.build_empty(
                         project=prj, number=i+1)
-
+                Report.build_empty(m)
 
         # 1. create journal
         prj_journal = Journal.objects.build_empty(project=prj)
@@ -179,10 +181,13 @@ class ProjectManager(models.Manager):
         prj.milestone_set.clear()
         for i in xrange(new_milestones):
             if i == new_milestones - 1:
+                m = Milestone.objects.build_empty(
+                    project=prj, number=i+1)
                 Report.build_empty(m, report_type=Report.FINAL)
             else:
                 m = Milestone.objects.build_empty(
                     project=prj, number=i+1)
+                Report.build_empty(m)
 
         # 4. recreate calendar plan
         if prj.calendar_plan:
@@ -1361,19 +1366,12 @@ class RiskDefinition(models.Model):
     def indicator(self):
         return self.probability * self.impact
 
-
-def on_milestone_create(sender, instance, created=False, **kwargs):
-    if not created:
-        return
-    Report.build_empty(instance)
-
 def on_report_created(sender, instance, created=False, **kwargs):
     if not created:
         return
     ProtectionDocument.build_empty(instance.project)
 
 post_save.connect(on_report_created, sender=Report)
-post_save.connect(on_milestone_create, sender=Milestone)
 post_save.connect(Report.post_save, sender=Report)
 post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)
