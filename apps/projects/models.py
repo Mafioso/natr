@@ -527,6 +527,10 @@ class FundingType(models.Model):
     def __unicode__(self):
         return self.name
 
+    @property 
+    def name_cap(self):
+        return self.get_name_display()
+
 
 @track_data('status')
 class Report(ProjectBasedModel):
@@ -1308,6 +1312,13 @@ class MonitoringTodo(ProjectBasedModel):
         self.event_type = event_type
         self.save()
 
+    @property
+    def act(self):
+        if self.acts:
+            return self.acts.first().id
+
+        return None
+
     def get_status_cap(self):
         return MonitoringTodo.STATUS_CAPS[self.status]
 
@@ -1409,6 +1420,38 @@ class RiskDefinition(models.Model):
     @property
     def indicator(self):
         return self.probability * self.impact
+
+
+class Act(ProjectBasedModel):
+    """
+        Акт выездного мониторинга
+    """
+    class Meta:
+        verbose_name = u"Акт выездного мониторинга"
+
+    monitoring_todo = models.ForeignKey('projects.MonitoringTodo', related_name='acts', null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    date_edited = models.DateTimeField(auto_now=True, blank=True)
+    conclusion = models.TextField(u'Вывод', null=True, blank=True)
+
+    @classmethod
+    def build_empty(cls, project):
+        obj = cls(project=project)
+        obj.save()
+        return obj
+
+class MonitoringOfContractPerformance(models.Model):
+    """
+        Мониторинг хода исполнения договора
+    """
+    class Meta:
+        verbose_name = u"Мониторинг хода исполнения договора"
+
+    act = models.ForeignKey('projects.Act', related_name="contract_performance")
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    date_edited = models.DateTimeField(auto_now=True, blank=True)
+    subject = models.CharField(u"Предмет выездного", max_length=1024, null=True, blank=True)
+    results = models.CharField(u"Результат выездного мониторинга", max_length=1024, null=True, blank=True)
 
 def on_report_created(sender, instance, created=False, **kwargs):
     if not created:

@@ -510,3 +510,9 @@ class RiskDefinitionViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Comment.objects.all()
     serializer_class = CommentSerializer
+
+
+class ActViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.Act.objects.all()
+    serializer_class = ActSerializer
+
