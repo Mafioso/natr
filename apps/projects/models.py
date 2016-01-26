@@ -198,7 +198,7 @@ class ProjectManager(models.Manager):
         # 5. recreate cost
         if prj.cost_document:
             prj.cost_document.delete()
-        CostDocument.build_empty(project=prj)
+        prj_cd = CostDocument.build_empty(project=prj)
 
         return prj
 
@@ -266,14 +266,14 @@ class Project(models.Model):
         return self.milestone_set.get(
             number=self.current_milestone.number)
 
-    @cached_property
+    @property
     def calendar_plan(self):
         try:
             return CalendarPlanDocument.objects.get(document__project=self)
         except ObjectDoesNotExist:
             return None
 
-    @cached_property
+    @property
     def cost_document(self):
         try:
             return CostDocument.objects.get(document__project=self)
