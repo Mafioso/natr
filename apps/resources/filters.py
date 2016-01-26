@@ -3,6 +3,8 @@ from django.db.models import Q
 from natr.rest_framework.filters import IntegerListFilter
 from projects import models
 from documents import models as doc_models
+from auth2 import models as auth2_models
+from grantee import models as grantee_models
 
 
 class ListOfIdFilter(django_filters.FilterSet):
@@ -84,3 +86,39 @@ class AttachmentFilter(ListOfIdFilter):
 
 	class Meta:
 		model = doc_models.Attachment
+
+
+
+class NatrUserFilter(django_filters.FilterSet):
+	search = django_filters.MethodFilter()
+
+	class Meta:
+		model = auth2_models.NatrUser
+
+	def filter_search(self, queryset, value):
+		return queryset.filter(
+			Q(account__email__icontains=value) |
+			Q(account__first_name__icontains=value) |
+			Q(account__last_name__icontains=value) |
+			Q(contact_details__full_name__icontains=value) |
+			Q(contact_details__phone_number__icontains=value) |
+			Q(contact_details__email__icontains=value)
+		)
+
+
+
+class GranteeUserFilter(django_filters.FilterSet):
+	search = django_filters.MethodFilter()
+
+	class Meta:
+		model = grantee_models.Grantee
+
+	def filter_search(self, queryset, value):
+		return queryset.filter(
+			Q(account__email__icontains=value) |
+			Q(account__first_name__icontains=value) |
+			Q(account__last_name__icontains=value) |
+			Q(contact_details__full_name__icontains=value) |
+			Q(contact_details__phone_number__icontains=value) |
+			Q(contact_details__email__icontains=value)
+		)

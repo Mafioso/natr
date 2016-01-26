@@ -5,14 +5,17 @@ from natr.rest_framework.policies import AdminPolicy, PermissionDefinition
 from auth2 import serializers, models
 from projects.models import Monitoring, MonitoringTodo
 from projects.serializers import MonitoringTodoSerializer
-
+from .filters import NatrUserFilter
 
 class NatrUserViewSet(viewsets.ModelViewSet):
 
-	queryset = models.NatrUser.objects.all().select_related('account', 'contact_details').prefetch_related('projects', 'account__user_permissions', 'account__groups')
+	queryset = models.NatrUser.objects.all()\
+					.select_related('account', 'contact_details')\
+					.prefetch_related('projects', 'account__user_permissions', 'account__groups')
 	serializer_class = serializers.NatrUserSerializer
+	filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
+	filter_class = NatrUserFilter
 	permission_classes = (PermissionDefinition, )
-	pagination_class = None
 
 	@detail_route(methods=['POST'], url_path='apply_permissions')
 	def apply_permissions(self, request, *a, **kw):
