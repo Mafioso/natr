@@ -33,8 +33,8 @@ class JournalActivity(ProjectBasedModel):
 	date_created = models.DateTimeField(u'Дата', null=True)
 	activity_type = models.IntegerField(
 		u'Вид взаимодействия', choices=ACTIVITY_TYPE_OPTS, default=OFFICIAL_LETTER)
-	subject_name = models.CharField(u'Вопрос (тема)', max_length=2048, null=True)
-	result = models.CharField(u'Результат', max_length=2048, null=True)
+	subject_name = models.TextField(u'Вопрос (тема)', null=True)
+	result = models.TextField(u'Результат', null=True)
 	attachments = models.ManyToManyField(
 		'documents.Attachment', verbose_name=u'Приложения', blank=True)
 

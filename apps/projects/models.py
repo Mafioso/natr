@@ -222,10 +222,10 @@ class Project(models.Model):
         u'низкий',
         u'средний',
         u'высокий')
-    name = models.CharField(max_length=2048, null=True, blank=True)
-    description = models.CharField(max_length=1024, null=True, blank=True)
-    innovation = models.CharField(u'Инновационность', max_length=1024, null=True, blank=True)
-    grant_goal = models.CharField(u'Цель гранта', max_length=1024, null=True, blank=True)
+    name = models.TextField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    innovation = models.TextField(u'Инновационность', null=True, blank=True)
+    grant_goal = models.TextField(u'Цель гранта', null=True, blank=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     total_month = models.IntegerField(u'Срок реализации проекта (месяцы)', default=24)
@@ -493,7 +493,7 @@ class ProjectLogEntry(ProjectBasedModel):
 
     milestone = models.ForeignKey('Milestone')
     type = models.CharField(max_length=100, null=True, blank=True, choices=GRANT_TYPES_OPTIONS)
-    text = models.CharField(max_length=1000, null=True, blank=True)
+    text = models.TextField(null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
 
 
@@ -1005,7 +1005,7 @@ class Milestone(ProjectBasedModel):
     planned_fundings = MoneyField(u'Сумма оплаты планируемая по календарному плану',
         max_digits=20, decimal_places=2, default_currency='KZT',
         null=True, blank=True)
-    conclusion = models.CharField(max_length=1024, null=True, blank=True)
+    conclusion = models.TextField(null=True, blank=True)
 
     def notification(self, cttype, ctid, notif_type):
         """Prepare notification data to send to client (user agent, mobile)."""
@@ -1271,7 +1271,7 @@ class MonitoringTodo(ProjectBasedModel):
         # ordering = ('date_start', 'date_end')
         filter_by_project = 'monitoring__project__in'
 
-    
+
     STATUSES = NOT_STARTED, STARTED, AKT_BUILDING, COMPLETED = range(4)
     STATUS_CAPS = (
         u'не начато',
@@ -1289,7 +1289,7 @@ class MonitoringTodo(ProjectBasedModel):
     date_end = models.DateTimeField(u'дата завершения', null=True)
     period = models.IntegerField(u'период (дней)', null=True)   # автозаполняемое
 
-    report_type = models.CharField(u'форма завершения', null=True, max_length=2048)
+    report_type = models.TextField(u'форма завершения', null=True)
 
     @property
     def remaining_days(self):
@@ -1346,7 +1346,7 @@ class MonitoringEventType(models.Model):
         Тип мониторинга: Камеральный, Выездной, Постгрантовый
     """
     DEFAULT = (
-        u'Камеральный мониторинг', 
+        u'Камеральный мониторинг',
         u'Выездной мониторинг',
         u'Постгрантовый мониторинг'
     )
@@ -1395,10 +1395,10 @@ class RiskDefinition(models.Model):
     category = models.ForeignKey(RiskCategory)
     code = models.IntegerField(null=True, blank=True)
     title = models.CharField(max_length=500, null=True, blank=True)
-    reasons = models.CharField(max_length=1000, null=True, blank=True)
-    consequences = models.CharField(max_length=1000, null=True, blank=True)
-    events = models.CharField(max_length=1000, null=True, blank=True)
-    event_status = models.CharField(max_length=1000, null=True, blank=True)
+    reasons = models.TextField(null=True, blank=True)
+    consequences = models.TextField(null=True, blank=True)
+    events = models.TextField(null=True, blank=True)
+    event_status = models.TextField(null=True, blank=True)
     probability  = models.IntegerField(null=True, blank=True)
     impact = models.IntegerField(null=True, blank=True)
     owner = models.CharField(max_length=500, null=True, blank=True)

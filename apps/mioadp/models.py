@@ -15,7 +15,7 @@ import parsers
 class ArticleLink(ProjectBasedModel):
 	"""МИОАДП: Ссылки на публикации"""
 
-	url = models.CharField(u'Ссылка', max_length=2048)
+	url = models.TextField(u'Ссылка')
 	source = models.CharField(u'Источник (TengriNews.kz, ..)', max_length=300)
 	date_created = models.DateTimeField(u'Дата', null=True)
 	title = models.TextField(u'Заголовок', null=True)

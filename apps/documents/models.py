@@ -39,7 +39,7 @@ class DocumentDMLManager(models.Manager):
 
     def update_agreement(self, instance, **kwargs):
         return self.update_doc_with_relations(instance, **kwargs)
-        
+
     def update_statement(self, instance, **kwargs):
         return self.update_doc_with_relations(instance, **kwargs)
 
@@ -83,7 +83,7 @@ class DocumentDMLManager(models.Manager):
 
     def update_other_agr_doc(self, instance, **kwargs):
         items = kwargs.pop('items', [])
-        
+
         instance = self.update_doc_with_relations(instance, **kwargs)
 
         item_obj_map = {item.id: item for item in instance.items.all()}
@@ -135,8 +135,8 @@ class DocumentDMLManager(models.Manager):
             ProjectTeamMember.objects.update_or_create(
                 pk=team_member_kw.get('id', None),
                 defaults=team_member_kw)
-        
-            
+
+
         if dev_info_kw:
             try:
                 dev_info = DevelopersInfo.objects.get(id=dev_info_kw.pop('id', None))
@@ -353,7 +353,7 @@ class AgreementDocument(models.Model):
         filter_by_project = 'document__project__in'
 
     document = models.OneToOneField(Document, related_name='agreement', on_delete=models.CASCADE)
-    name = models.CharField(u'Название договора', max_length=1024, default='')
+    name = models.TextField(u'Название договора', default='')
     # funding = MoneyField(u'Сумма договора', max_digits=20, null=True, blank=True, decimal_places=2, default_currency='KZT')
     subject = models.TextField(u'Предмет договора', default='')
     funding = MoneyField(
@@ -381,7 +381,7 @@ class OtherAgreementItem(models.Model):
         filter_by_project = 'other_agreements_doc__document__project__in'
 
     other_agreements_doc = models.ForeignKey(OtherAgreementsDocument, related_name='items', on_delete=models.CASCADE)
-    number = models.CharField(null=True, blank=True, max_length=1024)
+    number = models.TextField(null=True, blank=True)
     date_sign = models.DateTimeField(null=True)
 
     def get_project(self):
@@ -399,7 +399,7 @@ class ProtectionDocument(models.Model):
     def name(self, value):
         self.document.name = value
 
-    @property 
+    @property
     def number(self):
         return self.document.number
 
@@ -440,7 +440,7 @@ class BasicProjectPasportDocument(models.Model):
 
     document = models.OneToOneField(Document, related_name='basicpasport', on_delete=models.CASCADE)
 
-    description = models.CharField(u'Описание проекта и его целей, включающее в себя новизну, уникальность, конкретное применение результатов проекта, перспективы использования и другое', max_length=1024, null=True, blank=True)
+    description = models.TextField(u'Описание проекта и его целей, включающее в себя новизну, уникальность, конкретное применение результатов проекта, перспективы использования и другое', null=True, blank=True)
 
     result = models.IntegerField(u'Результат проекта', default=BasicProjectPasportStatuses.PATENT,
                                                         choices=BasicProjectPasportStatuses.RESULT_OPTS,
@@ -501,7 +501,7 @@ class BasicProjectPasportDocument(models.Model):
         context['other_agreements'] = self.get_other_agreements_display()
         context['cost_text'] = pytils.numeral.in_words_int(self.cost.amount)
         context['total_month'] = self.document.project.total_month
-        context['required_funding_text'] = pytils.numeral.in_words_int(self.required_funding.amount) 
+        context['required_funding_text'] = pytils.numeral.in_words_int(self.required_funding.amount)
         return context
 
 
@@ -629,7 +629,7 @@ class DevelopersInfo(models.Model):
         return self.pasport.get_project()
 
 class TechStage(models.Model):
-    title = models.CharField(u'На каком этапе Ваша технология?', max_length=1024)
+    title = models.TextField(u'На каком этапе Ваша технология?')
 
     #Характеристика технологии/продукта
 class TechnologyCharacteristics(models.Model):
@@ -919,7 +919,7 @@ class Attachment(models.Model):
         verbose_name = u"Приложения: медиа и файлы"
 
     file_path = models.CharField(max_length=270, null=True, blank=True)
-    url = models.CharField(max_length=3000, null=True, blank=True)
+    url = models.TextField(null=True, blank=True)
     name = models.CharField(max_length=255, null=True, blank=True)
     ext = models.CharField(max_length=255, null=True, blank=True)
     md5 = models.CharField(max_length=255, null=True, blank=True)
@@ -1034,9 +1034,7 @@ class UseOfBudgetDocumentItem(models.Model):
 
     cost_type = models.ForeignKey('natr.CostType', verbose_name=u'Наименование статей затрат', related_name='budget_items')
     date_created = models.DateTimeField(auto_now_add=True)
-    notes = models.CharField(
-        u'Примечания',
-        max_length=1024, null=True, blank=True)
+    notes = models.TextField(u'Примечания', null=True, blank=True)
 
     objects = UseOfBudgetDocumentItemManager()
 
@@ -1204,7 +1202,7 @@ class FactMilestoneCostRow(models.Model):
     class Meta:
         filter_by_project = 'cost_type__project__in'
 
-    name = models.CharField(max_length=1024, default='', null=True)
+    name = models.TextField(default='', null=True)
     cost_type = models.ForeignKey('natr.CostType', null=True, related_name='fact_cost_rows')
     milestone = models.ForeignKey('projects.Milestone')
     plan_cost_row = models.ForeignKey('MilestoneCostRow', null=True)
@@ -1213,7 +1211,7 @@ class FactMilestoneCostRow(models.Model):
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2)
     budget_item = models.ForeignKey('UseOfBudgetDocumentItem', related_name='costs')
-    note = models.CharField(max_length=1024, null=True)
+    note = models.TextField(null=True)
 
     @property
     def project(self):
