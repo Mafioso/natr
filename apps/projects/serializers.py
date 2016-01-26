@@ -132,10 +132,10 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     fundings = SerializerMoneyField(required=False)
     own_fundings = SerializerMoneyField(required=False)
-    funding_type = FundingTypeSerializer(required=False)
+    funding_type = FundingTypeSerializer(required=True)
     aggreement = AgreementDocumentSerializer(required=False)
     statement = StatementDocumentSerializer(required=False)
-    organization_details = OrganizationSerializer(required=False)
+    organization_details = OrganizationSerializer(required=True)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     calendar_plan_id = serializers.IntegerField(source='get_calendar_plan_id', read_only=True, required=False)
     cost_id = serializers.IntegerField(source='cost_document_id', read_only=True, required=False)
@@ -359,6 +359,8 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
         queryset=Project.objects.all(), required=True)
     remaining_days = serializers.IntegerField()
     project_name = serializers.SerializerMethodField()
+    event_name = serializers.CharField(required=False)
+    status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
     def get_project_name(self, instance):
         return instance.project.name

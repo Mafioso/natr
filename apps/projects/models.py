@@ -60,11 +60,13 @@ class ProjectManager(models.Manager):
         prj = Project.objects.create(**data)
         prj.save()
 
-        if organization_details:
-            Organization.objects.create_new(organization_details, project=prj)
+        # # if organization_details:
+        # now is required by default
+        Organization.objects.create_new(organization_details, project=prj)
 
-        if funding_type_data:
-            prj.funding_type = FundingType.objects.create(**funding_type_data)
+        # # if funding_type_data:
+        # now is required by default
+        prj.funding_type = FundingType.objects.create(**funding_type_data)
 
         if statement_data:
             Document.dml.create_statement(project=prj, **statement_data)
@@ -82,11 +84,13 @@ class ProjectManager(models.Manager):
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
             if i == prj.number_of_milestones - 1:
+                m = Milestone.objects.build_empty(
+                        project=prj, number=i+1)
                 Report.build_empty(m, report_type=Report.FINAL)
             else:
                 m = Milestone.objects.build_empty(
                         project=prj, number=i+1)
-
+                Report.build_empty(m)
 
         # 1. create journal
         prj_journal = Journal.objects.build_empty(project=prj)
@@ -177,10 +181,13 @@ class ProjectManager(models.Manager):
         prj.milestone_set.clear()
         for i in xrange(new_milestones):
             if i == new_milestones - 1:
+                m = Milestone.objects.build_empty(
+                    project=prj, number=i+1)
                 Report.build_empty(m, report_type=Report.FINAL)
             else:
                 m = Milestone.objects.build_empty(
                     project=prj, number=i+1)
+                Report.build_empty(m)
 
         # 4. recreate calendar plan
         if prj.calendar_plan:
@@ -191,7 +198,7 @@ class ProjectManager(models.Manager):
         # 5. recreate cost
         if prj.cost_document:
             prj.cost_document.delete()
-        CostDocument.build_empty(project=prj)
+        prj_cd = CostDocument.build_empty(project=prj)
 
         return prj
 
@@ -259,14 +266,14 @@ class Project(models.Model):
         return self.milestone_set.get(
             number=self.current_milestone.number)
 
-    @cached_property
+    @property
     def calendar_plan(self):
         try:
             return CalendarPlanDocument.objects.get(document__project=self)
         except ObjectDoesNotExist:
             return None
 
-    @cached_property
+    @property
     def cost_document(self):
         try:
             return CostDocument.objects.get(document__project=self)
@@ -572,7 +579,7 @@ class Report(ProjectBasedModel):
         'documents.UseOfBudgetDocument', null=True, on_delete=models.SET_NULL,
         verbose_name=u'Отчет об использовании целевых бюджетных средств')
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
-    results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)    
+    results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)
     protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
 
     def get_status_cap(self):
@@ -697,7 +704,7 @@ class Report(ProjectBasedModel):
                     else:
                         sub_row = kwargs['doc'].tables[1].add_row()
                         sub_row.cells[2].text = utils.get_stringed_value(cost.name)
-                        sub_row.cells[8].text = utils.get_stringed_value(cost.costs.amount)  
+                        sub_row.cells[8].text = utils.get_stringed_value(cost.costs.amount)
 
                     if cost.gp_docs.count() > 0:
                         first_gp_doc = True
@@ -761,7 +768,7 @@ class Report(ProjectBasedModel):
                         a = kwargs['doc'].tables[1].cell(merge_cell['row'], merge_cell['col'])
                         b = kwargs['doc'].tables[1].cell(merge_cell['row'] + merge_cell['rowspan'] - 1, merge_cell['col'])
                         A = a.merge(b)
-                    except: 
+                    except:
                         print "ERROR: OUT OF LIST", merge_cell
 
             row = kwargs['doc'].tables[2].add_row()
@@ -1109,14 +1116,14 @@ class Milestone(ProjectBasedModel):
     @property
     def report(self):
         reports = self.reports
-        
+
         if not reports:
             return None
 
         return reports.last()
 
     def get_report(self):
-        report = self.report        
+        report = self.report
         if not report:
             return None
 
@@ -1160,7 +1167,7 @@ class Monitoring(ProjectBasedModel):
     approved_date = MonitorField(monitor='status', when=[APPROVED])
     sed = GenericRelation(SEDEntity, content_type_field='context_type')
     attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
-    
+
     UPCOMING_RNG = (-1000, +3)
 
     class Meta:
@@ -1189,6 +1196,11 @@ class Monitoring(ProjectBasedModel):
             if 'id' in item:
                 item['monitoring'] = self
                 item['project'] = self.project
+                item.pop('status_cap', None)
+                try:
+                    item['event_type'] = MonitoringEventType.objects.get(id=item.get('event_type', None))
+                except:
+                    item.pop('event_type')
                 monitoring_todo = MonitoringTodo(id=item.pop('id'), **item)
             else:
                 item['project'] = self.project
@@ -1256,13 +1268,23 @@ class MonitoringTodo(ProjectBasedModel):
     """Мероприятие по мониторингу"""
 
     class Meta:
-        ordering = ('date_start', 'date_end')
+        # ordering = ('date_start', 'date_end')
         filter_by_project = 'monitoring__project__in'
+
+    
+    STATUSES = NOT_STARTED, STARTED, AKT_BUILDING, COMPLETED = range(4)
+    STATUS_CAPS = (
+        u'не начато',
+        u'начато',
+        u'формирование акта',
+        u'завершено')
+    STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
 
     monitoring = models.ForeignKey(
         'Monitoring', null=True, verbose_name=u'мониторинг', related_name='todos')
 
-    event_name = models.CharField(u'мероприятие мониторинга', max_length=2048, null=True)
+    status = models.IntegerField(default=STARTED, choices=STATUS_OPTS)
+    event_type = models.ForeignKey('projects.MonitoringEventType', null=True, blank=True)
     date_start = models.DateTimeField(u'дата начала', null=True)
     date_end = models.DateTimeField(u'дата завершения', null=True)
     period = models.IntegerField(u'период (дней)', null=True)   # автозаполняемое
@@ -1275,6 +1297,19 @@ class MonitoringTodo(ProjectBasedModel):
             now = timezone.now()
             return (self.date_end - now).days
         return None
+
+    @property
+    def event_name(self):
+        return self.event_type.name or None
+
+    @event_name.setter
+    def event_name(self, value):
+        event_type, created = MonitoringEventType.objects.get_or_create(name=value)
+        self.event_type = event_type
+        self.save()
+
+    def get_status_cap(self):
+        return MonitoringTodo.STATUS_CAPS[self.status]
 
     def save(self, *args, **kwargs):
         if self.date_start and self.date_end:
@@ -1306,6 +1341,22 @@ class MonitoringTodo(ProjectBasedModel):
     def notification_subscribers(self):
         return [exp.account for exp in self.project.assigned_experts.all()]
 
+class MonitoringEventType(models.Model):
+    u"""
+        Тип мониторинга: Камеральный, Выездной, Постгрантовый
+    """
+    DEFAULT = (
+        u'Камеральный мониторинг', 
+        u'Выездной мониторинг',
+        u'Постгрантовый мониторинг'
+    )
+
+    name = models.CharField(u'мероприятие мониторинга', max_length=255, null=True, blank=True)
+
+    @classmethod
+    def create_default(cls):
+        MonitoringEventType.objects.all().delete()
+        return [MonitoringEventType.objects.create(name=m_type) for m_type in cls.DEFAULT]
 
 class Comment(models.Model):
     """
@@ -1359,21 +1410,13 @@ class RiskDefinition(models.Model):
     def indicator(self):
         return self.probability * self.impact
 
-
-def on_milestone_create(sender, instance, created=False, **kwargs):
-    if not created:
-        return
-    Report.build_empty(instance)
-
 def on_report_created(sender, instance, created=False, **kwargs):
     if not created:
         return
     ProtectionDocument.build_empty(instance.project)
 
 post_save.connect(on_report_created, sender=Report)
-post_save.connect(on_milestone_create, sender=Milestone)
 post_save.connect(Report.post_save, sender=Report)
 post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)
 post_save.connect(Monitoring.post_save, sender=Monitoring)
-
