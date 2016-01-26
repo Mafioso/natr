@@ -1191,6 +1191,7 @@ class Monitoring(ProjectBasedModel):
             if 'id' in item:
                 item['monitoring'] = self
                 item['project'] = self.project
+                item.pop('status_cap', None)
                 try:
                     item['event_type'] = MonitoringEventType.objects.get(id=item.get('event_type', None))
                 except:
@@ -1262,7 +1263,7 @@ class MonitoringTodo(ProjectBasedModel):
     """Мероприятие по мониторингу"""
 
     class Meta:
-        ordering = ('date_start', 'date_end')
+        # ordering = ('date_start', 'date_end')
         filter_by_project = 'monitoring__project__in'
 
     
@@ -1277,7 +1278,7 @@ class MonitoringTodo(ProjectBasedModel):
     monitoring = models.ForeignKey(
         'Monitoring', null=True, verbose_name=u'мониторинг', related_name='todos')
 
-    status = models.IntegerField(default=NOT_STARTED, choices=STATUS_OPTS)
+    status = models.IntegerField(default=STARTED, choices=STATUS_OPTS)
     event_type = models.ForeignKey('projects.MonitoringEventType', null=True, blank=True)
     date_start = models.DateTimeField(u'дата начала', null=True)
     date_end = models.DateTimeField(u'дата завершения', null=True)
