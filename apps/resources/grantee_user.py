@@ -3,11 +3,13 @@ from rest_framework import viewsets, response, filters
 from natr.rest_framework.decorators import patch_serializer_class
 from natr.rest_framework.policies import AdminPolicy, PermissionDefinition
 from grantee import serializers, models
+from .filters import GranteeUserFilter
 
 
 class GranteeUserViewSet(viewsets.ModelViewSet):
 
 	queryset = models.Grantee.objects.all()
 	serializer_class = serializers.GranteeSerializer
+	filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
+	filter_class = GranteeUserFilter
 	permission_classes = (AdminPolicy, )
-	pagination_class = None

@@ -3,6 +3,8 @@ from django.db.models import Q
 from natr.rest_framework.filters import IntegerListFilter
 from projects import models
 from documents import models as doc_models
+from auth2 import models as auth2_models
+from grantee import models as grantee_models
 
 
 class ListOfIdFilter(django_filters.FilterSet):
@@ -86,6 +88,41 @@ class AttachmentFilter(ListOfIdFilter):
 		model = doc_models.Attachment
 
 
+class NatrUserFilter(django_filters.FilterSet):
+	search = django_filters.MethodFilter()
+
+	class Meta:
+		model = auth2_models.NatrUser
+
+	def filter_search(self, queryset, value):
+		return queryset.filter(
+			Q(account__email__icontains=value) |
+			Q(account__first_name__icontains=value) |
+			Q(account__last_name__icontains=value) |
+			Q(contact_details__full_name__icontains=value) |
+			Q(contact_details__phone_number__icontains=value) |
+			Q(contact_details__email__icontains=value)
+		)
+
+
+
+class GranteeUserFilter(django_filters.FilterSet):
+	search = django_filters.MethodFilter()
+
+	class Meta:
+		model = grantee_models.Grantee
+
+	def filter_search(self, queryset, value):
+		return queryset.filter(
+			Q(account__email__icontains=value) |
+			Q(account__first_name__icontains=value) |
+			Q(account__last_name__icontains=value) |
+			Q(contact_details__full_name__icontains=value) |
+			Q(contact_details__phone_number__icontains=value) |
+			Q(contact_details__email__icontains=value)
+		)
+
+
 class MonitoringTodoFilter(django_filters.FilterSet):
 
 	class Meta:
@@ -102,7 +139,7 @@ class MonitoringTodoFilter(django_filters.FilterSet):
 			milestone = models.Milestone.objects.get(id=value)
 		except models.Milestone.DoesNotExist:
 			return queryset
-		else: 
+		else:
 			date_start = milestone.date_start
 			date_end = milestone.date_end
 			return queryset.filter(date_start__gte=date_start, date_end__lte=date_end)
