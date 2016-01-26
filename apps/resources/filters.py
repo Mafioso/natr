@@ -84,3 +84,27 @@ class AttachmentFilter(ListOfIdFilter):
 
 	class Meta:
 		model = doc_models.Attachment
+
+
+class MonitoringTodoFilter(django_filters.FilterSet):
+
+	class Meta:
+		model = models.MonitoringTodo
+
+	milestone_id = django_filters.MethodFilter()
+	event_type = django_filters.MethodFilter()
+
+	def filter_event_type(self, queryset, value):
+		return queryset.filter(event_type__name=value)
+
+	def filter_milestone_id(self, queryset, value):
+		try:
+			milestone = models.Milestone.objects.get(id=value)
+		except models.Milestone.DoesNotExist:
+			return queryset
+		else: 
+			date_start = milestone.date_start
+			date_end = milestone.date_end
+			return queryset.filter(date_start__gte=date_start, date_end__lte=date_end)
+
+		return queryset

@@ -15,7 +15,7 @@ from documents.serializers import AttachmentSerializer
 from mioadp.models import ArticleLink
 from mioadp.serializers import ArticleLinkSerializer
 from journals import serializers as journal_serializers
-from .filters import ProjectFilter, ReportFilter
+from .filters import ProjectFilter, ReportFilter, MonitoringTodoFilter
 from projects.utils import ExcelReport
 from documents.utils import DocumentPrint
 from natr import mailing
@@ -238,8 +238,13 @@ class MonitoringTodoViewSet(ProjectBasedViewSet):
     pagination_class = LargeResultsSetPagination
 
     def list(self, request, monitoring_pk=None):
+        milestone_id = request.GET.get('milestone_id', None)
         qs = self.filter_queryset(
             self.get_queryset().filter(monitoring_id=monitoring_pk))
+        if milestone_id:
+            qs = MonitoringTodoFilter({'milestone_id': milestone_id,
+                                        'event_type':prj_models.MonitoringEventType.DEFAULT[1]},
+                                        qs).qs
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
