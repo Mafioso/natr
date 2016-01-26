@@ -359,6 +359,8 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
         queryset=Project.objects.all(), required=True)
     remaining_days = serializers.IntegerField()
     project_name = serializers.SerializerMethodField()
+    event_name = serializers.CharField(required=False)
+    status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
     def get_project_name(self, instance):
         return instance.project.name
