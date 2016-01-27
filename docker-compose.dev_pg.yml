@@ -1,0 +1,12 @@
+db:
+  image: postgres:9.5
+  environment:
+    - POSTGRES_USER='mars'
+    - POSTGRES_PASSWORD='2050'
+  command: postgres
+
+app:
+  environment:
+    - DJANGO_SETTINGS_MODULE=natr.settings.${PROFILE}
+  links:
+    - db

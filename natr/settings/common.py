@@ -237,6 +237,8 @@ ADMINS = (('Rustem', 'r.kamun@gmail.com'),
 
 AUTH_USER_MODEL = 'auth2.Account'
 LOGIN_REDIRECT_URL = 'home'
+SERVE_STATIC = os.getenv('SERVE_STATIC', 'True') in ('True', '1', 'true')
+
 # celery conf
 BROKER_HOST = os.getenv('RABBITMQ_PORT_5672_TCP_ADDR', '127.0.0.1')
 BROKER_PORT = os.getenv('RABBITMQ_PORT_5672_TCP_PORT', 5672)
