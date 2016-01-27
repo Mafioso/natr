@@ -2,6 +2,7 @@ import os
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
+from django.db.models import Q
 from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
@@ -127,15 +128,22 @@ class ProjectViewSet(viewsets.ModelViewSet):
         todos_ser = self.get_serializer(todo_qs, many=True)
         return Response(todo_ser.data)
 
-    @detail_route(methods=['get'], url_path='journal')
+    @detail_route(methods=['get'], url_path='journal_activities')
     @patch_serializer_class(journal_serializers.JournalActivitySerializer)
-    def journal(self, request, *a, **kw):
+    def journal_activities(self, request, *a, **kw):
         project = self.get_object()
         activities = project.get_journal()
 
         date_created = request.GET.get('date_created', None)
         if date_created and activities:
             activities = activities.filter(date_created__gte=dateutil.parser.parse(date_created))
+
+        search_text = request.GET.get('search_activity', None)
+        if search_text and activities:
+            activities = activities.filter(
+                Q(subject_name__icontains=search_text) |
+                Q(result__icontains=search_text)
+            )
 
         page = self.paginate_queryset(activities)
         if page is not None:

@@ -5,6 +5,7 @@ from projects import models
 from documents import models as doc_models
 from auth2 import models as auth2_models
 from grantee import models as grantee_models
+from journals import models as journals_models
 
 
 class ListOfIdFilter(django_filters.FilterSet):
@@ -145,3 +146,16 @@ class MonitoringTodoFilter(django_filters.FilterSet):
 			return queryset.filter(date_start__gte=date_start, date_end__lte=date_end)
 
 		return queryset
+
+
+class JournalActivityFilter(django_filters.FilterSet):
+	search = django_filters.MethodFilter()
+
+	class Meta:
+		model = journals_models.JournalActivity
+
+	def filter_search(self, queryset, value):
+		return queryset.filter(
+			Q(subject_name__icontains=value) |
+			Q(result__icontains=value)
+		)
