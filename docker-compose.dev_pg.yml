@@ -1,9 +1,12 @@
 db:
-  image: postgres:9.5
-  environment:
-    - POSTGRES_USER='mars'
-    - POSTGRES_PASSWORD='2050'
+  extends:
+    file: common-services.yml
+    service: db
   command: postgres
+  volumes_from:
+    - media
+  expose:
+    - "5432"
 
 app:
   environment:

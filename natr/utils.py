@@ -1,5 +1,6 @@
 import os
 from datetime import datetime, time, timedelta
+from functools import wraps
 import factory
 import random
 import faker
@@ -113,4 +114,14 @@ def parse_date(dtstr):
     if not dt:
         return None
     return datetime.combine(dt, time.min)
+
+
+def disable_for_loaddata(signal_handler):
+    @wraps(signal_handler)
+    def wrapper(*args, **kwargs):
+        if kwargs['raw']:
+            # print "Skipping signal for %s %s" % (args, kwargs)
+            return
+        signal_handler(*args, **kwargs)
+    return wrapper
 

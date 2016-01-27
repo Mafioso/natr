@@ -17,8 +17,10 @@ rabbitmq:
 db:
   image: postgres:9.5
   environment:
-    - POSTGRES_USER='mars'
-    - POSTGRES_PASSWORD='2050'
+    - POSTGRES_USER=mars
+    - POSTGRES_PASSWORD=2050
+    - POSTGRES_DB=natr_dev
+    - PGDATA=/db
   restart: always
 
 app:

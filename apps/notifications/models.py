@@ -21,6 +21,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from adjacent import Client
 from natr.mixins import ProjectBasedModel
+from natr.utils import disable_for_loaddata
 from notifications import utils
 from auth2.models import Account
 from rest_framework.utils import encoders
@@ -199,6 +200,7 @@ from django.dispatch import receiver
 
 
 @receiver(post_save, sender=Account)
+@disable_for_loaddata
 def on_user_create(sender, instance, created=False, **kwargs):
 	if not created:
 		return   # not interested

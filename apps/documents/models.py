@@ -12,6 +12,7 @@ from django.conf import settings
 from dateutil import parser as date_parser
 from natr.mixins import ProjectBasedModel
 from natr.models import CostType
+from natr.utils import disable_for_loaddata
 from statuses import (
     BasicProjectPasportStatuses,
     InnovativeProjectPasportStatuses,
@@ -1249,6 +1250,7 @@ class FactMilestoneCostRow(models.Model):
 
 from django.db.models.signals import post_save
 
+@disable_for_loaddata
 def on_cost_type_create(sender, instance, created=False, **kwargs):
     if not created:
         return

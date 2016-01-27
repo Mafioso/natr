@@ -1,2 +1,4 @@
 httpie
 django-test-without-migrations==0.3
+psycopg2==2.6.1
+uWSGI==2.0.12
