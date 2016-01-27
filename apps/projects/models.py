@@ -1204,7 +1204,9 @@ class Monitoring(ProjectBasedModel):
                 try:
                     item['event_type'] = MonitoringEventType.objects.get(id=item.get('event_type', None))
                 except:
-                    item.pop('event_type')
+                    if 'event_type' in item:
+                        item.pop('event_type')
+
                 monitoring_todo = MonitoringTodo(id=item.pop('id'), **item)
             else:
                 item['project'] = self.project
@@ -1268,6 +1270,7 @@ class Monitoring(ProjectBasedModel):
             date_end__range=(left_mrg, right_mrg))
 
 
+@track_data('event_name')
 class MonitoringTodo(ProjectBasedModel):
     """Мероприятие по мониторингу"""
 
@@ -1304,7 +1307,10 @@ class MonitoringTodo(ProjectBasedModel):
 
     @property
     def event_name(self):
-        return self.event_type.name or None
+        if self.event_type:
+            return self.event_type.name
+
+        return None
 
     @event_name.setter
     def event_name(self, value):
@@ -1316,6 +1322,17 @@ class MonitoringTodo(ProjectBasedModel):
     def act(self):
         if self.acts:
             return self.acts.first().id
+
+        return None
+
+    @cached_property
+    def milestone(self):
+        if not self.date_start or not self.date_end:
+            return None
+        for milestone in self.project.milestone_set.all():
+            if milestone.date_start and milestone.date_end:
+                if self.date_start >= milestone.date_start and self.date_end <=milestone.date_end:
+                    return milestone
 
         return None
 
@@ -1351,6 +1368,31 @@ class MonitoringTodo(ProjectBasedModel):
 
     def notification_subscribers(self):
         return [exp.account for exp in self.project.assigned_experts.all()]
+
+
+    @classmethod
+    def post_save(cls, sender, instance, created=False, **kwargs):
+        if not instance.has_changed('event_name'):
+            return
+
+        if created and instance.event_name == MonitoringEventType.DEFAULT[1]:
+            act = Act(project=instance.project, monitoring_todo=instance)
+            act.save()
+            return
+
+        # need to be uncommented, track_data don't set old value
+
+        # old_val = instance.old_value('event_name')
+        # new_val = instance.event_name
+
+        # if old_val != new_val and new_val == MonitoringEventType.DEFAULT[1]:
+        #     act = Act(project=instance.project, monitoring_todo=instance)
+        #     act.save()
+        #     return
+
+        # if old_val:
+        #     if old_val.name == MonitoringEventType.DEFAULT[1]:
+        #         instance.acts.all().delete()
 
 class MonitoringEventType(models.Model):
     u"""
@@ -1440,6 +1482,23 @@ class Act(ProjectBasedModel):
         obj.save()
         return obj
 
+    @cached_property
+    def milestone_number(self):
+        if self.monitoring_todo:
+            if self.monitoring_todo.milestone:
+                return self.monitoring_todo.milestone.number
+
+        return None
+
+    def update_contract_performance_items(self, contract_performance):
+        self.contract_performance.all().delete()
+        for item in contract_performance:
+            item['act'] = self
+            obj = MonitoringOfContractPerformance(**item)
+            obj.save()
+
+        return self.contract_performance
+
 class MonitoringOfContractPerformance(models.Model):
     """
         Мониторинг хода исполнения договора
@@ -1463,3 +1522,4 @@ post_save.connect(Report.post_save, sender=Report)
 post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)
 post_save.connect(Monitoring.post_save, sender=Monitoring)
+post_save.connect(MonitoringTodo.post_save, sender=MonitoringTodo)

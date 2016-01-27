@@ -403,10 +403,23 @@ class MonitoringOfContractPerformanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = MonitoringOfContractPerformance
 
+    id = serializers.IntegerField()
+
+    def update(self, instance, validated_data):
+        return super(MonitoringOfContractPerformanceSerializer, self).update(instance, validated_data)
 
 class ActSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Act
+        read_only_fields = ('milestone_number', 'project', 'monitoring_todo')
 
     contract_performance = MonitoringOfContractPerformanceSerializer(many=True, required=False)
+    monitoring_todo = MonitoringTodoSerializer(required=False, read_only=True)
+    milestone_number = serializers.CharField(read_only=True)
+
+    def update(self, instance, validated_data):
+        contract_performance = instance.update_contract_performance_items(validated_data.pop("contract_performance", []))
+        instance.conclusion = validated_data.pop('conclusion', None)
+        instance.save()
+        return instance
