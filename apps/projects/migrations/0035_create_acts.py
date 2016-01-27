@@ -18,7 +18,7 @@ def create_acts(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('projects', '0033_act_monitoringofcontractperformance'),
+        ('projects', '0034_merge'),
     ]
 
     operations = [
