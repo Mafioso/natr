@@ -106,15 +106,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
             'reports': report_ser.data,
         })
 
-    @detail_route(methods=['get'], url_path='reports')
-    @patch_serializer_class(ReportSerializer)
-    def reports(self, request, *a, **kw):
+    @detail_route(methods=['get'], url_path='acts')
+    @patch_serializer_class(ActSerializer)
+    def acts(self, request, *a, **kw):
         project = self.get_object()
-        report_qs = ReportFilter(request.GET, project.get_reports())
-        report_ser = self.get_serializer(report_qs, many=True)
-        return response.Response({
-            'reports': report_ser.data,
-        })
+        acts = prj_models.Act.objects.by_project(project)
+        acts = self.get_serializer(acts, many=True)
+        return response.Response(acts.data)
 
     @detail_route(methods=['get'], url_path='recent_todos')
     @patch_serializer_class(MonitoringTodoSerializer)
@@ -518,3 +516,9 @@ class RiskDefinitionViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Comment.objects.all()
     serializer_class = CommentSerializer
+
+
+class ActViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.Act.objects.all()
+    serializer_class = ActSerializer
+
