@@ -1206,8 +1206,14 @@ class Monitoring(ProjectBasedModel):
                 except:
                     if 'event_type' in item:
                         item.pop('event_type')
+                monitoring_todo = MonitoringTodo.objects.get(id=item.pop('id'))
+                
+                monitoring_todo.event_name = item.get('event_name', None) 
+                monitoring_todo.report_type = item.get('report_type', None) 
+                monitoring_todo.date_start = dateutil.parser.parse(item.get("date_start")) if item.get("date_start", None) else None
+                monitoring_todo.date_end = dateutil.parser.parse(item.get("date_end")) if item.get("date_end", None) else None
+                monitoring_todo.save()
 
-                monitoring_todo = MonitoringTodo(id=item.pop('id'), **item)
             else:
                 item['project'] = self.project
                 monitoring_todo = MonitoringTodo(monitoring=self, **item)
@@ -1382,17 +1388,16 @@ class MonitoringTodo(ProjectBasedModel):
 
         # need to be uncommented, track_data don't set old value
 
-        # old_val = instance.old_value('event_name')
-        # new_val = instance.event_name
+        old_val = instance.old_value('event_name')
+        new_val = instance.event_name
 
-        # if old_val != new_val and new_val == MonitoringEventType.DEFAULT[1]:
-        #     act = Act(project=instance.project, monitoring_todo=instance)
-        #     act.save()
-        #     return
+        if old_val != new_val and new_val == MonitoringEventType.DEFAULT[1]:
+            act = Act(project=instance.project, monitoring_todo=instance)
+            act.save()
+            return
 
-        # if old_val:
-        #     if old_val.name == MonitoringEventType.DEFAULT[1]:
-        #         instance.acts.all().delete()
+        if old_val == MonitoringEventType.DEFAULT[1]:
+            instance.acts.all().delete()
 
 class MonitoringEventType(models.Model):
     u"""
