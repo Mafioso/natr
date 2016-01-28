@@ -330,7 +330,8 @@ class MonitoringViewSet(ProjectBasedViewSet):
         is_valid, message = serializer.validate_docx_context(instance=monitoring)
 
         if not is_valid:
-            return HttpResponse({"message": message}, status=status.HTTP_204_NO_CONTENT)
+            return HttpResponse({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
         headers = self.get_success_headers(serializer.data)
         return response.Response({"monitoring": monitoring.id}, headers=headers)
 

@@ -1227,7 +1227,7 @@ class Monitoring(ProjectBasedModel):
             row.cells[0].text = utils.get_stringed_value(cnt)
             row.cells[1].text = utils.get_stringed_value(item.event_name)
             row.cells[2].text = utils.get_stringed_value(self.project.name)
-            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y"))
+            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y") or "")
             row.cells[4].text = utils.get_stringed_value(item.period)
             row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
             row.cells[6].text = utils.get_stringed_value(item.remaining_days)
