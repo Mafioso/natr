@@ -3,7 +3,7 @@ import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.db.models import Q
-from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes
+from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
 from natr.rest_framework.decorators import patch_serializer_class, ignore_permissions
@@ -211,6 +211,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return r
 
+    @list_route(methods=['get'], url_path='gen_registry')
+    @patch_serializer_class(ProjectBasicInfoSerializer)
+    def gen_registry(self, request, *a, **kw):
+        data = request.query_params
+        registry_data = prj_models.Project.gen_registry_data(data)
+        filename = ExcelReport(registry_data = registry_data).generate_registry_report()
+        fs = filename.split('/')
+        f = open(filename, 'r')
+        os.remove(filename)
+        filename = fs[len(fs)-1]
+        r = HttpResponse(f, content_type='application/vnd.ms-excel')
+        r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+        return r
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
@@ -522,4 +535,3 @@ class CommentViewSet(viewsets.ModelViewSet):
 class ActViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Act.objects.all()
     serializer_class = ActSerializer
-

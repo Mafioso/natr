@@ -65,9 +65,10 @@ class ExcelReport:
                    end_color='B3B3B3',
                    fill_type='solid')
 
-    def __init__(self, report=None, projects=None):
+    def __init__(self, report=None, projects=None, registry_data = None):
         self.report = report
         self.projects = projects
+        self.registry_data = registry_data
 
     def build_header_cell(self, ws, column, cell_number, string):
         ws = self.insert_into_cell(ws, column, cell_number, string)
@@ -326,5 +327,19 @@ class ExcelReport:
         if not os.path.exists(EXCEL_REPORTS_DIR):
             os.makedirs(EXCEL_REPORTS_DIR)
         filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по грантам 2015 года.xlsx'
+        wb.save(filename)
+        return filename
+    
+    def generate_registry_report(self):
+        wb = Workbook()
+        ws1 = wb.active
+
+        file_dir = EXCEL_REPORTS_DIR
+        if not os.path.exists(EXCEL_REPORTS_DIR):
+            os.makedirs(EXCEL_REPORTS_DIR)
+
+        dates = self.registry_data['date_from'].strftime("%d.%m.%y") + \
+                "-" + self.registry_data['date_to'].strftime("%d.%m.%y")
+        filename = EXCEL_REPORTS_DIR + '/' + u'Реестр проектов ' + dates + '.xlsx'
         wb.save(filename)
         return filename

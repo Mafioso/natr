@@ -11,7 +11,7 @@ from .project import (
 	RiskCategoryViewSet,
 	RiskDefinitionViewSet,
 	CommentViewSet,
-	ActViewSet
+	ActViewSet,
 )
 from .document import (
 	DocumentViewSet,

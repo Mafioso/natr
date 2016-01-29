@@ -468,6 +468,23 @@ class Project(models.Model):
         )
         return self
 
+    @classmethod
+    def gen_registry_data(cls, data):
+        registry_data = {
+            'date_from': dateutil.parser.parse(data['date_from']),
+            'date_to': dateutil.parser.parse(data['date_to']),
+            'projects': []
+        }
+
+        keys = []
+        if 'keys' in data:
+            keys = data['keys'].split(',')
+
+        for project in cls.objects.filter(document__date_sign__gte=registry_data['date_from'],
+                                          document__date_sign__lte=registry_data['date_to']):
+            registry_data['projects'].append(project)
+
+        return registry_data
 
 class ProjectRiskIndex(ProjectBasedModel):
     risks = models.ManyToManyField('RiskDefinition')

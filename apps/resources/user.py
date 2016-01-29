@@ -10,4 +10,3 @@ def get_initial_state(request):
 	return Response({
 		'current_user': user_
 	})
-	
