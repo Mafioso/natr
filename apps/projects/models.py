@@ -469,20 +469,41 @@ class Project(models.Model):
         return self
 
     @classmethod
-    def gen_registry_data(cls, data):
+    def gen_registry_data(cls, projects, data):
         registry_data = {
-            'date_from': dateutil.parser.parse(data['date_from']),
-            'date_to': dateutil.parser.parse(data['date_to']),
-            'projects': []
+            'projects': projects,
+            'keys': [   
+                        "aggreement",
+                        "grantee_name",
+                        "project_name",
+                        "grant_type",
+                        "region",
+                        "total_month",
+                        "fundings",
+                        "transhes",
+                        "expert",
+                        "balance",
+                        "status",
+                        "total_fundings",
+                    ]
         }
+        
+        if 'date_from' in data and 'date_to' in data:
+            registry_data['date_from'] = dateutil.parser.parse(data['date_from'])
+            registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
 
-        keys = []
-        if 'keys' in data:
-            keys = data['keys'].split(',')
+            _projects = []
+            for project in projects.filter(document__date_sign__gte=registry_data['date_from'],
+                                              document__date_sign__lte=registry_data['date_to']):
+                _projects.append(project)
 
-        for project in cls.objects.filter(document__date_sign__gte=registry_data['date_from'],
-                                          document__date_sign__lte=registry_data['date_to']):
-            registry_data['projects'].append(project)
+            registry_data['projects'] = _projects
+
+            keys = []
+            if 'keys' in data:
+                keys = data['keys'][1:-1].split(',')
+                registry_data['keys'] = keys
+
 
         return registry_data
 

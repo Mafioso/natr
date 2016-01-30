@@ -200,29 +200,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @list_route(methods=['get'], url_path='gen_experts_report')
     @patch_serializer_class(ProjectBasicInfoSerializer)
     def get_experts_report(self, request, *a, **kw):
-        projects = self.filter_queryset(self.get_queryset())
-        filename = ExcelReport(projects=projects).generate_experts_report()
-        fs = filename.split('/')
-        f = open(filename, 'r')
-        os.remove(filename)
-        filename = fs[len(fs)-1]
-        r = HttpResponse(f, content_type='application/vnd.ms-excel')
-        r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
-
-        return r
-
-    @list_route(methods=['get'], url_path='gen_registry')
-    @patch_serializer_class(ProjectBasicInfoSerializer)
-    def gen_registry(self, request, *a, **kw):
         data = request.query_params
-        registry_data = prj_models.Project.gen_registry_data(data)
-        filename = ExcelReport(registry_data = registry_data).generate_registry_report()
+
+        registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
+        projects = registry_data.pop("projects", [])
+
+        filename = ExcelReport(projects=projects, registry_data = registry_data).generate_experts_report()
         fs = filename.split('/')
         f = open(filename, 'r')
         os.remove(filename)
         filename = fs[len(fs)-1]
         r = HttpResponse(f, content_type='application/vnd.ms-excel')
         r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+
         return r
 
 class MilestoneViewSet(ProjectBasedViewSet):
