@@ -390,6 +390,9 @@ class ExcelReport:
                     pass
             ws = self.insert_into_cell(ws, get_column_letter(i), row, str(sum))
 
+        for i in range(all_cols_number):
+            ws.column_dimensions[get_column_letter(i+1)].width = 20.0
+
         file_dir = EXCEL_REPORTS_DIR
         if not os.path.exists(EXCEL_REPORTS_DIR):
             os.makedirs(EXCEL_REPORTS_DIR)
