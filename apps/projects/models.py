@@ -495,7 +495,8 @@ class Project(models.Model):
             _projects = []
             for project in projects.filter(document__date_sign__gte=registry_data['date_from'],
                                               document__date_sign__lte=registry_data['date_to']):
-                _projects.append(project)
+                if project not in _projects:
+                    _projects.append(project)
 
             registry_data['projects'] = _projects
 
