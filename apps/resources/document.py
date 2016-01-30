@@ -4,9 +4,9 @@ from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import list_route, detail_route
 from rest_framework import viewsets, response, status, filters
-from natr.rest_framework.decorators import patch_serializer_class
-from natr.rest_framework import serializers as natr_serializers
-from natr.rest_framework.mixins import ProjectBasedViewSet
+from natr.override_rest_framework.decorators import patch_serializer_class
+from natr.override_rest_framework import serializers as natr_serializers
+from natr.override_rest_framework.mixins import ProjectBasedViewSet
 from documents.serializers import *
 from documents.serializers.misc import TechStageSerializer
 from documents import models as doc_models

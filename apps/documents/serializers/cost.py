@@ -3,9 +3,9 @@
 
 from rest_framework import serializers
 import documents.models as models
-from natr.rest_framework.serializers import *
-from natr.rest_framework.fields import SerializerMoneyField
-from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
+from natr.override_rest_framework.serializers import *
+from natr.override_rest_framework.fields import SerializerMoneyField
+from natr.override_rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from .common import DocumentCompositionSerializer, DocumentSerializer
 
 

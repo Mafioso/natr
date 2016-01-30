@@ -104,6 +104,12 @@ def days_from_now(days):
 def days_from(dt, days):
     return make_aware(dt - timedelta(days=days))
 
+def seconds_from(dt, sec):
+    return make_aware(dt - timedelta(seconds=sec))    
+
+def seconds_after(dt, sec):
+    return make_aware(dt + timedelta(seconds=sec))
+
 def days_range(from_dt, to_dt):
     for n in xrange(int((to_dt - from_dt).days + 1)):
         yield from_dt + timedelta(n)

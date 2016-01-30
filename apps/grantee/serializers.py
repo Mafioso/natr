@@ -5,7 +5,7 @@ import grantee.models as models
 import projects.models as prj_models
 import auth2.models as auth2_models
 from auth2.serializers import AccountSerializer
-from natr.rest_framework.serializers import ContactDetailsSerializer, AuthorizedToInteractGranteeSerializer, ProjectNameSerializer
+from natr.override_rest_framework.serializers import ContactDetailsSerializer, AuthorizedToInteractGranteeSerializer, ProjectNameSerializer
 
 __all__ = (
 	'OrganizationSerializer',

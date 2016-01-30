@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
+from natr.override_rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from journals import models
 from documents.models import Attachment
 from documents.serializers import AttachmentSerializer
