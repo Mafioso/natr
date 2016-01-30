@@ -3,7 +3,7 @@ from rest_framework import viewsets, response, status, filters
 from rest_framework.exceptions import ParseError
 from projects.models import Project
 from projects.serializers import ProjectBasicInfoSerializer
-from chat.models import TextLine
+from chat.models import TextLine, ChatCounter
 from chat.serializers import TextLineSerializer
 
 
@@ -32,6 +32,17 @@ class ChatViewSet(viewsets.GenericViewSet):
         projects = Project.objects.of_user(self.request.user)
         project_ser = ProjectBasicInfoSerializer(instance=projects, many=True)
         return response.Response(project_ser.data)
+
+    @list_route(methods=['get'], url_path='counter')
+    def counter(self, request, *a, **kwargs):
+        counter = ChatCounter.get_or_create(request.user)
+        return response.Response(counter.counter)
+
+    @list_route(methods=['post'], url_path='reset_counter')
+    def reset_counter(self, request, *a, **kwargs):
+        counter = ChatCounter.get_or_create(request.user)
+        counter.reset_counter()
+        return response.Response(counter.counter)
 
     @list_route(methods=['post'], url_path='text_line')
     def text_line(self, request, *a, **kwargs):

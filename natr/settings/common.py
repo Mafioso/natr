@@ -126,6 +126,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'natr.context_processors.centrifugo',
+                'chat.context_processors.main',
                 'notifications.context_processors.main'
             ],
         },
