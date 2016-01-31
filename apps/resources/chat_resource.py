@@ -74,7 +74,6 @@ class ChatViewSet(viewsets.GenericViewSet):
     @list_route(methods=['post'], url_path='text_line')
     def text_line(self, request, *a, **kwargs):
         client = request.data.pop('client', None)
-        print client, 'client poped'
         # 1. create message
         serializer = TextLineSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
