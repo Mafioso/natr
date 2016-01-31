@@ -468,6 +468,45 @@ class Project(models.Model):
         )
         return self
 
+    @classmethod
+    def gen_registry_data(cls, projects, data):
+        registry_data = {
+            'projects': projects,
+            'keys': [   
+                        "aggreement",
+                        "grantee_name",
+                        "project_name",
+                        "grant_type",
+                        "region",
+                        "total_month",
+                        "fundings",
+                        "transhes",
+                        "expert",
+                        "balance",
+                        "status",
+                        "total_fundings",
+                    ]
+        }
+        
+        if 'date_from' in data and 'date_to' in data:
+            registry_data['date_from'] = dateutil.parser.parse(data['date_from'])
+            registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
+
+            _projects = []
+            for project in projects.filter(document__date_sign__gte=registry_data['date_from'],
+                                              document__date_sign__lte=registry_data['date_to']):
+                if project not in _projects:
+                    _projects.append(project)
+
+            registry_data['projects'] = _projects
+
+            keys = []
+            if 'keys' in data:
+                keys = data['keys'][1:-1].split(',')
+                registry_data['keys'] = keys
+
+
+        return registry_data
 
 class ProjectRiskIndex(ProjectBasedModel):
     risks = models.ManyToManyField('RiskDefinition')
@@ -1227,7 +1266,7 @@ class Monitoring(ProjectBasedModel):
             row.cells[0].text = utils.get_stringed_value(cnt)
             row.cells[1].text = utils.get_stringed_value(item.event_name)
             row.cells[2].text = utils.get_stringed_value(self.project.name)
-            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y"))
+            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y") or "")
             row.cells[4].text = utils.get_stringed_value(item.period)
             row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
             row.cells[6].text = utils.get_stringed_value(item.remaining_days)

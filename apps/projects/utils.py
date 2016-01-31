@@ -5,6 +5,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Alignment, Font, Border, Side, Color, colors, PatternFill
 from openpyxl.cell import get_column_letter
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.query import QuerySet
 import decimal
 import os
 
@@ -65,9 +66,10 @@ class ExcelReport:
                    end_color='B3B3B3',
                    fill_type='solid')
 
-    def __init__(self, report=None, projects=None):
+    def __init__(self, report=None, projects=None, registry_data = None):
         self.report = report
         self.projects = projects
+        self.registry_data = registry_data
 
     def build_header_cell(self, ws, column, cell_number, string):
         ws = self.insert_into_cell(ws, column, cell_number, string)
@@ -222,97 +224,159 @@ class ExcelReport:
 
         wb = Workbook()
         ws = wb.active
+
+        all_cols_number = 0
+        temp_col_num = 0
+        first = True
+        p_len = 0
+
+        if type(projects) == list:
+            p_len = len(projects)
+        elif type(projects) == QuerySet:
+            p_len = projects.count()
+
+        for project, cnt in zip( self.projects, range(p_len) ):
+            col_num = 1
+            row = cnt+4
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'№ п/п' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(cnt+1))
+
+            col_num += 1
+
+            if 'aggreement' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'№/дата договора' )
+
+                if project.aggreement: 
+                    agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
+                else:
+                    agreement_number = 0
+
+                if project.aggreement and project.aggreement.document.date_sign:
+                    agreement_date = project.aggreement.document.date_sign.strftime("%d.%m.%y")
+                else:
+                    agreement_date = ""
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(agreement_number) + ' от ' + agreement_date)
+                
+                col_num += 1
+                
+            if 'grantee_name' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Наименование Грантополучателя' )
+                try:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.name)
+                except ObjectDoesNotExist:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+                col_num += 1
+
+            if 'project_name' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Наименование проекта')
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.name) 
+                col_num += 1
+
+            if 'grant_type' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Вид гранта' )
+                if project.funding_type:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.funding_type.get_name_display())
+                col_num += 1
+
+            if 'region' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Регион' )
+                col_num += 1
+
+            if 'total_month' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Срок реализации проекта, (мес)' )
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.total_month)
+                col_num += 1
+
+            if 'fundings' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Сумма по Договору, (тенге)')
+                sum_fundings = 0
+                if project.fundings:
+                    sum_fundings += project.fundings.amount
+                if project.own_fundings:
+                    sum_fundings += project.own_fundings.amount
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(sum_fundings))
+                col_num += 1
+
+
+            money_sum = 0
+            temp_col_num = col_num
+            for milestone in project.milestone_set.all():
+                if milestone.fundings:
+                    money_sum += milestone.fundings.amount
+
+                if 'transhes' in self.registry_data['keys']: 
+                    try:
+                        ws = self.insert_into_cell(ws, greyFillet_column_letter(i), row, str(project.milestone_set.all()[i-10].fundings.amount))
+                    except:
+                        ws = self.insert_into_cell(ws, get_column_letter(i), row, str(0))
+                    col_num += 1
+            
+            if 'transhes' in self.registry_data['keys']: 
+                if first:
+                    for i in range(col_num, col_num+max_milestone_num):
+                        ws = self.build_header_cell(ws, get_column_letter(i), row-1, u'{} транш'.format(str(i-col_num+1)) )
+                col_num = temp_col_num + max_milestone_num    
+                
+            if 'expert' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Исполнитель' )
+                assigned_experts = []
+
+                for expert in project.assigned_experts.all():
+                    assigned_experts.append(expert.get_full_name())
+
+                ws = self.build_header_cell( ws, get_column_letter(col_num), row, ",".join(assigned_experts) )
+                col_num += 1
+
+            if 'balance' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Остаток денежных средств,  (тенге)' )
+                if not project.fundings:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(0))
+                else:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(project.fundings.amount - money_sum))
+                col_num += 1
+
+            if 'status' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Статус ' )     
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())               
+                col_num += 1
+
+            if 'total_fundings' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Итого перечислено')
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(money_sum))
+                col_num += 1
+
+            all_cols_number = col_num
+            first = False
+
         ws = self.insert_into_cell(ws, 'A', '1', u'Отчет по грантам 2015 года')
-        ws.merge_cells('A1:R1')
+        ws.merge_cells('A1:%s1'%get_column_letter(all_cols_number-1))
         ws['A1'].alignment = self.alignment_center
         ws['A1'].font = Font(bold=True)
-        ws = self.build_header_cell(ws, 'A', '2', u'№ п/п' )
-        ws = self.build_header_cell(ws, 'B', '2', u'№/дата договора' )
-        ws = self.build_header_cell(ws, 'C', '2', u'Наименование Грантополучателя' )
-        ws = self.build_header_cell(ws, 'D', '2', u'Наименование проекта' )
-        ws = self.build_header_cell(ws, 'E', '2', u'Вид гранта' )
-        ws = self.build_header_cell(ws, 'F', '2', u'Регион ' )
-        ws = self.build_header_cell(ws, 'G', '2', u'Адрес Грантополучателя' )
-        ws = self.build_header_cell(ws, 'H', '2', u'Срок реализации проекта, (мес)' )
-        ws = self.build_header_cell(ws, 'I', '2', u'Договор' )
-        for i in range(10, 10+max_milestone_num):
-            ws = self.build_header_cell(ws, get_column_letter(i), '2', u'{} транш'.format(str(i-9)) )
-        start_col = col_num = 10+max_milestone_num
-        ws = self.build_header_cell(ws, get_column_letter(col_num), '2', u'Исполнитель' )
-        col_num += 1
-        ws = self.build_header_cell(ws, get_column_letter(col_num), '2', u'Остаток денежных средств,  (тенге)' )
-        col_num += 1
-        ws = self.build_header_cell(ws, get_column_letter(col_num), '2', u'Статус ' )
-        col_num += 1
-        ws = self.build_header_cell(ws, get_column_letter(col_num), '2', u'Итого перечислен')
-        col_num += 1
 
-        row = 3
-        for project in projects:
-            ws = self.insert_into_cell(ws, 'A', row, project.id)
-            if project.aggreement: 
-                agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
-            else:
-                agreement_number = 0
-            if project.aggreement.hasattr('document') and project.aggreement.document.date_created:
-                agreement_date = project.aggreement.document.date_created.strftime("%d/%m/%y")
-            else:
-                agreement_date = ""
-            ws = self.insert_into_cell(ws, 'B', row, str(agreement_number) + ' от ' + agreement_date)
-            try:
-                ws = self.insert_into_cell(ws, 'C', row, project.organization_details.name)
-            except ObjectDoesNotExist:
-                ws = self.insert_into_cell(ws, 'C', row, '')
-            ws = self.insert_into_cell(ws, 'D', row, project.name)
-            if project.funding_type:
-                ws = self.insert_into_cell(ws, 'E', row, project.funding_type.name)
-            try:
-                if project.organization_details.address_1:
-                    ws = self.insert_into_cell(ws, 'G', row, project.organization_details.address_1)
-                elif project.organization_details.address_2:
-                    ws = self.insert_into_cell(ws, 'G', row, project.organization_details.address_2)
-            except ObjectDoesNotExist:
-                ws = self.insert_into_cell(ws, 'G', row, '')
-            ws = self.insert_into_cell(ws, 'H', row, project.total_month)
-            sum_fundings = 0
-            if project.fundings:
-                sum_fundings += project.fundings.amount
-            if project.own_fundings:
-                sum_fundings += project.own_fundings.amount
-            ws = self.insert_into_cell(ws, 'I', row, str(sum_fundings))
-            money_sum = 0
-            for i in range(10, 10+project.milestone_set.count()):
-                try:
-                    money_sum += project.milestone_set.all()[i-10].fundings.amount
-                    ws = self.insert_into_cell(ws, greyFillet_column_letter(i), row, str(project.milestone_set.all()[i-10].fundings.amount))
-                except:
-                    ws = self.insert_into_cell(ws, get_column_letter(i), row, str(0))
-
-            col_num = start_col
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")
-            col_num += 1
-            if not project.fundings:
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(0))
-            else:
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(project.fundings.amount - money_sum))
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(money_sum))
-            col_num += 1
-            row += 1
-
+        row += 2
         ws = self.insert_into_cell(ws, 'A', row, u'Итого по договорам на мониторинге ')
-        ws.merge_cells("A{}:H{}".format(row, row))
+        ws.merge_cells("A%s:%s%s"%(row, get_column_letter(all_cols_number-1), row))
         ws["A{}".format(row)].alignment = self.alignment_center
-        ws["A{}".format(row)].fill = self.greyFill
-        row +=1
-        ws = self.insert_into_cell(ws, 'A', row, u'ВСЕГО по Договорам 2015 года:')
-        ws.merge_cells("A{}:H{}".format(row, row))
-        ws["A{}".format(row)].alignment = self.alignment_right
-        ws["A{}".format(row)].fill = self.greyFill
+        row += 1
 
-        for i in range(9, col_num):
+        ws = self.insert_into_cell(ws, 'A', row, u'ВСЕГО по Договорам 2015 года:')
+        ws.merge_cells("A%s:%s%s"%(row, get_column_letter(temp_col_num-2), row))
+        ws["A{}".format(row)].alignment = self.alignment_right
+
+        for i in range(temp_col_num-1, col_num):
             sum = 0
             for j in range(2, row-1):
                 val = ws['{}{}'.format(get_column_letter(i), j)].value
@@ -322,9 +386,30 @@ class ExcelReport:
                     pass
             ws = self.insert_into_cell(ws, get_column_letter(i), row, str(sum))
 
+        for i in range(all_cols_number):
+            ws.column_dimensions[get_column_letter(i+1)].width = 20.0
+
         file_dir = EXCEL_REPORTS_DIR
         if not os.path.exists(EXCEL_REPORTS_DIR):
             os.makedirs(EXCEL_REPORTS_DIR)
+
         filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по грантам 2015 года.xlsx'
+
+        if 'date_from' in self.registry_data and "date_to" in self.registry_data:
+            dates = self.registry_data['date_from'].strftime("%d.%m.%y") + \
+                    "-" + self.registry_data['date_to'].strftime("%d.%m.%y")
+            
+            ws = self.insert_into_cell(ws, 'A', '1', u'Реестр проектов ' + dates)
+            ws.merge_cells('A1:%s1'%get_column_letter(all_cols_number-1))
+            ws['A1'].alignment = self.alignment_center
+            ws['A1'].font = Font(bold=True)
+
+            # ws = self.insert_into_cell(ws, 'A', row, u'ВСЕГО по Договорам ' + dates)
+            # ws.merge_cells("A%s:%s%s"%(row, get_column_letter(all_cols_number-1), row))
+            # ws["A{}".format(row)].alignment = self.alignment_right
+
+            filename = EXCEL_REPORTS_DIR + '/' + u'Реестр проектов ' + dates + '.xlsx'
+
         wb.save(filename)
         return filename
+
