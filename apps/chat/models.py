@@ -142,7 +142,7 @@ class TextLine(ProjectBasedModel):
         # 2 add to sending buffer
         chnl = prepare_channel(user.id)
         centrifugo_client.publish(chnl, {
-            'message': params,
+            'line': params,
             'counter': room_counter.counter,
         })
             
@@ -151,6 +151,7 @@ class ChatCounter(ProjectBasedModel):
 
     account = models.ForeignKey('auth2.Account', related_name='chat_counter')
     counter = models.IntegerField(default=0)
+    ts = models.DateTimeField(auto_now=True, null=True)
 
     def incr_counter(self, force_save=True):
         self.counter += 1

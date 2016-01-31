@@ -114,6 +114,9 @@ def days_range(from_dt, to_dt):
     for n in xrange(int((to_dt - from_dt).days + 1)):
         yield from_dt + timedelta(n)
 
+def very_old_dt():
+    return tz.now().replace(year=1970)
+
 def parse_date(dtstr):
     dt = dj_parse_date(dtstr)
     if not dt:

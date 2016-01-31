@@ -1,6 +1,8 @@
+from operator import attrgetter
 from rest_framework.decorators import list_route, detail_route
 from rest_framework import viewsets, response, status, filters
 from rest_framework.exceptions import ParseError
+from natr.utils import very_old_dt
 from projects.models import Project
 from projects.serializers import ProjectBasicInfoSerializer
 from chat.models import TextLine, ChatCounter
@@ -12,6 +14,8 @@ class ChatViewSet(viewsets.GenericViewSet):
 
     def require_project(self):
         project_id = self.request.query_params.get('project', None)
+        if not project_id:
+            project_id = self.request.data.get('project', None)
         if not project_id:
             raise ParseError('Provide `project` parameter')
         try:
@@ -41,11 +45,16 @@ class ChatViewSet(viewsets.GenericViewSet):
         project_ser = ProjectBasicInfoSerializer(instance=projects, many=True)
         rooms = project_ser.data
         rooms_counters = {
-            c.project_id: c.counter
-            for c in ChatCounter.rooms_counters()}
+            c.project_id: c
+            for c in ChatCounter.rooms_counters(request.user)}
         for room in rooms:
-            room['counter'] = rooms_counters[room['id']]
-        return response.Response(rooms)
+            counter = rooms_counters.get(room['id'], None)
+            room['counter'] = 0
+            room['ts'] = very_old_dt()
+            if counter is not None:
+                room['counter'] = counter.counter
+                room['ts'] = counter.ts
+        return response.Response(sorted(rooms, key=lambda x: x['ts'], reverse=True))
 
     @list_route(methods=['get'], url_path='counter')
     def counter(self, request, *a, **kwargs):
