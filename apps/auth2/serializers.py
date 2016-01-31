@@ -5,7 +5,7 @@ import auth2.models as models
 import grantee.models as grantee_models
 import projects.models as projects_models
 from django.core.exceptions import ObjectDoesNotExist
-from natr.rest_framework.serializers import ContactDetailsSerializer, ProjectNameSerializer
+from natr.override_rest_framework.serializers import ContactDetailsSerializer, ProjectNameSerializer
 
 __all__ = (
 	'AccountSerializer',

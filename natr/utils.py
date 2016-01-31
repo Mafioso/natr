@@ -104,9 +104,18 @@ def days_from_now(days):
 def days_from(dt, days):
     return make_aware(dt - timedelta(days=days))
 
+def seconds_from(dt, sec):
+    return make_aware(dt - timedelta(seconds=sec))    
+
+def seconds_after(dt, sec):
+    return make_aware(dt + timedelta(seconds=sec))
+
 def days_range(from_dt, to_dt):
     for n in xrange(int((to_dt - from_dt).days + 1)):
         yield from_dt + timedelta(n)
+
+def very_old_dt():
+    return tz.now().replace(year=1970)
 
 def parse_date(dtstr):
     dt = dj_parse_date(dtstr)

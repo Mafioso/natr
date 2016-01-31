@@ -6,10 +6,10 @@ from django.db.models import Q
 from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
-from natr.rest_framework.decorators import patch_serializer_class, ignore_permissions
-from natr.rest_framework.policies import PermissionDefinition
-from natr.rest_framework.authentication import TokenAuthentication
-from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
+from natr.override_rest_framework.decorators import patch_serializer_class, ignore_permissions
+from natr.override_rest_framework.policies import PermissionDefinition
+from natr.override_rest_framework.authentication import TokenAuthentication
+from natr.override_rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
 from projects.serializers import *
 from projects import models as prj_models
 from documents.serializers import AttachmentSerializer

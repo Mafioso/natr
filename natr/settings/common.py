@@ -17,7 +17,6 @@ import os
 import sys
 
 
-
 def FileSettings(path):
     path = os.path.expanduser(path)
 
@@ -79,7 +78,8 @@ APPS = (
     'auth2',
     'notifications',
     'mioadp',
-    'integrations'
+    'integrations',
+    'chat'
 )
 
 INSTALLED_APPS = (
@@ -126,6 +126,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'natr.context_processors.centrifugo',
+                'chat.context_processors.main',
                 'notifications.context_processors.main'
             ],
         },
@@ -185,7 +186,7 @@ LOCALE_PATHS = (
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.SessionAuthentication',
-        'natr.rest_framework.authentication.DummyAuthentication',
+        'natr.override_rest_framework.authentication.DummyAuthentication',
         'rest_framework.authentication.BasicAuthentication',
 
     ),
@@ -271,6 +272,7 @@ USD = 'USD'
 CURRENCIES = (KZT, USD)
 
 NOTIFICATION_CHANNEL = 'notification'
+CHAT_CHANNEL = 'chat'
 HOST = 'natr.kz'
 DOCKER_HOST = '192.168.99.100'
 CENTRIFUGO_HOST = os.getenv('CENTRIFUGO_PORT_8001_TCP_ADDR', 'centrifugo.natr.kz')

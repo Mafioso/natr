@@ -44,7 +44,13 @@ from journals.models import Journal, JournalActivity
 from grantee.models import Organization, ContactDetails, ShareHolder, AuthorizedToInteractGrantee
 
 
+Q = models.Q
+
+
 class ProjectManager(models.Manager):
+
+    def of_user(self, user):
+        return self.filter(Q(assigned_experts__account=user) | Q(assigned_grantees__account=user))
 
     def create_new(self, **data):
         user = data.pop('user', None)
@@ -353,7 +359,7 @@ class Project(models.Model):
                return 1
             return 0
 
-    @cached_property
+    @property
     def risks(self):
         risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
         return risk_index.risks.all()
@@ -364,7 +370,7 @@ class Project(models.Model):
         except:
             return []
 
-    @cached_property
+    @property
     def stakeholders(self):
         experts = list(self.assigned_experts.all())
         grantees = list(self.assigned_grantees.all())

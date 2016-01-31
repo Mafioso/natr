@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from rest_framework import serializers
-from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
+from natr.override_rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from documents import models
 
 

@@ -19,14 +19,11 @@ from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
-from adjacent import Client
 from natr.mixins import ProjectBasedModel
+from natr.realtime import centrifugo_client
 from notifications import utils
 from auth2.models import Account
-from rest_framework.utils import encoders
 from rest_framework.renderers import JSONRenderer
-
-centrifugo_client = Client(json_encoder=encoders.JSONEncoder)
 
 
 class Notification(models.Model):
@@ -38,9 +35,6 @@ class Notification(models.Model):
 			('sent_gp', u'Отпрака уведомлений для ГП'))
 		verbose_name = u'Отправка уведомлений'
 		relevant_for_permission = True
-
-	context_type = models.ForeignKey(ContentType, null=True)
-	context_id = models.PositiveIntegerField(null=True)
 
 	TRANSH_PAY = 1
 	MONITORING_TODO_EVENT = 2
@@ -104,7 +98,6 @@ class Notification(models.Model):
 
 	def store_by_subscriber(self):
 		users = self.context.notification_subscribers()
-		subscribers = []
 		for u in users:
 			s, counter = NotificationSubscribtion.objects.create(
 				account=u, notification=self)
