@@ -5,8 +5,8 @@ from django.http import HttpResponse
 from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
-from natr.rest_framework.decorators import patch_serializer_class, ignore_permissions
-from natr.rest_framework.authentication import TokenAuthentication
+from natr.override_rest_framework.decorators import patch_serializer_class, ignore_permissions
+from natr.override_rest_framework.authentication import TokenAuthentication
 from integrations.serializers import SEDEntitySerializer
 from integrations.models import SEDEntity
 

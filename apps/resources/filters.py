@@ -1,6 +1,6 @@
 import django_filters
 from django.db.models import Q
-from natr.rest_framework.filters import IntegerListFilter
+from natr.override_rest_framework.filters import IntegerListFilter
 from projects import models
 from documents import models as doc_models
 from auth2 import models as auth2_models

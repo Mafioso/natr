@@ -3,9 +3,9 @@
 
 from rest_framework import serializers
 from natr import utils, mailing, models as natr_models
-from natr.rest_framework.fields import SerializerMoneyField
-from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
-from natr.rest_framework.serializers import AuthorizedToInteractGranteeSerializer
+from natr.override_rest_framework.fields import SerializerMoneyField
+from natr.override_rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
+from natr.override_rest_framework.serializers import AuthorizedToInteractGranteeSerializer
 from grantee.serializers import *
 from documents.serializers import *
 from documents.serializers.misc import ProtectionDocumentSerializer
