@@ -468,6 +468,45 @@ class Project(models.Model):
         )
         return self
 
+    @classmethod
+    def gen_registry_data(cls, projects, data):
+        registry_data = {
+            'projects': projects,
+            'keys': [   
+                        "aggreement",
+                        "grantee_name",
+                        "project_name",
+                        "grant_type",
+                        "region",
+                        "total_month",
+                        "fundings",
+                        "transhes",
+                        "expert",
+                        "balance",
+                        "status",
+                        "total_fundings",
+                    ]
+        }
+        
+        if 'date_from' in data and 'date_to' in data:
+            registry_data['date_from'] = dateutil.parser.parse(data['date_from'])
+            registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
+
+            _projects = []
+            for project in projects.filter(document__date_sign__gte=registry_data['date_from'],
+                                              document__date_sign__lte=registry_data['date_to']):
+                if project not in _projects:
+                    _projects.append(project)
+
+            registry_data['projects'] = _projects
+
+            keys = []
+            if 'keys' in data:
+                keys = data['keys'][1:-1].split(',')
+                registry_data['keys'] = keys
+
+
+        return registry_data
 
 class ProjectRiskIndex(ProjectBasedModel):
     risks = models.ManyToManyField('RiskDefinition')
@@ -526,6 +565,10 @@ class FundingType(models.Model):
 
     def __unicode__(self):
         return self.name
+
+    @property 
+    def name_cap(self):
+        return self.get_name_display()
 
 
 @track_data('status')
@@ -1200,8 +1243,16 @@ class Monitoring(ProjectBasedModel):
                 try:
                     item['event_type'] = MonitoringEventType.objects.get(id=item.get('event_type', None))
                 except:
-                    item.pop('event_type')
-                monitoring_todo = MonitoringTodo(id=item.pop('id'), **item)
+                    if 'event_type' in item:
+                        item.pop('event_type')
+                monitoring_todo = MonitoringTodo.objects.get(id=item.pop('id'))
+                
+                monitoring_todo.event_name = item.get('event_name', None) 
+                monitoring_todo.report_type = item.get('report_type', None) 
+                monitoring_todo.date_start = dateutil.parser.parse(item.get("date_start")) if item.get("date_start", None) else None
+                monitoring_todo.date_end = dateutil.parser.parse(item.get("date_end")) if item.get("date_end", None) else None
+                monitoring_todo.save()
+
             else:
                 item['project'] = self.project
                 monitoring_todo = MonitoringTodo(monitoring=self, **item)
@@ -1215,7 +1266,7 @@ class Monitoring(ProjectBasedModel):
             row.cells[0].text = utils.get_stringed_value(cnt)
             row.cells[1].text = utils.get_stringed_value(item.event_name)
             row.cells[2].text = utils.get_stringed_value(self.project.name)
-            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y"))
+            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y") or "")
             row.cells[4].text = utils.get_stringed_value(item.period)
             row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
             row.cells[6].text = utils.get_stringed_value(item.remaining_days)
@@ -1264,6 +1315,7 @@ class Monitoring(ProjectBasedModel):
             date_end__range=(left_mrg, right_mrg))
 
 
+@track_data('event_name')
 class MonitoringTodo(ProjectBasedModel):
     """Мероприятие по мониторингу"""
 
@@ -1300,13 +1352,34 @@ class MonitoringTodo(ProjectBasedModel):
 
     @property
     def event_name(self):
-        return self.event_type.name or None
+        if self.event_type:
+            return self.event_type.name
+
+        return None
 
     @event_name.setter
     def event_name(self, value):
         event_type, created = MonitoringEventType.objects.get_or_create(name=value)
         self.event_type = event_type
         self.save()
+
+    @property
+    def act(self):
+        if self.acts:
+            return self.acts.first().id
+
+        return None
+
+    @cached_property
+    def milestone(self):
+        if not self.date_start or not self.date_end:
+            return None
+        for milestone in self.project.milestone_set.all():
+            if milestone.date_start and milestone.date_end:
+                if self.date_start >= milestone.date_start and self.date_end <=milestone.date_end:
+                    return milestone
+
+        return None
 
     def get_status_cap(self):
         return MonitoringTodo.STATUS_CAPS[self.status]
@@ -1340,6 +1413,30 @@ class MonitoringTodo(ProjectBasedModel):
 
     def notification_subscribers(self):
         return [exp.account for exp in self.project.assigned_experts.all()]
+
+
+    @classmethod
+    def post_save(cls, sender, instance, created=False, **kwargs):
+        if not instance.has_changed('event_name'):
+            return
+
+        if created and instance.event_name == MonitoringEventType.DEFAULT[1]:
+            act = Act(project=instance.project, monitoring_todo=instance)
+            act.save()
+            return
+
+        # need to be uncommented, track_data don't set old value
+
+        old_val = instance.old_value('event_name')
+        new_val = instance.event_name
+
+        if old_val != new_val and new_val == MonitoringEventType.DEFAULT[1]:
+            act = Act(project=instance.project, monitoring_todo=instance)
+            act.save()
+            return
+
+        if old_val == MonitoringEventType.DEFAULT[1]:
+            instance.acts.all().delete()
 
 class MonitoringEventType(models.Model):
     u"""
@@ -1410,6 +1507,55 @@ class RiskDefinition(models.Model):
     def indicator(self):
         return self.probability * self.impact
 
+
+class Act(ProjectBasedModel):
+    """
+        Акт выездного мониторинга
+    """
+    class Meta:
+        verbose_name = u"Акт выездного мониторинга"
+
+    monitoring_todo = models.ForeignKey('projects.MonitoringTodo', related_name='acts', null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    date_edited = models.DateTimeField(auto_now=True, blank=True)
+    conclusion = models.TextField(u'Вывод', null=True, blank=True)
+
+    @classmethod
+    def build_empty(cls, project):
+        obj = cls(project=project)
+        obj.save()
+        return obj
+
+    @cached_property
+    def milestone_number(self):
+        if self.monitoring_todo:
+            if self.monitoring_todo.milestone:
+                return self.monitoring_todo.milestone.number
+
+        return None
+
+    def update_contract_performance_items(self, contract_performance):
+        self.contract_performance.all().delete()
+        for item in contract_performance:
+            item['act'] = self
+            obj = MonitoringOfContractPerformance(**item)
+            obj.save()
+
+        return self.contract_performance
+
+class MonitoringOfContractPerformance(models.Model):
+    """
+        Мониторинг хода исполнения договора
+    """
+    class Meta:
+        verbose_name = u"Мониторинг хода исполнения договора"
+
+    act = models.ForeignKey('projects.Act', related_name="contract_performance")
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    date_edited = models.DateTimeField(auto_now=True, blank=True)
+    subject = models.CharField(u"Предмет выездного", max_length=1024, null=True, blank=True)
+    results = models.CharField(u"Результат выездного мониторинга", max_length=1024, null=True, blank=True)
+
 def on_report_created(sender, instance, created=False, **kwargs):
     if not created:
         return
@@ -1420,3 +1566,4 @@ post_save.connect(Report.post_save, sender=Report)
 post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)
 post_save.connect(Monitoring.post_save, sender=Monitoring)
+post_save.connect(MonitoringTodo.post_save, sender=MonitoringTodo)

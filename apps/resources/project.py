@@ -2,7 +2,8 @@ import os
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
-from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes
+from django.db.models import Q
+from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
 from natr.rest_framework.decorators import patch_serializer_class, ignore_permissions
@@ -105,15 +106,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
             'reports': report_ser.data,
         })
 
-    @detail_route(methods=['get'], url_path='reports')
-    @patch_serializer_class(ReportSerializer)
-    def reports(self, request, *a, **kw):
+    @detail_route(methods=['get'], url_path='acts')
+    @patch_serializer_class(ActSerializer)
+    def acts(self, request, *a, **kw):
         project = self.get_object()
-        report_qs = ReportFilter(request.GET, project.get_reports())
-        report_ser = self.get_serializer(report_qs, many=True)
-        return response.Response({
-            'reports': report_ser.data,
-        })
+        acts = prj_models.Act.objects.by_project(project)
+        acts = self.get_serializer(acts, many=True)
+        return response.Response(acts.data)
 
     @detail_route(methods=['get'], url_path='recent_todos')
     @patch_serializer_class(MonitoringTodoSerializer)
@@ -127,15 +126,22 @@ class ProjectViewSet(viewsets.ModelViewSet):
         todos_ser = self.get_serializer(todo_qs, many=True)
         return Response(todo_ser.data)
 
-    @detail_route(methods=['get'], url_path='journal')
+    @detail_route(methods=['get'], url_path='journal_activities')
     @patch_serializer_class(journal_serializers.JournalActivitySerializer)
-    def journal(self, request, *a, **kw):
+    def journal_activities(self, request, *a, **kw):
         project = self.get_object()
         activities = project.get_journal()
 
         date_created = request.GET.get('date_created', None)
         if date_created and activities:
             activities = activities.filter(date_created__gte=dateutil.parser.parse(date_created))
+
+        search_text = request.GET.get('search_activity', None)
+        if search_text and activities:
+            activities = activities.filter(
+                Q(subject_name__icontains=search_text) |
+                Q(result__icontains=search_text)
+            )
 
         page = self.paginate_queryset(activities)
         if page is not None:
@@ -194,8 +200,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @list_route(methods=['get'], url_path='gen_experts_report')
     @patch_serializer_class(ProjectBasicInfoSerializer)
     def get_experts_report(self, request, *a, **kw):
-        projects = self.filter_queryset(self.get_queryset())
-        filename = ExcelReport(projects=projects).generate_experts_report()
+        data = request.query_params
+
+        registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
+        projects = registry_data.pop("projects", [])
+
+        filename = ExcelReport(projects=projects, registry_data = registry_data).generate_experts_report()
         fs = filename.split('/')
         f = open(filename, 'r')
         os.remove(filename)
@@ -204,7 +214,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
 
         return r
-
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
@@ -324,7 +333,8 @@ class MonitoringViewSet(ProjectBasedViewSet):
         is_valid, message = serializer.validate_docx_context(instance=monitoring)
 
         if not is_valid:
-            return HttpResponse({"message": message}, status=status.HTTP_204_NO_CONTENT)
+            return HttpResponse({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
         headers = self.get_success_headers(serializer.data)
         return response.Response({"monitoring": monitoring.id}, headers=headers)
 
@@ -510,3 +520,8 @@ class RiskDefinitionViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Comment.objects.all()
     serializer_class = CommentSerializer
+
+
+class ActViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.Act.objects.all()
+    serializer_class = ActSerializer

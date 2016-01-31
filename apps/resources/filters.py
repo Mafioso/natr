@@ -5,6 +5,7 @@ from projects import models
 from documents import models as doc_models
 from auth2 import models as auth2_models
 from grantee import models as grantee_models
+from journals import models as journals_models
 
 
 class ListOfIdFilter(django_filters.FilterSet):
@@ -135,6 +136,7 @@ class MonitoringTodoFilter(django_filters.FilterSet):
 		return queryset.filter(event_type__name=value)
 
 	def filter_milestone_id(self, queryset, value):
+			
 		try:
 			milestone = models.Milestone.objects.get(id=value)
 		except models.Milestone.DoesNotExist:
@@ -142,6 +144,23 @@ class MonitoringTodoFilter(django_filters.FilterSet):
 		else:
 			date_start = milestone.date_start
 			date_end = milestone.date_end
+
+			if not date_start or not date_end:
+				return models.MonitoringTodo.objects.none()
+
 			return queryset.filter(date_start__gte=date_start, date_end__lte=date_end)
 
 		return queryset
+
+
+class JournalActivityFilter(django_filters.FilterSet):
+	search = django_filters.MethodFilter()
+
+	class Meta:
+		model = journals_models.JournalActivity
+
+	def filter_search(self, queryset, value):
+		return queryset.filter(
+			Q(subject_name__icontains=value) |
+			Q(result__icontains=value)
+		)

@@ -1187,14 +1187,23 @@ class MilestoneCostRow(models.Model):
         u'Сумма затрат (тенге)',
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2)
+    grant_costs = MoneyField(
+        u'Средства гранта (тенге)',
+        default=0, default_currency=settings.KZT,
+        max_digits=20, decimal_places=2, null=True)
     own_costs = MoneyField(
         u'Собственные средства (тенге)',
         default=0, default_currency=settings.KZT,
-        max_digits=20, decimal_places=2)
+        max_digits=20, decimal_places=2, null=True)
+
+
+    @property
+    def costs(self):
+        total = self.grant_costs.amount + self.own_costs.amount
+        return Money(amount=total, currency=settings.KZT)
 
     def get_project(self):
         return self.cost_document.get_project()
-
 
 class FactMilestoneCostRow(models.Model):
     u"""Расход на предприятие фактическая по этапу"""

@@ -13,7 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from documents import models as doc_models
 from grantee import models as grantee_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance
 from auth2.models import NatrUser
 from notifications.models import send_notification, Notification
 
@@ -32,6 +32,8 @@ __all__ = (
     'RiskCategorySerializer',
     'RiskDefinitionSerializer',
     'ProjectLogEntrySerializer',
+    'ActSerializer',
+    'MonitoringOfContractPerformanceSerializer'
 )
 
 
@@ -63,6 +65,8 @@ class FundingTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FundingType
+
+    name_cap = serializers.CharField(read_only=True)
 
 
 class MilestoneSerializer(
@@ -361,6 +365,7 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
     project_name = serializers.SerializerMethodField()
     event_name = serializers.CharField(required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    act = serializers.CharField(read_only=True)
 
     def get_project_name(self, instance):
         return instance.project.name
@@ -391,3 +396,30 @@ class ProjectLogEntrySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProjectLogEntry
+
+
+class MonitoringOfContractPerformanceSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MonitoringOfContractPerformance
+
+    id = serializers.IntegerField()
+
+    def update(self, instance, validated_data):
+        return super(MonitoringOfContractPerformanceSerializer, self).update(instance, validated_data)
+
+class ActSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Act
+        read_only_fields = ('milestone_number', 'project', 'monitoring_todo')
+
+    contract_performance = MonitoringOfContractPerformanceSerializer(many=True, required=False)
+    monitoring_todo = MonitoringTodoSerializer(required=False, read_only=True)
+    milestone_number = serializers.CharField(read_only=True)
+
+    def update(self, instance, validated_data):
+        contract_performance = instance.update_contract_performance_items(validated_data.pop("contract_performance", []))
+        instance.conclusion = validated_data.pop('conclusion', None)
+        instance.save()
+        return instance

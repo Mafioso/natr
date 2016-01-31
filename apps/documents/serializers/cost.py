@@ -21,7 +21,7 @@ class MilestoneCostRowSerializer(serializers.ListSerializer):
 
     def update(self, instance, validated_data):
         for cost_cell_obj, cost_cell_data in zip(instance, validated_data):
-            cost_cell_obj.costs = cost_cell_data['costs']
+            cost_cell_obj.grant_costs = cost_cell_data['grant_costs']
             cost_cell_obj.own_costs = cost_cell_data['own_costs']
             cost_cell_obj.save()
         return instance
@@ -40,7 +40,7 @@ class MilestoneCostCellSerializer(ExcludeCurrencyFields, serializers.ModelSerial
 
     cost_document = serializers.PrimaryKeyRelatedField(
         queryset=models.CostDocument.objects.all(), required=False)
-    costs = SerializerMoneyField(required=False)
+    grant_costs = SerializerMoneyField(required=False)
     own_costs = SerializerMoneyField(required=False)
 
 
