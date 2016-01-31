@@ -5,7 +5,7 @@ from datetime import timedelta
 from adjacent import Client
 from django.utils import timezone as tz
 from django.db import models
-from django.db.models import Q
+from django.db.models import Q, Sum, F
 from django.conf import settings
 from natr.mixins import ProjectBasedModel
 from natr.realtime import centrifugo_client
@@ -109,7 +109,7 @@ class TextLine(ProjectBasedModel):
         params = self.prepare_data(self.attachments.all())
         # 3 multicast to group of stakeholders
         for user in self.project.stakeholders:
-            self.send_single(user, params)
+            self.send_single(user, self.project, params)
         # 4 flush everybody
         centrifugo_client.send()
         return params
@@ -136,20 +136,20 @@ class TextLine(ProjectBasedModel):
             params['attachments'] = dump_attachments(self.attachments)
         return params
 
-    def send_single(self, user, params):
+    def send_single(self, user, project, params):
         # 1 incr counter
-        user_counter = ChatCounter.incr_for(user)
+        room_counter = ChatCounter.incr_for(user, project)
         # 2 add to sending buffer
         chnl = prepare_channel(user.id)
         centrifugo_client.publish(chnl, {
             'message': params,
-            'counter': user_counter.counter
+            'counter': room_counter.counter,
         })
             
 
-class ChatCounter(models.Model):
+class ChatCounter(ProjectBasedModel):
 
-    account = models.OneToOneField('auth2.Account', related_name='chat_counter')
+    account = models.ForeignKey('auth2.Account', related_name='chat_counter')
     counter = models.IntegerField(default=0)
 
     def incr_counter(self, force_save=True):
@@ -157,20 +157,32 @@ class ChatCounter(models.Model):
         if force_save:
             self.save()
 
-    def reset_counter(self):
+    def reset_counter(self, force_save=True):
         self.counter = 0
-        self.save()
+        if force_save:
+            self.save()
 
     @classmethod
-    def get_or_create(cls, account):
+    def get_or_create(cls, account, project):
+        created = False
         try:
-            counter = ChatCounter.objects.get(account=account)
+            counter = ChatCounter.objects.get(account=account, project=project)
         except ChatCounter.DoesNotExist:
-            counter = ChatCounter.objects.create(account=account)
-        return counter
+            counter = ChatCounter.objects.create(account=account, project=project)
+            created = True
+        return created, counter
 
     @classmethod
-    def incr_for(cls, account):
-        counter_obj = cls.get_or_create(account)
+    def incr_for(cls, account, project):
+        _, counter_obj = ChatCounter.get_or_create(account, project)
         counter_obj.incr_counter()
         return counter_obj
+
+    @classmethod
+    def total_for(cls, account):
+        aggr = ChatCounter.rooms_counters(account).aggregate(total_counter=Sum(F('counter')))
+        return aggr['total_counter']
+
+    @classmethod
+    def rooms_counters(cls, account):
+        return ChatCounter.objects.filter(account=account)

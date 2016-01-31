@@ -28,3 +28,14 @@ class TextLine(DjangoModelFactory):
             self._prefetched_objects_cache = {'attachments': attachments}
         else:
             self.attachments.add(*attachments)
+
+
+class ChatCounter(DjangoModelFactory):
+    
+    class Meta:
+        model = models.ChatCounter
+        strategy = BUILD_STRATEGY
+
+    account = factory.SubFactory('auth2.factories.Account')
+    project = factory.SubFactory('projects.factories.Project')
+    counter = factory.LazyAttribute(lambda x: random.randint(0, 5))

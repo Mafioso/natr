@@ -1,12 +1,13 @@
 from django.test import TestCase
 from datetime import timedelta
 from django.utils import timezone as tz
-from natr import utils
-from chat.models import TextLine
-from chat import models
-from chat.factories import TextLine as TextLineFactory
-from auth2.factories import Account as AccountFactory
 from django.conf import settings
+from natr import utils
+from projects.factories import Project as ProjectFactory
+from auth2.factories import Account as AccountFactory
+from chat.models import TextLine, ChatCounter
+from chat import models
+from chat.factories import TextLine as TextLineFactory, ChatCounter as ChatCounterFactory
 
 
 class TextLineTestCase(TestCase):
@@ -122,3 +123,42 @@ class TextLineTestCase(TestCase):
         self.assertEqual(len(line.line.split('\n')), 2)
         # 6. attachments
         
+
+class ChatCounterTestCase(TestCase):
+
+    def setUp(self):
+        self.prj = ProjectFactory.create()
+        self.acc = AccountFactory.create()
+
+    def counter_obj(self, cnt=0, force_create=False):
+        make_fn = force_create and ChatCounterFactory.create or ChatCounterFactory.build
+        return make_fn(counter=cnt)
+
+    def test_incr_counter(self):
+        counter = self.counter_obj(cnt=10)
+        counter.incr_counter(force_save=False)
+        self.assertEqual(counter.counter, 11)
+
+    def test_reset_counter(self):
+        counter = self.counter_obj(cnt=5)
+        counter.reset_counter(force_save=False)
+        self.assertEqual(counter.counter, 0)
+
+    def test_get_or_create(self):
+        # 1 test create
+        created, _ = ChatCounter.get_or_create(self.acc, self.prj)
+        self.assertTrue(created)
+
+        created, _ = ChatCounter.get_or_create(self.acc, self.prj)
+        self.assertFalse(created)
+
+    def test_incr_for(self):
+        counter = ChatCounter.incr_for(self.acc, self.prj)
+        self.assertEqual(counter.counter, 1)
+        counter = ChatCounter.incr_for(self.acc, self.prj)
+        self.assertEqual(counter.counter, 2)
+
+    def test_total_for(self):
+        for i in xrange(5):
+            ChatCounterFactory.create(account=self.acc, counter=i)
+        self.assertEqual(ChatCounter.total_for(self.acc), sum(xrange(5)))

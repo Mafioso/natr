@@ -10,12 +10,20 @@ from chat.serializers import TextLineSerializer
 class ChatViewSet(viewsets.GenericViewSet):
     queryset = TextLine.objects.all()
 
-    def get_queryset(self):
-        qs = super(ChatViewSet, self).get_queryset()
+    def require_project(self):
         project_id = self.request.query_params.get('project', None)
         if not project_id:
             raise ParseError('Provide `project` parameter')
-        return qs.by_project(project_id).of_user(self.request.user)
+        try:
+            prj = Project.objects.get(pk=project_id)
+        except Project.DoesNotExist:
+            raise ParseError('Provide correct `project` parameter')            
+        else:
+            return prj
+
+    def get_queryset(self):
+        qs = super(ChatViewSet, self).get_queryset()
+        return qs.by_project(self.require_project()).of_user(self.request.user)
 
     @list_route(methods=['get'], url_path='history')
     def history(self, request, *a, **kwargs):
@@ -31,16 +39,26 @@ class ChatViewSet(viewsets.GenericViewSet):
     def rooms(self, request, *a, **kwargs):
         projects = Project.objects.of_user(self.request.user)
         project_ser = ProjectBasicInfoSerializer(instance=projects, many=True)
-        return response.Response(project_ser.data)
+        rooms = project_ser.data
+        rooms_counters = {
+            c.project_id: c.counter
+            for c in ChatCounter.rooms_counters()}
+        for room in rooms:
+            room['counter'] = rooms_counters[room['id']]
+        return response.Response(rooms)
 
     @list_route(methods=['get'], url_path='counter')
     def counter(self, request, *a, **kwargs):
-        counter = ChatCounter.get_or_create(request.user)
+        project = self.require_project()
+        _, counter = ChatCounter.get_or_create(request.user, project)
         return response.Response(counter.counter)
 
     @list_route(methods=['post'], url_path='reset_counter')
     def reset_counter(self, request, *a, **kwargs):
-        counter = ChatCounter.get_or_create(request.user)
+        project = self.require_project()
+        _, counter = ChatCounter.get_or_create(request.user, project)
+        if counter.counter == 0:
+            return response.Response(0)
         counter.reset_counter()
         return response.Response(counter.counter)
 
