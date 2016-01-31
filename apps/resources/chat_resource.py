@@ -27,7 +27,7 @@ class ChatViewSet(viewsets.GenericViewSet):
 
     def get_queryset(self):
         qs = super(ChatViewSet, self).get_queryset()
-        return qs.by_project(self.require_project()).of_user(self.request.user)
+        return qs.by_project(self.require_project())
 
     @list_route(methods=['get'], url_path='history')
     def history(self, request, *a, **kwargs):
@@ -73,11 +73,13 @@ class ChatViewSet(viewsets.GenericViewSet):
 
     @list_route(methods=['post'], url_path='text_line')
     def text_line(self, request, *a, **kwargs):
+        client = request.data.pop('client', None)
+        print client, 'client poped'
         # 1. create message
         serializer = TextLineSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         # 2. flush
         text_line = serializer.instance
-        text_line_dict = text_line.spray()
+        text_line_dict = text_line.spray(client)
         return response.Response(text_line_dict, status=status.HTTP_201_CREATED)

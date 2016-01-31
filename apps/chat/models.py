@@ -61,7 +61,7 @@ class TextLineQuerySet(models.QuerySet):
         the_line, created = None, True
         line = '' if line is None else line
         attachments = [] if attachments is None else attachments
-        lst_msg = self.last_of_user(from_account)
+        lst_msg = self.by_project(project).order_by('-ts').first()
         
         if not force_create and lst_msg:
             in_bounds = in_time_bounds(lst_msg.ts, ts or tz.now(), threshold=threshold)
@@ -102,14 +102,14 @@ class TextLine(ProjectBasedModel):
 
     objects = TextLineQuerySet.as_manager()
 
-    def spray(self):
+    def spray(self, client_id=None):
         # 1 set sending timestamp
         self.set_ts(tz.now())
         # 2 prepare message
         params = self.prepare_data(self.attachments.all())
         # 3 multicast to group of stakeholders
         for user in self.project.stakeholders:
-            self.send_single(user, self.project, params)
+            self.send_single(user, self.project, params, client_id=client_id)
         # 4 flush everybody
         centrifugo_client.send()
         return params
@@ -136,15 +136,15 @@ class TextLine(ProjectBasedModel):
             params['attachments'] = dump_attachments(self.attachments)
         return params
 
-    def send_single(self, user, project, params):
+    def send_single(self, user, project, params, client_id):
         # 1 incr counter
-        room_counter = ChatCounter.incr_for(user, project)
+
+        _, room_counter = ChatCounter.get_or_create(user, project)
+        if user.id != self.from_account_id:
+            room_counter.incr_counter()
         # 2 add to sending buffer
         chnl = prepare_channel(user.id)
-        centrifugo_client.publish(chnl, {
-            'line': params,
-            'counter': room_counter.counter,
-        })
+        centrifugo_client.publish(chnl, params, client=client_id)
             
 
 class ChatCounter(ProjectBasedModel):
