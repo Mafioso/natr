@@ -1179,34 +1179,101 @@ class CostDocument(models.Model):
             'cost_document': u"РАСШИВРОВКА СМЕТЫ" if kwargs['expanded_cost_doc'] else u"СМЕТА"
         }
         table = kwargs['doc'].tables[0]
+        merge_cells = []
+        milestones_count = self.document.project.milestone_set.count()
+
+        first = True
+        for milestone, cnt in zip(self.document.project.milestone_set.all().order_by("number"),
+                                range(milestones_count)):
+            if first:
+                table.rows[1].cells[2].text = str(milestone.number)
+                first = False
+                continue
+            col_summ = table.add_column(20)
+            col_own_fund = table.add_column(20)
+            col_natd_fund = table.add_column(20)
+            col_summ.cells[2].text = str(milestone.number)
+            col_summ.cells[2].text = u"Общая сумма"
+            col_own_fund.cells[2].text = u"Собственные средства"
+            col_natd_fund.cells[2].text = u"Сумма гранта"
+            merge_cells.append({
+                                    'row': 1,
+                                    'col': cnt+5,
+                                    'rowspan': 3
+                                })
+        merge_cells.append({
+                            'row': 0,
+                            'col': 2,
+                            'rowspan': milestones_count*3
+                            })
+
+        if kwargs['expanded_cost_doc']:
+            col = table.add_column(30)
+            col.cells[0].text = u"Расшифровка"
+            try:
+                a = table.cell(0, milestones_count*3+2)
+                b = table.cell(2, milestones_count*3+2)
+                A = a.merge(b)
+            except:
+                print "ERROR: OUT OF LIST"
+
+        for merge_cell in merge_cells:
+            try:
+                a = table.cell(merge_cell['row'], merge_cell['col'])
+                b = table.cell(merge_cell['row'] + merge_cell['rowspan'] - 1, merge_cell['col'])
+                A = a.merge(b)
+            except:
+                print "ERROR: OUT OF LIST", merge_cell
 
         cost_rows = self.get_costs_rows()
         cost_rows_data = []
+        total = 0
+        total_costs = [{"total_costs": 0, 
+                        "total_grant_costs": 0, 
+                        "total_own_costs": 0 }]*milestones_count
+
+
         for cost_row in cost_rows:
             if not cost_row:
                 continue
-            # assert len(cost_row) > 0, 'have to be at least one element'
-            cost_cell = cost_row[0]
-            cost_type_data = natr_serializers.CostTypeSerializer(instance=cost_cell.cost_type).data
-            cost_row_data = MilestoneCostCellSerializer(instance=cost_row, many=True).data
-            cost_rows_data.append({
-                "cost_type": cost_type_data,
-                "cost_row": cost_row_data
-            })
-        headers = self.get_success_headers(cost_rows_data)
-        return response.Response(cost_rows_data, headers=headers)
+            row = table.add_row()
+            row.cells[0].text = cost_row[0].cost_type.name
+            for cell, cnt in zip(cost_row, range(len(cost_row))):
+                grant_costs = 0
+                own_costs = 0
 
+                if cell.grant_costs:
+                    grant_costs = cell.grant_costs.amount
 
-        # for item, cnt in zip(self.todos.all(), range(1, self.todos.count()+1)):
-        #     row = kwargs['doc'].tables[0].add_row()
-        #     row.cells[0].text = utils.get_stringed_value(cnt)
-        #     row.cells[1].text = utils.get_stringed_value(item.event_name)
-        #     row.cells[2].text = utils.get_stringed_value(self.project.name)
-        #     row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y") or "")
-        #     row.cells[4].text = utils.get_stringed_value(item.period)
-        #     row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
-        #     row.cells[6].text = utils.get_stringed_value(item.remaining_days)
-        #     row.cells[7].text = utils.get_stringed_value(item.report_type)
+                if cell.own_costs:
+                    own_costs = cell.own_costs.amount
+
+                row.cells[2+cnt*3].text = str(grant_costs + own_costs)
+                row.cells[3+cnt*3].text = str(own_costs)
+                row.cells[4+cnt*3].text = str(grant_costs)
+
+                total_costs[cnt]["total_costs"] += grant_costs + own_costs
+                total_costs[cnt]["total_grant_costs"] += grant_costs
+                total_costs[cnt]["total_own_costs"] += own_costs
+
+        for cost, cnt  in zip(total_costs, range(milestones_count)):
+            table.rows[3].cells[2+cnt*3].text = str(cost["total_costs"])
+            table.rows[3].cells[3+cnt*3].text = str(cost["total_own_costs"])
+            table.rows[3].cells[4+cnt*3].text = str(cost["total_grant_costs"])
+            total += cost["total_costs"]
+        table.cell(3, 1).text = str(cost["total_costs"])
+
+        # for cost_row in cost_rows:
+        #     if not cost_row:
+        #         continue
+        #     # assert len(cost_row) > 0, 'have to be at least one element'
+        #     cost_cell = cost_row[0]
+        #     cost_type_data = natr_serializers.CostTypeSerializer(instance=cost_cell.cost_type).data
+        #     cost_row_data = MilestoneCostCellSerializer(instance=cost_row, many=True).data
+        #     cost_rows_data.append({
+        #         "cost_type": cost_type_data,
+        #         "cost_row": cost_row_data
+        #     })
 
         return context
 
