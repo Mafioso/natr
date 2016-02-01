@@ -11,7 +11,7 @@ from .project import (
 	RiskCategoryViewSet,
 	RiskDefinitionViewSet,
 	CommentViewSet,
-	ActViewSet
+	ActViewSet,
 )
 from .document import (
 	DocumentViewSet,
@@ -31,6 +31,7 @@ from .document import (
 )
 from .journal import JournalActivityViewSet, JournalViewSet
 from .notification import NotificationViewSet, NotificationSubscriptionViewSet, NotificationCounterViewSet
+from .chat_resource import ChatViewSet
 from .user import get_initial_state
 from .natr_user import NatrUserViewSet, PermissionViewSet, GroupViewSet, DepartmentViewSet
 from .grantee_user import GranteeUserViewSet
@@ -71,6 +72,7 @@ monitoring_router.register(r'todos', MonitoringTodoViewSet, base_name='monitorin
 router.register(r'journals', JournalViewSet, 'journal')
 router.register(r'activities', JournalActivityViewSet, 'activity')
 router.register(r'notifications', NotificationViewSet, 'notification')
+router.register(r'chat', ChatViewSet, 'chat')
 router.register(r'my-notifications', NotificationSubscriptionViewSet, 'notif_subscription')
 router.register(r'notif-counter', NotificationCounterViewSet, 'notif_counter')
 router.register(r'natr-user', NatrUserViewSet, 'natr_user')

@@ -3,13 +3,13 @@ import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
 from django.db.models import Q
-from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes
+from rest_framework.decorators import list_route, detail_route, authentication_classes, permission_classes, api_view
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import viewsets, response, filters, status
-from natr.rest_framework.decorators import patch_serializer_class, ignore_permissions
-from natr.rest_framework.policies import PermissionDefinition
-from natr.rest_framework.authentication import TokenAuthentication
-from natr.rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
+from natr.override_rest_framework.decorators import patch_serializer_class, ignore_permissions
+from natr.override_rest_framework.policies import PermissionDefinition
+from natr.override_rest_framework.authentication import TokenAuthentication
+from natr.override_rest_framework.mixins import ProjectBasedViewSet, LargeResultsSetPagination
 from projects.serializers import *
 from projects import models as prj_models
 from documents.serializers import AttachmentSerializer
@@ -200,8 +200,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @list_route(methods=['get'], url_path='gen_experts_report')
     @patch_serializer_class(ProjectBasicInfoSerializer)
     def get_experts_report(self, request, *a, **kw):
-        projects = self.filter_queryset(self.get_queryset())
-        filename = ExcelReport(projects=projects).generate_experts_report()
+        data = request.query_params
+
+        registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
+        projects = registry_data.pop("projects", [])
+
+        filename = ExcelReport(projects=projects, registry_data = registry_data).generate_experts_report()
         fs = filename.split('/')
         f = open(filename, 'r')
         os.remove(filename)
@@ -210,7 +214,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
 
         return r
-
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
@@ -330,7 +333,8 @@ class MonitoringViewSet(ProjectBasedViewSet):
         is_valid, message = serializer.validate_docx_context(instance=monitoring)
 
         if not is_valid:
-            return HttpResponse({"message": message}, status=status.HTTP_204_NO_CONTENT)
+            return HttpResponse({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
         headers = self.get_success_headers(serializer.data)
         return response.Response({"monitoring": monitoring.id}, headers=headers)
 
@@ -521,4 +525,3 @@ class CommentViewSet(viewsets.ModelViewSet):
 class ActViewSet(viewsets.ModelViewSet):
     queryset = prj_models.Act.objects.all()
     serializer_class = ActSerializer
-

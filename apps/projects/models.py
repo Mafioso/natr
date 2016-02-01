@@ -44,7 +44,13 @@ from journals.models import Journal, JournalActivity
 from grantee.models import Organization, ContactDetails, ShareHolder, AuthorizedToInteractGrantee
 
 
+Q = models.Q
+
+
 class ProjectManager(models.Manager):
+
+    def of_user(self, user):
+        return self.filter(Q(assigned_experts__account=user) | Q(assigned_grantees__account=user))
 
     def create_new(self, **data):
         user = data.pop('user', None)
@@ -353,7 +359,7 @@ class Project(models.Model):
                return 1
             return 0
 
-    @cached_property
+    @property
     def risks(self):
         risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
         return risk_index.risks.all()
@@ -364,7 +370,7 @@ class Project(models.Model):
         except:
             return []
 
-    @cached_property
+    @property
     def stakeholders(self):
         experts = list(self.assigned_experts.all())
         grantees = list(self.assigned_grantees.all())
@@ -468,6 +474,45 @@ class Project(models.Model):
         )
         return self
 
+    @classmethod
+    def gen_registry_data(cls, projects, data):
+        registry_data = {
+            'projects': projects,
+            'keys': [   
+                        "aggreement",
+                        "grantee_name",
+                        "project_name",
+                        "grant_type",
+                        "region",
+                        "total_month",
+                        "fundings",
+                        "transhes",
+                        "expert",
+                        "balance",
+                        "status",
+                        "total_fundings",
+                    ]
+        }
+        
+        if 'date_from' in data and 'date_to' in data:
+            registry_data['date_from'] = dateutil.parser.parse(data['date_from'])
+            registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
+
+            _projects = []
+            for project in projects.filter(document__date_sign__gte=registry_data['date_from'],
+                                              document__date_sign__lte=registry_data['date_to']):
+                if project not in _projects:
+                    _projects.append(project)
+
+            registry_data['projects'] = _projects
+
+            keys = []
+            if 'keys' in data:
+                keys = data['keys'][1:-1].split(',')
+                registry_data['keys'] = keys
+
+
+        return registry_data
 
 class ProjectRiskIndex(ProjectBasedModel):
     risks = models.ManyToManyField('RiskDefinition')
@@ -806,6 +851,12 @@ class Report(ProjectBasedModel):
     @classmethod
     def all_active(cls):
         return Report.objects.filter(status__gt=Report.NOT_ACTIVE)
+
+    def create_protection_doc(self, **protection_document_data):
+        protection_document = ProtectionDocument.build_empty(project=self.project)
+        protection_document.update(**protection_document_data)
+        self.protection_document = protection_document
+        return self
 
 
 @track_data('status')
@@ -1227,7 +1278,7 @@ class Monitoring(ProjectBasedModel):
             row.cells[0].text = utils.get_stringed_value(cnt)
             row.cells[1].text = utils.get_stringed_value(item.event_name)
             row.cells[2].text = utils.get_stringed_value(self.project.name)
-            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y"))
+            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y") or "")
             row.cells[4].text = utils.get_stringed_value(item.period)
             row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
             row.cells[6].text = utils.get_stringed_value(item.remaining_days)

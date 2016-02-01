@@ -3,9 +3,9 @@
 
 from rest_framework import serializers
 from natr import utils, mailing, models as natr_models
-from natr.rest_framework.fields import SerializerMoneyField
-from natr.rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
-from natr.rest_framework.serializers import AuthorizedToInteractGranteeSerializer
+from natr.override_rest_framework.fields import SerializerMoneyField
+from natr.override_rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
+from natr.override_rest_framework.serializers import AuthorizedToInteractGranteeSerializer
 from grantee.serializers import *
 from documents.serializers import *
 from documents.serializers.misc import ProtectionDocumentSerializer
@@ -216,7 +216,10 @@ class ReportSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if 'protection_document' in validated_data:
             protection_document = validated_data.pop('protection_document')
-            instance.protection_document.update(**protection_document)
+            if instance.protection_document:
+                instance.protection_document.update(**protection_document)
+            else:
+                instance.create_protection_doc(**protection_document)
 
         report = super(ReportSerializer, self).update(instance, validated_data)
         return report
