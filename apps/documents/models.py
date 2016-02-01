@@ -1173,6 +1173,43 @@ class CostDocument(models.Model):
                     cost_document=cd)
         return cd
 
+    def get_print_context(self, **kwargs):
+        context = {
+            'project_name': self.document.project.name,
+            'cost_document': u"РАСШИВРОВКА СМЕТЫ" if kwargs['expanded_cost_doc'] else u"СМЕТА"
+        }
+        table = kwargs['doc'].tables[0]
+
+        cost_rows = self.get_costs_rows()
+        cost_rows_data = []
+        for cost_row in cost_rows:
+            if not cost_row:
+                continue
+            # assert len(cost_row) > 0, 'have to be at least one element'
+            cost_cell = cost_row[0]
+            cost_type_data = natr_serializers.CostTypeSerializer(instance=cost_cell.cost_type).data
+            cost_row_data = MilestoneCostCellSerializer(instance=cost_row, many=True).data
+            cost_rows_data.append({
+                "cost_type": cost_type_data,
+                "cost_row": cost_row_data
+            })
+        headers = self.get_success_headers(cost_rows_data)
+        return response.Response(cost_rows_data, headers=headers)
+
+
+        # for item, cnt in zip(self.todos.all(), range(1, self.todos.count()+1)):
+        #     row = kwargs['doc'].tables[0].add_row()
+        #     row.cells[0].text = utils.get_stringed_value(cnt)
+        #     row.cells[1].text = utils.get_stringed_value(item.event_name)
+        #     row.cells[2].text = utils.get_stringed_value(self.project.name)
+        #     row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y") or "")
+        #     row.cells[4].text = utils.get_stringed_value(item.period)
+        #     row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
+        #     row.cells[6].text = utils.get_stringed_value(item.remaining_days)
+        #     row.cells[7].text = utils.get_stringed_value(item.report_type)
+
+        return context
+
 
 class MilestoneCostRow(models.Model):
     u"""Статья расходов по этапу"""
