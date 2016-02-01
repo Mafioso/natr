@@ -216,7 +216,10 @@ class ReportSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         if 'protection_document' in validated_data:
             protection_document = validated_data.pop('protection_document')
-            instance.protection_document.update(**protection_document)
+            if instance.protection_document:
+                instance.protection_document.update(**protection_document)
+            else:
+                instance.create_protection_doc(**protection_document)
 
         report = super(ReportSerializer, self).update(instance, validated_data)
         return report

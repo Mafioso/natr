@@ -398,6 +398,7 @@ class ProtectionDocument(models.Model):
     @name.setter
     def name(self, value):
         self.document.name = value
+        self.document.save()
 
     @property
     def number(self):
@@ -406,6 +407,7 @@ class ProtectionDocument(models.Model):
     @number.setter
     def number(self, value):
         self.document.number = value
+        self.document.save()
 
     @property
     def date_sign(self):
@@ -414,6 +416,7 @@ class ProtectionDocument(models.Model):
     @date_sign.setter
     def date_sign(self, value):
         self.document.date_sign = date_parser.parse(value)
+        self.document.save()
 
     @classmethod
     def build_empty(cls, project):
@@ -427,6 +430,7 @@ class ProtectionDocument(models.Model):
             if hasattr(self, k):
                 setattr(self, k, v)
 
+        self.save()
         return self
 
 

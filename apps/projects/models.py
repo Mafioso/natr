@@ -852,6 +852,12 @@ class Report(ProjectBasedModel):
     def all_active(cls):
         return Report.objects.filter(status__gt=Report.NOT_ACTIVE)
 
+    def create_protection_doc(self, **protection_document_data):
+        protection_document = ProtectionDocument.build_empty(project=self.project)
+        protection_document.update(**protection_document_data)
+        self.protection_document = protection_document
+        return self
+
 
 @track_data('status')
 class Corollary(ProjectBasedModel):
