@@ -73,6 +73,8 @@ class ProjectManager(models.Manager):
         # # if funding_type_data:
         # now is required by default
         prj.funding_type = FundingType.objects.create(**funding_type_data)
+        if prj.funding_type.name == FundingType.COMMERCIALIZATION:
+            CostType.objects.create(project=prj, name=u"расходы на патентование в РК")
 
         if statement_data:
             Document.dml.create_statement(project=prj, **statement_data)
@@ -145,9 +147,13 @@ class ProjectManager(models.Manager):
                 print 'Error: ', e.message
                 Organization.objects.create_new(orgdet_data, project=instance)
 
+        old_funding_type = instance.funding_type.name
         if funding_type_data:
             FundingType.objects.filter(pk=instance.funding_type_id
                 ).update(**funding_type_data)
+            if instance.funding_type.name == FundingType.COMMERCIALIZATION and \
+                old_funding_type != instance.funding_type.name:
+                CostType.objects.create(project=instance, name=u"расходы на патентование в РК")
 
         if statement_data:
             if instance.statement:
