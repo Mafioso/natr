@@ -124,19 +124,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         todos_ser = self.get_serializer(todo_qs, many=True)
-        return Response(todo_ser.data)
+        return response.Response(todo_ser.data)
 
     @detail_route(methods=['get'], url_path='journal_activities')
     @patch_serializer_class(journal_serializers.JournalActivitySerializer)
     def journal_activities(self, request, *a, **kw):
+        query_params = request.query_params
         project = self.get_object()
         activities = project.get_journal()
-
-        date_created = request.GET.get('date_created', None)
+        date_created = query_params.get('date_created', None)
         if date_created and activities:
             activities = activities.filter(date_created__gte=dateutil.parser.parse(date_created))
 
-        search_text = request.GET.get('search_activity', None)
+        search_text = query_params.get('search_activity', None)
         if search_text and activities:
             activities = activities.filter(
                 Q(subject_name__icontains=search_text) |
@@ -150,7 +150,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
         activity_ser = self.get_serializer(activities, many=True)
-        return Response(activity_ser.data)
+        return response.Response(activity_ser.data)
 
     @list_route(methods=['get'], url_path='get_titles')
     def list_project_titles(self, request, *a, **kw):

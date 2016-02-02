@@ -232,7 +232,7 @@ class Project(models.Model):
     description = models.TextField(null=True, blank=True)
     innovation = models.TextField(u'Инновационность', null=True, blank=True)
     grant_goal = models.TextField(u'Цель гранта', null=True, blank=True)
-    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     total_month = models.IntegerField(u'Срок реализации проекта (месяцы)', default=24)

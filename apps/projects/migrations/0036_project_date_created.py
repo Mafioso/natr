@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='project',
-            name='date_created',
+            name='created_at',
             field=models.DateTimeField(default=datetime.datetime(2016, 2, 2, 8, 5, 12, 665977, tzinfo=utc), auto_now_add=True),
             preserve_default=False,
         ),
