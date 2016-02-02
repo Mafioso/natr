@@ -404,6 +404,7 @@ class ReportViewSet(ProjectBasedViewSet):
         prev_status = report.status
         report.status = prj_models.Report.REWORK
         report.save()
+        comment = None
 
         if data.get('comment_text', None):
             data['expert'] = request.user.user.id
