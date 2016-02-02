@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
@@ -204,6 +207,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
         projects = registry_data.pop("projects", [])
+
+        if not projects:
+            return response.Response(u"По вашему запросу проектов не найдено(Projects not found)", status=status.HTTP_404_NOT_FOUND)
 
         filename = ExcelReport(projects=projects, registry_data = registry_data).generate_experts_report()
         fs = filename.split('/')
