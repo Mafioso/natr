@@ -171,8 +171,11 @@ def assign_user_group(sender, instance, created=False, **kwargs):
         return
     instance.add_to_experts()
 
-post_save.connect(assign_user_group, sender=NatrUser)
+def delete_account(sender, instance, **kwargs):
+    instance.account.delete()
 
+post_save.connect(assign_user_group, sender=NatrUser)
+post_delete.connect(delete_account, sender=NatrUser)
 
 def test_cascade():
     import random

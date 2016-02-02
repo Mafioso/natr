@@ -109,16 +109,16 @@ class GranteeSerializer(serializers.ModelSerializer):
 		#XXX:: fix it by making ManyToMany between `grantee` and `organization_details`
 		def hasOrgDetails(project):
 			return hasattr(project, 'organization_details')
-		
+
 		project = filter(hasOrgDetails, projects)[0]
 		organization = project.organization_details
 
-		name = contact_details_data['full_name'].split()
+		name_parts = contact_details_data['full_name'].split()
 		first_name = last_name = None
-		if len(name) == 1:
-			first_name = name[0]
-		elif len(name) > 1:
-			last_name = name[1]
+		if len(name_parts) > 0:
+			first_name = name_parts[0]
+		if len(name_parts) > 1:
+			last_name = name_parts[1]
 
 		grantee_user = auth2_models.Account.objects.create_grantee(
 			first_name=first_name,
