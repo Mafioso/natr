@@ -59,3 +59,12 @@ class CostDocumentSerializer(DocumentCompositionSerializer):
             return models.Document.dml.create_empty_cost(**validated_data)
         else:
             return models.Document.dml.create_cost(**validated_data)
+
+    def validate_docx_context(self, instance):
+        # for item, cnt in zip(instance.todos.all(), range(1, instance.todos.count()+1)):
+        #     if not item.date_start:
+        #         return False, u"Заполните поле \"Начало\" для мероприятия №%s"%cnt
+        #     if not item.date_end:
+        #         return False, u"Заполните поле \"Завершение\" для мероприятия №%s"%cnt
+
+        return True, u""
