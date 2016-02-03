@@ -1200,7 +1200,7 @@ class CostDocument(models.Model):
             table.cell(2, cnt*3+2).text = u"Общая сумма"
             table.cell(2, cnt*3+3).text = u"Собственные средства"
             table.cell(2, cnt*3+4).text = u"Сумма гранта"
-            
+
             merge_cells.append({
                                     'row': 1,
                                     'col': cnt*3+2,
@@ -1224,8 +1224,8 @@ class CostDocument(models.Model):
         cost_rows = self.get_costs_rows()
         cost_rows_data = []
         total = 0
-        total_costs = [{"total_costs": 0, 
-                        "total_grant_costs": 0, 
+        total_costs = [{"total_costs": 0,
+                        "total_grant_costs": 0,
                         "total_own_costs": 0 }]*milestones_count
 
 
@@ -1256,7 +1256,7 @@ class CostDocument(models.Model):
 
             row.cells[1].text = str(summ)
 
-            if kwargs['expanded_cost_doc']: 
+            if kwargs['expanded_cost_doc']:
                 row_desc = table.add_row()
                 row_desc.cells[0].text = cost_row[0].cost_type.price_details
                 a = table.cell(row_desc._index, 0)
@@ -1292,8 +1292,8 @@ class CostDocument(models.Model):
         _table.cell(0, 1).text = u"От имени Грантополучателя"
         _table.cell(1, 0).text = u"__________________   _________/М.П"
         _table.cell(1, 1).text = u"__________________   _________/М.П"
-        _table.cell(2, 0).text = u"  /Ф.И.О./                      /подпись/"           
-        _table.cell(2, 1).text = u"  /Ф.И.О./                     /подпись/"   
+        _table.cell(2, 0).text = u"  /Ф.И.О./                      /подпись/"
+        _table.cell(2, 1).text = u"  /Ф.И.О./                     /подпись/"
         _table.autofit = True
 
         return context
@@ -1308,10 +1308,6 @@ class MilestoneCostRow(models.Model):
     cost_document = models.ForeignKey('CostDocument', related_name='milestone_costs')
     milestone = models.ForeignKey('projects.Milestone')
     cost_type = models.ForeignKey('natr.CostType')
-    costs = MoneyField(
-        u'Сумма затрат (тенге)',
-        default=0, default_currency=settings.KZT,
-        max_digits=20, decimal_places=2)
     grant_costs = MoneyField(
         u'Средства гранта (тенге)',
         default=0, default_currency=settings.KZT,
@@ -1320,7 +1316,6 @@ class MilestoneCostRow(models.Model):
         u'Собственные средства (тенге)',
         default=0, default_currency=settings.KZT,
         max_digits=20, decimal_places=2, null=True)
-
 
     @property
     def costs(self):
