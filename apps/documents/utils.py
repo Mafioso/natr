@@ -50,9 +50,9 @@ class DocumentPrint:
     def __init__(self, object):
         self.object = object
 
-    def generate_docx(self):
+    def generate_docx(self, expanded_cost_doc=False):
         template_name = self.get_template_name()
-        filename = self.get_filename()
+        filename = self.get_filename(expanded_cost_doc=expanded_cost_doc)
 
         if not template_name or not filename:
             return None, None
@@ -60,7 +60,7 @@ class DocumentPrint:
         template_path = os.path.join(settings.DOCX_TEMPLATES_DIR, template_name)
 
         doc = DocxTemplate(template_path)
-        context = self.get_context(**{'doc': doc})
+        context = self.get_context(**{'doc': doc, "expanded_cost_doc": expanded_cost_doc})
 
         style = doc.styles['Normal']
         font = style.font
@@ -83,6 +83,8 @@ class DocumentPrint:
             return u"report.docx"
         elif self.object.__class__.__name__ == 'Monitoring':
             return u"monitoring.docx"
+        elif self.object.__class__.__name__ == "CostDocument":
+            return u"cost_document.docx"
 
         return None
 
@@ -99,7 +101,7 @@ class DocumentPrint:
 
         return context
 
-    def get_filename(self):
+    def get_filename(self, expanded_cost_doc=False):
         if self.object.__class__.__name__ == 'ProjectStartDescription':
             return u"Показатели эффективности по состоянию на начало проекта.docx"
         elif self.object.__class__.__name__ == 'BasicProjectPasportDocument' or \
@@ -109,6 +111,10 @@ class DocumentPrint:
             return u"Отчет по проекту.docx"
         elif self.object.__class__.__name__ == 'Monitoring':
             return u"План мониторинга.docx"
+        elif self.object.__class__.__name__ == 'CostDocument' and expanded_cost_doc:
+            return u"Расшивровка сметы расходов.docx"
+        elif self.object.__class__.__name__ == 'CostDocument' and not expanded_cost_doc:
+            return u"Cмета расходов.docx"
 
         return None
 

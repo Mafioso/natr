@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 import auth2.models as models
 import grantee.models as grantee_models
 import projects.models as projects_models
@@ -35,7 +36,10 @@ class AccountSerializer(serializers.ModelSerializer):
 
 	user_permissions = PermissionSerializer(source='get_all_permission_objs', many=True, required=False)
 	password = serializers.CharField(required=False)
-	email = serializers.CharField(required=False)
+	email = serializers.CharField(
+		required=False,
+		validators=[UniqueValidator(queryset=models.Account.objects.all())]
+	)
 	# groups = GroupSerializer(many=True)
 	counters = serializers.SerializerMethodField()
 

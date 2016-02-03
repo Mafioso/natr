@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import os
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
@@ -124,19 +127,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(page, many=True)
             return self.get_paginated_response(serializer.data)
         todos_ser = self.get_serializer(todo_qs, many=True)
-        return Response(todo_ser.data)
+        return response.Response(todo_ser.data)
 
     @detail_route(methods=['get'], url_path='journal_activities')
     @patch_serializer_class(journal_serializers.JournalActivitySerializer)
     def journal_activities(self, request, *a, **kw):
+        query_params = request.query_params
         project = self.get_object()
         activities = project.get_journal()
-
-        date_created = request.GET.get('date_created', None)
+        date_created = query_params.get('date_created', None)
         if date_created and activities:
             activities = activities.filter(date_created__gte=dateutil.parser.parse(date_created))
 
-        search_text = request.GET.get('search_activity', None)
+        search_text = query_params.get('search_activity', None)
         if search_text and activities:
             activities = activities.filter(
                 Q(subject_name__icontains=search_text) |
@@ -150,7 +153,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
 
         activity_ser = self.get_serializer(activities, many=True)
-        return Response(activity_ser.data)
+        return response.Response(activity_ser.data)
 
     @list_route(methods=['get'], url_path='get_titles')
     def list_project_titles(self, request, *a, **kw):
@@ -204,6 +207,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
         projects = registry_data.pop("projects", [])
+
+        if not projects:
+            return response.Response(u"По вашему запросу проектов не найдено(Projects not found)", status=status.HTTP_404_NOT_FOUND)
 
         filename = ExcelReport(projects=projects, registry_data = registry_data).generate_experts_report()
         fs = filename.split('/')
@@ -404,6 +410,7 @@ class ReportViewSet(ProjectBasedViewSet):
         prev_status = report.status
         report.status = prj_models.Report.REWORK
         report.save()
+        comment = None
 
         if data.get('comment_text', None):
             data['expert'] = request.user.user.id

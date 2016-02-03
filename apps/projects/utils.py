@@ -225,10 +225,26 @@ class ExcelReport:
         wb = Workbook()
         ws = wb.active
 
+        if len(projects) == 0:
+            ws = self.insert_into_cell(ws, 'A', '1', u'Реестр проектов')
+            ws = self.insert_into_cell(ws, 'A', '2', u'Проектов не найдено')
+            ws.merge_cells('A1:B1')
+            ws['A1'].alignment = self.alignment_center
+            ws['A1'].font = Font(bold=True)
+
+            file_dir = EXCEL_REPORTS_DIR
+            if not os.path.exists(EXCEL_REPORTS_DIR):
+                os.makedirs(EXCEL_REPORTS_DIR)
+
+            filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по грантам.xlsx'
+            wb.save(filename)
+            return filename
+
         all_cols_number = 0
         temp_col_num = 0
         first = True
         p_len = 0
+        row = 1
 
         if type(projects) == list:
             p_len = len(projects)
@@ -315,9 +331,9 @@ class ExcelReport:
 
                 if 'transhes' in self.registry_data['keys']: 
                     try:
-                        ws = self.insert_into_cell(ws, greyFillet_column_letter(i), row, str(project.milestone_set.all()[i-10].fundings.amount))
+                        ws = self.insert_into_cell(ws, greyFillet_column_letter(col_num), row, str(project.milestone_set.all()[i-10].fundings.amount))
                     except:
-                        ws = self.insert_into_cell(ws, get_column_letter(i), row, str(0))
+                        ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(0))
                     col_num += 1
             
             if 'transhes' in self.registry_data['keys']: 
@@ -361,30 +377,31 @@ class ExcelReport:
             all_cols_number = col_num
             first = False
 
-        ws = self.insert_into_cell(ws, 'A', '1', u'Отчет по грантам 2015 года')
-        ws.merge_cells('A1:%s1'%get_column_letter(all_cols_number-1))
+        ws = self.insert_into_cell(ws, 'A', '1', u'Отчет по грантам')
+        ws.merge_cells('A1:%s1'%get_column_letter(all_cols_number-1 if all_cols_number > 1 else 1))
         ws['A1'].alignment = self.alignment_center
         ws['A1'].font = Font(bold=True)
 
         row += 2
         ws = self.insert_into_cell(ws, 'A', row, u'Итого по договорам на мониторинге ')
-        ws.merge_cells("A%s:%s%s"%(row, get_column_letter(all_cols_number-1), row))
+        ws.merge_cells("A%s:%s%s"%(row, get_column_letter(all_cols_number-1 if all_cols_number > 1 else 1), row))
         ws["A{}".format(row)].alignment = self.alignment_center
         row += 1
 
         ws = self.insert_into_cell(ws, 'A', row, u'ВСЕГО по Договорам 2015 года:')
-        ws.merge_cells("A%s:%s%s"%(row, get_column_letter(temp_col_num-2), row))
+        ws.merge_cells("A%s:%s%s"%(row, get_column_letter(temp_col_num-2 if temp_col_num > 2 else 1), row))
         ws["A{}".format(row)].alignment = self.alignment_right
 
-        for i in range(temp_col_num-1, col_num):
-            sum = 0
-            for j in range(2, row-1):
-                val = ws['{}{}'.format(get_column_letter(i), j)].value
-                try:                 
-                    sum += decimal.Decimal(val)
-                except:
-                    pass
-            ws = self.insert_into_cell(ws, get_column_letter(i), row, str(sum))
+        if temp_col_num > 2 and all_cols_number > 2:
+            for i in range(temp_col_num-1, all_cols_number):
+                sum = 0
+                for j in range(2, row-1):
+                    val = ws['{}{}'.format(get_column_letter(i), j)].value
+                    try:                 
+                        sum += decimal.Decimal(val)
+                    except:
+                        pass
+                ws = self.insert_into_cell(ws, get_column_letter(i), row, str(sum))
 
         for i in range(all_cols_number):
             ws.column_dimensions[get_column_letter(i+1)].width = 20.0
@@ -400,13 +417,13 @@ class ExcelReport:
                     "-" + self.registry_data['date_to'].strftime("%d.%m.%y")
             
             ws = self.insert_into_cell(ws, 'A', '1', u'Реестр проектов ' + dates)
-            ws.merge_cells('A1:%s1'%get_column_letter(all_cols_number-1))
+            ws.merge_cells('A1:%s1'%get_column_letter(all_cols_number-1 if all_cols_number > 1 else 1))
             ws['A1'].alignment = self.alignment_center
             ws['A1'].font = Font(bold=True)
 
-            # ws = self.insert_into_cell(ws, 'A', row, u'ВСЕГО по Договорам ' + dates)
-            # ws.merge_cells("A%s:%s%s"%(row, get_column_letter(all_cols_number-1), row))
-            # ws["A{}".format(row)].alignment = self.alignment_right
+            ws = self.insert_into_cell(ws, 'A', row, u'ВСЕГО по Договорам ' + dates)
+            ws.merge_cells("A%s:%s%s"%(row, get_column_letter(temp_col_num-2 if temp_col_num > 2 else 1), row))
+            ws["A{}".format(row)].alignment = self.alignment_right
 
             filename = EXCEL_REPORTS_DIR + '/' + u'Реестр проектов ' + dates + '.xlsx'
 

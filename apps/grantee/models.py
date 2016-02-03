@@ -5,8 +5,7 @@ __author__ = 'xepa4ep'
 
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
-
-# from django.contrib.auth.models import User
+from django.db.models.signals import post_save, post_delete
 
 
 class OrganizationManager(models.Manager):
@@ -183,3 +182,8 @@ class Grantee(models.Model):
             return self.organization.authorized_grantees.first()
         except ObjectDoesNotExist:
             return None
+
+def delete_account(sender, instance, **kwargs):
+    instance.account.delete()
+
+post_delete.connect(delete_account, sender=Grantee)

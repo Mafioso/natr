@@ -73,6 +73,8 @@ class ProjectManager(models.Manager):
         # # if funding_type_data:
         # now is required by default
         prj.funding_type = FundingType.objects.create(**funding_type_data)
+        if prj.funding_type.name == FundingType.COMMERCIALIZATION:
+            CostType.objects.create(project=prj, name=u"расходы на патентование в РК")
 
         if statement_data:
             Document.dml.create_statement(project=prj, **statement_data)
@@ -145,9 +147,13 @@ class ProjectManager(models.Manager):
                 print 'Error: ', e.message
                 Organization.objects.create_new(orgdet_data, project=instance)
 
+        old_funding_type = instance.funding_type.name
         if funding_type_data:
             FundingType.objects.filter(pk=instance.funding_type_id
                 ).update(**funding_type_data)
+            if instance.funding_type.name == FundingType.COMMERCIALIZATION and \
+                old_funding_type != instance.funding_type.name:
+                CostType.objects.create(project=instance, name=u"расходы на патентование в РК")
 
         if statement_data:
             if instance.statement:
@@ -232,6 +238,7 @@ class Project(models.Model):
     description = models.TextField(null=True, blank=True)
     innovation = models.TextField(u'Инновационность', null=True, blank=True)
     grant_goal = models.TextField(u'Цель гранта', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, blank=True)
     date_start = models.DateTimeField(null=True)
     date_end = models.DateTimeField(null=True)
     total_month = models.IntegerField(u'Срок реализации проекта (месяцы)', default=24)
@@ -851,6 +858,12 @@ class Report(ProjectBasedModel):
     @classmethod
     def all_active(cls):
         return Report.objects.filter(status__gt=Report.NOT_ACTIVE)
+
+    def create_protection_doc(self, **protection_document_data):
+        protection_document = ProtectionDocument.build_empty(project=self.project)
+        protection_document.update(**protection_document_data)
+        self.protection_document = protection_document
+        return self
 
 
 @track_data('status')

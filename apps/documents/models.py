@@ -398,6 +398,7 @@ class ProtectionDocument(models.Model):
     @name.setter
     def name(self, value):
         self.document.name = value
+        self.document.save()
 
     @property
     def number(self):
@@ -406,6 +407,7 @@ class ProtectionDocument(models.Model):
     @number.setter
     def number(self, value):
         self.document.number = value
+        self.document.save()
 
     @property
     def date_sign(self):
@@ -414,6 +416,7 @@ class ProtectionDocument(models.Model):
     @date_sign.setter
     def date_sign(self, value):
         self.document.date_sign = date_parser.parse(value)
+        self.document.save()
 
     @classmethod
     def build_empty(cls, project):
@@ -427,6 +430,7 @@ class ProtectionDocument(models.Model):
             if hasattr(self, k):
                 setattr(self, k, v)
 
+        self.save()
         return self
 
 
@@ -1172,6 +1176,127 @@ class CostDocument(models.Model):
                     cost_type=ctype,
                     cost_document=cd)
         return cd
+
+    def get_print_context(self, **kwargs):
+        context = {
+            'project_name': self.document.project.name,
+            'cost_document': u"РАСШИВРОВКА СМЕТЫ" if kwargs['expanded_cost_doc'] else u"СМЕТА"
+        }
+
+        merge_cells = []
+        milestones_count = self.document.project.milestone_set.count()
+        table = kwargs['doc'].add_table(rows=5, cols=2+milestones_count*3, style="TableGrid")
+
+        table.cell(0, 0).text = u"Затраты на выполнение работ"
+        table.cell(0, 1).text = u"Сумма затрат, тенге"
+        table.cell(0, 2).text = u"Этапы работ"
+        table.cell(3, 0).text = u"Затраты - ВСЕГО:"
+        table.cell(4, 0).text = u"в том числе по статьям-"
+
+        for milestone, cnt in zip(self.document.project.milestone_set.all().order_by("number"),
+                                range(milestones_count)):
+            table.rows[1].cells[cnt*3+2].text = str(milestone.number)
+
+            table.cell(2, cnt*3+2).text = u"Общая сумма"
+            table.cell(2, cnt*3+3).text = u"Собственные средства"
+            table.cell(2, cnt*3+4).text = u"Сумма гранта"
+            
+            merge_cells.append({
+                                    'row': 1,
+                                    'col': cnt*3+2,
+                                    'rowspan': 3
+                                })
+
+        merge_cells.append({
+                            'row': 0,
+                            'col': 2,
+                            'rowspan': milestones_count*3
+                            })
+
+        for merge_cell in merge_cells:
+            try:
+                a = table.cell(merge_cell['row'], merge_cell['col'])
+                b = table.cell(merge_cell['row'], merge_cell['col'] + merge_cell['rowspan'] - 1)
+                A = a.merge(b)
+            except:
+                print "ERROR: OUT OF LIST", merge_cell
+
+        cost_rows = self.get_costs_rows()
+        cost_rows_data = []
+        total = 0
+        total_costs = [{"total_costs": 0, 
+                        "total_grant_costs": 0, 
+                        "total_own_costs": 0 }]*milestones_count
+
+
+        for cost_row in cost_rows:
+            if not cost_row:
+                continue
+            summ = 0
+            row = table.add_row()
+            row.cells[0].text = cost_row[0].cost_type.name
+            for cell, cnt in zip(cost_row, range(len(cost_row))):
+                grant_costs = 0
+                own_costs = 0
+
+                if cell.grant_costs:
+                    grant_costs = cell.grant_costs.amount
+
+                if cell.own_costs:
+                    own_costs = cell.own_costs.amount
+
+                row.cells[2+cnt*3].text = str(grant_costs + own_costs)
+                row.cells[3+cnt*3].text = str(own_costs)
+                row.cells[4+cnt*3].text = str(grant_costs)
+
+                total_costs[cnt]["total_costs"] += grant_costs + own_costs
+                total_costs[cnt]["total_grant_costs"] += grant_costs
+                total_costs[cnt]["total_own_costs"] += own_costs
+                summ += grant_costs + own_costs
+
+            row.cells[1].text = str(summ)
+
+            if kwargs['expanded_cost_doc']: 
+                row_desc = table.add_row()
+                row_desc.cells[0].text = cost_row[0].cost_type.price_details
+                a = table.cell(row_desc._index, 0)
+                b = table.cell(row_desc._index, milestones_count*3+1)
+                A = a.merge(b)
+
+
+        for cost, cnt  in zip(total_costs, range(milestones_count)):
+            table.rows[3].cells[2+cnt*3].text = str(cost["total_costs"])
+            table.rows[3].cells[3+cnt*3].text = str(cost["total_own_costs"])
+            table.rows[3].cells[4+cnt*3].text = str(cost["total_grant_costs"])
+            total += cost["total_costs"]
+        table.cell(3, 1).text = str(cost["total_costs"])
+        table.autofit = True
+
+        total_width = 0
+        total_cols = milestones_count*3 + 2
+        for column in table.columns:
+            total_width += column.width
+
+        summ_col_width = total_width/(total_cols+2)
+
+        for column in table.columns:
+            if column._index == 0:
+                column.width = summ_col_width * 3
+                continue
+            column.width = summ_col_width
+
+        kwargs['doc'].add_paragraph()
+
+        _table = kwargs['doc'].add_table(rows=3, cols=2)
+        _table.cell(0, 0).text = u"От имени НАТР"
+        _table.cell(0, 1).text = u"От имени Грантополучателя"
+        _table.cell(1, 0).text = u"__________________   _________/М.П"
+        _table.cell(1, 1).text = u"__________________   _________/М.П"
+        _table.cell(2, 0).text = u"  /Ф.И.О./                      /подпись/"           
+        _table.cell(2, 1).text = u"  /Ф.И.О./                     /подпись/"   
+        _table.autofit = True
+
+        return context
 
 
 class MilestoneCostRow(models.Model):
