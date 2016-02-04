@@ -1536,6 +1536,7 @@ class Act(ProjectBasedModel):
     """
     class Meta:
         verbose_name = u"Акт выездного мониторинга"
+        relevant_for_permission = True
 
     monitoring_todo = models.ForeignKey('projects.MonitoringTodo', related_name='acts', null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
