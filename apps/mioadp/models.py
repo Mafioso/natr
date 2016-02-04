@@ -31,15 +31,19 @@ class ArticleLink(ProjectBasedModel):
 	@classmethod
 	def create_from_link(cls, project, link):
 		try:
+			if not link.startswith('http') or not link.startswith('https'):
+				link = 'http://' + link
 			url = urlparse(link)
 			hostname = url.hostname.split('.')[-2] # 'finance.nur.kz' -> 'nur
 		except Exception as e:
+			print 'here', e
 			return None
 
 		try:
 			html = urlopen(url.geturl())
 			soup = BeautifulSoup(html.read(), "lxml")
 		except Exception as e:
+			print 'here2', e
 			return None
 
 		_parser = None

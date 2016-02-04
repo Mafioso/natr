@@ -102,7 +102,7 @@ class Notification(models.Model):
 			s, counter = NotificationSubscribtion.objects.create(
 				account=u, notification=self)
 			yield (u.id, utils.prepare_channel(u.id), s.id, counter.counter)
-		
+
 	@property
 	def milestone(self):
 		"""Hook property that is called by corresponding serializer.
@@ -219,7 +219,7 @@ def test():
 				'date_start': '2016-01-08T00:00:00Z',
 				'number': 2,
 				'project': 25,
-				'fundings': {'currency': 'XYZ', 'amount': 33333.22}
+				'fundings': {'currency': 'KZT', 'amount': 33333.22}
 			},
 			'counter': 3
 		})
@@ -227,4 +227,3 @@ def test():
 
 if __name__ == '__main__':
 	test()
-

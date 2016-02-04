@@ -485,7 +485,7 @@ class Project(models.Model):
     def gen_registry_data(cls, projects, data):
         registry_data = {
             'projects': projects,
-            'keys': [   
+            'keys': [
                         "aggreement",
                         "grantee_name",
                         "project_name",
@@ -500,7 +500,7 @@ class Project(models.Model):
                         "total_fundings",
                     ]
         }
-        
+
         if 'date_from' in data and 'date_to' in data:
             registry_data['date_from'] = dateutil.parser.parse(data['date_from'])
             registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
@@ -579,7 +579,7 @@ class FundingType(models.Model):
     def __unicode__(self):
         return self.name
 
-    @property 
+    @property
     def name_cap(self):
         return self.get_name_display()
 
@@ -875,6 +875,9 @@ class Corollary(ProjectBasedModel):
         verbose_name = u"Заключение"
         permissions = (
             ('approve_corollary', u"Утверждение документа"),
+            ('sendto_approve_corollary', u"Отправлять документ на утверждение"),
+            ('sendto_rework_corollary', u"Отправлять документ на доработку"),
+            ('start_next_milestone', u"Начинать следующий этап"),
         )
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
@@ -1265,9 +1268,9 @@ class Monitoring(ProjectBasedModel):
                     if 'event_type' in item:
                         item.pop('event_type')
                 monitoring_todo = MonitoringTodo.objects.get(id=item.pop('id'))
-                
-                monitoring_todo.event_name = item.get('event_name', None) 
-                monitoring_todo.report_type = item.get('report_type', None) 
+
+                monitoring_todo.event_name = item.get('event_name', None)
+                monitoring_todo.report_type = item.get('report_type', None)
                 monitoring_todo.date_start = dateutil.parser.parse(item.get("date_start")) if item.get("date_start", None) else None
                 monitoring_todo.date_end = dateutil.parser.parse(item.get("date_end")) if item.get("date_end", None) else None
                 monitoring_todo.save()
@@ -1533,6 +1536,7 @@ class Act(ProjectBasedModel):
     """
     class Meta:
         verbose_name = u"Акт выездного мониторинга"
+        relevant_for_permission = True
 
     monitoring_todo = models.ForeignKey('projects.MonitoringTodo', related_name='acts', null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
