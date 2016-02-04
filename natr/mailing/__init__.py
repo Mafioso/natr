@@ -42,7 +42,7 @@ def send_create_grantee(name, email, password):
 def send_milestone_status_payment(milestone):
     mail = EmailMessage(
                 u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
-                u"""Здравствуйте!\nНачался этап №1 по вашему проекту \"%s\". Просим ознакомится с памяткой""" % milestone.project.name, 
+                u"""Здравствуйте!\nНачался этап №1 по вашему проекту \"%s\". Просим ознакомится с памяткой""" % milestone.project.name,
                 settings.DEFAULT_FROM_EMAIL,
                 map(lambda x: x.account.email, milestone.project.get_grantees())
             )
@@ -54,16 +54,18 @@ def send_milestone_status_payment(milestone):
 def send_milestone_status_implementation(milestone):
     send_mail(
         u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
-        u"""Здравствуйте!\nТранш поступил. Статус этапа: \"На реализации\"""", 
+        u"""Здравствуйте!\nТранш поступил. Статус этапа: \"На реализации\"""",
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, milestone.project.get_grantees()),
         fail_silently=True
     )
 
+# TODO: "по отчету ГП уведомления должны приходить .."
 def send_milestone_status_revision(milestone):
+    print '..here', milestone.project.get_grantees()
     send_mail(
         u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
-        u"""Здравствуйте!\nВаш отчет отправлен на доработку. Проверьте кабинет""", 
+        u"""Здравствуйте!\nВаш отчет отправлен на доработку. Проверьте кабинет""",
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, milestone.project.get_grantees()),
         fail_silently=True
@@ -72,7 +74,7 @@ def send_milestone_status_revision(milestone):
 def send_milestone_status_finished(milestone):
     send_mail(
         u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
-        u"""Здравствуйте!\nЭтап завершен. Сформировано заключение по этапу""", 
+        u"""Здравствуйте!\nЭтап завершен. Сформировано заключение по этапу""",
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, milestone.project.get_grantees()),
         fail_silently=True
@@ -87,7 +89,7 @@ def send_monitoring_plan_agreed(monitoring):
 
     mail = EmailMultiAlternatives(
         u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
-        u"""Здравствуйте!\nВаш план мониторинга был согласован""", 
+        u"""Здравствуйте!\nВаш план мониторинга был согласован""",
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, monitoring.project.get_grantees()) + \
         map(lambda x: x.account.email, monitoring.project.assigned_experts.all()),
@@ -107,7 +109,7 @@ def send_monitoring_plan_gp_approve(monitoring):
 
     mail = EmailMultiAlternatives(
         u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
-        mail_text, 
+        mail_text,
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, monitoring.project.get_grantees()),
     )
@@ -124,12 +126,12 @@ def send_monitoring_plan_approved_by_gp(monitoring):
             Для отправки на согласование руководству перейдите по ссылке: http://178.88.64.87:8000/#/projects/edit/%s/monitoring"""%monitoring.project.id
     mail = EmailMultiAlternatives(
         u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
-        mail_text, 
+        mail_text,
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, monitoring.project.assigned_experts.all())
     )
     mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
-    mail.send(fail_silently=True) 
+    mail.send(fail_silently=True)
 
 def send_monitoring_plan_was_send_to_rework(monitoring, user=None):
     def get_monitoring_plan(monitoring):
@@ -151,7 +153,7 @@ def send_monitoring_plan_was_send_to_rework(monitoring, user=None):
             Для редактирования плана перейдите по ссылке: http://178.88.64.87:8000/#/project/%s/monitoring_plan"""%(user_info, monitoring.project.id)
     mail = EmailMultiAlternatives(
         u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
-        mail_text, 
+        mail_text,
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, monitoring.project.assigned_experts.all())
     )
@@ -161,7 +163,7 @@ def send_monitoring_plan_was_send_to_rework(monitoring, user=None):
 def send_corollary_approved(corollary):
     send_mail(
         u'Заключение по проекту \"%s\" утверждено.' % corollary.project.name,
-        u"""Здравствуйте!\nЗаключение по проекту \"%s\" утверждено.""" % corollary.project.name, 
+        u"""Здравствуйте!\nЗаключение по проекту \"%s\" утверждено.""" % corollary.project.name,
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
         fail_silently=True
@@ -176,11 +178,11 @@ def send_corollary_to_rework(corollary, user=None):
         elif hasattr(user, 'grantee'):
             user_type = u"Грантополучатель"
 
-        message_text = user_type + u" " +user.get_full_name()+u" отправил(а) заключение, по проекту \"%s\", на доработку."%corollary.project.name  
+        message_text = user_type + u" " +user.get_full_name()+u" отправил(а) заключение, по проекту \"%s\", на доработку."%corollary.project.name
 
     send_mail(
         u'Заключение по проекту \"%s\" было отправлено на доработку.' % corollary.project.name,
-        message_text, 
+        message_text,
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
         fail_silently=True
