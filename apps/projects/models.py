@@ -73,6 +73,7 @@ class ProjectManager(models.Manager):
         # # if funding_type_data:
         # now is required by default
         prj.funding_type = FundingType.objects.create(**funding_type_data)
+        
         if prj.funding_type.name == FundingType.COMMERCIALIZATION:
             CostType.objects.create(project=prj, name=u"расходы на патентование в РК")
 
