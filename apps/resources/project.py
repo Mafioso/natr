@@ -211,9 +211,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
         registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
         projects = registry_data.pop("projects", [])
 
-        if not projects:
-            return response.Response(u"По вашему запросу проектов не найдено(Projects not found)", status=status.HTTP_404_NOT_FOUND)
-
         filename = ExcelReport(projects=projects, registry_data = registry_data).generate_experts_report()
         fs = filename.split('/')
         f = open(filename, 'r')
@@ -223,6 +220,19 @@ class ProjectViewSet(viewsets.ModelViewSet):
         r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
 
         return r
+
+    @list_route(methods=['get'], url_path='validate_report_context')
+    def validate_report_context(self, request, *a, **kw):
+        data = request.query_params
+
+        registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
+        projects = registry_data.pop("projects", [])
+
+        if not projects:
+            return HttpResponse({"message": "projects not found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"message": "success"}, headers=headers)
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
