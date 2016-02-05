@@ -103,7 +103,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @patch_serializer_class(ReportSerializer)
     def reports(self, request, *a, **kw):
         project = self.get_object()
-        report_qs = ReportFilter(request.GET, project.get_reports())
+        if hasattr(self.request.user, 'user'):
+            report_qs = ReportFilter(request.GET, project.get_expert_reports())
+        if hasattr(self.request.user, 'grantee'):
+            report_qs = ReportFilter(request.GET, project.get_reports())
         report_ser = self.get_serializer(report_qs.qs, many=True)
         return response.Response({
             'reports': report_ser.data,

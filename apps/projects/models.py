@@ -389,6 +389,12 @@ class Project(models.Model):
     def get_reports(self):
         return Report.objects.by_project(self).filter(status__gt=Report.NOT_ACTIVE)
 
+    def get_expert_reports(self):
+        return Report.objects.by_project(self).filter(status__in=[Report.CHECK, 
+                                                                  Report.APPROVE,
+                                                                  Report.APPROVED,
+                                                                  Report.FINISH])
+
     def get_recent_todos(self):
         return MonitoringTodo.objects.by_project(self)
 
