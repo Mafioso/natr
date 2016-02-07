@@ -155,7 +155,7 @@ class ProjectManager(models.Manager):
             funding_type.save()
 
             if old_funding_type != funding_type.name:
-                if instance.funding_type.name == FundingType.COMMERCIALIZATION:
+                if funding_type.name == FundingType.COMMERCIALIZATION:
                     cost_type, created = CostType.objects.get_or_create(project=instance, name=u"расходы на патентование в РК")
                     if created:
                         cost_type.save()
