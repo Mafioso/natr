@@ -231,7 +231,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if not projects:
             return HttpResponse({"message": "projects not found"}, status=status.HTTP_400_BAD_REQUEST)
 
-        headers = self.get_success_headers(serializer.data)
+        headers = self.get_success_headers({})
         return response.Response({"message": "success"}, headers=headers)
 
 class MilestoneViewSet(ProjectBasedViewSet):
