@@ -150,11 +150,32 @@ class ProjectManager(models.Manager):
 
         old_funding_type = instance.funding_type.name
         if funding_type_data:
-            FundingType.objects.filter(pk=instance.funding_type_id
-                ).update(**funding_type_data)
-            if instance.funding_type.name == FundingType.COMMERCIALIZATION and \
-                old_funding_type != instance.funding_type.name:
-                CostType.objects.create(project=instance, name=u"расходы на патентование в РК")
+            funding_type = FundingType.objects.get(pk=instance.funding_type.id)
+            funding_type.name = funding_type_data['name']
+            funding_type.save()
+
+            if old_funding_type != funding_type.name:
+                if instance.funding_type.name == FundingType.COMMERCIALIZATION:
+                    cost_type, created = CostType.objects.get_or_create(project=instance, name=u"расходы на патентование в РК")
+                    if created:
+                        cost_type.save()
+
+                # 5. update project pasport which depends on funding type
+                if funding_type.name in ('INDS_RES', 'COMMERCIALIZATION') and \
+                    old_funding_type not in ('INDS_RES', 'COMMERCIALIZATION') and \
+                    instance.pasport_type != "innovative":
+                    if instance.pasport:
+                        instance.pasport.delete()
+
+                    prj_pasport = InnovativeProjectPasportDocument.objects.build_empty(project=instance)
+                elif funding_type.name not in ('INDS_RES', 'COMMERCIALIZATION') and \
+                    old_funding_type in ('INDS_RES', 'COMMERCIALIZATION') and  \
+                    instance.pasport_type != "basic":
+                    if instance.pasport:
+                        instance.pasport.delete()
+
+                    prj_pasport = BasicProjectPasportDocument.objects.build_empty(project=instance)
+
 
         if statement_data:
             if instance.statement:
