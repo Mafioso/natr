@@ -18,6 +18,7 @@ from statuses import (
     CommonStatuses
 )
 import utils as doc_utils
+from natr import utils as natr_utils
 
 
 class SimpleDocumentManager(models.Manager):
@@ -354,11 +355,11 @@ class AgreementDocument(models.Model):
 
     document = models.OneToOneField(Document, related_name='agreement', on_delete=models.CASCADE)
     name = models.TextField(u'Название договора', default='')
-    # funding = MoneyField(u'Сумма договора', max_digits=20, null=True, blank=True, decimal_places=2, default_currency='KZT')
+    # funding = MoneyField(u'Сумма договора', max_digits=20, null=True, blank=True, decimal_places=2, default_currency=settings.KZT)
     subject = models.TextField(u'Предмет договора', default='')
     funding = MoneyField(
         u'Полная стоимость работ в тенге', max_digits=20, null=True,
-        decimal_places=2, default_currency='KZT')
+        decimal_places=2, default_currency=settings.KZT)
 
     def get_project(self):
         return self.document.get_project()
@@ -475,10 +476,10 @@ class BasicProjectPasportDocument(models.Model):
                                                         null=True, blank=True)
     cost = MoneyField(u'Полная стоимость работ в тенге',
                                                         max_digits=20, null=True,
-                                                        decimal_places=2, default_currency='KZT')
+                                                        decimal_places=2, default_currency=settings.KZT)
     required_funding = MoneyField(u'Требуемое финансирование в тенге',
                                                         max_digits=20, null=True,
-                                                        decimal_places=2, default_currency='KZT')
+                                                        decimal_places=2, default_currency=settings.KZT)
     finance_source = models.TextField(u'Источники финансирования проекта (собственные средства, заемные \
                                                         средства, гранты других организаций) и в каком объеме',
                                                         null=True, blank=True)
@@ -565,10 +566,10 @@ class InnovativeProjectPasportDocument(models.Model):
                                                         null=True, blank=True)
     total_cost = MoneyField(u'Полная стоимость проекта',
                                                         max_digits=20, null=True,
-                                                        decimal_places=2, default_currency='KZT')
+                                                        decimal_places=2, default_currency=settings.KZT)
     needed_cost = MoneyField(u'Требуемое финансирование',
                                                         max_digits=20, null=True,
-                                                        decimal_places=2, default_currency='KZT')
+                                                        decimal_places=2, default_currency=settings.KZT)
     other_financed_source = models.TextField(u'Финансировался ли данный проект \
                                                         из других источников (да, нет) и в каком объеме?',
                                                         null=True, blank=True)
@@ -582,6 +583,44 @@ class InnovativeProjectPasportDocument(models.Model):
 
     def get_project(self):
         return self.document.get_project()
+
+    def get_print_context(self, **kwargs):
+        context = self.__dict__
+
+        if self.team_members.count():           
+            for member, cnt in zip(self.team_members.all(), range(1, self.team_members.count()+1)):
+                row = kwargs['doc'].tables[0].add_row()
+                row.cells[0].text = natr_utils.get_stringed_value(member.full_name)
+                row.cells[1].text = natr_utils.get_stringed_value(member.experience)
+                row.cells[2].text = natr_utils.get_stringed_value(member.qualification)
+                row.cells[3].text = natr_utils.get_stringed_value(member.responsibilities)
+                row.cells[4].text = natr_utils.get_stringed_value(member.business_skills)
+
+        if hasattr(self, "dev_info"):
+            context.update(self.dev_info.get_context())
+
+        if hasattr(self, "tech_char"):
+            context.update(self.tech_char.get_context())
+
+        if hasattr(self, "intellectual_property"):
+            context.update(self.intellectual_property.get_context())
+
+        if hasattr(self, "tech_readiness"):
+            context.update(self.tech_readiness.get_context())
+        context['project'] = self.document.project.name
+        context['total_month'] = self.document.project.total_month
+        context['result'] = self.get_result_display()+". " if self.result else ""
+        context['result_statement'] = self.result_statement if self.result_statement else "" 
+        context['independent_test'] = self.get_independent_test_display()+". " if self.independent_test else ""
+        context['independent_test_statement'] = self.independent_test_statement if self.independent_test_statement else "" 
+        context['character'] = self.get_character_display()+". " if self.character else ""
+        context['character_statement'] = self.character_statement if self.character_statement else "" 
+        context['patent_defence'] = self.get_patent_defence_display()+". " if self.patent_defence else ""
+        context['readiness'] = self.get_readiness_display()+". " if self.readiness else ""
+        context['readiness_statement'] = self.readiness_statement if self.readiness_statement else "" 
+        context['result_agreement'] = self.get_result_agreement_display()+". " if self.result_agreement else ""
+        context['result_agreement_statement'] = self.result_agreement_statement if self.result_agreement_statement else "" 
+        return context
 
     #Команда проекта
 class ProjectTeamMember(models.Model):
@@ -632,6 +671,12 @@ class DevelopersInfo(models.Model):
     def get_project(self):
         return self.pasport.get_project()
 
+    def get_context(self):
+        context = self.__dict__
+
+        context['tech_stages'] = ", ".join([t.title for t in self.tech_stages.all()])
+        return context
+
 class TechStage(models.Model):
     title = models.TextField(u'На каком этапе Ваша технология?')
 
@@ -675,6 +720,10 @@ class TechnologyCharacteristics(models.Model):
     def get_project(self):
         return self.pasport.get_project()
 
+    def get_context(self):
+        context = self.__dict__
+        return context
+
     #Оценка интеллектуальной собственности
 class IntellectualPropertyAssesment(models.Model):
 
@@ -706,6 +755,10 @@ class IntellectualPropertyAssesment(models.Model):
 
     def get_project(self):
         return self.pasport.get_project()
+
+    def get_context(self):
+        context = self.__dict__
+        return context
 
     #Оценка степени готовности технологии
 class TechnologyReadiness(models.Model):
@@ -741,6 +794,10 @@ class TechnologyReadiness(models.Model):
 
     def get_project(self):
         return self.pasport.get_project()
+
+    def get_context(self):
+        context = self.__dict__
+        return context
 
 
 class StatementDocument(models.Model):
@@ -786,6 +843,16 @@ class CalendarPlanDocument(models.Model):
                 number=m.number, calendar_plan=cp)
         return cp
 
+    def get_print_context(self, **kwargs):
+        for item, cnt in zip(self.items.all(), range(1, self.items.count()+1)):
+            row = kwargs['doc'].tables[0].add_row()
+            row.cells[0].text = natr_utils.get_stringed_value(item.number)
+            row.cells[1].text = natr_utils.get_stringed_value(item.description)
+            row.cells[2].text = natr_utils.get_stringed_value(item.deadline)
+            row.cells[3].text = natr_utils.get_stringed_value(item.fundings.amount if item.fundings else "")
+            row.cells[4].text = natr_utils.get_stringed_value(item.reporting)
+        context = {'project': self.get_project().name}
+        return context
 
 class CalendarPlanItem(models.Model):
 
@@ -830,25 +897,25 @@ class ProjectStartDescription(models.Model):
     types_plan = models.IntegerField(u'Количество видов производимой продукции (План)', null=True, blank=True)
     types_avrg = models.IntegerField(u'Количество видов производимой продукции (Средние показатели)', null=True, blank=True)
 
-    prod_fact = MoneyField(u'Объем выпускаемой продукции (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    prod_plan = MoneyField(u'Объем выпускаемой продукции (План)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    prod_avrg = MoneyField(u'Объем выпускаемой продукции (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    prod_fact = MoneyField(u'Объем выпускаемой продукции (Факт)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    prod_plan = MoneyField(u'Объем выпускаемой продукции (План)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    prod_avrg = MoneyField(u'Объем выпускаемой продукции (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
 
-    rlzn_fact = MoneyField(u'Объем реализуемой продукции (внутренний рынок) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    rlzn_plan = MoneyField(u'Объем реализуемой продукции (внутренний рынок) (План)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    rlzn_avrg = MoneyField(u'Объем реализуемой продукции (внутренний рынок) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    rlzn_fact = MoneyField(u'Объем реализуемой продукции (внутренний рынок) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    rlzn_plan = MoneyField(u'Объем реализуемой продукции (внутренний рынок) (План)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    rlzn_avrg = MoneyField(u'Объем реализуемой продукции (внутренний рынок) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
 
-    rlzn_exp_fact = MoneyField(u'Объем реализуемой продукции (экспорт) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    rlzn_exp_plan = MoneyField(u'Объем реализуемой продукции (экспорт) (План)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    rlzn_exp_avrg = MoneyField(u'Объем реализуемой продукции (экспорт) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    rlzn_exp_fact = MoneyField(u'Объем реализуемой продукции (экспорт) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    rlzn_exp_plan = MoneyField(u'Объем реализуемой продукции (экспорт) (План)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    rlzn_exp_avrg = MoneyField(u'Объем реализуемой продукции (экспорт) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
 
-    tax_fact = MoneyField(u'Объем налоговых отчислений (В Республиканский бюджет) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    tax_plan = MoneyField(u'Объем налоговых отчислений (В Республиканский бюджет) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    tax_avrg = MoneyField(u'Объем налоговых отчислений (В Республиканский бюджет) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    tax_fact = MoneyField(u'Объем налоговых отчислений (В Республиканский бюджет) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    tax_plan = MoneyField(u'Объем налоговых отчислений (В Республиканский бюджет) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    tax_avrg = MoneyField(u'Объем налоговых отчислений (В Республиканский бюджет) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
 
-    tax_local_fact = MoneyField(u'Объем налоговых отчислений (В местный бюджет) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    tax_local_plan = MoneyField(u'Объем налоговых отчислений (В местный бюджет) (План)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
-    tax_local_avrg = MoneyField(u'Объем налоговых отчислений (В местный бюджет) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency='KZT')
+    tax_local_fact = MoneyField(u'Объем налоговых отчислений (В местный бюджет) (Факт)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    tax_local_plan = MoneyField(u'Объем налоговых отчислений (В местный бюджет) (План)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
+    tax_local_avrg = MoneyField(u'Объем налоговых отчислений (В местный бюджет) (Средние показатели)', max_digits=20, null=True, decimal_places=2, default_currency=settings.KZT)
 
     innovs_fact = models.IntegerField(u'Количество внедренных инновационных продуктов (Факт)', null=True, blank=True)
     innovs_plan = models.IntegerField(u'Количество внедренных инновационных продуктов (План)', null=True, blank=True)
