@@ -149,7 +149,8 @@ class DocumentDMLManager(models.Manager):
                 dev_info.tech_stages.add(*tech_stages)
                 dev_info.save()
             else:
-                dev_info_kw.pop('pasport')
+                if 'pasport' in dev_info_kw:
+                    dev_info_kw.pop('pasport')
                 tech_stages_ids = dev_info_kw.pop('tech_stages', [])
                 tech_stages = TechStage.objects.filter(id__in=tech_stages_ids)
                 for k, v in dev_info_kw.iteritems():
@@ -165,7 +166,8 @@ class DocumentDMLManager(models.Manager):
                 tech_char_kw['pasport'] = instance
                 tech_char = TechnologyCharacteristics.objects.create(**tech_char_kw)
             else:
-                tech_char_kw.pop('pasport')
+                if 'pasport' in tech_char_kw:
+                    tech_char_kw.pop('pasport')
                 for k, v in tech_char_kw.iteritems():
                     setattr(tech_char, k, v)
                 tech_char.save()
@@ -189,7 +191,8 @@ class DocumentDMLManager(models.Manager):
                 intellectual_property_kw['pasport'] = instance
                 intellectual_property = IntellectualPropertyAssesment.objects.create(**intellectual_property_kw)
             else:
-                intellectual_property_kw.pop('pasport')
+                if 'pasport' in intellectual_property_kw:
+                    intellectual_property_kw.pop('pasport')
                 for k, v in intellectual_property_kw.iteritems():
                     setattr(intellectual_property, k, v)
                 intellectual_property.save()
@@ -201,7 +204,8 @@ class DocumentDMLManager(models.Manager):
                 tech_readiness_kw['pasport'] = instance
                 tech_readiness = TechnologyReadiness.objects.create(**tech_readiness_kw)
             else:
-                tech_readiness_kw.pop('pasport')
+                if 'pasport' in tech_readiness_kw:
+                    tech_readiness_kw.pop('pasport')
                 for k, v in tech_readiness_kw.iteritems():
                     setattr(tech_readiness, k, v)
                 tech_readiness.save()
