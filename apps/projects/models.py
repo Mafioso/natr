@@ -73,7 +73,7 @@ class ProjectManager(models.Manager):
         # # if funding_type_data:
         # now is required by default
         prj.funding_type = FundingType.objects.create(**funding_type_data)
-        
+
         if prj.funding_type.name == FundingType.COMMERCIALIZATION:
             CostType.objects.create(project=prj, name=u"расходы на патентование в РК")
 
@@ -412,7 +412,7 @@ class Project(models.Model):
         return Report.objects.by_project(self).filter(status__gt=Report.NOT_ACTIVE)
 
     def get_expert_reports(self):
-        return Report.objects.by_project(self).filter(status__in=[Report.CHECK, 
+        return Report.objects.by_project(self).filter(status__in=[Report.CHECK,
                                                                   Report.APPROVE,
                                                                   Report.APPROVED,
                                                                   Report.FINISH])
@@ -723,6 +723,8 @@ class Report(ProjectBasedModel):
             if status == Report.CHECK:
                 status_cap = u"проверку"
                 for expert in self.project.assigned_experts.all():
+                    if expert.is_manager():
+                        continue
                     send_mail(
                         u'Отправлен отчет на %s, по проекту %s'%(status_cap, self.project.name),
                         u"""Здравствуйте, %(name)s!
