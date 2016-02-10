@@ -73,6 +73,7 @@ class ProjectManager(models.Manager):
         # # if funding_type_data:
         # now is required by default
         prj.funding_type = FundingType.objects.create(**funding_type_data)
+        
         if prj.funding_type.name == FundingType.COMMERCIALIZATION:
             CostType.objects.create(project=prj, name=u"расходы на патентование в РК")
 
@@ -149,11 +150,32 @@ class ProjectManager(models.Manager):
 
         old_funding_type = instance.funding_type.name
         if funding_type_data:
-            FundingType.objects.filter(pk=instance.funding_type_id
-                ).update(**funding_type_data)
-            if instance.funding_type.name == FundingType.COMMERCIALIZATION and \
-                old_funding_type != instance.funding_type.name:
-                CostType.objects.create(project=instance, name=u"расходы на патентование в РК")
+            funding_type = FundingType.objects.get(pk=instance.funding_type.id)
+            funding_type.name = funding_type_data['name']
+            funding_type.save()
+
+            if old_funding_type != funding_type.name:
+                if funding_type.name == FundingType.COMMERCIALIZATION:
+                    cost_type, created = CostType.objects.get_or_create(project=instance, name=u"расходы на патентование в РК")
+                    if created:
+                        cost_type.save()
+
+                # 5. update project pasport which depends on funding type
+                if funding_type.name in ('INDS_RES', 'COMMERCIALIZATION') and \
+                    old_funding_type not in ('INDS_RES', 'COMMERCIALIZATION') and \
+                    instance.pasport_type != "innovative":
+                    if instance.pasport:
+                        instance.pasport.delete()
+
+                    prj_pasport = InnovativeProjectPasportDocument.objects.build_empty(project=instance)
+                elif funding_type.name not in ('INDS_RES', 'COMMERCIALIZATION') and \
+                    old_funding_type in ('INDS_RES', 'COMMERCIALIZATION') and  \
+                    instance.pasport_type != "basic":
+                    if instance.pasport:
+                        instance.pasport.delete()
+
+                    prj_pasport = BasicProjectPasportDocument.objects.build_empty(project=instance)
+
 
         if statement_data:
             if instance.statement:
@@ -247,10 +269,10 @@ class Project(models.Model):
         'FundingType', null=True, on_delete=models.SET_NULL)
 
     fundings = MoneyField(
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     own_fundings = MoneyField(
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     funding_date = models.DateTimeField(null=True)
     number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
@@ -388,6 +410,12 @@ class Project(models.Model):
 
     def get_reports(self):
         return Report.objects.by_project(self).filter(status__gt=Report.NOT_ACTIVE)
+
+    def get_expert_reports(self):
+        return Report.objects.by_project(self).filter(status__in=[Report.CHECK, 
+                                                                  Report.APPROVE,
+                                                                  Report.APPROVED,
+                                                                  Report.FINISH])
 
     def get_recent_todos(self):
         return MonitoringTodo.objects.by_project(self)
@@ -1004,25 +1032,25 @@ class CorollaryStatByCostType(models.Model):
     corollary = models.ForeignKey('Corollary', related_name='stats')
     cost_type = models.ForeignKey('natr.CostType')
     natr_fundings = MoneyField(u'Средства гранта',
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     own_fundings = MoneyField(u'Собственные средства',
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     planned_costs = MoneyField(u'Сумма согласно договора',
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     fact_costs = MoneyField(u'Сумма представленная ГП',
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     costs_received_by_natr = MoneyField(u'Сумма принимаемая НАТР',
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     costs_approved_by_docs = MoneyField(u'Сумма подтвержденная документами',
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     savings = MoneyField(u'Экономия',
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
 
     def get_project(self):
@@ -1065,10 +1093,10 @@ class Milestone(ProjectBasedModel):
 
     date_funded = models.DateTimeField(u'Дата оплаты', null=True)
     fundings = MoneyField(u'Сумма оплаты по факту',
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     planned_fundings = MoneyField(u'Сумма оплаты планируемая по календарному плану',
-        max_digits=20, decimal_places=2, default_currency='KZT',
+        max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     conclusion = models.TextField(null=True, blank=True)
 
