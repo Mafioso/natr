@@ -79,12 +79,16 @@ class DocumentPrint:
             return u"start_description.docx"
         elif self.object.__class__.__name__ == 'BasicProjectPasportDocument':
             return u"basic_pasport.docx"
+        elif self.object.__class__.__name__ == 'InnovativeProjectPasportDocument':
+            return u"innovative_pasport.docx"
         elif self.object.__class__.__name__ == 'Report':
             return u"report.docx"
         elif self.object.__class__.__name__ == 'Monitoring':
             return u"monitoring.docx"
         elif self.object.__class__.__name__ == "CostDocument":
             return u"cost_document.docx"
+        elif self.object.__class__.__name__ == "CalendarPlanDocument":
+            return u"calendar_plan.docx"
 
         return None
 
@@ -115,6 +119,8 @@ class DocumentPrint:
             return u"Расшивровка сметы расходов.docx"
         elif self.object.__class__.__name__ == 'CostDocument' and not expanded_cost_doc:
             return u"Cмета расходов.docx"
+        elif self.object.__class__.__name__ == "CalendarPlanDocument":
+            return u"Календарный план по проекту.docx"
 
         return None
 

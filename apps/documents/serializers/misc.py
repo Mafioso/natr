@@ -191,6 +191,15 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
     def update(self, instance, validated_data):
         document = validated_data.pop('document', None)
         return models.Document.dml.update_innovative_project_pasport(instance, **validated_data)
+
+    def validate_docx_context(self, instance):
+        # if not instance.cost:
+        #     return False, u"Пожалуйста, заполните \"Полная стоимость работ в тенге\".";
+        # if not instance.required_funding:
+        #     return False, u"Пожалуйста, заполните \"Требуемое финансирование в тенге\".";
+
+
+        return True, u""
         
 
 class StatementDocumentSerializer(DocumentCompositionSerializer):
@@ -247,6 +256,14 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
             updated_item = models.CalendarPlanItem(id=item_obj.id, **item_data)
             updated_item.save()
         return instance
+
+    def validate_docx_context(self, instance):
+        # if not instance.cost:
+        #     return False, u"Пожалуйста, заполните \"Полная стоимость работ в тенге\".";
+        # if not instance.required_funding:
+        #     return False, u"Пожалуйста, заполните \"Требуемое финансирование в тенге\".";
+
+        return True, u""
 
 
 class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):

@@ -80,6 +80,37 @@ class InnovativeProjectPasportDocumentViewSet(ProjectBasedViewSet):
     serializer_class = InnovativeProjectPasportSerializer
     queryset = InnovativeProjectPasportDocument.objects.all()
 
+    @detail_route(methods=['get'], url_path='gen_docx')
+    def gen_docx(self, request, *a, **kw):
+        instance = self.get_object()
+        upd_instance = doc_models.Document.dml.update_doc_(instance, **request.data)
+        upd_instance.save()
+
+        _file, filename = DocumentPrint(object=upd_instance).generate_docx()
+
+        if not _file or not filename:
+            return HttpResponse(status=400)
+
+        response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
+        return response
+
+    @detail_route(methods=['post'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        instance = self.get_object()
+
+        item_ser = self.get_serializer(instance=instance, data=request.data)
+        item_ser.is_valid(raise_exception=True)
+        item_obj = item_ser.save()
+
+        is_valid, message = item_ser.validate_docx_context(instance=item_obj)
+        
+        if not is_valid:
+            return HttpResponse({"message": message}, status=400)
+
+        headers = self.get_success_headers(item_ser.data)
+        return response.Response(item_ser.data, headers=headers)
+
 
 class CalendarPlanDocumentViewSet(ProjectBasedViewSet):
 
@@ -118,6 +149,29 @@ class CalendarPlanDocumentViewSet(ProjectBasedViewSet):
         item_obj = item_ser.save()
         headers = self.get_success_headers(item_ser.data)
         return response.Response(item_ser.data, headers=headers)
+
+    @detail_route(methods=['get'], url_path='gen_docx')
+    def gen_docx(self, request, *a, **kw):
+        _file, filename = DocumentPrint(object=self.get_object()).generate_docx()
+
+        if not _file or not filename:
+            return HttpResponse(status=400)
+
+        response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
+        return response
+
+    @detail_route(methods=['get'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance=instance)
+        is_valid, message = serializer.validate_docx_context(instance=instance)
+
+        if not is_valid:
+            return HttpResponse({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"instance": instance.id}, headers=headers)
 
 
 

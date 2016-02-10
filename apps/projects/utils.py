@@ -268,13 +268,13 @@ class ExcelReport:
                 if project.aggreement: 
                     agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
                 else:
-                    agreement_number = 0
+                    agreement_number = ""
 
                 if project.aggreement and project.aggreement.document.date_sign:
-                    agreement_date = project.aggreement.document.date_sign.strftime("%d.%m.%y")
+                    agreement_date = u' от ' + project.aggreement.document.date_sign.strftime("%d.%m.%y")
                 else:
                     agreement_date = ""
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(agreement_number) + ' от ' + agreement_date)
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(agreement_number) + agreement_date)
                 
                 col_num += 1
                 
