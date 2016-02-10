@@ -43,7 +43,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         else:
             if hasattr(self.request.user, 'user'):
                 user = self.request.user.user
-                return qs.filter(assigned_experts=user)
+                if user.is_manager():
+                    return qs
+                else:
+                    return qs.filter(assigned_experts=user)
             if hasattr(self.request.user, 'grantee'):
                 user = self.request.user.grantee
                 return qs.filter(assigned_grantees=user)
