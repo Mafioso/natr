@@ -902,7 +902,7 @@ class Corollary(ProjectBasedModel):
     class Meta:
         filter_by_project = 'project__in'
         relevant_for_permission = True
-        verbose_name = u"Заключение"
+        verbose_name = u"Заключение КМ"
         permissions = (
             ('approve_corollary', u"Утверждение документа"),
             ('sendto_approve_corollary', u"Отправлять документ на утверждение"),
