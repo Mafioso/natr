@@ -13,21 +13,21 @@ import os
 class ExcelReport:
     assignments = []
     assig_intervals = [
-        'Никогда',
-        'Еженедельно',
-        'Ежемесячно',
-        'Ежеквартально',
-        'Каждые полгода',
-        'Ежегодно'
+        u'Никогда',
+        u'Еженедельно',
+        u'Ежемесячно',
+        u'Ежеквартально',
+        u'Каждые полгода',
+        u'Ежегодно'
     ]
     assig_statuses =  [
-        'Не назначено',
-        'Назначено',
-        'Отправлено на доработку',
-        'Исполнение продолжается',
-        'На утверждении',
-        'Утверждено',
-        'Исполнено'
+        u'Не назначено',
+        u'Назначено',
+        u'Отправлено на доработку',
+        u'Исполнение продолжается',
+        u'На утверждении',
+        u'Утверждено',
+        u'Исполнено'
     ]
     alignment_left=Alignment(horizontal='left',
                     vertical='top',
@@ -274,7 +274,7 @@ class ExcelReport:
                     agreement_date = u' от ' + project.aggreement.document.date_sign.strftime("%d.%m.%y")
                 else:
                     agreement_date = ""
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(agreement_number) + agreement_date)
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, agreement_number + agreement_date)
                 
                 col_num += 1
                 
