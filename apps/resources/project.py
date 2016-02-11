@@ -519,12 +519,20 @@ class CorollaryViewSet(ProjectBasedViewSet):
 
         if changed:
             if corollary.status == prj_models.Corollary.APPROVED:
-                mailing.send_corollary_approved(corollary)
+                try:
+                    mailing.send_corollary_approved(corollary)
+                except Exception as e:
+                    print str(e)
+
             elif corollary.status == prj_models.Corollary.REWORK:
                 user = None
                 if request and hasattr(request, "user"):
                     user = request.user
-                mailing.send_corollary_to_rework(corollary, user)
+                try:
+                    mailing.send_corollary_to_rework(corollary, user)
+                except Exception as e:
+                    print str(e)
+
 
         return response.Response({"milestone_id": corollary.milestone.id}, status=200)
 

@@ -55,7 +55,10 @@ class UserManager(BaseUserManager):
     def create_natrexpert(self, email, password, **extra_fields):
         account = self._create_user(email, password, False, **extra_fields)
         acc = NatrUser.objects.create(account=account)
-        mailing.send_create_natrexpert(account.get_full_name(), email, password)
+        try:
+            mailing.send_create_natrexpert(account.get_full_name(), email, password)
+        except Exception as e:
+            print str(e)
         return acc
 
     def create_grantee(self, email, password, organization=None, **extra_fields):
@@ -63,7 +66,10 @@ class UserManager(BaseUserManager):
         grantee = Grantee.objects.create(
             account=account,
             organization=organization,)
-        mailing.send_create_grantee(account.get_full_name(), email, password)
+        try:
+            mailing.send_create_grantee(account.get_full_name(), email, password)
+        except Exception as e:
+            print str(e)
         return grantee
 
 

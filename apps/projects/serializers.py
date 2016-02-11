@@ -93,14 +93,26 @@ class MilestoneSerializer(
         instance = super(MilestoneSerializer, self).update(instance, validated_data)
         if status_changed:
             if instance.status == 1:
-                mailing.send_milestone_status_payment(instance)
+                try:
+                    mailing.send_milestone_status_payment(instance)
+                except Exception as e:
+                    print str(e)
             if instance.status == 2:
-                send_notification(Notification.TRANSH_PAY, instance)
-                mailing.send_milestone_status_implementation(instance)
+                try:
+                    send_notification(Notification.TRANSH_PAY, instance)
+                    mailing.send_milestone_status_implementation(instance)
+                except Exception as e:
+                    print str(e)
             if instance.status == 5:
-                mailing.send_milestone_status_revision(instance)
+                try:
+                    mailing.send_milestone_status_revision(instance)
+                except Exception as e:
+                    print str(e)
             if instance.status == 7:
-                mailing.send_milestone_status_finished(instance)
+                try:
+                    mailing.send_milestone_status_finished(instance)
+                except Exception as e:
+                    print str(e)
         return instance
 
 
@@ -332,17 +344,29 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
         instance = super(MonitoringSerializer, self).update(instance, validated_data)
         if changed:
             if instance.status == 2:
-                mailing.send_monitoring_plan_agreed(instance)
+                try:
+                    mailing.send_monitoring_plan_agreed(instance)
+                except Exception as e:
+                    print str(e)
             elif instance.status == Monitoring.ON_GRANTEE_APPROVE:
-                mailing.send_monitoring_plan_gp_approve(instance)
+                try:
+                    mailing.send_monitoring_plan_gp_approve(instance)
+                except Exception as e:
+                    print str(e)
             elif instance.status == Monitoring.GRANTEE_APPROVED:
-                mailing.send_monitoring_plan_approved_by_gp(instance)
+                try:
+                    mailing.send_monitoring_plan_approved_by_gp(instance)
+                except Exception as e:
+                    print str(e)
             elif instance.status == Monitoring.ON_REWORK:
                 user = None
                 request = self.context.get("request")
                 if request and hasattr(request, "user"):
                     user = request.user
-                mailing.send_monitoring_plan_was_send_to_rework(instance, user)
+                try:
+                    mailing.send_monitoring_plan_was_send_to_rework(instance, user)
+                except Exception as e:
+                    print str(e)
 
         return instance
 
