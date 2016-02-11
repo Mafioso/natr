@@ -55,7 +55,10 @@ class UserManager(BaseUserManager):
     def create_natrexpert(self, email, password, **extra_fields):
         account = self._create_user(email, password, False, **extra_fields)
         acc = NatrUser.objects.create(account=account)
-        mailing.send_create_natrexpert(account.get_full_name(), email, password)
+        try:
+            mailing.send_create_natrexpert(account.get_full_name(), email, password)
+        except Exception as e:
+            print str(e)
         return acc
 
     def create_grantee(self, email, password, organization=None, **extra_fields):
@@ -63,7 +66,10 @@ class UserManager(BaseUserManager):
         grantee = Grantee.objects.create(
             account=account,
             organization=organization,)
-        mailing.send_create_grantee(account.get_full_name(), email, password)
+        try:
+            mailing.send_create_grantee(account.get_full_name(), email, password)
+        except Exception as e:
+            print str(e)
         return grantee
 
 
@@ -88,7 +94,7 @@ class Account(AbstractBaseUser, PermissionsMixin):
         """
         Returns the first_name plus the last_name, with a space in between.
         """
-        full_name = '%s %s' % (self.first_name, self.last_name)
+        full_name = ' '.join( filter(None, [self.first_name, self.last_name]) )
         return full_name.strip()
 
     def get_short_name(self):
@@ -125,11 +131,6 @@ class NatrUser(models.Model):
     departments = models.ManyToManyField(Department, blank=True)
 
     account = models.OneToOneField('Account', related_name='user', on_delete=models.CASCADE)
-
-    def delete(self, **kwargs):
-        acc = self.account
-        super(NatrUser, self).delete(**kwargs)
-        acc.delete()
 
     def get_full_name(self):
         return self.account.get_full_name()
