@@ -93,7 +93,7 @@ class NatrUserSerializer(serializers.ModelSerializer):
 		contact_details_data = validated_data.pop('contact_details', None)
 		departments = validated_data.pop('departments', None)
 		groups = validated_data.pop('groups', [])
-		projects = validated_data.pop('projects', None)
+		projects = validated_data.pop('projects', [])
 
 		name_parts = contact_details_data['full_name'].split()
 		first_name = last_name = None
