@@ -497,6 +497,15 @@ class BasicProjectPasportDocument(models.Model):
 
     objects = SimpleDocumentManager()
 
+    def save(self, *args, **kwargs):
+        if self.result < 5:
+            self.result_statement = None
+        if self.character < 3:
+            self.character_statement = None
+        if self.readiness < 5:
+            self.readiness_statement = None
+        super(self.__class__, self).save(*args, **kwargs)
+
     def get_project(self):
         return self.document.get_project()
 
@@ -625,6 +634,14 @@ class InnovativeProjectPasportDocument(models.Model):
         context['result_agreement'] = self.get_result_agreement_display()+". " if self.result_agreement else ""
         context['result_agreement_statement'] = self.result_agreement_statement if self.result_agreement_statement else ""
         return context
+
+    def save(self, *args, **kwargs):
+        if self.result < 8:
+            self.result_statement = None
+        if self.character < 3:
+            self.character_statement = None
+
+        super(self.__class__, self).save(*args, **kwargs)
 
     #Команда проекта
 class ProjectTeamMember(models.Model):
