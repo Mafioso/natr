@@ -497,6 +497,15 @@ class BasicProjectPasportDocument(models.Model):
 
     objects = SimpleDocumentManager()
 
+    def save(self, *args, **kwargs):
+        if self.result < 5:
+            self.result_statement = None
+        if self.character < 3:
+            self.character_statement = None
+        if self.readiness < 5:
+            self.readiness_statement = None
+        super(self.__class__, self).save(*args, **kwargs)
+
     def get_project(self):
         return self.document.get_project()
 
@@ -591,7 +600,7 @@ class InnovativeProjectPasportDocument(models.Model):
     def get_print_context(self, **kwargs):
         context = self.__dict__
 
-        if self.team_members.count():           
+        if self.team_members.count():
             for member, cnt in zip(self.team_members.all(), range(1, self.team_members.count()+1)):
                 row = kwargs['doc'].tables[0].add_row()
                 row.cells[0].text = natr_utils.get_stringed_value(member.full_name)
@@ -614,17 +623,25 @@ class InnovativeProjectPasportDocument(models.Model):
         context['project'] = self.document.project.name
         context['total_month'] = self.document.project.total_month
         context['result'] = self.get_result_display()+". " if self.result else ""
-        context['result_statement'] = self.result_statement if self.result_statement else "" 
+        context['result_statement'] = self.result_statement if self.result_statement else ""
         context['independent_test'] = self.get_independent_test_display()+". " if self.independent_test else ""
-        context['independent_test_statement'] = self.independent_test_statement if self.independent_test_statement else "" 
+        context['independent_test_statement'] = self.independent_test_statement if self.independent_test_statement else ""
         context['character'] = self.get_character_display()+". " if self.character else ""
-        context['character_statement'] = self.character_statement if self.character_statement else "" 
+        context['character_statement'] = self.character_statement if self.character_statement else ""
         context['patent_defence'] = self.get_patent_defence_display()+". " if self.patent_defence else ""
         context['readiness'] = self.get_readiness_display()+". " if self.readiness else ""
-        context['readiness_statement'] = self.readiness_statement if self.readiness_statement else "" 
+        context['readiness_statement'] = self.readiness_statement if self.readiness_statement else ""
         context['result_agreement'] = self.get_result_agreement_display()+". " if self.result_agreement else ""
-        context['result_agreement_statement'] = self.result_agreement_statement if self.result_agreement_statement else "" 
+        context['result_agreement_statement'] = self.result_agreement_statement if self.result_agreement_statement else ""
         return context
+
+    def save(self, *args, **kwargs):
+        if self.result < 8:
+            self.result_statement = None
+        if self.character < 3:
+            self.character_statement = None
+
+        super(self.__class__, self).save(*args, **kwargs)
 
     #Команда проекта
 class ProjectTeamMember(models.Model):
@@ -1014,7 +1031,7 @@ class UseOfBudgetDocument(models.Model):
         filter_by_project = 'document__project__in'
 
     document = models.OneToOneField(Document, related_name='use_of_budget_doc', on_delete=models.CASCADE)
-    milestone = models.ForeignKey('projects.Milestone', verbose_name='этап', null=True)
+    milestone = models.ForeignKey('projects.Milestone', verbose_name=u'этап', null=True)
 
     objects = SimpleDocumentManager()
 

@@ -1514,7 +1514,7 @@ class Comment(models.Model):
 
     class Meta:
         filter_by_project = 'report__project__in'
-        verbose_name = 'Комментарий к заключению'
+        verbose_name = u'Комментарий к заключению'
 
     report = models.ForeignKey(Report, related_name='comments')
     expert = models.ForeignKey('auth2.NatrUser', related_name='comments')
