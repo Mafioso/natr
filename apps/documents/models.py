@@ -313,7 +313,6 @@ class Document(ProjectBasedModel):
     class Meta:
         filter_by_project = 'project__in'
         verbose_name = u"Работа с документами"
-        relevant_for_permission = True
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
 
