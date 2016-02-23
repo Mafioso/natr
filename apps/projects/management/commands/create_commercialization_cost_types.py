@@ -7,6 +7,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.core.management import call_command
 from projects.models import Project, FundingType
 from natr.models import CostType
+from documents.models import UseOfBudgetDocument
 from django.core.exceptions import MultipleObjectsReturned
 
 
@@ -28,6 +29,13 @@ class Command(BaseCommand):
 						if created:
 							cost_type.save()
 							print "cost type created"
+						if project.cost_document:
+							project.cost_document.add_empty_row(cost_type)
+
+						budget_reports = UseOfBudgetDocument.objects.filter(document__project=project)
+						for budget_report in budget_reports:
+							budget_report.add_empty_item(cost_type)
+							
 					except MultipleObjectsReturned:
 						print "Multiple commercialization cost types, for project id: %s"%project.id
 						pass

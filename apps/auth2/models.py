@@ -127,6 +127,7 @@ class NatrUser(models.Model):
         verbose_name = u'Пользователи ИСЭМ'
 
     DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT = ('expert', 'manager', 'risk_expert')
+    ADMIN_GROUP = 'admin'
 
     departments = models.ManyToManyField(Department, blank=True)
 
@@ -147,6 +148,10 @@ class NatrUser(models.Model):
     def is_manager(self):
         groups = self.get_groups()
         return groups.filter(name=NatrUser.MANAGER).first()
+
+    def is_admin(self):
+        groups = self.get_groups()
+        return groups.filter(name=NatrUser.ADMIN_GROUP).first()
 
     def is_risk_expert(self):
         groups = self.get_groups()
@@ -175,8 +180,17 @@ def assign_user_group(sender, instance, created=False, **kwargs):
 def delete_account(sender, instance, **kwargs):
     instance.account.delete()
 
+def set_new_perm_to_admin(sender, instance, created=False, **kwargs):
+    if not created:
+        return
+    admin_group = Group.objects.get(name=NatrUser.ADMIN_GROUP)
+    if admin_group:
+        admin_group.permissions.add(instance)
+
+
 post_save.connect(assign_user_group, sender=NatrUser)
 post_delete.connect(delete_account, sender=NatrUser)
+post_save.connect(set_new_perm_to_admin, sender=Permission)
 
 def test_cascade():
     import random
