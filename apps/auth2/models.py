@@ -46,20 +46,27 @@ class UserManager(BaseUserManager):
         return user
 
     def create_user(self, email, password=None, **extra_fields):
-        return self._create_user(email, password, False,
-                                 **extra_fields)
+        return self._create_user(email, password, False, **extra_fields)
 
     def create_superuser(self, email, password, **extra_fields):
-        return self._create_user(email, password, True, **extra_fields)
+        admin_group = Group.objects.filter(name=NatrUser.ADMIN_GROUP).first()
+        admin_group.permissions = Permission.objects.all()
+        admin_group.save()
+
+        groups = extra_fields.pop('groups', [admin_group])
+        extra_fields['groups'] = groups
+        acc = self._create_user(email, password, True, **extra_fields)
+        user = NatrUser.objects.create(account=acc)
+        return user
 
     def create_natrexpert(self, email, password, **extra_fields):
         account = self._create_user(email, password, False, **extra_fields)
-        acc = NatrUser.objects.create(account=account)
+        user = NatrUser.objects.create(account=account)
         try:
             mailing.send_create_natrexpert(account.get_full_name(), email, password)
         except Exception as e:
             print str(e)
-        return acc
+        return user
 
     def create_grantee(self, email, password, organization=None, **extra_fields):
         account = self._create_user(email, password, False, **extra_fields)
