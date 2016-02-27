@@ -75,7 +75,7 @@ class ProjectManager(models.Manager):
         prj.funding_type = FundingType.objects.create(**funding_type_data)
 
         if prj.funding_type.name == FundingType.COMMERCIALIZATION:
-            CostType.objects.create(project=prj, name=u"расходы на патентование в РК")
+            CostType.objects.create(project=prj, name=u"Расходы на патентование в РК")
 
         if statement_data:
             Document.dml.create_statement(project=prj, **statement_data)
@@ -156,7 +156,7 @@ class ProjectManager(models.Manager):
 
             if old_funding_type != funding_type.name:
                 if funding_type.name == FundingType.COMMERCIALIZATION:
-                    cost_type, created = CostType.objects.get_or_create(project=instance, name=u"расходы на патентование в РК")
+                    cost_type, created = CostType.objects.get_or_create(project=instance, name=u"Расходы на патентование в РК")
                     if created:
                         cost_type.save()
 
