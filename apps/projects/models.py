@@ -203,25 +203,25 @@ class ProjectManager(models.Manager):
             Milestone.objects.filter(pk=instance.current_milestone.pk
                 ).update(**current_milestone_data)
 
+        # 3. add empty or delete exist milestones
         if old_milestones == new_milestones:
             return prj
 
-        # 3. re-generate empty milestones
-        for milestone in prj.milestone_set.all():
-            for report in milestone.reports.all():
-                report.delete()
-
-
-        prj.milestone_set.clear()
-        for i in xrange(new_milestones):
-            if i == new_milestones - 1:
+        elif old_milestones < new_milestones:
+            for i in xrange(old_milestones, new_milestones):
                 m = Milestone.objects.build_empty(
                     project=prj, number=i+1)
-                Report.build_empty(m, report_type=Report.FINAL)
-            else:
-                m = Milestone.objects.build_empty(
-                    project=prj, number=i+1)
-                Report.build_empty(m)
+                if i == new_milestones - 1:
+                    Report.build_empty(m, report_type=Report.FINAL)
+                else:
+                    Report.build_empty(m)
+
+        elif old_milestones > new_milestones:
+            for milestone in prj.milestone_set.all()[new_milestones:old_milestones]:
+                milestone.reports.clear()
+                # for report in milestone.reports.all():
+                #     report.delete()
+                milestone.delete()
 
         # 4. recreate calendar plan
         if prj.calendar_plan:
