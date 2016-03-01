@@ -25,7 +25,7 @@ class Command(BaseCommand):
 			if project.funding_type:
 				if project.funding_type.name == "COMMERCIALIZATION":
 					try:
-						cost_type, created = CostType.objects.get_or_create(name=u"расходы на патентование в РК", project=project)
+						cost_type, created = CostType.objects.get_or_create(name=u"Расходы на патентование в РК", project=project)
 						if created:
 							cost_type.save()
 							print "cost type created"
