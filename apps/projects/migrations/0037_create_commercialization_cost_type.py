@@ -11,7 +11,7 @@ def create_commercializaion_cost_type(apps, schema_editor):
 	for project in Project.objects.all():
 		if project.funding_type:
 			if project.funding_type.name == "COMMERCIALIZATION":
-				cost_type = CostType(name=u"расходы на патентование в РК", project=project)
+				cost_type = CostType(name=u"Расходы на патентование в РК", project=project)
 				cost_type.save()
 
 class Migration(migrations.Migration):
