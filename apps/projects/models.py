@@ -1678,6 +1678,8 @@ class Act(ProjectBasedModel):
         relevant_for_permission = True
 
     monitoring_todo = models.ForeignKey('projects.MonitoringTodo', related_name='acts', null=True, blank=True)
+    city = models.CharField(max_length=1024, null=True, blank=True)
+    date = models.DateTimeField(null=True, blank=True)
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
     date_edited = models.DateTimeField(auto_now=True, blank=True)
     conclusion = models.TextField(u'Вывод', null=True, blank=True)
@@ -1708,19 +1710,23 @@ class Act(ProjectBasedModel):
     def get_print_context(self, **kwargs):
         context = self.__dict__
 
-        context['organization_name'] = self.project.organization_details.name
-        context['organization_address'] = self.project.organization_details.address2
-        context['funding_type'] = self.project.funding_type.get_name_display()
         context['project'] = self.project.name
         context['total_month'] = self.project.total_month
         context['fundings'] = self.project.fundings
         context['own_fundings'] = self.project.own_fundings 
-        context['agr_fundings'] = self.project.aggreement.funding
         context['number_of_milestones'] = self.project.number_of_milestones
         context['milestone_number'] = self.milestone_number   
+        if self.project.organization_details:
+            context['organization_name'] = self.project.organization_details.name
+            context['organization_address'] = self.project.organization_details.address_2
+        if self.project.funding_type:
+            context['funding_type'] = self.project.funding_type.get_name_display()
+        if self.project.aggreement:
+            context['aggreement'] = self.project.aggreement.document.number+' '+self.project.aggreement.document.date_sign.strftime("%d.%m.%Y")
+            context['agr_fundings'] = self.project.aggreement.funding
              
         for item, cnt in zip(self.contract_performance.all(), range(1, self.contract_performance.count()+1)):
-            row = kwargs['doc'].tables[1].add_row()
+            row = kwargs['doc'].tables[2].add_row()
             row.cells[0].text = utils.get_stringed_value(cnt)
             row.cells[1].text = utils.get_stringed_value(item.subject)
             row.cells[2].text = utils.get_stringed_value(item.results)

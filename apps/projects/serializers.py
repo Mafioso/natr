@@ -430,8 +430,6 @@ class MonitoringOfContractPerformanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = MonitoringOfContractPerformance
 
-    id = serializers.IntegerField()
-
     def update(self, instance, validated_data):
         return super(MonitoringOfContractPerformanceSerializer, self).update(instance, validated_data)
 
