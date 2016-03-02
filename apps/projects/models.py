@@ -92,13 +92,19 @@ class ProjectManager(models.Manager):
 
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
-            if i == prj.number_of_milestones - 1:
+            if i == 0 and data['funding_date'] is not None:
                 m = Milestone.objects.build_empty(
-                        project=prj, number=i+1)
-                Report.build_empty(m, report_type=Report.FINAL)
+                    project=prj, number=i+1,
+                    date_start=data['funding_date'],
+                    date_funded=data['funding_date'],
+                    status=Milestone.TRANCHE_PAY)
             else:
                 m = Milestone.objects.build_empty(
-                        project=prj, number=i+1)
+                    project=prj, number=i+1)
+
+            if i == prj.number_of_milestones - 1:
+                Report.build_empty(m, report_type=Report.FINAL)
+            else:
                 Report.build_empty(m)
 
         # 1. create journal
@@ -204,25 +210,24 @@ class ProjectManager(models.Manager):
             Milestone.objects.filter(pk=instance.current_milestone.pk
                 ).update(**current_milestone_data)
 
+        # 3. add empty or delete exist milestones
         if old_milestones == new_milestones:
             return prj
 
-        # 3. re-generate empty milestones
-        for milestone in prj.milestone_set.all():
-            for report in milestone.reports.all():
-                report.delete()
-
-
-        prj.milestone_set.clear()
-        for i in xrange(new_milestones):
-            if i == new_milestones - 1:
+        elif old_milestones < new_milestones:
+            for i in xrange(old_milestones, new_milestones):
                 m = Milestone.objects.build_empty(
                     project=prj, number=i+1)
-                Report.build_empty(m, report_type=Report.FINAL)
-            else:
-                m = Milestone.objects.build_empty(
-                    project=prj, number=i+1)
-                Report.build_empty(m)
+                if i == new_milestones - 1:
+                    Report.build_empty(m, report_type=Report.FINAL)
+                else:
+                    Report.build_empty(m)
+
+        elif old_milestones > new_milestones:
+            for milestone in prj.milestone_set.all()[new_milestones:old_milestones]:
+                for report in milestone.reports.all():
+                    report.delete()
+                milestone.delete()
 
         # 4. recreate calendar plan
         if prj.calendar_plan:
@@ -1178,8 +1183,6 @@ class Milestone(ProjectBasedModel):
     class AlreadyExists(Exception):
         pass
 
-    # STATUSES = NOT_START, START, CLOSE = range(3)
-    STATUSES = NOT_STARTED, TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(8)
     STATUS_CAPS = (
         u'не начато',
         u'оплата транша',
@@ -1190,6 +1193,7 @@ class Milestone(ProjectBasedModel):
         u'на утверждении заключения',
         u'завершен'
     )
+    STATUSES = NOT_STARTED, TRANCHE_PAY, IMPLEMENTING, REPORTING, REPORT_CHECK, REPORT_REWORK, COROLLARY_APROVING, CLOSE = range(len(STATUS_CAPS))
     STATUSES_OPTS = zip(STATUSES, STATUS_CAPS)
 
     number = models.IntegerField(null=True)
