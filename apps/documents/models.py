@@ -10,6 +10,7 @@ from django.db import models
 from django.utils.functional import cached_property
 from django.conf import settings
 from dateutil import parser as date_parser
+from datetime import timedelta
 from natr.mixins import ProjectBasedModel
 from natr.models import CostType
 from statuses import (
@@ -893,7 +894,26 @@ class CalendarPlanItem(models.Model):
     # milestone = models.OneToOneField('Milestone', null=True, related_name='calendar_plan_item', on_delete=models.CASCADE)
 
     def get_project(self):
-        return self.document.get_project()
+        return self.calendar_plan.get_project()
+
+    @classmethod
+    def post_save(cls, sender, instance, created, **kwargs):
+        if created:
+            return None
+        # update Milestone's `period` and `date_end`
+        project = instance.get_project()
+        try:
+            milestone = project.milestone_set.get(number=instance.number)
+            if instance.deadline is None:
+                milestone.period = None
+                milestone.date_end = None
+            else:
+                milestone.period = instance.deadline
+                if milestone.date_start is not None:
+                    milestone.date_end = milestone.date_start + timedelta(days=30*milestone.period)
+            milestone.save()
+        except Exception as e:
+            pass
 
 
 class ProjectStartDescription(models.Model):
@@ -1477,3 +1497,4 @@ def on_cost_type_create(sender, instance, created=False, **kwargs):
         budget_report.add_empty_item(instance)
 
 post_save.connect(on_cost_type_create, sender=CostType)
+post_save.connect(CalendarPlanItem.post_save, sender=CalendarPlanItem)
