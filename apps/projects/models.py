@@ -75,7 +75,7 @@ class ProjectManager(models.Manager):
         prj.funding_type = FundingType.objects.create(**funding_type_data)
 
         if prj.funding_type.name == FundingType.COMMERCIALIZATION:
-            CostType.objects.create(project=prj, name=u"расходы на патентование в РК")
+            CostType.objects.create(project=prj, name=u"Расходы на патентование в РК")
 
         if statement_data:
             Document.dml.create_statement(project=prj, **statement_data)
@@ -152,11 +152,12 @@ class ProjectManager(models.Manager):
         if funding_type_data:
             funding_type = FundingType.objects.get(pk=instance.funding_type.id)
             funding_type.name = funding_type_data['name']
+            funding_type.subtype = funding_type_data.get('subtype', None)
             funding_type.save()
 
             if old_funding_type != funding_type.name:
                 if funding_type.name == FundingType.COMMERCIALIZATION:
-                    cost_type, created = CostType.objects.get_or_create(project=instance, name=u"расходы на патентование в РК")
+                    cost_type, created = CostType.objects.get_or_create(project=instance, name=u"Расходы на патентование в РК")
                     if created:
                         cost_type.save()
 
@@ -587,9 +588,12 @@ class FundingType(models.Model):
                     COMMERCIALIZATION,
                     FOREIGN_PROFS,
                     CONSULTING,
-                    INTRO_TECH) = ('ACQ_TECH', 'INDS_RES', 'PERSNL_TR', 'PROD_SUPPORT',
+                    INTRO_TECH,
+                    INTELL_PAT,
+                    RISK_RESEARCH,
+                    GROUNDING) = ('ACQ_TECH', 'INDS_RES', 'PERSNL_TR', 'PROD_SUPPORT',
                                         'PATENTING', 'COMMERCIALIZATION', 'FOREIGN_PROFS',
-                                        'CONSULTING', 'INTRO_TECH')
+                                        'CONSULTING', 'INTRO_TECH', 'INTELL_PAT', 'RISK_RESEARCH', 'GROUNDING')
     GRANT_TYPES = (
         u'Приобретение технологий',
         u'Проведение промышленных исследований',
@@ -598,11 +602,112 @@ class FundingType(models.Model):
         u'Патентование в зарубежных странах и (или) региональных патентных организациях',
         u'Коммерциализацию технологий',
         u'Привлечение высококвалифицированных иностранных специалистов', #without pasport
-        u'Привлечение консалтинговых, проектных и инжиниринговых организаций', #without pasport
-        u'Внедрение управленческих и производственных технологий', #without pasport
+        u'Привлечение квалифицированных организаций', #without pasport
+        u'Внедрение управленческих и производственных технологий', #without pasport,
+        u'Патентование объекта интеллектуальной собственности в иностранных государствах и (или) международных патентных организациях',
+        u'Выполнение опытно-конструкторских работ и (или) рисковых исследований прикладного характера',
+        u'Подготовка технико-экономического обоснования инновационного проекта',
     )
     GRANT_TYPES_OPTIONS = zip(TYPE_KEYS, GRANT_TYPES)
+
+    SUB_TYPE_KEYS = ( 
+                      CONSULTING_SUB_1,
+                      CONSULTING_SUB_2,
+                      ACQ_TECHNOLOGY_SUB_1,
+                      ACQ_TECHNOLOGY_SUB_2,
+                      ACQ_TECHNOLOGY_SUB_3,
+                      ACQ_TECHNOLOGY_SUB_4,
+                      ACQ_TECHNOLOGY_SUB_5,
+                      INDS_RES_SUB_1,
+                      INDS_RES_SUB_2,
+                      INDS_RES_SUB_3,
+                      INDS_RES_SUB_4,
+                      INDS_RES_SUB_5,
+                      INDS_RES_SUB_6,
+                      INDS_RES_SUB_7,
+                      PROD_SUPPORT_SUB_1,
+                      PROD_SUPPORT_SUB_2,
+                      PATENTING_SUB_1,
+                      PATENTING_SUB_2,
+                      PATENTING_SUB_3,
+                      PATENTING_SUB_4,
+                      PATENTING_SUB_5,
+                      PATENTING_SUB_6,
+                      PATENTING_SUB_7,
+                      COMMERCIALIZATION_SUB_1,
+                      COMMERCIALIZATION_SUB_2,
+                      COMMERCIALIZATION_SUB_3,
+                      COMMERCIALIZATION_SUB_4,
+                      COMMERCIALIZATION_SUB_5
+                        ) = ( 
+                              'CONSULTING_SUB_1',
+                              'CONSULTING_SUB_2',
+                              'ACQ_TECHNOLOGY_SUB_1',
+                              'ACQ_TECHNOLOGY_SUB_2',
+                              'ACQ_TECHNOLOGY_SUB_3',
+                              'ACQ_TECHNOLOGY_SUB_4',
+                              'ACQ_TECHNOLOGY_SUB_5',
+                              'INDS_RES_SUB_1',
+                              'INDS_RES_SUB_2',
+                              'INDS_RES_SUB_3',
+                              'INDS_RES_SUB_4',
+                              'INDS_RES_SUB_5',
+                              'INDS_RES_SUB_6',
+                              'INDS_RES_SUB_7',
+                              'PROD_SUPPORT_SUB_1',
+                              'PROD_SUPPORT_SUB_2',
+                              'PATENTING_SUB_1',
+                              'PATENTING_SUB_2',
+                              'PATENTING_SUB_3',
+                              'PATENTING_SUB_4',
+                              'PATENTING_SUB_5',
+                              'PATENTING_SUB_6',
+                              'PATENTING_SUB_7',
+                              'COMMERCIALIZATION_SUB_1',
+                              'COMMERCIALIZATION_SUB_2',
+                              'COMMERCIALIZATION_SUB_3',
+                              'COMMERCIALIZATION_SUB_4',
+                              'COMMERCIALIZATION_SUB_5'
+                                )
+    SUB_TYPES = (
+                 u'Привлечение квалифицированных консалтинговых организаций', #subtype CONSULTING
+                 u'Привлечение квалифицированных проектных и инжиниринговых организаций', #subtype CONSULTING
+
+                 u'Приобретение технологий для возмещения затрат на приобретение патента и/или лицензии', #subtype ACQ_TECHNOLOGY
+                 u'Приобретение технологий юридическим лицам для: приобретения лицензии на право использования технологии', #subtype ACQ_TECHNOLOGY
+                 u'Приобретение лицензии на право использования технологии и приобретение оборудования, являющегося неотъемлемой частью приобретаемой технологии', #subtype ACQ_TECHNOLOGY
+                 u'Приобретение оборудования, являющегося неотъемлемой частью приобретаемой технологии', #subtype ACQ_TECHNOLOGY
+                 u'Приобретение технологии и/ или оборудования, являющегося неотъемлемой частью приобретаемой технологии', #subtype ACQ_TECHNOLOGY
+                 
+                 u'Для 1 категории заявителей на: оплату приобретения реактивов, расходных материалов и лабораторного оборудования', #subtype INDS_RES
+                 u'Для 1 категории заявителей на: оплату труда ИТК и/или услуг отечественной и/ или иностранной научно-технической организации', #subtype INDS_RES
+                 u'Для 1 категории заявителей на: накладные расходы не превышающие 10%  от заявленных затрат', #subtype INDS_RES
+                 u'Для 2 категории заявителей на: оплату предпроектных и проектных работ', #subtype INDS_RES
+                 u'Для 2 категории заявителей на: приобретения реактивов, расходных материалов и лабораторного оборудования', #subtype INDS_RES
+                 u'Для 2 категории заявителей на: оплату труда ИТК и/или услуг отечественной и/ или иностранной научно-технической организации, вузов', #subtype INDS_RES
+                 u'Для 2 категории заявителей на: накладные расходы и другие обоснованные расходы, в т.ч. затраты на проведение опытно-внедренческих работ', #subtype INDS_RES
+                 
+                 u'Согласно перечню, утвержденному законод. РК', #subtype PROD_SUPPORT
+                 u'Cогласно перечню, утвержденному уполномоченным органом', #subtype PROD_SUPPORT
+                 
+                 u'На подачу международной заявки', #subtype PATENTING
+                 u'На получение патента на объект промышленной собственности в зарубежных странах', #subtype PATENTING
+                 u'На поддержание патента на объект промышленной собственности в силе не более, чем в трех зарубежных странах в течение трех лет с даты получения патента на объект промышленной собственности', #subtype PATENTING
+                 u'На подачу международной (м/н) заявки, проведение м/н поиска и м/н предварительной экспертизы в м/н поисковом органе в соответствии с Договором о патентной кооперации (РСТ)', #subtype PATENTING
+                 u'На получение патента на объект промышленной собственности в запрашиваемых странах', #subtype PATENTING
+                 u'На поддержание патента на объект промышленной собственности в силе не более, чем в 3 (трех) зарубежных странах в течение 3 (трех) лет с даты выдачи патента на объект промышленной собственности', #subtype PATENTING
+                 u'Обоснования концепции проекта для коммерческого использования', #subtype PATENTING
+                 
+                 u'1 этап для обоснования концепции проекта для коммерческого использования', #subtype COMMERCIALIZATION
+                 u'2 этап для создания промышленного прототипа и его коммерческой демонстрации', #subtype COMMERCIALIZATION
+                 u'1 этап для создания опытного лабораторного образца', #subtype COMMERCIALIZATION
+                 u'2 этап для создания экспериментального промышл. образца', #subtype COMMERCIALIZATION
+                 u'3 этап для выпуска и реализации тестовой партии продукта', #subtype COMMERCIALIZATION
+                )
+    SUB_TYPES_OPTIONS = zip(SUB_TYPE_KEYS, SUB_TYPES)
+
     name = models.CharField(max_length=25, null=True, blank=True, choices=GRANT_TYPES_OPTIONS)
+    subtype = models.CharField(max_length=50, null=True, blank=True, choices=SUB_TYPES_OPTIONS)
 
     def __unicode__(self):
         return self.name
