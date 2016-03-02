@@ -1701,6 +1701,29 @@ class Act(ProjectBasedModel):
 
         return self.contract_performance
 
+    def get_print_context(self, **kwargs):
+        context = self.__dict__
+
+        context['organization_name'] = self.project.organization_details.name
+        context['organization_address'] = self.project.organization_details.address2
+        context['funding_type'] = self.project.funding_type.get_name_display()
+        context['project'] = self.project.name
+        context['total_month'] = self.project.total_month
+        context['fundings'] = self.project.fundings
+        context['own_fundings'] = self.project.own_fundings 
+        context['agr_fundings'] = self.project.aggreement.funding
+        context['number_of_milestones'] = self.project.number_of_milestones
+        context['milestone_number'] = self.milestone_number   
+             
+        for item, cnt in zip(self.contract_performance.all(), range(1, self.contract_performance.count()+1)):
+            row = kwargs['doc'].tables[1].add_row()
+            row.cells[0].text = utils.get_stringed_value(cnt)
+            row.cells[1].text = utils.get_stringed_value(item.subject)
+            row.cells[2].text = utils.get_stringed_value(item.results)
+        
+
+        return context
+
 class MonitoringOfContractPerformance(models.Model):
     """
         Мониторинг хода исполнения договора

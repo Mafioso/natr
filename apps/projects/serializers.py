@@ -450,3 +450,6 @@ class ActSerializer(serializers.ModelSerializer):
         instance.conclusion = validated_data.pop('conclusion', None)
         instance.save()
         return instance
+
+    def validate_docx_context(self, instance):
+        return True, u""

@@ -89,6 +89,8 @@ class DocumentPrint:
             return u"cost_document.docx"
         elif self.object.__class__.__name__ == "CalendarPlanDocument":
             return u"calendar_plan.docx"
+        elif self.object.__class__.__name__ == "Act":
+            return u"act.docx"
 
         return None
 
@@ -121,6 +123,8 @@ class DocumentPrint:
             return u"Cмета расходов.docx"
         elif self.object.__class__.__name__ == "CalendarPlanDocument":
             return u"Календарный план по проекту.docx"
+        elif self.object.__class__.__name__ == "Act":
+            return u"Акт по результатам выездного мониторинга.docx"
 
         return None
 
