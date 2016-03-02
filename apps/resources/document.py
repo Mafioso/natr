@@ -469,6 +469,11 @@ class CostTypeViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(cost_row, many=True)
         return response.Response(serializer.data)
 
+    def destroy(self, request, *a, **kw):
+        cost_type = CostType.objects.get(pk=kw['pk'])
+        cost_type.delete()
+        return response.Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class FactMilestoneCostRowViewSet(ProjectBasedViewSet):
     serializer_class = FactMilestoneCostRowSerializer
