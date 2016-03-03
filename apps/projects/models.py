@@ -615,7 +615,7 @@ class FundingType(models.Model):
     )
     GRANT_TYPES_OPTIONS = zip(TYPE_KEYS, GRANT_TYPES)
 
-    SUB_TYPE_KEYS = ( 
+    SUB_TYPE_KEYS = (
                       CONSULTING_SUB_1,
                       CONSULTING_SUB_2,
                       ACQ_TECHNOLOGY_SUB_1,
@@ -644,7 +644,7 @@ class FundingType(models.Model):
                       COMMERCIALIZATION_SUB_3,
                       COMMERCIALIZATION_SUB_4,
                       COMMERCIALIZATION_SUB_5
-                        ) = ( 
+                        ) = (
                               'CONSULTING_SUB_1',
                               'CONSULTING_SUB_2',
                               'ACQ_TECHNOLOGY_SUB_1',
@@ -683,7 +683,7 @@ class FundingType(models.Model):
                  u'Приобретение лицензии на право использования технологии и приобретение оборудования, являющегося неотъемлемой частью приобретаемой технологии', #subtype ACQ_TECHNOLOGY
                  u'Приобретение оборудования, являющегося неотъемлемой частью приобретаемой технологии', #subtype ACQ_TECHNOLOGY
                  u'Приобретение технологии и/ или оборудования, являющегося неотъемлемой частью приобретаемой технологии', #subtype ACQ_TECHNOLOGY
-                 
+
                  u'Для 1 категории заявителей на: оплату приобретения реактивов, расходных материалов и лабораторного оборудования', #subtype INDS_RES
                  u'Для 1 категории заявителей на: оплату труда ИТК и/или услуг отечественной и/ или иностранной научно-технической организации', #subtype INDS_RES
                  u'Для 1 категории заявителей на: накладные расходы не превышающие 10%  от заявленных затрат', #subtype INDS_RES
@@ -691,10 +691,10 @@ class FundingType(models.Model):
                  u'Для 2 категории заявителей на: приобретения реактивов, расходных материалов и лабораторного оборудования', #subtype INDS_RES
                  u'Для 2 категории заявителей на: оплату труда ИТК и/или услуг отечественной и/ или иностранной научно-технической организации, вузов', #subtype INDS_RES
                  u'Для 2 категории заявителей на: накладные расходы и другие обоснованные расходы, в т.ч. затраты на проведение опытно-внедренческих работ', #subtype INDS_RES
-                 
+
                  u'Согласно перечню, утвержденному законод. РК', #subtype PROD_SUPPORT
                  u'Cогласно перечню, утвержденному уполномоченным органом', #subtype PROD_SUPPORT
-                 
+
                  u'На подачу международной заявки', #subtype PATENTING
                  u'На получение патента на объект промышленной собственности в зарубежных странах', #subtype PATENTING
                  u'На поддержание патента на объект промышленной собственности в силе не более, чем в трех зарубежных странах в течение трех лет с даты получения патента на объект промышленной собственности', #subtype PATENTING
@@ -702,7 +702,7 @@ class FundingType(models.Model):
                  u'На получение патента на объект промышленной собственности в запрашиваемых странах', #subtype PATENTING
                  u'На поддержание патента на объект промышленной собственности в силе не более, чем в 3 (трех) зарубежных странах в течение 3 (трех) лет с даты выдачи патента на объект промышленной собственности', #subtype PATENTING
                  u'Обоснования концепции проекта для коммерческого использования', #subtype PATENTING
-                 
+
                  u'1 этап для обоснования концепции проекта для коммерческого использования', #subtype COMMERCIALIZATION
                  u'2 этап для создания промышленного прототипа и его коммерческой демонстрации', #subtype COMMERCIALIZATION
                  u'1 этап для создания опытного лабораторного образца', #subtype COMMERCIALIZATION
@@ -1609,7 +1609,7 @@ class MonitoringEventType(models.Model):
         u'Постгрантовый мониторинг'
     )
 
-    name = models.CharField(u'мероприятие мониторинга', max_length=255, null=True, blank=True)
+    name = models.CharField(u'мероприятие мониторинга', max_length=255, unique=True, null=True, blank=True)
 
     @classmethod
     def create_default(cls):
@@ -1713,9 +1713,9 @@ class Act(ProjectBasedModel):
         context['project'] = self.project.name
         context['total_month'] = self.project.total_month
         context['fundings'] = self.project.fundings
-        context['own_fundings'] = self.project.own_fundings 
+        context['own_fundings'] = self.project.own_fundings
         context['number_of_milestones'] = self.project.number_of_milestones
-        context['milestone_number'] = self.milestone_number   
+        context['milestone_number'] = self.milestone_number
         if self.project.organization_details:
             context['organization_name'] = self.project.organization_details.name
             context['organization_address'] = self.project.organization_details.address_2
@@ -1724,13 +1724,13 @@ class Act(ProjectBasedModel):
         if self.project.aggreement:
             context['aggreement'] = self.project.aggreement.document.number+' '+self.project.aggreement.document.date_sign.strftime("%d.%m.%Y")
             context['agr_fundings'] = self.project.aggreement.funding
-             
+
         for item, cnt in zip(self.contract_performance.all(), range(1, self.contract_performance.count()+1)):
             row = kwargs['doc'].tables[2].add_row()
             row.cells[0].text = utils.get_stringed_value(cnt)
             row.cells[1].text = utils.get_stringed_value(item.subject)
             row.cells[2].text = utils.get_stringed_value(item.results)
-        
+
 
         return context
 
