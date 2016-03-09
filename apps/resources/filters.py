@@ -39,7 +39,7 @@ class ProjectFilter(ListOfIdFilter):
 			Q(name__icontains=value) |
 			(Q(document__number__startswith=value) & Q(document__type='agreement'))
 		)
-		return queryset
+		return queryset.distinct()
 
 
 class ReportFilter(django_filters.FilterSet):
