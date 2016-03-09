@@ -540,10 +540,12 @@ class Project(models.Model):
             registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
 
             _projects = []
-            for project in projects.filter(document__date_sign__gte=registry_data['date_from'],
-                                              document__date_sign__lte=registry_data['date_to']):
-                if project not in _projects:
-                    _projects.append(project)
+            for project in projects:
+                if project.aggreement:
+                    if project.aggreement.document.date_sign:
+                        if project.aggreement.document.date_sign >= registry_data['date_from'] and \
+                           project.aggreement.document.date_sign <= registry_data['date_to']:
+                            _projects.append(project)
 
             registry_data['projects'] = _projects
 
