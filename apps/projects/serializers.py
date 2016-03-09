@@ -219,6 +219,7 @@ class ReportSerializer(serializers.ModelSerializer):
     milestone_number = serializers.IntegerField(read_only=True)
     period = serializers.IntegerField(read_only=True)
     protection_document = ProtectionDocumentSerializer(required=False)
+    attachments = AttachmentSerializer(many=True, required=False)
 
     def create(self, validated_data):
         milestone = validated_data.pop('milestone', None)
@@ -232,6 +233,13 @@ class ReportSerializer(serializers.ModelSerializer):
                 instance.protection_document.update(**protection_document)
             else:
                 instance.create_protection_doc(**protection_document)
+
+        if 'attachments' in validated_data: 
+            attachments = validated_data.pop('attachments')
+            for attachment in attachments:
+                attachment = Attachment(**attachment).save()
+                instance.attachments.add(attachment)
+            instance.save()
 
         report = super(ReportSerializer, self).update(instance, validated_data)
         return report
@@ -442,10 +450,18 @@ class ActSerializer(serializers.ModelSerializer):
     contract_performance = MonitoringOfContractPerformanceSerializer(many=True, required=False)
     monitoring_todo = MonitoringTodoSerializer(required=False, read_only=True)
     milestone_number = serializers.CharField(read_only=True)
+    attachments = AttachmentSerializer(many=True, required=False)
 
     def update(self, instance, validated_data):
         contract_performance = instance.update_contract_performance_items(validated_data.pop("contract_performance", []))
         instance.conclusion = validated_data.pop('conclusion', None)
+        
+        if 'attachments' in validated_data: 
+            attachments = validated_data.pop('attachments')
+            for attachment in attachments:
+                attachment = Attachment(**attachment).save()
+                instance.attachments.add(attachment)
+
         instance.save()
         return instance
 
