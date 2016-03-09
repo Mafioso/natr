@@ -9,24 +9,24 @@ from rest_framework.pagination import PageNumberPagination
 
 class ExcludeCurrencyFields(object):
 
-	def get_field_names(self, declared_fields, info):
-		fields = super(ExcludeCurrencyFields, self).get_field_names(declared_fields, info)
-		remove_fields = []
-		for f in fields:
-			if f.endswith('_currency'):
-				remove_fields.append(f)
-		for f in remove_fields:
-			fields.remove(f)
-		return fields
+    def get_field_names(self, declared_fields, info):
+        fields = super(ExcludeCurrencyFields, self).get_field_names(declared_fields, info)
+        remove_fields = []
+        for f in fields:
+            if f.endswith('_currency'):
+                remove_fields.append(f)
+        for f in remove_fields:
+            fields.remove(f)
+        return fields
 
 
 class EmptyObjectDMLMixin(object):
 
-	@classmethod
-	def build_empty(cls, project, **kwargs):
-		assert hasattr(cls, 'empty_data') and callable(cls.empty_data), "Provide empty_data method"
-		data = cls.empty_data(project, **kwargs)
-		return cls(data=data)
+    @classmethod
+    def build_empty(cls, project, **kwargs):
+        assert hasattr(cls, 'empty_data') and callable(cls.empty_data), "Provide empty_data method"
+        data = cls.empty_data(project, **kwargs)
+        return cls(data=data)
 
 
 class ProjectBasedViewSet(viewsets.ModelViewSet):
@@ -37,7 +37,7 @@ class ProjectBasedViewSet(viewsets.ModelViewSet):
         qs = super(ProjectBasedViewSet, self).get_queryset()
         cttype = ContentType.objects.get_for_model(self.queryset.model)
         perm = '%s.view_%s' % (cttype.app_label, cttype.model)
-        
+
         if self.request.user.is_superuser:
             return qs
         elif self.request.user.has_perm(perm):
@@ -45,6 +45,8 @@ class ProjectBasedViewSet(viewsets.ModelViewSet):
         else:
             if hasattr(self.request.user, 'user'):
                 user = self.request.user.user
+                if user.is_manager():
+                    return qs
                 projects = prj_models.Project.objects.filter(assigned_experts=user)
                 return qs.filter(**{
                     qs.model._meta.filter_by_project: projects
