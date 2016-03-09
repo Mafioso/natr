@@ -36,10 +36,10 @@ class ProjectFilter(ListOfIdFilter):
 
 	def filter_search(self, queryset, value):
 		queryset = queryset.filter(
-			Q(name__icontains=value)
-			# Q(aggreement__number__startswith=value)
+			Q(name__icontains=value) |
+			(Q(document__number__startswith=value) & Q(document__type='agreement'))
 		)
-		return queryset
+		return queryset.distinct()
 
 
 class ReportFilter(django_filters.FilterSet):
@@ -136,7 +136,7 @@ class MonitoringTodoFilter(django_filters.FilterSet):
 		return queryset.filter(event_type__name=value)
 
 	def filter_milestone_id(self, queryset, value):
-			
+
 		try:
 			milestone = models.Milestone.objects.get(id=value)
 		except models.Milestone.DoesNotExist:

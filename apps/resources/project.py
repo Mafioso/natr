@@ -373,7 +373,10 @@ class ReportViewSet(ProjectBasedViewSet):
         queryset = super(ReportViewSet, self).get_queryset()
         qs_filter_args = {}
         if not self.request.user.is_superuser:
-            qs_filter_args["user"] = self.request.user
+            if hasattr(self.request.user, 'user') and self.request.user.user.is_manager():
+                pass
+            else:
+                qs_filter_args["user"] = self.request.user
 
         if is_active:
             qs_filter_args["status__gt"] = prj_models.Report.NOT_ACTIVE
@@ -566,7 +569,7 @@ class ActViewSet(viewsets.ModelViewSet):
         item_obj = item_ser.save()
 
         is_valid, message = item_ser.validate_docx_context(instance=item_obj)
-        
+
         if not is_valid:
             return HttpResponse({"message": message}, status=400)
 

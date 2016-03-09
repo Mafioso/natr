@@ -540,10 +540,12 @@ class Project(models.Model):
             registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
 
             _projects = []
-            for project in projects.filter(document__date_sign__gte=registry_data['date_from'],
-                                              document__date_sign__lte=registry_data['date_to']):
-                if project not in _projects:
-                    _projects.append(project)
+            for project in projects:
+                if project.aggreement:
+                    if project.aggreement.document.date_sign:
+                        if project.aggreement.document.date_sign >= registry_data['date_from'] and \
+                           project.aggreement.document.date_sign <= registry_data['date_to']:
+                            _projects.append(project)
 
             registry_data['projects'] = _projects
 
@@ -775,6 +777,7 @@ class Report(ProjectBasedModel):
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
     results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)
     protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
+    attachments = models.ManyToManyField('documents.Attachment', related_name='reports', blank=True)
 
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
@@ -1683,7 +1686,8 @@ class Act(ProjectBasedModel):
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
     date_edited = models.DateTimeField(auto_now=True, blank=True)
     conclusion = models.TextField(u'Вывод', null=True, blank=True)
-
+    attachments = models.ManyToManyField('documents.Attachment', related_name='acts', blank=True)
+    
     @classmethod
     def build_empty(cls, project):
         obj = cls(project=project)
