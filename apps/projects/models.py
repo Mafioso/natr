@@ -775,6 +775,7 @@ class Report(ProjectBasedModel):
     description = models.TextField(u'Описание фактически проведенных работ', null=True, blank=True)
     results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)
     protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
+    attachments = models.ManyToManyField('documents.Attachment', related_name='reports', blank=True)
 
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
@@ -1683,7 +1684,8 @@ class Act(ProjectBasedModel):
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
     date_edited = models.DateTimeField(auto_now=True, blank=True)
     conclusion = models.TextField(u'Вывод', null=True, blank=True)
-
+    attachments = models.ManyToManyField('documents.Attachment', related_name='acts', blank=True)
+    
     @classmethod
     def build_empty(cls, project):
         obj = cls(project=project)
