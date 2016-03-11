@@ -90,10 +90,16 @@ class AttachmentFilter(ListOfIdFilter):
 
 
 class NatrUserFilter(django_filters.FilterSet):
+	expert_only = django_filters.MethodFilter()
 	search = django_filters.MethodFilter()
 
 	class Meta:
 		model = auth2_models.NatrUser
+
+	def filter_expert_only(self, queryset, value):
+		if value == 'true':
+			queryset = queryset.filter(account__groups__name__in=[auth2_models.NatrUser.EXPERT, auth2_models.NatrUser.RISK_EXPERT])
+		return queryset
 
 	def filter_search(self, queryset, value):
 		return queryset.filter(
