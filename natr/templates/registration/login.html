@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load static from staticfiles %}
-{% block head_title %} Login page {% endblock %}
+{% block head_title %} Вход {% endblock %}
 {% block css %}
 <link rel="shortcut icon" href="{% static 'images/favicon.png' %}" type="image/png">
 <link rel="stylesheet" type="text/css" href="{% static 'css/icons.css' %}">
@@ -15,10 +15,10 @@
     <div class="user_login">
       {% csrf_token %}
       <div class="block_head">
-        <div class="title">Вход в систему</div>                    
+        <div class="title">Вход в систему</div>
       </div>
-      <div class="block_border_bottom">                            
-        <div class="input_block_full">                            
+      <div class="block_border_bottom">
+        <div class="input_block_full">
            <div class="input_text">
               <div class="label">
                 Логин
@@ -28,17 +28,17 @@
               </div>
            </div>
         </div>
-        <div class="input_block_full">                            
+        <div class="input_block_full">
           <div class="input_text">
               <div class="label">
-                Пароль 
+                Пароль
                </div>
                <div class="wrap">
                   <input type="password" class="login-input" id="login-password" name="password" placeholder="Password">
               </div>
           </div>
         </div>
-        
+
         <div class="project_block_part">
           <div class="part_left">
               <div class="filter_side">
@@ -48,7 +48,7 @@
               </div>
           </div>
           <div class="part_right">
-              <a href="" class="no_pas">Забыли пароль?</a>    
+              <a href="/auth/password_reset/" class="no_pas">Забыли пароль?</a>
           </div>
         </div>
       </div>

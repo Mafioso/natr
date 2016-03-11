@@ -82,9 +82,9 @@ APPS = (
     'chat'
 )
 
-INSTALLED_APPS = (
-    'django.contrib.admin',
+INSTALLED_APPS = APPS +(
     'django.contrib.auth',
+    'django.contrib.admin',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
@@ -94,7 +94,7 @@ INSTALLED_APPS = (
     'rest_framework_swagger',
     'test_without_migrations',
     'corsheaders'
-) + APPS
+)
 
 MIDDLEWARE_CLASSES = (
     'corsheaders.middleware.CorsMiddleware',
@@ -117,7 +117,7 @@ CONFIG_TEMPLATE_DIR = rel(CONFIG_DIR, 'templates')
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [rel('templates',), CONFIG_TEMPLATE_DIR ],
+        'DIRS': [rel('templates',), CONFIG_TEMPLATE_DIR, ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -325,4 +325,3 @@ SCRAPY_SETTINGS = {
     'SPIDER_MODULES': 'natr_spider.spiders',
     'NEWSPIDER_MODULE': 'natr_spider.spiders'
 }
-
