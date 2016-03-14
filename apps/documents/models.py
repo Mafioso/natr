@@ -42,6 +42,9 @@ class DocumentDMLManager(models.Manager):
     def update_agreement(self, instance, **kwargs):
         return self.update_doc_with_relations(instance, **kwargs)
 
+    def update_basic_project_pasport(self, instance, **kwargs):
+        return self.update_doc_with_relations(instance, **kwargs)
+
     def update_statement(self, instance, **kwargs):
         return self.update_doc_with_relations(instance, **kwargs)
 
@@ -124,7 +127,7 @@ class DocumentDMLManager(models.Manager):
         intellectual_property_kw = kwargs.pop('intellectual_property', {})
         tech_readiness_kw = kwargs.pop('tech_readiness', {})
 
-        doc = self.update_doc_(instance, **kwargs)
+        doc = self.update_doc_with_relations(instance, **kwargs)
 
         old_ids = {tm.id for tm in instance.team_members.all()}
         incoming_ids = {tm['id'] for tm in team_members_kw if tm.get('id', None)}
@@ -1168,13 +1171,34 @@ class UseOfBudgetDocumentItem(models.Model):
     def cost_document(self):
         return self.project.cost_document
 
-    @property
+    # @property
+    # def total_budget(self):
+    #     u"""Сумма бюджетных стредств по смете"""
+    #     total = sum([
+    #         cost_cell is not None and cost_cell.own_costs.amount
+    #         for cost_cell in self.cost_document.get_milestone_costs(self.milestone).all()
+    #     ])
+    #     return Money(amount=total, currency=settings.KZT)
+
+    @property 
     def total_budget(self):
         u"""Сумма бюджетных стредств по смете"""
-        total = sum([
-            cost_cell is not None and cost_cell.own_costs.amount
-            for cost_cell in self.cost_document.get_milestone_costs(self.milestone).all()
-        ])
+        cost_rows = self.cost_document.get_costs_rows()
+        total = 0
+        for cost_row in cost_rows:
+            if cost_row.first().cost_type == self.cost_type:
+                grant_costs = 0
+                own_costs = 0
+                
+                if cost_row.first().grant_costs:
+                    grant_costs = cost_row.first().grant_costs.amount
+
+                if cost_row.first().own_costs:
+                    own_costs = cost_row.first().own_costs.amount
+
+                total = grant_costs + own_costs
+
+
         return Money(amount=total, currency=settings.KZT)
 
     @property

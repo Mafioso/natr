@@ -237,7 +237,8 @@ class ReportSerializer(serializers.ModelSerializer):
         if 'attachments' in validated_data: 
             attachments = validated_data.pop('attachments')
             for attachment in attachments:
-                attachment = Attachment(**attachment).save()
+                attachment = doc_models.Attachment(**attachment)
+                attachment.save()
                 instance.attachments.add(attachment)
             instance.save()
 
@@ -459,7 +460,8 @@ class ActSerializer(serializers.ModelSerializer):
         if 'attachments' in validated_data: 
             attachments = validated_data.pop('attachments')
             for attachment in attachments:
-                attachment = Attachment(**attachment).save()
+                attachment = doc_models.Attachment(**attachment)
+                attachment.save()
                 instance.attachments.add(attachment)
 
         instance.save()

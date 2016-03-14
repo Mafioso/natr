@@ -105,8 +105,9 @@ class BasicProjectPasportSerializer(DocumentCompositionSerializer):
         return doc
 
     def update(self, instance, validated_data):
-        document = validated_data.pop('document', None)
-        return models.Document.dml.update_doc_(instance, **validated_data)
+        return models.Document.dml.update_basic_project_pasport(instance, **validated_data)
+        # document = validated_data.pop('document', None)
+        # return models.Document.dml.update_doc_(instance, **validated_data)
 
     def validate_docx_context(self, instance):
         if not instance.cost:
@@ -189,7 +190,6 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
         return doc
 
     def update(self, instance, validated_data):
-        document = validated_data.pop('document', None)
         return models.Document.dml.update_innovative_project_pasport(instance, **validated_data)
 
     def validate_docx_context(self, instance):
