@@ -37,7 +37,7 @@ class ProjectFilter(ListOfIdFilter):
 	def filter_search(self, queryset, value):
 		queryset = queryset.filter(
 			Q(name__icontains=value) |
-			(Q(document__number__startswith=value) & Q(document__type='agreement'))
+			(Q(document__type='agreement') & Q(document__number__contains=value))
 		)
 		return queryset.distinct()
 
