@@ -92,7 +92,7 @@ class ProjectManager(models.Manager):
 
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
-            if i == 0 and data['funding_date'] is not None:
+            if i == 0 and data.get('funding_date', None) is not None:
                 m = Milestone.objects.build_empty(
                     project=prj, number=i+1,
                     date_start=data['funding_date'],
@@ -1687,7 +1687,7 @@ class Act(ProjectBasedModel):
     date_edited = models.DateTimeField(auto_now=True, blank=True)
     conclusion = models.TextField(u'Вывод', null=True, blank=True)
     attachments = models.ManyToManyField('documents.Attachment', related_name='acts', blank=True)
-    
+
     @classmethod
     def build_empty(cls, project):
         obj = cls(project=project)
