@@ -40,8 +40,8 @@ class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
 
 	def get_queryset(self):
 		qs = super(NotificationSubscriptionViewSet, self).get_queryset()
-		last_three_monthes = timezone.now() - timedelta(days=90)
-		return qs.filter(account=self.request.user, date_created__gte=last_three_monthes).order_by('-date_created')
+		last_month = timezone.now() - timedelta(days=30)
+		return qs.filter(account=self.request.user, date_created__gte=last_month).order_by('-date_created')
 
 	def list(self, request, *a, **kw):
 		response = super(NotificationSubscriptionViewSet, self).list(request, *a, **kw)
