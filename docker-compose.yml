@@ -8,8 +8,8 @@ media:
 rabbitmq:
   image: rabbitmq:3.5.4-management
   ports:
-    - "15672:15672"
-    - "5672:5672"
+    - "15671:15671"
+    - "5671:5671"
   environment:
     - RABBITMQ_DEFAULT_VHOST='/'
     - RABBITMQ_USER_PASSWD=guest:guest
