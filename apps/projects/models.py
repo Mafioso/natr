@@ -1127,6 +1127,37 @@ class Corollary(ProjectBasedModel):
         corollary.build_stat()
         return corollary
 
+    def get_print_context(self, **kwargs):
+        context = self.__dict__
+        
+        if self.report.type == Report.CAMERAL:
+            context['title'] = u"Заключение по камеральному мониторингу хода исполнения договора об инновационном гранте"
+        elif self.report.type == Report.FINAL:
+            context['title'] = u"Итоговое заключение на момент завершения договора об инновационном гранте"
+
+        context['date'] = datetime.datetime.utcnow()
+        context['report_date'] = self.report_date
+        context['project'] = self.project.name
+        context['total_month'] = self.project.total_month
+        context['fundings'] = self.project.fundings
+        context['own_fundings'] = self.project.own_fundings
+        context['number_of_milestones'] = self.project.number_of_milestones
+
+        if self.project.organization_details:
+            context['organization_name'] = self.project.organization_details.name
+            context['organization_address'] = self.project.organization_details.address_2
+        if self.project.funding_type:
+            context['funding_type'] = self.project.funding_type.get_name_display()
+        if self.project.aggreement:
+            context['aggreement'] = self.project.aggreement.document.number+' '+self.project.aggreement.document.date_sign.strftime("%d.%m.%Y")
+            context['agr_fundings'] = self.project.aggreement.funding
+
+        if self.milestone:
+            context['conclusion'] = self.milestone.conclusion
+            context['milestone_period'] = self.milestone.period
+
+        return context
+
     @classmethod
     def post_save(cls, sender, instance, created, **kwargs):
         if not instance.has_changed('status'):

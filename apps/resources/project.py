@@ -539,6 +539,30 @@ class CorollaryViewSet(ProjectBasedViewSet):
 
         return response.Response({"milestone_id": corollary.milestone.id}, status=200)
 
+    @detail_route(methods=['get'], url_path='gen_docx')
+    def gen_docx(self, request, *a, **kw):
+        _file, filename = DocumentPrint(object=self.get_object()).generate_docx()
+
+        if not _file or not filename:
+            return HttpResponse(status=400)
+
+        response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
+        return response
+
+    @detail_route(methods=['get'], url_path='validate_docx_context')
+    def validate_docx_context(self, request, *a, **kw):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance=instance)
+        is_valid, message = serializer.validate_docx_context(instance=instance)
+
+        if not is_valid:
+            return HttpResponse({"message": message}, status=status.HTTP_400_BAD_REQUEST)
+
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"instance": instance.id}, headers=headers)
+        
+
 class RiskCategoryViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskCategory.objects.all()
     serializer_class = RiskCategorySerializer
