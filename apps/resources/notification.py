@@ -3,7 +3,8 @@ from rest_framework.serializers import ValidationError
 from rest_framework import viewsets, response, filters, status
 from natr.override_rest_framework.decorators import patch_serializer_class
 from notifications import models, serializers
-
+from datetime import timedelta
+from django.utils import timezone
 
 class NotificationViewSet(viewsets.ModelViewSet):
 
@@ -39,7 +40,8 @@ class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
 
 	def get_queryset(self):
 		qs = super(NotificationSubscriptionViewSet, self).get_queryset()
-		return qs.filter(account=self.request.user)
+		last_three_monthes = timezone.now() - timedelta(days=90)
+		return qs.filter(account=self.request.user, date_created__gte=last_three_monthes).order_by('-date_created')
 
 	def list(self, request, *a, **kw):
 		response = super(NotificationSubscriptionViewSet, self).list(request, *a, **kw)
