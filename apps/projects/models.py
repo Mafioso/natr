@@ -912,14 +912,14 @@ class Report(ProjectBasedModel):
                                 row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
                                 row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
                                 row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else "")
-                                row.cells[6].text = utils.get_stringed_value("attachments")
+                                row.cells[6].text = utils.get_stringed_value("")
                                 row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
                                 first_gp_doc = False
                             elif first_gp_doc and sub_row:
                                 sub_row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
                                 sub_row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
                                 sub_row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else "")
-                                sub_row.cells[6].text = utils.get_stringed_value("attachments")
+                                sub_row.cells[6].text = utils.get_stringed_value("")
                                 sub_row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
                                 first_gp_doc = False
                             else:
@@ -927,7 +927,7 @@ class Report(ProjectBasedModel):
                                 cost_sub_row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
                                 cost_sub_row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
                                 cost_sub_row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else "")
-                                cost_sub_row.cells[6].text = utils.get_stringed_value("attachments")
+                                cost_sub_row.cells[6].text = utils.get_stringed_value("")
                                 cost_sub_row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
                         rows_to_merge += cost.gp_docs.count()
                         merge_cells.extend(
@@ -976,7 +976,7 @@ class Report(ProjectBasedModel):
             row.cells[2].text = utils.get_stringed_value(item.total_budget.amount)
             row.cells[3].text = utils.get_stringed_value(item.total_expense.amount)
             row.cells[4].text = utils.get_stringed_value(item.remain_budget.amount)
-            row.cells[5].text = utils.get_stringed_value("attachments")
+            row.cells[5].text = utils.get_stringed_value("")
             row.cells[6].text = utils.get_stringed_value(item.notes)
 
         return context
