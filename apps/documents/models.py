@@ -1460,7 +1460,7 @@ class FactMilestoneCostRow(models.Model):
     u"""Расход на предприятие фактическая по этапу"""
 
     class Meta:
-        filter_by_project = 'cost_type__project__in'
+        filter_by_project = 'milestone__project__in'
 
     name = models.TextField(default='', null=True)
     cost_type = models.ForeignKey('natr.CostType', null=True, related_name='fact_cost_rows')

@@ -7,6 +7,7 @@ from random import randrange
 from django.utils import timezone as tz
 from django.utils.dateparse import parse_date as dj_parse_date
 from moneyed import Money, KZT
+from collections import OrderedDict
 
 f = faker.Faker()
 
@@ -59,7 +60,7 @@ def pretty(d, indent=0):
         return ''
 
 def get_stringed_value(value):
-    if not value:
+    if not value and value != 0:
         return ""
     return '%s'%value
 
@@ -123,3 +124,40 @@ def parse_date(dtstr):
         return None
     return datetime.combine(dt, time.min)
 
+def write_roman(num):
+
+    roman = OrderedDict()
+    roman[1000] = "M"
+    roman[900] = "CM"
+    roman[500] = "D"
+    roman[400] = "CD"
+    roman[100] = "C"
+    roman[90] = "XC"
+    roman[50] = "L"
+    roman[40] = "XL"
+    roman[10] = "X"
+    roman[9] = "IX"
+    roman[5] = "V"
+    roman[4] = "IV"
+    roman[1] = "I"
+
+    def roman_num(num):
+        for r in roman.keys():
+            x, y = divmod(num, r)
+            yield roman[r] * x
+            num -= (r * x)
+            if num > 0:
+                roman_num(num)
+            else:
+                break
+
+    return "".join([a for a in roman_num(num)])
+
+def getRatio(numerator, denominator):
+    if denominator == 0 or \
+        numerator == None or \
+        denominator == None:
+        return ""
+
+    print numerator, denominator
+    return "%.2f%%"%(numerator/denominator*100)
