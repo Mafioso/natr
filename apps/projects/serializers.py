@@ -331,6 +331,9 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         milestone = instance.project.take_next_milestone()
         return MilestoneFinSummarySerializer(instance=milestone).data
 
+    def validate_docx_context(self, instance):
+        return True, u""
+        
 
 class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
 

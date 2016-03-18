@@ -91,6 +91,8 @@ class DocumentPrint:
             return u"calendar_plan.docx"
         elif self.object.__class__.__name__ == "Act":
             return u"act.docx"
+        elif self.object.__class__.__name__ == "Corollary":
+            return u"corollary.docx"            
 
         return None
 
@@ -125,6 +127,8 @@ class DocumentPrint:
             return u"Календарный план по проекту.docx"
         elif self.object.__class__.__name__ == "Act":
             return u"Акт по результатам выездного мониторинга.docx"
+        elif self.object.__class__.__name__ == "Corollary":
+            return u"Заключение по отчету.docx"
 
         return None
 

@@ -912,14 +912,14 @@ class Report(ProjectBasedModel):
                                 row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
                                 row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
                                 row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else "")
-                                row.cells[6].text = utils.get_stringed_value("attachments")
+                                row.cells[6].text = utils.get_stringed_value("")
                                 row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
                                 first_gp_doc = False
                             elif first_gp_doc and sub_row:
                                 sub_row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
                                 sub_row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
                                 sub_row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else "")
-                                sub_row.cells[6].text = utils.get_stringed_value("attachments")
+                                sub_row.cells[6].text = utils.get_stringed_value("")
                                 sub_row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
                                 first_gp_doc = False
                             else:
@@ -927,7 +927,7 @@ class Report(ProjectBasedModel):
                                 cost_sub_row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
                                 cost_sub_row.cells[4].text = utils.get_stringed_value(gp_doc.document.number)
                                 cost_sub_row.cells[5].text = utils.get_stringed_value(gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else "")
-                                cost_sub_row.cells[6].text = utils.get_stringed_value("attachments")
+                                cost_sub_row.cells[6].text = utils.get_stringed_value("")
                                 cost_sub_row.cells[7].text = utils.get_stringed_value(gp_doc.expences.amount)
                         rows_to_merge += cost.gp_docs.count()
                         merge_cells.extend(
@@ -976,7 +976,7 @@ class Report(ProjectBasedModel):
             row.cells[2].text = utils.get_stringed_value(item.total_budget.amount)
             row.cells[3].text = utils.get_stringed_value(item.total_expense.amount)
             row.cells[4].text = utils.get_stringed_value(item.remain_budget.amount)
-            row.cells[5].text = utils.get_stringed_value("attachments")
+            row.cells[5].text = utils.get_stringed_value("")
             row.cells[6].text = utils.get_stringed_value(item.notes)
 
         return context
@@ -1126,6 +1126,294 @@ class Corollary(ProjectBasedModel):
                 'project': report.project})
         corollary.build_stat()
         return corollary
+
+    def get_print_context(self, **kwargs):
+        def conc_table(obj, table, final=False):
+            prj_fundings = obj.project.fundings.amount if obj.project.fundings else 0
+            rows = []
+            for ind in range(0, 3+obj.project.number_of_milestones if final else 4):
+                rows.append(table.add_row())
+            
+            rows[0].cells[0].text = utils.get_stringed_value(1)
+            rows[0].cells[1].text = utils.get_stringed_value(u"Всего сумма гранта") 
+            rows[0].cells[2].text = utils.get_stringed_value(obj.project.funding_date.strftime("%d.%m.%Y") if obj.project.funding_date else "")
+            rows[0].cells[3].text = utils.get_stringed_value(prj_fundings)
+
+            cnt = 1
+            if final:
+                for milestone in obj.project.milestone_set.all():
+                    rows[cnt].cells[0].text = utils.get_stringed_value(cnt+1)
+                    rows[cnt].cells[1].text = utils.get_stringed_value(u"Перечисление средств %s транша"%(utils.write_roman(milestone.number)))
+                    rows[cnt].cells[2].text = utils.get_stringed_value(milestone.date_funded.strftime("%d.%m.%Y") if milestone.date_funded else "")
+                    rows[cnt].cells[3].text = utils.get_stringed_value(milestone.fundings.amount if milestone.fundings else "")
+                    rows[cnt].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=milestone.fundings.amount if milestone.fundings else 0, 
+                                                                                    denominator=prj_fundings))
+
+                    if hasattr(obj, 'stats'):
+                        savings = sum([stat.savings.amount if stat.savings else 0 for stat in obj.stats.all()])
+                        rows[cnt].cells[4].text = utils.get_stringed_value(savings.amount if savings else 0)
+                        rows[cnt].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=savings.amount if savings else 0, denominator=milestone.fundings.amount if milestone.fundings else 0))
+                    
+                    cnt += 1
+            else:
+                rows[1].cells[0].text = utils.get_stringed_value(2)
+                rows[1].cells[1].text = utils.get_stringed_value(u"Перечисление средств %s транша"%(utils.write_roman(obj.milestone.number)))
+                rows[1].cells[2].text = utils.get_stringed_value(obj.milestone.date_funded.strftime("%d.%m.%Y") if obj.milestone.date_funded else "")
+                rows[1].cells[3].text = utils.get_stringed_value(obj.milestone.fundings.amount if obj.milestone.fundings else "")
+                rows[1].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=obj.milestone.fundings.amount if obj.milestone.fundings else 0, 
+                                                                                denominator=prj_fundings))
+
+                if hasattr(obj, 'stats'):
+                    savings = sum([stat.savings.amount if stat.savings else 0 for stat in obj.stats.all()])
+                    rows[1].cells[4].text = utils.get_stringed_value(savings.amount if savings else 0)
+                    rows[1].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=savings.amount if savings else 0, denominator=obj.milestone.fundings.amount if obj.milestone.fundings else 0))
+
+                cnt += 1
+
+            total_fundings = 0
+            total_savings = 0
+            for milestone in obj.project.milestone_set.filter(number__lte=obj.milestone.number):
+                total_fundings += milestone.fundings.amount if milestone.fundings else 0
+                if hasattr(milestone, 'corollary'):
+                    if hasattr(milestone.corollary, 'stats'):
+                       total_savings += sum([stat.savings.amount if stat.savings else 0 for stat in milestone.corollary.stats.all()]) 
+
+            rows[cnt].cells[0].text = utils.get_stringed_value(cnt+1)
+            rows[cnt].cells[1].text = utils.get_stringed_value(u"Итого перечислено")
+            rows[cnt].cells[3].text = utils.get_stringed_value(total_fundings)
+            rows[cnt].cells[4].text = utils.get_stringed_value(total_savings)
+            rows[cnt].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=total_savings, denominator=total_fundings))
+            rows[cnt].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=total_fundings, denominator=prj_fundings))
+            
+            rows[cnt+1].cells[0].text = utils.get_stringed_value(cnt+2)
+            rows[cnt+1].cells[1].text = utils.get_stringed_value(u"Остаток средств")
+            rows[cnt+1].cells[3].text = utils.get_stringed_value(prj_fundings - total_fundings)
+            rows[cnt+1].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=prj_fundings - total_fundings, denominator=prj_fundings))
+            return obj
+
+        def get_row_data(use_of_budget_doc_items, stats):
+            row_data = []
+
+            for item in use_of_budget_doc_items:
+                for stats_item in stats:
+                    if item.cost_type == stats_item.cost_type:
+                        row_data.append({
+                                'use_of_budget': item,
+                                'stats': stats_item
+                            })
+
+            return row_data
+
+        def get_totals(instance):
+            rv = {
+                'planned_costs': utils.zero_money(),
+                'fact_costs': utils.zero_money(),
+                'costs_received_by_natr': utils.zero_money(),
+                'costs_approved_by_docs': utils.zero_money(),
+                'savings': utils.zero_money()
+            }
+            for stat_key in rv:
+                for stat_obj in instance.stats.all():
+                    rv[stat_key] += getattr(stat_obj, stat_key)
+            return rv
+
+        def fill_corollary_table(obj, table):
+            current_row = 3
+            row_data = get_row_data(obj.report.use_of_budget_doc.items.all(), obj.stats.all() if hasattr(obj, 'stats') else [])
+            totals = get_totals(obj)
+
+            table_totals_row = table.add_row()
+            table_totals_row.cells[1].text = utils.get_stringed_value(u'Всего')
+            table_totals_row.cells[2].text = utils.get_stringed_value(str(obj.milestone.number)+u" этап работ")
+            table_totals_row.cells[6].text = utils.get_stringed_value(totals["planned_costs"].amount if totals["planned_costs"] else 0)
+            table_totals_row.cells[7].text = utils.get_stringed_value(totals["fact_costs"].amount if totals["fact_costs"] else 0)
+            table_totals_row.cells[8].text = utils.get_stringed_value(totals["costs_approved_by_docs"].amount if totals["costs_approved_by_docs"] else 0)
+            table_totals_row.cells[9].text = utils.get_stringed_value(totals["costs_received_by_natr"].amount if totals["costs_received_by_natr"] else 0)
+            table_totals_row.cells[10].text = utils.get_stringed_value(totals["savings"].amount if totals['savings'] else 0)
+
+            try:
+                    a = table.cell(2, 2)
+                    b = table.cell(2, 5)
+                    A = a.merge(b)
+            except:
+                print "ERROR: OUT OF LIST"
+
+            for item, cnt in zip(row_data, range(1, len(row_data)+1)):
+                totals_row = table.add_row()
+                totals_row.cells[0].text = utils.get_stringed_value(cnt)
+                totals_row.cells[1].text = utils.get_stringed_value(item['use_of_budget'].cost_type.name)
+                totals_row.cells[2].text = utils.get_stringed_value(u'Всего')
+                totals_row.cells[6].text = utils.get_stringed_value(item['stats'].planned_costs.amount if item['stats'].planned_costs else 0)
+                totals_row.cells[7].text = utils.get_stringed_value(item['stats'].fact_costs.amount if item['stats'].fact_costs else 0)
+                totals_row.cells[8].text = utils.get_stringed_value(item['stats'].costs_approved_by_docs.amount if item['stats'].costs_approved_by_docs else 0)
+                totals_row.cells[9].text = utils.get_stringed_value(item['stats'].costs_received_by_natr.amount if item['stats'].costs_received_by_natr else 0)
+                totals_row.cells[10].text = utils.get_stringed_value(item['stats'].savings.amount if item['stats'].savings else 0)
+                row = table.add_row()
+
+                rows_to_merge = 1
+                next_cost_row = 1
+                merge_cells = []
+                current_row = current_row
+                if item['use_of_budget'].costs.count() > 0:
+                    first_cost = True
+                    for cost in item['use_of_budget'].costs.all():
+                        if first_cost:
+                            row.cells[2].text = utils.get_stringed_value(cost.name)
+                            row.cells[6].text = utils.get_stringed_value(item['stats'].planned_costs.amount if item['stats'].planned_costs else 0)
+                            row.cells[7].text = utils.get_stringed_value(item['stats'].fact_costs.amount if item['stats'].fact_costs else 0)
+                            row.cells[8].text = utils.get_stringed_value(item['stats'].costs_approved_by_docs.amount if item['stats'].costs_approved_by_docs else 0)
+                            row.cells[9].text = utils.get_stringed_value(item['stats'].costs_received_by_natr.amount if item['stats'].costs_received_by_natr else 0)
+                            row.cells[10].text = utils.get_stringed_value(item['stats'].savings.amount if item['stats'].savings else 0)
+                            row.cells[11].text = utils.get_stringed_value(item['use_of_budget'].cost_type.price_details)
+                        else:
+                            sub_row = table.add_row()
+                            sub_row.cells[2].text = utils.get_stringed_value(cost.name)
+                            sub_row.cells[6].text = utils.get_stringed_value(item['stats'].planned_costs.amount if item['stats'].planned_costs else 0)
+                            sub_row.cells[7].text = utils.get_stringed_value(item['stats'].fact_costs.amount if item['stats'].fact_costs else 0)
+                            sub_row.cells[8].text = utils.get_stringed_value(item['stats'].costs_approved_by_docs.amount if item['stats'].costs_approved_by_docs else 0)
+                            sub_row.cells[9].text = utils.get_stringed_value(item['stats'].costs_received_by_natr.amount if item['stats'].costs_received_by_natr else 0)
+                            sub_row.cells[10].text = utils.get_stringed_value(item['stats'].savings.amount if item['stats'].savings else 0)
+                        if cost.gp_docs.count() > 0:
+                            first_gp_doc = True
+                            for gp_doc in cost.gp_docs.all():
+                                if first_gp_doc and first_cost:
+                                    date_sign = gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else ""
+                                    number = u'№'+gp_doc.document.number if gp_doc.document.number else ""
+                                    row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
+                                    row.cells[4].text = utils.get_stringed_value(number+" "+date_sign)
+                                    row.cells[5].text = utils.get_stringed_value(gp_doc.expences.amount)
+                                    first_gp_doc = False
+                                elif first_gp_doc and sub_row:
+                                    date_sign = gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else ""
+                                    number = u'№'+gp_doc.document.number if gp_doc.document.number else ""
+                                    sub_row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
+                                    sub_row.cells[4].text = utils.get_stringed_value(number+" "+date_sign)
+                                    sub_row.cells[5].text = utils.get_stringed_value(gp_doc.expences.amount)
+                                    first_gp_doc = False
+                                else:
+                                    cost_sub_row = table.add_row()
+                                    date_sign = gp_doc.document.date_sign.strftime("%d.%m.%Y") if gp_doc.document.date_sign else ""
+                                    number = u'№'+gp_doc.document.number if gp_doc.document.number else ""
+                                    cost_sub_row.cells[3].text = utils.get_stringed_value(gp_doc.document.name)
+                                    cost_sub_row.cells[4].text = utils.get_stringed_value(number+" "+date_sign)
+                                    cost_sub_row.cells[5].text = utils.get_stringed_value(gp_doc.expences.amount)
+                            rows_to_merge += cost.gp_docs.count()
+                            merge_cells.extend(
+                                    ({
+                                        'row': current_row + next_cost_row,
+                                        'col': 2,
+                                        'rowspan': cost.gp_docs.count()
+                                    },
+                                    {
+                                        'row': current_row + next_cost_row,
+                                        'col': 8,
+                                        'rowspan': cost.gp_docs.count()
+                                    })
+                                )
+                            next_cost_row += cost.gp_docs.count()
+                        else:
+                            rows_to_merge += 1
+
+                        first_cost = False
+
+                    merge_cells.extend(
+                            ({
+                                'row': current_row,
+                                'col': 0,
+                                'rowspan': rows_to_merge
+                            },
+                            {
+                                'row': current_row,
+                                'col': 1,
+                                'rowspan': rows_to_merge
+                            },
+                            {
+                                'row': current_row+1,
+                                'col': 6,
+                                'rowspan': rows_to_merge-1
+                            },
+                            {
+                                'row': current_row+1,
+                                'col': 7,
+                                'rowspan': rows_to_merge-1
+                            },
+                            {
+                                'row': current_row+1,
+                                'col': 8,
+                                'rowspan': rows_to_merge-1
+                            },
+                            {
+                                'row': current_row+1,
+                                'col': 9,
+                                'rowspan': rows_to_merge-1
+                            },
+                            {
+                                'row': current_row+1,
+                                'col': 10,
+                                'rowspan': rows_to_merge-1
+                            },
+                            {
+                                'row': current_row+1,
+                                'col': 11,
+                                'rowspan': rows_to_merge-1
+                            })
+                        )
+                    current_row = current_row + rows_to_merge
+
+                    #   {row: current_row, col: 2, rowspan: 1, colspan: 5},
+
+                    for merge_cell in merge_cells:
+                        try:
+                            a = table.cell(merge_cell['row'], merge_cell['col'])
+                            b = table.cell(merge_cell['row'] + merge_cell['rowspan'] - 1, merge_cell['col'])
+                            A = a.merge(b)
+                        except:
+                            print "ERROR: OUT OF LIST", merge_cell
+
+                    try:
+                            a = table.cell(current_row - rows_to_merge, 2)
+                            b = table.cell(current_row - rows_to_merge, 5)
+                            A = a.merge(b)
+                    except:
+                        print "ERROR: OUT OF LIST"
+
+            return obj
+
+        context = self.__dict__
+        if self.report.type == Report.CAMERAL:
+            context['title'] = u"Заключение по камеральному мониторингу хода исполнения договора об инновационном гранте"
+            conc_table(self, kwargs['doc'].tables[2])
+
+        elif self.report.type == Report.FINAL:
+            context['title'] = u"Итоговое заключение на момент завершения договора об инновационном гранте"
+            conc_table(self, kwargs['doc'].tables[2], final=True)
+
+        context['date'] = datetime.datetime.utcnow()
+        context['report_date'] = self.report_date
+        context['project'] = self.project.name
+        context['total_month'] = self.project.total_month
+        context['fundings'] = self.project.fundings
+        context['own_fundings'] = self.project.own_fundings
+        context['number_of_milestones'] = self.project.number_of_milestones 
+
+        if self.project.organization_details:
+            context['organization_name'] = self.project.organization_details.name
+            context['organization_address'] = self.project.organization_details.address_2
+        if self.project.funding_type:
+            context['funding_type'] = self.project.funding_type.get_name_display()
+        if self.project.aggreement:
+            context['aggreement'] = self.project.aggreement.document.number+' '+self.project.aggreement.document.date_sign.strftime("%d.%m.%Y")
+            context['agr_fundings'] = self.project.aggreement.funding
+
+        if self.milestone:
+            context['conclusion'] = self.milestone.conclusion
+            context['milestone_period'] = self.milestone.period
+
+        fill_corollary_table(self, kwargs['doc'].tables[3])
+
+        kwargs['doc'].tables[2].style="TableGrid"
+        kwargs['doc'].tables[3].style="TableGrid"
+        return context
 
     @classmethod
     def post_save(cls, sender, instance, created, **kwargs):

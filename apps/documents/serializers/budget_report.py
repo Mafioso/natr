@@ -7,6 +7,7 @@ from natr.override_rest_framework.serializers import *
 from natr.override_rest_framework.fields import SerializerMoneyField
 from natr.override_rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from .common import DocumentCompositionSerializer, DocumentSerializer
+from .cost import CostDocumentSerializer
 
 
 class GPDocumentTypeSerializer(serializers.ModelSerializer):
