@@ -248,6 +248,11 @@ class Project(models.Model):
     class Meta:
         relevant_for_permission = True
         verbose_name = u"Проект"
+        permissions = (
+            ('complete_project', u"Завершение проекта"),
+            ('terminate_project', u"Расторжение проекта")
+        )
+        
 
     STATUSES = MONITOR, FINISH, BREAK = range(3)
     STATUS_CAPS = (
@@ -284,6 +289,7 @@ class Project(models.Model):
     number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
     assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
+    directors_attachments = models.ManyToManyField('documents.Attachment', related_name='projects', null=True, blank=True)
 
     objects = ProjectManager()
 

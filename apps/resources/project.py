@@ -16,6 +16,7 @@ from natr.override_rest_framework.mixins import ProjectBasedViewSet, LargeResult
 from projects.serializers import *
 from projects import models as prj_models
 from documents.serializers import AttachmentSerializer
+from documents import models as doc_models
 from mioadp.models import ArticleLink
 from mioadp.serializers import ArticleLinkSerializer
 from journals import serializers as journal_serializers
@@ -236,6 +237,23 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         headers = self.get_success_headers({})
         return response.Response({"message": "success"}, headers=headers)
+
+    @detail_route(methods=['post'], url_path='status')
+    def change_status(self, request, *a, **kw):
+        project = self.get_object()
+        project.status = request.data['status']
+        if 'directors_attachments' in request.data: 
+            attachments = request.data.pop('directors_attachments')
+            for attachment in attachments:
+                attachment = doc_models.Attachment(**attachment)
+                attachment.save()
+                project.directors_attachments.add(attachment)
+        project.save()
+
+        mailing.send_project_status_changed(project)
+
+        serializer = self.get_serializer(project)
+        return response.Response(serializer.data)
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
