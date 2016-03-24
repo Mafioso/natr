@@ -23,6 +23,7 @@ class ProjectFilter(ListOfIdFilter):
 	search = django_filters.MethodFilter()
 	status = django_filters.MethodFilter()
 	has_grantee = django_filters.MethodFilter()
+	user = django_filters.MethodFilter()
 
 	def filter_status(self, queryset, value):
 		value = map(int,value.split('_'))
@@ -32,6 +33,11 @@ class ProjectFilter(ListOfIdFilter):
 	def filter_has_grantee(self, queryset, value):
 		if value == 'true':
 			queryset = queryset.filter(assigned_grantees__exact=None)
+		return queryset
+
+	def filter_user(self, queryset, value):
+		if value:
+			queryset = queryset.filter(assigned_experts__exact=value)
 		return queryset
 
 	def filter_search(self, queryset, value):

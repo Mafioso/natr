@@ -210,7 +210,7 @@ class ProjectManager(models.Manager):
             Milestone.objects.filter(pk=instance.current_milestone.pk
                 ).update(**current_milestone_data)
 
-        # 3. add empty or delete exist milestones
+        # 3. add empty or delete exist milestones from right
         if old_milestones == new_milestones:
             return prj
 
@@ -229,16 +229,13 @@ class ProjectManager(models.Manager):
                     report.delete()
                 milestone.delete()
 
-        # 4. recreate calendar plan
-        if prj.calendar_plan:
-            prj.calendar_plan.delete()
+        # 4. update calendar plan with new milestones
+        prj_cp = prj.calendar_plan
+        prj_cp.update(project=prj)
 
-        prj_cp = CalendarPlanDocument.build_empty(project=prj)
-
-        # 5. recreate cost
-        if prj.cost_document:
-            prj.cost_document.delete()
-        prj_cd = CostDocument.build_empty(project=prj)
+        # 5. update cost with new milestones
+        prj_cd = prj.cost_document
+        prj_cd.update(project=prj)
 
         return prj
 
@@ -1133,9 +1130,9 @@ class Corollary(ProjectBasedModel):
             rows = []
             for ind in range(0, 3+obj.project.number_of_milestones if final else 4):
                 rows.append(table.add_row())
-            
+
             rows[0].cells[0].text = utils.get_stringed_value(1)
-            rows[0].cells[1].text = utils.get_stringed_value(u"Всего сумма гранта") 
+            rows[0].cells[1].text = utils.get_stringed_value(u"Всего сумма гранта")
             rows[0].cells[2].text = utils.get_stringed_value(obj.project.funding_date.strftime("%d.%m.%Y") if obj.project.funding_date else "")
             rows[0].cells[3].text = utils.get_stringed_value(prj_fundings)
 
@@ -1146,21 +1143,21 @@ class Corollary(ProjectBasedModel):
                     rows[cnt].cells[1].text = utils.get_stringed_value(u"Перечисление средств %s транша"%(utils.write_roman(milestone.number)))
                     rows[cnt].cells[2].text = utils.get_stringed_value(milestone.date_funded.strftime("%d.%m.%Y") if milestone.date_funded else "")
                     rows[cnt].cells[3].text = utils.get_stringed_value(milestone.fundings.amount if milestone.fundings else "")
-                    rows[cnt].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=milestone.fundings.amount if milestone.fundings else 0, 
+                    rows[cnt].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=milestone.fundings.amount if milestone.fundings else 0,
                                                                                     denominator=prj_fundings))
 
                     if hasattr(obj, 'stats'):
                         savings = sum([stat.savings.amount if stat.savings else 0 for stat in obj.stats.all()])
                         rows[cnt].cells[4].text = utils.get_stringed_value(savings.amount if savings else 0)
                         rows[cnt].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=savings.amount if savings else 0, denominator=milestone.fundings.amount if milestone.fundings else 0))
-                    
+
                     cnt += 1
             else:
                 rows[1].cells[0].text = utils.get_stringed_value(2)
                 rows[1].cells[1].text = utils.get_stringed_value(u"Перечисление средств %s транша"%(utils.write_roman(obj.milestone.number)))
                 rows[1].cells[2].text = utils.get_stringed_value(obj.milestone.date_funded.strftime("%d.%m.%Y") if obj.milestone.date_funded else "")
                 rows[1].cells[3].text = utils.get_stringed_value(obj.milestone.fundings.amount if obj.milestone.fundings else "")
-                rows[1].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=obj.milestone.fundings.amount if obj.milestone.fundings else 0, 
+                rows[1].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=obj.milestone.fundings.amount if obj.milestone.fundings else 0,
                                                                                 denominator=prj_fundings))
 
                 if hasattr(obj, 'stats'):
@@ -1176,7 +1173,7 @@ class Corollary(ProjectBasedModel):
                 total_fundings += milestone.fundings.amount if milestone.fundings else 0
                 if hasattr(milestone, 'corollary'):
                     if hasattr(milestone.corollary, 'stats'):
-                       total_savings += sum([stat.savings.amount if stat.savings else 0 for stat in milestone.corollary.stats.all()]) 
+                       total_savings += sum([stat.savings.amount if stat.savings else 0 for stat in milestone.corollary.stats.all()])
 
             rows[cnt].cells[0].text = utils.get_stringed_value(cnt+1)
             rows[cnt].cells[1].text = utils.get_stringed_value(u"Итого перечислено")
@@ -1184,7 +1181,7 @@ class Corollary(ProjectBasedModel):
             rows[cnt].cells[4].text = utils.get_stringed_value(total_savings)
             rows[cnt].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=total_savings, denominator=total_fundings))
             rows[cnt].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=total_fundings, denominator=prj_fundings))
-            
+
             rows[cnt+1].cells[0].text = utils.get_stringed_value(cnt+2)
             rows[cnt+1].cells[1].text = utils.get_stringed_value(u"Остаток средств")
             rows[cnt+1].cells[3].text = utils.get_stringed_value(prj_fundings - total_fundings)
@@ -1394,7 +1391,7 @@ class Corollary(ProjectBasedModel):
         context['total_month'] = self.project.total_month
         context['fundings'] = self.project.fundings
         context['own_fundings'] = self.project.own_fundings
-        context['number_of_milestones'] = self.project.number_of_milestones 
+        context['number_of_milestones'] = self.project.number_of_milestones
 
         if self.project.organization_details:
             context['organization_name'] = self.project.organization_details.name
@@ -1975,7 +1972,7 @@ class Act(ProjectBasedModel):
     date_edited = models.DateTimeField(auto_now=True, blank=True)
     conclusion = models.TextField(u'Вывод', null=True, blank=True)
     attachments = models.ManyToManyField('documents.Attachment', related_name='acts', null=True, blank=True)
-    
+
     @classmethod
     def build_empty(cls, project):
         obj = cls(project=project)
