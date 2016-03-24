@@ -15,7 +15,7 @@ from model_utils.fields import MonitorField
 from djmoney.models.fields import MoneyField
 from natr.models import track_data
 from natr.mixins import ProjectBasedModel, ModelDiffMixin
-from natr import utils
+from natr import utils, mailing
 from natr.models import CostType
 from django.contrib.auth import get_user_model
 from django.utils.functional import cached_property
@@ -1748,6 +1748,10 @@ class Monitoring(ProjectBasedModel):
             return
         old_val = instance.old_value('status')
         new_val = instance.status
+        
+        if new_val == Monitoring.ON_GRANTEE_APPROVE:
+            mailing.send_grantee_approve_email(instance)
+
         if not new_val == Monitoring.APPROVE or new_val == Monitoring.APPROVED:
             return
         sed = instance.sed.last()
