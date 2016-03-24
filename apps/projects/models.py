@@ -15,7 +15,7 @@ from model_utils.fields import MonitorField
 from djmoney.models.fields import MoneyField
 from natr.models import track_data
 from natr.mixins import ProjectBasedModel, ModelDiffMixin
-from natr import utils
+from natr import utils, mailing
 from natr.models import CostType
 from django.contrib.auth import get_user_model
 from django.utils.functional import cached_property
@@ -245,6 +245,11 @@ class Project(models.Model):
     class Meta:
         relevant_for_permission = True
         verbose_name = u"Проект"
+        permissions = (
+            ('complete_project', u"Завершение проекта"),
+            ('terminate_project', u"Расторжение проекта")
+        )
+        
 
     STATUSES = MONITOR, FINISH, BREAK = range(3)
     STATUS_CAPS = (
@@ -281,6 +286,7 @@ class Project(models.Model):
     number_of_milestones = models.IntegerField(u'Количество этапов по проекту', default=3)
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
     assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
+    directors_attachments = models.ManyToManyField('documents.Attachment', related_name='projects', null=True, blank=True)
 
     objects = ProjectManager()
 
@@ -1739,6 +1745,10 @@ class Monitoring(ProjectBasedModel):
             return
         old_val = instance.old_value('status')
         new_val = instance.status
+        
+        if new_val == Monitoring.ON_GRANTEE_APPROVE:
+            mailing.send_grantee_approve_email(instance)
+
         if not new_val == Monitoring.APPROVE or new_val == Monitoring.APPROVED:
             return
         sed = instance.sed.last()

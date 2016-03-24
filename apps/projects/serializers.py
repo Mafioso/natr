@@ -164,6 +164,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     milestone_set = MilestoneBaseInfo(many=True, required=False, read_only=True)
     risk_degree = serializers.IntegerField(required=False, read_only=True)
     risks = RiskDefinitionSerializer(many=True, read_only=True)
+    directors_attachments = AttachmentSerializer(many=True, required=False)
 
     def create(self, validated_data):
         return Project.objects.create_new(**validated_data)
