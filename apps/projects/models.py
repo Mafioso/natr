@@ -1418,6 +1418,11 @@ class Corollary(ProjectBasedModel):
         kwargs['doc'].tables[3].style="TableGrid"
         return context
 
+    def build_printed(self):
+        temp_file, temp_fname = DocumentPrint(object=self).generate_docx()
+        attachment_dict = store_from_temp(temp_file, temp_fname)
+        return Attachment.objects.create(**attachment_dict)
+
     @classmethod
     def post_save(cls, sender, instance, created, **kwargs):
         if not instance.has_changed('status'):
@@ -1427,6 +1432,16 @@ class Corollary(ProjectBasedModel):
         milestone = instance.milestone
         if new_val == Corollary.APPROVE:
             milestone.set_status(Milestone.COROLLARY_APROVING)
+        elif new_val == Corollary.APPROVED:
+            attachment = instance.build_printed()
+            # if instance.report.type == Report.FINAL:
+            title = u'Итоговое заключение по КМ' if instance.report.type == Report.FINAL else u'Промежуточное заключение по КМ'
+            corollary_type = 'corollary_final' if instance.report.type == Report.FINAL else 'corollary_cameral'
+            SEDEntity.pin_to_sed(
+                corollary_type, instance,
+                project_name=instance.project.name,
+                document_title=title,
+                attachments=[attachment])
         milestone.save()
 
 

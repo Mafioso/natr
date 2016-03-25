@@ -303,6 +303,14 @@ DOCUMENTOLOG_DOCUMENTS = {
         'title': u'План_мониторинга',
         'uuid': '430c493c-dabf-43dc-9e95-568cf65501f4',
     },
+    'corollary_final': {
+        'title': u'Итоговое_заключение_по_КМ',
+        'uuid': '43723bf0-4bd4-4c6f-873d-56f3d3ed0291',
+    },
+    'corollary_cameral': {
+        'title': u'Промежуточное_заключение_по_КМ',
+        'uuid': '3e93501d-b5c0-4dc0-9131-56f3d3fb030e',
+    },
 }
 
 DOCUMENTOLOG_USER = 'info@documentolog.kz'

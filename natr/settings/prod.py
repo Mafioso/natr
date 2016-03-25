@@ -16,12 +16,20 @@ DOCUMENTOLOG_MOVE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/move?wsdl'
 DOCUMENTOLOG_WSDL_USERNAME = 'documentolog'
 DOCUMENTOLOG_WSDL_PASSWORD = 'secret'
 DOCUMENTOLOG_LOGIN = 'R.Amanzholov@natd.gov.kz'
-DOCUMENTOLOG_PASSWORD = 'Qjuehnghj1'
+DOCUMENTOLOG_PASSWORD = '1q2w3e4R'
 DOCUMENTOLOG_LOGIN_URL = DOCUMENTOLOG_URL + '/user/login'
 DOCUMENTOLOG_DOCUMENTS = {
     'plan_monitoring': {
         'title': u'План_мониторинга',
         'uuid': '2a79b458-85bd-4c09-a414-569faae9001a',
+    },
+    'corollary_final': {
+        'title': u'Итоговое_заключение_по_КМ',
+        'uuid': '06f9c616-c5c7-4342-9621-56f3d3ef0045',
+    },
+    'corollary_cameral': {
+        'title': u'Промежуточное_заключение_по_КМ',
+        'uuid': 'ec46fab1-6d34-4e73-b34d-56f3d3d70110',
     },
 }
 
