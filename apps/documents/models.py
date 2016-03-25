@@ -867,6 +867,24 @@ class CalendarPlanDocument(models.Model):
                 number=m.number, calendar_plan=cp)
         return cp
 
+    def update(self, project):
+        updated_project = self.get_project()
+        prev_milestones_count = project.number_of_milestones
+        next_milestones_count = updated_project.number_of_milestones
+
+        if prev_milestones_count > next_milestones_count:
+            CalendarPlanItem.objects\
+                .filter(
+                    number__gt=next_milestones_count,
+                    calendar_plan=self)\
+                .delete()
+        elif prev_milestones_count < next_milestones_count:
+            new_milestones = updated_project.milestone_set.filter(number__gt=prev_milestones_count)
+            for m in new_milestones.all():
+                CalendarPlanItem.objects.create(
+                    number=m.number,
+                    calendar_plan=self)
+
     def get_print_context(self, **kwargs):
         for item, cnt in zip(self.items.all(), range(1, self.items.count()+1)):
             row = kwargs['doc'].tables[0].add_row()
@@ -1180,7 +1198,7 @@ class UseOfBudgetDocumentItem(models.Model):
     #     ])
     #     return Money(amount=total, currency=settings.KZT)
 
-    @property 
+    @property
     def total_budget(self):
         u"""Сумма бюджетных стредств по смете"""
         cost_rows = self.cost_document.get_costs_rows()
@@ -1189,7 +1207,7 @@ class UseOfBudgetDocumentItem(models.Model):
             if cost_row.first().cost_type == self.cost_type:
                 grant_costs = 0
                 own_costs = 0
-                
+
                 if cost_row.first().grant_costs:
                     grant_costs = cost_row.first().grant_costs.amount
 
@@ -1307,6 +1325,28 @@ class CostDocument(models.Model):
                     cost_type=ctype,
                     cost_document=cd)
         return cd
+
+    def update(self, project):
+        updated_project = project
+        project = self.get_project()
+        prev_milestones_count = project.number_of_milestones
+        next_milestones_count = updated_project.number_of_milestones
+
+        if prev_milestones_count > next_milestones_count:
+            removing_milestones = project.milestone_set.filter(number__gt=next_milestones_count)
+            MilestoneCostRow.objects\
+                .filter(
+                    cost_document=self,
+                    milestone__in=removing_milestones)\
+                .delete()
+        elif prev_milestones_count < next_milestones_count:
+            new_milestones = updated_project.milestone_set.filter(number__gt=prev_milestones_count)
+            for m in new_milestones.all():
+                for ctype in updated_project.costtype_set.all():
+                    MilestoneCostRow.objects.create(
+                        milestone=m,
+                        cost_type=ctype,
+                        cost_document=self)
 
     def get_print_context(self, **kwargs):
         context = {

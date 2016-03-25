@@ -187,3 +187,25 @@ def send_corollary_to_rework(corollary, user=None):
         map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
         fail_silently=True
     )
+
+def send_project_status_changed(project):
+    message_text = u"Здравствуйте. Настоящим письмом уведомляем Вас о %s договора по вашему проекту \"%s\""%(u"завершении" if project.status == 1 else u"расторжении", project.name)
+
+    send_mail(
+        u"%s договора"%(u"Завершение" if project.status == 1 else u"Расторжение"),
+        message_text,
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, project.get_grantees()),
+        fail_silently=True
+    )
+
+def send_grantee_approve_email(monitoring_plan):
+    message_text = u"Здравствуйте! По Вашему проекту \"%s\" поступил план мониторинга."%monitoring_plan.project.name
+
+    send_mail(
+        u"%s договора"%(u"Завершение" if monitoring_plan.project.status == 1 else u"Расторжение"),
+        message_text,
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, monitoring_plan.project.get_grantees()),
+        fail_silently=True
+    )
