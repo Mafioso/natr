@@ -99,7 +99,7 @@ class TextLine(ProjectBasedModel):
     ts = models.DateTimeField(null=True)
     attachments = models.ManyToManyField(
         'documents.Attachment', verbose_name=u'Приложения', blank=True)
-
+    date_created = models.DateTimeField(auto_now_add=True)
     objects = TextLineQuerySet.as_manager()
 
     def spray(self, client_id=None):
@@ -187,3 +187,8 @@ class ChatCounter(ProjectBasedModel):
     @classmethod
     def rooms_counters(cls, account):
         return ChatCounter.objects.filter(account=account)
+
+from django.db.models.signals import post_save
+from journals.signals import create_journal_activity
+
+post_save.connect(create_journal_activity, sender=TextLine)
