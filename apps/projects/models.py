@@ -1487,6 +1487,9 @@ class Milestone(ProjectBasedModel):
         filter_by_project = 'project__in'
         relevant_for_permission = True
         verbose_name = u"Этап по проекту"
+        permissions = (
+            ('attach_files', u"Прикрепление файлов к заседанию правления"),
+        )
 
 
     class AlreadyExists(Exception):
@@ -1519,6 +1522,8 @@ class Milestone(ProjectBasedModel):
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     conclusion = models.TextField(null=True, blank=True)
+
+    attachments = models.ManyToManyField('documents.Attachment', related_name='milestones', null=True, blank=True)
 
     def notification(self, cttype, ctid, notif_type):
         """Prepare notification data to send to client (user agent, mobile)."""
