@@ -242,7 +242,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def change_status(self, request, *a, **kw):
         project = self.get_object()
         project.status = request.data['status']
-        if 'directors_attachments' in request.data: 
+        if 'directors_attachments' in request.data:
             attachments = request.data.pop('directors_attachments')
             for attachment in attachments:
                 attachment = doc_models.Attachment(**attachment)
@@ -579,7 +579,7 @@ class CorollaryViewSet(ProjectBasedViewSet):
 
         headers = self.get_success_headers(serializer.data)
         return response.Response({"instance": instance.id}, headers=headers)
-        
+
 
 class RiskCategoryViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskCategory.objects.all()

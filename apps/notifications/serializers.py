@@ -1,12 +1,17 @@
+# -*- coding: utf-8 -*-
 import json
 from rest_framework import serializers
+from django.contrib.contenttypes.models import ContentType
 from notifications import models
-from projects.models import Milestone
+from projects.models import Milestone, Project
 from projects.serializers import MilestoneSerializer
+from natr.override_rest_framework.serializers import ProjectNameSerializer
+from datetime import datetime
 
 
 __all__ = (
 	'MilestoneNotificationSerializer',
+	'AnnouncementNotificationSerializer',
 )
 
 
@@ -22,7 +27,7 @@ __all__ = (
 
 
 class NotificationSerializer(serializers.ModelSerializer):
-	
+
 	class Meta:
 		model = models.Notification
 		exclude = ('subscribers', 'id')
@@ -61,6 +66,49 @@ class MilestoneNotificationSerializer(serializers.ModelSerializer):
 		notif.spray()
 		return notif
 
+class AnnouncementNotificationSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = models.Notification
+		exclude = ('context_id', 'context_type')
+		include = ('projects', 'date')
+
+	projects = ProjectNameSerializer(write_only=True, many=True, required=False)
+	date = serializers.DateTimeField(write_only=True, required=False)
+	text = serializers.CharField(write_only=True, required=True)
+
+
+	def create(self, validated_data):
+		notif_type = validated_data.get('notif_type')
+		projects = validated_data.get('projects')
+		date = validated_data.get('date', datetime.now())
+		text = validated_data.get('text')
+
+		user = None
+		request = self.context.get("request")
+		if request and hasattr(request, "user"):
+			user = request.user
+
+		extra_params = {
+			'user_id': user.id,
+			'user_name': user.get_full_name(),
+			'date': date,
+			'text': text,
+		}
+
+		if notif_type == models.Notification.ANNOUNCEMENT_PROJECTS:
+			print '..', extra_params, user, notif_type, projects
+
+			project_context_type = ContentType.objects.get_for_model(Project)
+			def create_notif(project):
+				notif = models.Notification.objects.create(
+					notif_type=notif_type,
+					context_id=project['id'],
+					context_type=project_context_type)
+				notif.spray(extra_params)
+				return notif
+			return map(create_notif, projects)
+
 
 class NotificationSubscribtionSerializer(serializers.ModelSerializer):
 
@@ -76,6 +124,3 @@ class NotificationCounterSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = models.NotificationCounter
-		
-
-

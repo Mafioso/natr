@@ -16,7 +16,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 	def milestone(self, request, *a, **kw):
 		"""
 		Create notification of type TRANSH_PAY.
-		
+
 		Request Body
 		------------
 		{
@@ -31,6 +31,35 @@ class NotificationViewSet(viewsets.ModelViewSet):
 		}
 		"""
 		return self.create(request, *a, **kw)
+
+	@list_route(methods=['post'], url_path='announcement')
+	@patch_serializer_class(serializers.AnnouncementNotificationSerializer)
+	def announcement(self, request, *a, **kw):
+		"""
+		Create notification of type ANNOUNCEMENT_USERS or ANNOUNCEMENT_PROJECTS.
+
+		Request Body
+		------------
+		{
+			projects: [pk]
+			text: String
+			date: String
+		}
+
+		Response Body
+		-------------
+		{
+			notification: json object,
+			notification_subscribers: list of ids
+		}
+		"""
+		serializer = self.get_serializer(data=request.data, many=True)
+		serializer.is_valid(raise_exception=True)
+		self.perform_create(serializer)
+		print serializer.data
+		# notifications = self.create(request, *a, **kw)
+		# serializer = self.get_serializer(notifications, many=True)
+		return response.Response(serializer.data)
 
 
 class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
@@ -74,7 +103,7 @@ class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
 
 
 class NotificationCounterViewSet(viewsets.ModelViewSet):
-		
+
 	queryset = models.NotificationCounter.objects.all()
 	serializer_class = serializers.NotificationCounterSerializer
 
@@ -82,4 +111,3 @@ class NotificationCounterViewSet(viewsets.ModelViewSet):
 	def reset(self, request, *a, **kw):
 		models.NotificationCounter.get_or_create(request.user).reset_counter()
 		return response.Response(status=status.HTTP_204_NO_CONTENT)
-

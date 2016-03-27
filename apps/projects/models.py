@@ -249,7 +249,7 @@ class Project(models.Model):
             ('complete_project', u"Завершение проекта"),
             ('terminate_project', u"Расторжение проекта")
         )
-        
+
 
     STATUSES = MONITOR, FINISH, BREAK = range(3)
     STATUS_CAPS = (
@@ -517,6 +517,19 @@ class Project(models.Model):
             text=u'Новые риски: ' + ', '.join(map(lambda x: x.title, risks))
         )
         return self
+
+
+    def notification(self, cttype, ctid, notif_type):
+        """Prepare notification data to send to client (user agent, mobile)."""
+        assert notif_type in Notification.ANNOUNCEMENT_PROJECTS_NOTIFS, "Expected ANNOUNCEMENT_PROJECTS_NOTIFS"
+        data = {
+            'project': self.id,
+            'project_name': self.name,
+        }
+        return data
+
+    def notification_subscribers(self):
+        return self.stakeholders
 
     @classmethod
     def gen_registry_data(cls, projects, data):
@@ -1745,7 +1758,7 @@ class Monitoring(ProjectBasedModel):
             return
         old_val = instance.old_value('status')
         new_val = instance.status
-        
+
         if new_val == Monitoring.ON_GRANTEE_APPROVE:
             mailing.send_grantee_approve_email(instance)
 

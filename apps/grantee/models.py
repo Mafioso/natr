@@ -177,6 +177,9 @@ class Grantee(models.Model):
     def project(self):
         return self.organization and self.organization.project.id or None
 
+    def get_full_name(self):
+        return self.account.get_full_name()
+
     def contact_details(self):
         try:
             return self.organization.authorized_grantees.first()
