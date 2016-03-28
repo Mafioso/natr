@@ -11,6 +11,14 @@ from collections import OrderedDict
 
 f = faker.Faker()
 
+def get_field_display(klass, field, value):
+    f = klass._meta.get_field(field)
+    return dict(f.flatchoices).get(value, value)
+
+def print_itertools(items):
+    def prnt(item):
+        print item
+    map(prnt, items)
 
 def fake_money():
     return Money(random.randint(1, 100) * 1000, KZT)
@@ -40,7 +48,7 @@ def pretty(d, indent=0):
     if isinstance(d, list) and d and hasattr(d[0], 'iteritems'):
         for item in d:
             pretty(item)
-    else: 
+    else:
         for key, value in d.iteritems():
             print u'\t' * indent + unicode(key)
             if hasattr(value, 'iteritems'):
@@ -106,7 +114,7 @@ def days_from(dt, days):
     return make_aware(dt - timedelta(days=days))
 
 def seconds_from(dt, sec):
-    return make_aware(dt - timedelta(seconds=sec))    
+    return make_aware(dt - timedelta(seconds=sec))
 
 def seconds_after(dt, sec):
     return make_aware(dt + timedelta(seconds=sec))

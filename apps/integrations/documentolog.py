@@ -14,8 +14,8 @@ from suds.client import Client
 def create_document(doc_key, **kwargs):
     document_settings = settings.DOCUMENTOLOG_DOCUMENTS[doc_key]
     client = get_authenticated_client(
-        url=settings.DOCUMENTOLOG_CREATE_WSDL,
-        location='http://195.12.114.15/ws/workflow/create')
+        url=settings.DOCUMENTOLOG_CREATE_WSDL)
+        # location='http://195.12.114.15/ws/workflow/create')
     xml_string = prepare_files(*kwargs['attachments'])
     result = getattr(client.service, str(document_settings['title'].encode('utf-8')))(**{
         u'Наименование_проекта': kwargs['project_name'],
@@ -28,12 +28,12 @@ def create_document(doc_key, **kwargs):
     return document_id
 
 
-def get_authenticated_client(url, location):
+def get_authenticated_client(url):
     if settings.DEBUG:
         logging.basicConfig(level=logging.INFO)
         logging.getLogger('suds.client').setLevel(logging.DEBUG)
     client = Client(url=url,
-                    location=location,
+                    # location=location,
                     username=settings.DOCUMENTOLOG_WSDL_USERNAME,
                     password=settings.DOCUMENTOLOG_WSDL_PASSWORD)
     return client
@@ -53,8 +53,8 @@ def prepare_files(*attachments):
 
 def move_document(doctype_id, doc_id):
     client = get_authenticated_client(
-        url=settings.DOCUMENTOLOG_MOVE_WSDL,
-        location='http://195.12.114.15/ws/workflow/move')
+        url=settings.DOCUMENTOLOG_MOVE_WSDL)
+        # location='http://195.12.114.15/ws/workflow/move')
     xml = escape(u"""<?xml version="1.0" encoding="UTF-8"?><root><item doctype_id='"""+unicode(doctype_id)+"""' document_id='"""+unicode(doc_id)+"""'>Title</item></root>""")
     result = client.service.move(xml, 1)
     # print result

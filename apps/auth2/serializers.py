@@ -35,7 +35,7 @@ class GroupSerializer(serializers.ModelSerializer):
 class AccountSerializer(serializers.ModelSerializer):
 
 	user_permissions = PermissionSerializer(source='get_all_permission_objs', many=True, required=False)
-	password = serializers.CharField(required=False)
+	password = serializers.CharField(required=False, write_only=True)
 	email = serializers.CharField(
 		required=False,
 		validators=[UniqueValidator(queryset=models.Account.objects.all())]
@@ -43,21 +43,10 @@ class AccountSerializer(serializers.ModelSerializer):
 	# groups = GroupSerializer(many=True)
 	counters = serializers.SerializerMethodField()
 
-	user_type = serializers.SerializerMethodField()
+	user_type = serializers.CharField(source='get_user_type')
 
 	class Meta:
 		model = models.Account
-
-	def get_user_type(self, instance):
-		if hasattr(instance, 'user'):
-			if instance.user.is_manager():
-				return 'manager'
-			elif instance.user.is_risk_expert():
-				return 'risk_expert'
-			else:
-				return 'expert'
-		elif hasattr(instance, 'grantee'):
-			return 'grantee'
 
 	def get_counters(self, instance):
 		return instance.get_counters()

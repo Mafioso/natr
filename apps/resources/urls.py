@@ -37,6 +37,7 @@ from .natr_user import NatrUserViewSet, PermissionViewSet, GroupViewSet, Departm
 from .grantee_user import GranteeUserViewSet
 from .mioadps import ArticleLinkViewSet
 from .documentlog import DocumentologViewSet
+from .loggers import LogItemViewSet
 
 
 router = DefaultRouter()
@@ -82,6 +83,7 @@ router.register(r'groups', GroupViewSet, 'group')
 router.register(r'departments', DepartmentViewSet, 'department')
 router.register(r'article_links', ArticleLinkViewSet, 'article_link')
 router.register(r'documentolog', DocumentologViewSet, 'documentolog')
+router.register(r'logs', LogItemViewSet, 'logs')
 
 urlpatterns = [
 	url(r'', include(router.urls)),

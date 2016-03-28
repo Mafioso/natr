@@ -14,6 +14,7 @@ __author__ = 'xepa4ep'
 
 """
 import json
+import itertools
 from django.utils import timezone
 from django.db import models
 from django.conf import settings
@@ -31,13 +32,21 @@ class Notification(models.Model):
 	class Meta:
 		default_permissions = ()
 		permissions = (
-			('sent_expert', u'Отпрака уведомлений для эксперта'),
-			('sent_gp', u'Отпрака уведомлений для ГП'))
+			('sent_all', u'Отправка уведомлений всем пользователям ИСЭМ'),
+			('sent_manager', u'Отправка уведомлений всем Руководителям'),
+			('sent_expert', u'Отправка уведомлений всем Экспертам'),
+			('sent_gp', u'Отправка уведомлений всем ГП')
+		)
 		verbose_name = u'Отправка уведомлений'
 		relevant_for_permission = True
 
 	TRANSH_PAY = 1
 	MONITORING_TODO_EVENT = 2
+	ANNOUNCEMENT_PROJECTS = 3
+	ANNOUNCEMENT_USERS = 4
+	ANNOUNCEMENT_USERS_GP = 5
+	ANNOUNCEMENT_USERS_MANAGER = 6
+	ANNOUNCEMENT_USERS_EXPERT = 7
 
 	MILESTONE_NOTIFS = (
 		TRANSH_PAY,
@@ -49,12 +58,28 @@ class Notification(models.Model):
 		MONITORING_TODO_EVENT,
 	)
 	MONITORING_NOTIFS_CAPS = (
-		u'мероприятия мониторина',
+		u'мероприятия мониторинга',
+	)
+
+	ANNOUNCEMENT_USERS_NOTIFS = (
+		ANNOUNCEMENT_USERS, ANNOUNCEMENT_USERS_GP, ANNOUNCEMENT_USERS_MANAGER, ANNOUNCEMENT_USERS_EXPERT,
+	)
+	ANNOUNCEMENT_USERS_NOTIFS_CAPS = (
+		u'рассылка объявления пользователям',
+		u'рассылка объявления Грантополучателям',
+		u'рассылка объявления Руководителям',
+		u'рассылка объявления Экспертам',
+	)
+	ANNOUNCEMENT_PROJECTS_NOTIFS = (
+		ANNOUNCEMENT_PROJECTS,
+	)
+	ANNOUNCEMENT_PROJECTS_NOTIFS_CAPS = (
+		u'рассылка объявления по Проектам',
 	)
 
 	NOTIF_TYPES_CAPS = zip(
-		MILESTONE_NOTIFS,
-		MILESTONE_NOTIFS_CAPS
+		itertools.chain(MILESTONE_NOTIFS, MONITORING_NOTIFS, ANNOUNCEMENT_PROJECTS_NOTIFS, ANNOUNCEMENT_USERS_NOTIFS),
+		itertools.chain(MILESTONE_NOTIFS_CAPS, MONITORING_NOTIFS_CAPS, ANNOUNCEMENT_PROJECTS_NOTIFS_CAPS, ANNOUNCEMENT_USERS_NOTIFS_CAPS)
 	)
 
 	context_type = models.ForeignKey(ContentType, null=True)
@@ -66,14 +91,14 @@ class Notification(models.Model):
 
 	subscribers = models.ManyToManyField('auth2.Account', through='NotificationSubscribtion')
 
-	def spray(self):
+	def spray(self, extra_params):
 		# 1 prepare message
 		default_params = {
 			'notif_type': self.notif_type,
 			'context_type': self.context_type.model,
 			'context_id': self.context_id,
 			'status': NotificationSubscribtion.SENT}
-		notif_params = self.prepare_msg()
+		notif_params = self.prepare_msg(extra_params)
 		notif_params.update(default_params)
 		# 2 spray msg
 		for uid, chnl, sid, counter in self.store_by_subscriber():
@@ -82,19 +107,27 @@ class Notification(models.Model):
 				'id': sid,
 				'ack': sid,
 			})
+			print notif_params
 			centrifugo_client.publish(chnl, {
 				'notification': params,
 				'counter': counter})
 		# propogate error if it happens
 		return centrifugo_client.send()
 
-	def prepare_msg(self):
+	def prepare_msg(self, extra_params):
 		if not self.params:
 			notif_params = self.context.notification(
 				self.context_type, self.context_id, self.notif_type)
 			self.params = JSONRenderer().render(notif_params)
 			self.save()
-		return json.loads(self.params)
+
+		params = json.loads(self.params)
+		if extra_params:
+			params.update(extra_params)
+			self.params = JSONRenderer().render(params)
+			self.save()
+
+		return params
 
 	def store_by_subscriber(self):
 		users = self.context.notification_subscribers()

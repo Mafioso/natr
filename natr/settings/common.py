@@ -79,7 +79,8 @@ APPS = (
     'notifications',
     'mioadp',
     'integrations',
-    'chat'
+    'chat',
+    'logger',
 )
 
 INSTALLED_APPS = APPS +(
@@ -274,7 +275,7 @@ CURRENCIES = (KZT, USD)
 NOTIFICATION_CHANNEL = 'notification'
 CHAT_CHANNEL = 'chat'
 HOST = 'natr.kz'
-DOCKER_HOST = '192.168.99.100'
+DOCKER_HOST = '172.17.0.1'
 CENTRIFUGO_HOST = os.getenv('CENTRIFUGO_PORT_8001_TCP_ADDR', 'centrifugo.natr.kz')
 CENTRIFUGO_PORT = os.getenv('CENTRIFUGO_PORT_8001_TCP_PORT', 8001)
 CENTRIFUGE_ADDRESS = 'http://{}:{}'.format(CENTRIFUGO_HOST, CENTRIFUGO_PORT)
@@ -302,6 +303,14 @@ DOCUMENTOLOG_DOCUMENTS = {
     'plan_monitoring': {
         'title': u'План_мониторинга',
         'uuid': '430c493c-dabf-43dc-9e95-568cf65501f4',
+    },
+    'corollary_final': {
+        'title': u'Итоговое_заключение_по_КМ',
+        'uuid': '43723bf0-4bd4-4c6f-873d-56f3d3ed0291',
+    },
+    'corollary_cameral': {
+        'title': u'Промежуточное_заключение_по_КМ',
+        'uuid': '3e93501d-b5c0-4dc0-9131-56f3d3fb030e',
     },
 }
 

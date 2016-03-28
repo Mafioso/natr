@@ -242,7 +242,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def change_status(self, request, *a, **kw):
         project = self.get_object()
         project.status = request.data['status']
-        if 'directors_attachments' in request.data: 
+        if 'directors_attachments' in request.data:
             attachments = request.data.pop('directors_attachments')
             for attachment in attachments:
                 attachment = doc_models.Attachment(**attachment)
@@ -262,7 +262,7 @@ class MilestoneViewSet(ProjectBasedViewSet):
 
     @detail_route(methods=['get'], url_path='expanded')
     @patch_serializer_class(ExpandedMilestoneSerializer)
-    def journal(self, request, *a, **kw):
+    def expanded(self, request, *a, **kw):
         serializer = self.get_serializer(self.get_object())
         return response.Response(serializer.data)
 
@@ -278,6 +278,21 @@ class MilestoneViewSet(ProjectBasedViewSet):
             corollary = new_obj.corollary
             corollary.status = prj_models.Corollary.APPROVE
             corollary.save()
+
+    @detail_route(methods=['get', 'post'], url_path='attachments')
+    @patch_serializer_class(AttachmentSerializer)
+    def attachments(self, request, *a, **kw):
+        obj = self.get_object()
+        if request.method == "POST":
+            attachments = request.data.pop('attachments')
+            for attachment in attachments:
+                attachment = doc_models.Attachment(**attachment)
+                attachment.save()
+                obj.attachments.add(attachment)
+            obj.save()
+
+        serializer = self.get_serializer(obj.attachments, many=True)
+        return response.Response(serializer.data)
 
 
 class MonitoringTodoViewSet(ProjectBasedViewSet):
@@ -579,7 +594,7 @@ class CorollaryViewSet(ProjectBasedViewSet):
 
         headers = self.get_success_headers(serializer.data)
         return response.Response({"instance": instance.id}, headers=headers)
-        
+
 
 class RiskCategoryViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskCategory.objects.all()

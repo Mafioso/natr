@@ -17,6 +17,7 @@ from natr.models import track_data
 from natr.mixins import ProjectBasedModel, ModelDiffMixin
 from natr import utils, mailing
 from natr.models import CostType
+from natr.utils import get_field_display
 from django.contrib.auth import get_user_model
 from django.utils.functional import cached_property
 from notifications.models import Notification
@@ -42,6 +43,7 @@ from documents.models import (
 )
 from journals.models import Journal, JournalActivity
 from grantee.models import Organization, ContactDetails, ShareHolder, AuthorizedToInteractGrantee
+from logger.models import LogItem
 
 
 Q = models.Q
@@ -249,7 +251,7 @@ class Project(models.Model):
             ('complete_project', u"Завершение проекта"),
             ('terminate_project', u"Расторжение проекта")
         )
-        
+
 
     STATUSES = MONITOR, FINISH, BREAK = range(3)
     STATUS_CAPS = (
@@ -517,6 +519,50 @@ class Project(models.Model):
             text=u'Новые риски: ' + ', '.join(map(lambda x: x.title, risks))
         )
         return self
+
+
+    def notification(self, cttype, ctid, notif_type):
+        """Prepare notification data to send to client (user agent, mobile)."""
+        assert notif_type in Notification.ANNOUNCEMENT_PROJECTS_NOTIFS, "Expected ANNOUNCEMENT_PROJECTS_NOTIFS"
+        data = {
+            'project': self.id,
+            'project_name': self.name,
+        }
+        return data
+
+    def notification_subscribers(self):
+        return self.stakeholders
+
+    def log_changes(self, validated_data, account):
+        logs = []
+
+        funding_type_data = validated_data.get('funding_type')
+        if self.funding_type.name != funding_type_data.get('name'):
+            old_cap = self.funding_type.get_name_display()
+            new_cap = get_field_display(self.funding_type.__class__, 'name', funding_type_data.get('name'))
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.PROJECT_FUNDING_TYPE_CHANGE,
+                    old_value=old_cap,
+                    new_value=new_cap)
+            logs.append(_log)
+
+        if self.funding_date != validated_data.get('funding_date'):
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.PROJECT_FUNDING_DATE_CHANGE,
+                    old_value=self.funding_date,
+                    new_value=validated_data.get('funding_date'))
+            logs.append(_log)
+
+        if self.number_of_milestones != validated_data.get('number_of_milestones'):
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.PROJECT_NUMBER_OF_MILESTONES_CHANGE,
+                    old_value=self.number_of_milestones,
+                    new_value=validated_data.get('number_of_milestones'))
+            logs.append(_log)
+        return logs
 
     @classmethod
     def gen_registry_data(cls, projects, data):
@@ -1418,6 +1464,11 @@ class Corollary(ProjectBasedModel):
         kwargs['doc'].tables[3].style="TableGrid"
         return context
 
+    def build_printed(self):
+        temp_file, temp_fname = DocumentPrint(object=self).generate_docx()
+        attachment_dict = store_from_temp(temp_file, temp_fname)
+        return Attachment.objects.create(**attachment_dict)
+
     @classmethod
     def post_save(cls, sender, instance, created, **kwargs):
         if not instance.has_changed('status'):
@@ -1427,6 +1478,16 @@ class Corollary(ProjectBasedModel):
         milestone = instance.milestone
         if new_val == Corollary.APPROVE:
             milestone.set_status(Milestone.COROLLARY_APROVING)
+        elif new_val == Corollary.APPROVED:
+            attachment = instance.build_printed()
+            # if instance.report.type == Report.FINAL:
+            title = u'Итоговое заключение по КМ' if instance.report.type == Report.FINAL else u'Промежуточное заключение по КМ'
+            corollary_type = 'corollary_final' if instance.report.type == Report.FINAL else 'corollary_cameral'
+            SEDEntity.pin_to_sed(
+                corollary_type, instance,
+                project_name=instance.project.name,
+                document_title=title,
+                attachments=[attachment])
         milestone.save()
 
 
@@ -1472,6 +1533,9 @@ class Milestone(ProjectBasedModel):
         filter_by_project = 'project__in'
         relevant_for_permission = True
         verbose_name = u"Этап по проекту"
+        permissions = (
+            ('attach_files', u"Прикрепление файлов к заседанию правления"),
+        )
 
 
     class AlreadyExists(Exception):
@@ -1504,6 +1568,8 @@ class Milestone(ProjectBasedModel):
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     conclusion = models.TextField(null=True, blank=True)
+
+    attachments = models.ManyToManyField('documents.Attachment', related_name='milestones', null=True, blank=True)
 
     def notification(self, cttype, ctid, notif_type):
         """Prepare notification data to send to client (user agent, mobile)."""
@@ -1745,7 +1811,7 @@ class Monitoring(ProjectBasedModel):
             return
         old_val = instance.old_value('status')
         new_val = instance.status
-        
+
         if new_val == Monitoring.ON_GRANTEE_APPROVE:
             mailing.send_grantee_approve_email(instance)
 
