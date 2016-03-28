@@ -79,7 +79,8 @@ APPS = (
     'notifications',
     'mioadp',
     'integrations',
-    'chat'
+    'chat',
+    'logger',
 )
 
 INSTALLED_APPS = APPS +(

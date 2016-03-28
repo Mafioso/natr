@@ -42,6 +42,7 @@ from documents.models import (
 )
 from journals.models import Journal, JournalActivity
 from grantee.models import Organization, ContactDetails, ShareHolder, AuthorizedToInteractGrantee
+from logger.models import LogItem
 
 
 Q = models.Q
@@ -530,6 +531,32 @@ class Project(models.Model):
 
     def notification_subscribers(self):
         return self.stakeholders
+
+    def log_changes(self, validated_data, account):
+        logs = []
+        funding_type_data = validated_data.get('funding_type')
+        if self.funding_type.name != funding_type_data.get('name'):
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.PROJECT_FUNDING_TYPE_CHANGE,
+                    old_value=self.funding_type.name,
+                    new_value=funding_type_data.get('name'))
+            logs.append(_log)
+        if self.funding_date != validated_data.get('funding_date'):
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.PROJECT_FUNDING_DATE_CHANGE,
+                    old_value=self.funding_date,
+                    new_value=validated_data.get('funding_date'))
+            logs.append(_log)
+        if self.number_of_milestones != validated_data.get('number_of_milestones'):
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.PROJECT_NUMBER_OF_MILESTONES_CHANGE,
+                    old_value=self.number_of_milestones,
+                    new_value=validated_data.get('number_of_milestones'))
+            logs.append(_log)
+        return logs
 
     @classmethod
     def gen_registry_data(cls, projects, data):

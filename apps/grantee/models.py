@@ -6,6 +6,7 @@ __author__ = 'xepa4ep'
 from django.db import models
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.signals import post_save, post_delete
+from logger.models import LogItem
 
 
 class OrganizationManager(models.Manager):
@@ -132,6 +133,24 @@ class Organization(models.Model):
         except ObjectDoesNotExist:
             return None
 
+    def log_changes(self, validated_data, account):
+        logs = []
+        contact_details = validated_data.get('contact_details')
+        if self.iik != validated_data.get('iik'):
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.ORGANIZATION_DETAILS_IIK_CHANGE,
+                    old_value=self.iik,
+                    new_value=validated_data.get('iik'))
+            logs.append(_log)
+        if self.contact_details.email != contact_details.get('email'):
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.ORGANIZATION_DETAILS_EMAIL_CHANGE,
+                    old_value=self.contact_details.email,
+                    new_value=contact_details.get('email'))
+            logs.append(_log)
+        return logs
 
 
 class ShareHolder(models.Model):

@@ -20,6 +20,7 @@ from statuses import (
 )
 import utils as doc_utils
 from natr import utils as natr_utils
+from logger.models import LogItem
 
 
 class SimpleDocumentManager(models.Manager):
@@ -371,6 +372,25 @@ class AgreementDocument(models.Model):
     def get_project(self):
         return self.document.get_project()
 
+    def log_changes(self, validated_data, account):
+        logs = []
+        funding_updated = validated_data.get('funding')
+        document_data = validated_data.get('document')
+        if self.funding.amount != funding_updated.amount:
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.AGGREEMENT_FUNDING_CHANGE,
+                    old_value=self.funding.amount,
+                    new_value=funding_updated.amount)
+            logs.append(_log)
+        if self.document.number != document_data.get('number'):
+            _log = LogItem(
+                    context=self, account=account,
+                    log_type=LogItem.AGGREEMENT_NUMBER_CHANGE,
+                    old_value=self.document.number,
+                    new_value=document_data.get('number'))
+            logs.append(_log)
+        return logs
 
 class OtherAgreementsDocument(models.Model):
     tp="other_agreements"

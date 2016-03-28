@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import itertools
 from rest_framework import serializers
 from natr import utils, mailing, models as natr_models
 from natr.override_rest_framework.fields import SerializerMoneyField
@@ -16,6 +17,7 @@ from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance
 from auth2.models import NatrUser
 from notifications.models import send_notification, Notification
+
 
 __all__ = (
     'FundingTypeSerializer',
@@ -170,6 +172,19 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         return Project.objects.create_new(**validated_data)
 
     def update(self, instance, validated_data):
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+
+        # get logs
+        project_logs = instance.log_changes(validated_data, user)
+        aggreement_logs = instance.aggreement.log_changes(validated_data.get('aggreement'), user)
+        organization_details_logs = instance.organization_details.log_changes(validated_data.get('organization_details'), user)
+        # save logs
+        logs = itertools.chain(project_logs, aggreement_logs, organization_details_logs)
+        LogItem.bulk_save(logs)
+
         if self.partial:
             return super(ProjectSerializer, self).update(instance, validated_data)
         return Project.objects.update_(instance, **validated_data)
@@ -235,7 +250,7 @@ class ReportSerializer(serializers.ModelSerializer):
             else:
                 instance.create_protection_doc(**protection_document)
 
-        if 'attachments' in validated_data: 
+        if 'attachments' in validated_data:
             attachments = validated_data.pop('attachments')
             for attachment in attachments:
                 attachment = doc_models.Attachment(**attachment)
@@ -334,7 +349,7 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     def validate_docx_context(self, instance):
         return True, u""
-        
+
 
 class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
 
@@ -460,8 +475,8 @@ class ActSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         contract_performance = instance.update_contract_performance_items(validated_data.pop("contract_performance", []))
         instance.conclusion = validated_data.pop('conclusion', None)
-        
-        if 'attachments' in validated_data: 
+
+        if 'attachments' in validated_data:
             attachments = validated_data.pop('attachments')
             for attachment in attachments:
                 attachment = doc_models.Attachment(**attachment)
