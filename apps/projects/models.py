@@ -17,6 +17,7 @@ from natr.models import track_data
 from natr.mixins import ProjectBasedModel, ModelDiffMixin
 from natr import utils, mailing
 from natr.models import CostType
+from natr.utils import get_field_display
 from django.contrib.auth import get_user_model
 from django.utils.functional import cached_property
 from notifications.models import Notification
@@ -534,14 +535,18 @@ class Project(models.Model):
 
     def log_changes(self, validated_data, account):
         logs = []
+
         funding_type_data = validated_data.get('funding_type')
         if self.funding_type.name != funding_type_data.get('name'):
+            old_cap = self.funding_type.get_name_display()
+            new_cap = get_field_display(self.funding_type.__class__, 'name', funding_type_data.get('name'))
             _log = LogItem(
                     context=self, account=account,
                     log_type=LogItem.PROJECT_FUNDING_TYPE_CHANGE,
-                    old_value=self.funding_type.name,
-                    new_value=funding_type_data.get('name'))
+                    old_value=old_cap,
+                    new_value=new_cap)
             logs.append(_log)
+
         if self.funding_date != validated_data.get('funding_date'):
             _log = LogItem(
                     context=self, account=account,
@@ -549,6 +554,7 @@ class Project(models.Model):
                     old_value=self.funding_date,
                     new_value=validated_data.get('funding_date'))
             logs.append(_log)
+
         if self.number_of_milestones != validated_data.get('number_of_milestones'):
             _log = LogItem(
                     context=self, account=account,

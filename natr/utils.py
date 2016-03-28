@@ -11,6 +11,10 @@ from collections import OrderedDict
 
 f = faker.Faker()
 
+def get_field_display(klass, field, value):
+    f = klass._meta.get_field(field)
+    return dict(f.flatchoices).get(value, value)
+
 def print_itertools(items):
     def prnt(item):
         print item

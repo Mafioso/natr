@@ -13,6 +13,7 @@ from django.contrib.contenttypes.fields import GenericForeignKey
 class LogItem(models.Model):
 
 	class Meta:
+		ordering = ['-date_created']
 		default_permissions = ()
 		verbose_name = u'Журнал логирования'
 		relevant_for_permission = True
