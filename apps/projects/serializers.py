@@ -17,6 +17,7 @@ from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance
 from auth2.models import NatrUser
 from notifications.models import send_notification, Notification
+from grantee.models import LogItem
 
 
 __all__ = (

@@ -122,6 +122,18 @@ class Account(AbstractBaseUser, PermissionsMixin):
             perms.setdefault(p.id, p)
         return perms.values()
 
+    @property
+    def get_user_type(self):
+        if hasattr(self, 'user'):
+            if self.user.is_manager():
+                return NatrUser.MANAGER
+            elif self.user.is_risk_expert():
+                return NatrUser.RISK_EXPERT
+            else:
+                return NatrUser.EXPERT
+        elif hasattr(self, 'grantee'):
+            return 'grantee'
+
 
 class Department(models.Model):
     name = models.CharField(max_length=200, null=True, blank=True)

@@ -51,9 +51,14 @@ class LogItem(models.Model):
 	new_value = models.TextField(null=True)
 
 	def __unicode__(self):
-		return u'log_type: %s, context: %s, values: (%s | %s)' % (
-			self.log_type, self.context, self.old_value, self.new_value)
+		return u'id: %s, log_type: %s, context: %s, values: (%s | %s)' % (
+			self.id, self.log_type, self.context, self.old_value, self.new_value)
 
 	@classmethod
 	def bulk_save(self, logs):
-		map(lambda item: item.save(), logs)
+		for item in logs:
+			item.save()
+			# print item
+
+	def get_log_type_cap(self):
+		return filter(lambda opt: opt[0]==self.log_type, LogItem.LOG_TYPES_OPTIONS)[0][1]
