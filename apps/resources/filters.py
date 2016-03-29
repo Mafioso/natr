@@ -63,6 +63,8 @@ class ReportFilter(django_filters.FilterSet):
 
 	id__in = django_filters.MethodFilter()
 
+	status__in = django_filters.MethodFilter()
+
 	def filter_search(self, queryset, value):
 		return queryset.filter(
 			Q(project__name__icontains=value)
@@ -87,6 +89,9 @@ class ReportFilter(django_filters.FilterSet):
 
 	def filter_id__in(self, queryset, value):
 		return queryset.filter(id__in=value)
+
+	def filter_status__in(self, queryset, value):
+		return queryset.filter(status__in=value)
 
 
 class AttachmentFilter(ListOfIdFilter):

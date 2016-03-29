@@ -26,5 +26,4 @@ def create_journal_activity(sender, instance, created, **kwargs):
 						   activity_type=JournalActivity.CHAT,
 						   subject_name=instance.line)
 	journal_activity.save()
-	print project.id, journal.id, journal_activity.id
 	return journal_activity

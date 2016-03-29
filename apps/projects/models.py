@@ -1812,8 +1812,8 @@ class Monitoring(ProjectBasedModel):
         old_val = instance.old_value('status')
         new_val = instance.status
 
-        if new_val == Monitoring.ON_GRANTEE_APPROVE:
-            mailing.send_grantee_approve_email(instance)
+        # if new_val == Monitoring.ON_GRANTEE_APPROVE:
+        #     mailing.send_grantee_approve_email(instance)
 
         if not new_val == Monitoring.APPROVE or new_val == Monitoring.APPROVED:
             return
