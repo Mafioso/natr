@@ -10,7 +10,8 @@ from django.utils import timezone
 from django.db import models
 from django.db.models.signals import post_save
 from django.core.exceptions import MultipleObjectsReturned, ObjectDoesNotExist
-from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
 from model_utils.fields import MonitorField
 from djmoney.models.fields import MoneyField
 from natr.models import track_data
@@ -828,10 +829,7 @@ class Report(ProjectBasedModel):
     protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
     attachments = models.ManyToManyField('documents.Attachment', related_name='reports', null=True, blank=True)
 
-    digest = models.TextField(null=True, blank=True)
-    signature = models.TextField(null=True, blank=True)
-    signature_meta = models.TextField(null=True, blank=True)
-    signature_date = models.DateTimeField(null=True, blank=True)
+    signature = GenericRelation('DigitalSignature', content_type_field='context_type')
 
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
@@ -2121,6 +2119,16 @@ def on_report_created(sender, instance, created=False, **kwargs):
     if not created:
         return
     ProtectionDocument.build_empty(instance.project)
+
+
+class DigitalSignature(models.Model):
+    info = models.TextField(null=True, blank=True)
+    value = models.TextField(null=True, blank=True)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    context_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    context = GenericForeignKey('context_type', 'object_id')
+
 
 post_save.connect(on_report_created, sender=Report)
 post_save.connect(Report.post_save, sender=Report)

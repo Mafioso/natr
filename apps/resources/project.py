@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import datetime
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
@@ -486,6 +487,19 @@ class ReportViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(instance=report)
         headers = self.get_success_headers(serializer.data)
         return response.Response({"report": report.id}, headers=headers)
+
+    @detail_route(methods=['patch'], url_path='sign')
+    def sign(self, request, *a, **kw):
+        report = self.get_object()
+        data = request.data
+        report.signature.all().delete()
+        signature = prj_models.DigitalSignature.objects.create(
+            context=report,
+            **data
+        )
+        print signature
+        serializer = self.get_serializer(report)
+        return response.Response(serializer.data)
 
     @detail_route(methods=['get'], url_path='gen_excel_report')
     def get_excel_report(self, request, *a, **kw):
