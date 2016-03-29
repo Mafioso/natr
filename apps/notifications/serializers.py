@@ -83,9 +83,37 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 			return json.loads(instance.params)
 		return None
 
-	def create(self, validated_data):
-		notif_type = validated_data.get('notif_type')
-		projects = validated_data.get('projects')
+	def create_for_projects(self, projects):
+		project_context_type = ContentType.objects.get_for_model(Project)
+		def create_notif(project):
+			notif = models.Notification.objects.create(
+				notif_type=self.notif_type,
+				context_id=project['id'],
+				context_type=project_context_type)
+			notif.update_params(self.extra_params)
+			notif.spray()
+			return notif
+		return map(create_notif, projects)
+
+	def create_for_managers(self):
+		project_context_type = ContentType.objects.get_for_model(Project)
+		def create_notif(project):
+			notif = models.Notification.objects.create(
+				notif_type=self.notif_type,
+				context_id=project['id'],
+				context_type=project_context_type)
+			notif.update_params(self.extra_params)
+			notif.spray()
+			return notif
+		return map(create_notif, projects)
+
+	def create_for_gp_users(self):
+		pass
+
+	def create_for_experts(self):
+		pass
+
+	def init_extra_params(self, validated_data):
 		date = validated_data.get('date', datetime.now())
 		text = validated_data.get('text')
 
@@ -94,24 +122,35 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 		if request and hasattr(request, "user"):
 			user = request.user
 
-		extra_params = {
+		self.extra_params = {
 			'user_id': user.id,
 			'user_name': user.get_full_name(),
 			'date': date,
 			'text': text,
 		}
 
-		if notif_type == models.Notification.ANNOUNCEMENT_PROJECTS:
-			project_context_type = ContentType.objects.get_for_model(Project)
-			def create_notif(project):
-				notif = models.Notification.objects.create(
-					notif_type=notif_type,
-					context_id=project['id'],
-					context_type=project_context_type)
-				notif.update_params(extra_params)
-				notif.spray()
-				return notif
-			return map(create_notif, projects)
+	def create(self, validated_data):
+		self.init_extra_params(validated_data)
+
+		self.notif_type = validated_data.get('notif_type')
+		projects = validated_data.get('projects')
+
+
+		if self.notif_type == models.Notification.ANNOUNCEMENT_PROJECTS:
+			return self.create_for_projects(projects)
+
+		elif self.notif_type in models.Notification.ANNOUNCEMENT_USERS_NOTIFS:
+			if self.notif_type == models.Notification.ANNOUNCEMENT_USERS_MANAGER:
+				return self.create_for_managers()
+			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS_GP:
+				return self.create_for_gp_users()
+			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS_EXPERT:
+				return self.create_for_experts()
+			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS:
+				return itertools.chain(self.create_for_managers(), self.create_for_gp_users(), self.create_for_experts())
+
+		else:
+			raise "%s is incorrect notif_type" % (notif_type)
 
 
 class NotificationSubscribtionSerializer(serializers.ModelSerializer):
