@@ -146,6 +146,7 @@ class ProjectManager(models.Manager):
         old_milestones = instance.number_of_milestones
         new_milestones = data['number_of_milestones']
         current_milestone_data = data.pop('current_milestone', None)
+        directors_attachments = data.pop('directors_attachments', None)
 
         self.model.objects.filter(pk=instance.pk).update(**data)
 
@@ -1719,7 +1720,7 @@ class Monitoring(ProjectBasedModel):
     STATUS_CAPS = (
         u'формирование',
         u'на согласовании руководством',
-        u'утвержден',
+        u'Утвержден руководством"',
         u'не согласован',
         u'на согласовании ГП',
         u'утвержден ГП',
