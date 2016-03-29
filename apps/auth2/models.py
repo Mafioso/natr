@@ -147,8 +147,7 @@ class NatrUser(models.Model):
         relevant_for_permission = True
         verbose_name = u'Пользователи ИСЭМ'
 
-    DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT = ('expert', 'manager', 'risk_expert')
-    ADMIN_GROUP = 'admin'
+    DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT, ADMIN_GROUP = ('expert', 'manager', 'risk_expert', 'admin')
 
     departments = models.ManyToManyField(Department, blank=True)
 
