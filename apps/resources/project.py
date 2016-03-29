@@ -24,6 +24,7 @@ from .filters import ProjectFilter, ReportFilter, MonitoringTodoFilter
 from projects.utils import ExcelReport
 from documents.utils import DocumentPrint
 from natr import mailing
+from datetime import datetime, timedelta
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -335,7 +336,7 @@ class MonitoringViewSet(ProjectBasedViewSet):
             projects = self.request.user.grantee.projects.all()
         ms = self.get_queryset().filter(project__in=projects)
         qs = prj_models.MonitoringTodo.objects.filter(
-            monitoring__in=ms).order_by('date_end')
+            monitoring__in=ms, date_end__gt=datetime.now()-timedelta(days=31)).order_by('date_end')
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -403,6 +404,7 @@ class ReportViewSet(ProjectBasedViewSet):
         """
         id_value = self.request.query_params.get('id', None)
         is_active = self.request.query_params.get('isActive', None)
+        status = self.request.query_params.get('status', None)
         queryset = super(ReportViewSet, self).get_queryset()
         qs_filter_args = {}
         if not self.request.user.is_superuser:
@@ -416,6 +418,9 @@ class ReportViewSet(ProjectBasedViewSet):
 
         if id_value:
             qs_filter_args["id__in"] = id_value.split(',')
+
+        if status:
+            qs_filter_args['status__in'] = status.split(',')
 
         filtered_qs = ReportFilter(qs_filter_args, queryset)
         return filtered_qs.qs

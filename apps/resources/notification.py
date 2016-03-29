@@ -48,17 +48,20 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
 		Response Body
 		-------------
-		{
-			notification: json object,
-			notification_subscribers: list of ids
-		}
+		[
+			{
+				json object,
+			}
+		]
 		"""
-		serializer = self.get_serializer(data=request.data, many=True)
+
+		serializer = self.get_serializer(data=request.data)
 		serializer.is_valid(raise_exception=True)
 		self.perform_create(serializer)
-		print serializer.data
-		# notifications = self.create(request, *a, **kw)
-		# serializer = self.get_serializer(notifications, many=True)
+
+		instances = serializer.instance
+
+		serializer = self.get_serializer(instances, many=True)
 		return response.Response(serializer.data)
 
 

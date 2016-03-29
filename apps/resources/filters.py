@@ -43,7 +43,9 @@ class ProjectFilter(ListOfIdFilter):
 	def filter_search(self, queryset, value):
 		queryset = queryset.filter(
 			Q(name__icontains=value) |
-			(Q(document__type='agreement') & Q(document__number__contains=value))
+			(Q(document__type='agreement') & Q(document__number__contains=value)) |
+			# Q(organization_details__authorized_grantee__full_name__contains=value) - related fields do not support lookups
+			Q(organization_details__first_head_fio__contains=value)
 		)
 		return queryset.distinct()
 
@@ -62,6 +64,8 @@ class ReportFilter(django_filters.FilterSet):
 	status__gt = django_filters.MethodFilter()
 
 	id__in = django_filters.MethodFilter()
+
+	status__in = django_filters.MethodFilter()
 
 	def filter_search(self, queryset, value):
 		return queryset.filter(
@@ -87,6 +91,9 @@ class ReportFilter(django_filters.FilterSet):
 
 	def filter_id__in(self, queryset, value):
 		return queryset.filter(id__in=value)
+
+	def filter_status__in(self, queryset, value):
+		return queryset.filter(status__in=value)
 
 
 class AttachmentFilter(ListOfIdFilter):

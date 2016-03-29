@@ -42,7 +42,7 @@ def send_create_grantee(name, email, password):
 def send_milestone_status_payment(milestone):
     mail = EmailMessage(
                 u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
-                u"""Здравствуйте!\nНачался этап №1 по вашему проекту \"%s\". Просим ознакомится с памяткой""" % milestone.project.name,
+                u"""Здравствуйте!\nНачался этап №%s по вашему проекту \"%s\". Просим ознакомится с памяткой""" %(milestone.number, milestone.project.name),
                 settings.DEFAULT_FROM_EMAIL,
                 map(lambda x: x.account.email, milestone.project.get_grantees())
             )
@@ -83,7 +83,7 @@ def send_milestone_status_finished(milestone):
 def send_monitoring_plan_agreed(monitoring):
     def get_monitoring_plan(monitoring):
         table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
-        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y'), y.period, y.date_end.strftime('%d %m %Y'), y.report_type),
+        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
                 monitoring.todos.all(), u'')
         return table
 
@@ -100,12 +100,11 @@ def send_monitoring_plan_agreed(monitoring):
 def send_monitoring_plan_gp_approve(monitoring):
     def get_monitoring_plan(monitoring):
         table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
-        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y'), y.period, y.date_end.strftime('%d %m %Y'), y.report_type),
+        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
                 monitoring.todos.all(), u'')
         return table
 
-    mail_text = u"""Здравствуйте!\nПлан мониторинга был отправлен вам на согласование. \n
-            Для утверждения плана перейдите по ссылке: http://178.88.64.87:8000/#/project/%s/monitoring_plan"""%monitoring.project.id
+    mail_text = u"""Здравствуйте!\nПлан мониторинга был отправлен вам на согласование. \n"""
 
     mail = EmailMultiAlternatives(
         u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
@@ -119,11 +118,10 @@ def send_monitoring_plan_gp_approve(monitoring):
 def send_monitoring_plan_approved_by_gp(monitoring):
     def get_monitoring_plan(monitoring):
         table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
-        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y'), y.period, y.date_end.strftime('%d %m %Y'), y.report_type),
+        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
                 monitoring.todos.all(), u'')
         return table
-    mail_text = u"""Здравствуйте!\nПлан мониторинга был согласован грантополучателем. \n
-            Для отправки на согласование руководству перейдите по ссылке: http://178.88.64.87:8000/#/projects/edit/%s/monitoring"""%monitoring.project.id
+    mail_text = u"""Здравствуйте!\nПлан мониторинга был согласован грантополучателем. \n"""
     mail = EmailMultiAlternatives(
         u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
         mail_text,
@@ -136,7 +134,7 @@ def send_monitoring_plan_approved_by_gp(monitoring):
 def send_monitoring_plan_was_send_to_rework(monitoring, user=None):
     def get_monitoring_plan(monitoring):
         table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
-        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y'), y.period, y.date_end.strftime('%d %m %Y'), y.report_type),
+        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
                 monitoring.todos.all(), u'')
         return table
     user_info = "План мониторинга был отправлен на доработку"
@@ -149,8 +147,7 @@ def send_monitoring_plan_was_send_to_rework(monitoring, user=None):
 
         user_info = user_type + u" " +user.get_full_name()+u" отправил(а) план мониторинга на доработку."
 
-    mail_text = u"""Здравствуйте!\n%s. \n
-            Для редактирования плана перейдите по ссылке: http://178.88.64.87:8000/#/project/%s/monitoring_plan"""%(user_info, monitoring.project.id)
+    mail_text = u"""Здравствуйте!\n%s."""%(user_info)
     mail = EmailMultiAlternatives(
         u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
         mail_text,
@@ -203,9 +200,37 @@ def send_grantee_approve_email(monitoring_plan):
     message_text = u"Здравствуйте! По Вашему проекту \"%s\" поступил план мониторинга."%monitoring_plan.project.name
 
     send_mail(
-        u"%s договора"%(u"Завершение" if monitoring_plan.project.status == 1 else u"Расторжение"),
+        u"План мониторинга",
         message_text,
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, monitoring_plan.project.get_grantees()),
         fail_silently=True
+    )
+
+def send_chat_activity(text_line, from_account):
+    from_type = ""
+    to_accounts = []
+
+    if from_account:
+        if hasattr(from_account, 'user'):
+            from_type = u"Эксперт"
+            to_type = u"грантополучатель"
+            to_accounts = map(lambda x: x.account.email, text_line.project.get_grantees())
+        elif hasattr(from_account, 'grantee'):
+            from_type = u"Грантополучатель"
+            to_type = u"эксперт"
+            to_accounts = map(lambda x: x.account.email, text_line.project.assigned_experts.all())
+
+    title = u"Новое сообщение в ИСЭМ"
+    message_text = u"""Уважаемый %s! \n%s %s отправил вам сообщение: \n%s \n
+                    Ссылка для входа в кабинет: http://178.88.64.87:8000"""%(to_type,
+                                                                             from_type, 
+                                                                             from_account.get_full_name(), 
+                                                                             text_line.line)
+    send_mail(
+        title,
+        message_text,
+        settings.DEFAULT_FROM_EMAIL,
+        to_accounts,
+        fail_silently = True
     )

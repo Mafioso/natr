@@ -43,7 +43,7 @@ class AccountSerializer(serializers.ModelSerializer):
 	# groups = GroupSerializer(many=True)
 	counters = serializers.SerializerMethodField()
 
-	user_type = serializers.CharField(source='get_user_type')
+	user_type = serializers.CharField(source='get_user_type', required=False)
 
 	class Meta:
 		model = models.Account

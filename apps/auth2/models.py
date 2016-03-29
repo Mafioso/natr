@@ -102,11 +102,11 @@ class Account(AbstractBaseUser, PermissionsMixin):
         Returns the first_name plus the last_name, with a space in between.
         """
         full_name = ' '.join( filter(None, [self.first_name, self.last_name]) )
-        return full_name.strip()
+        return unicode(full_name.strip())
 
     def get_short_name(self):
         "Returns the short name for the user."
-        return self.first_name
+        return unicode(self.first_name)
 
     def get_counters(self):
         return {
@@ -127,6 +127,8 @@ class Account(AbstractBaseUser, PermissionsMixin):
         if hasattr(self, 'user'):
             if self.user.is_manager():
                 return NatrUser.MANAGER
+            elif self.user.is_expert():
+                return NatrUser.EXPERT
             elif self.user.is_risk_expert():
                 return NatrUser.RISK_EXPERT
             else:
@@ -145,8 +147,7 @@ class NatrUser(models.Model):
         relevant_for_permission = True
         verbose_name = u'Пользователи ИСЭМ'
 
-    DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT = ('expert', 'manager', 'risk_expert')
-    ADMIN_GROUP = 'admin'
+    DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT, ADMIN_GROUP = ('expert', 'manager', 'risk_expert', 'admin')
 
     departments = models.ManyToManyField(Department, blank=True)
 
