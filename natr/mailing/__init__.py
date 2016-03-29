@@ -42,7 +42,7 @@ def send_create_grantee(name, email, password):
 def send_milestone_status_payment(milestone):
     mail = EmailMessage(
                 u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
-                u"""Здравствуйте!\nНачался этап №1 по вашему проекту \"%s\". Просим ознакомится с памяткой""" % milestone.project.name,
+                u"""Здравствуйте!\nНачался этап №%s по вашему проекту \"%s\". Просим ознакомится с памяткой""" %(milestone.number, milestone.project.name),
                 settings.DEFAULT_FROM_EMAIL,
                 map(lambda x: x.account.email, milestone.project.get_grantees())
             )
