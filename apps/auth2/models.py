@@ -127,6 +127,8 @@ class Account(AbstractBaseUser, PermissionsMixin):
         if hasattr(self, 'user'):
             if self.user.is_manager():
                 return NatrUser.MANAGER
+            elif self.user.is_expert():
+                return NatrUser.EXPERT
             elif self.user.is_risk_expert():
                 return NatrUser.RISK_EXPERT
             else:

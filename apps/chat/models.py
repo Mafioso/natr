@@ -190,5 +190,7 @@ class ChatCounter(ProjectBasedModel):
 
 from django.db.models.signals import post_save
 from journals.signals import create_journal_activity
+from .signals import notify_account_to_email
 
 post_save.connect(create_journal_activity, sender=TextLine)
+post_save.connect(notify_account_to_email, sender=TextLine)
