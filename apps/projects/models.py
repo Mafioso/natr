@@ -828,6 +828,11 @@ class Report(ProjectBasedModel):
     protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
     attachments = models.ManyToManyField('documents.Attachment', related_name='reports', null=True, blank=True)
 
+    digest = models.TextField(null=True, blank=True)
+    signature = models.TextField(null=True, blank=True)
+    signature_meta = models.TextField(null=True, blank=True)
+    signature_date = models.DateTimeField(null=True, blank=True)
+
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
 
