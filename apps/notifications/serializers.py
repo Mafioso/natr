@@ -70,13 +70,18 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = models.Notification
-		exclude = ('context_id', 'context_type')
-		include = ('projects', 'date')
+		exclude = ('context_id', 'context_type', 'subscribers')
+		include = ('projects', 'date', 'text', 'params')
 
 	projects = ProjectNameSerializer(write_only=True, many=True, required=False)
 	date = serializers.DateTimeField(write_only=True, required=False)
 	text = serializers.CharField(write_only=True, required=True)
+	params = serializers.SerializerMethodField()
 
+	def get_params(self, instance):
+		if instance.params:
+			return json.loads(instance.params)
+		return None
 
 	def create(self, validated_data):
 		notif_type = validated_data.get('notif_type')
@@ -97,15 +102,14 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 		}
 
 		if notif_type == models.Notification.ANNOUNCEMENT_PROJECTS:
-			print '..', extra_params, user, notif_type, projects
-
 			project_context_type = ContentType.objects.get_for_model(Project)
 			def create_notif(project):
 				notif = models.Notification.objects.create(
 					notif_type=notif_type,
 					context_id=project['id'],
 					context_type=project_context_type)
-				notif.spray(extra_params)
+				notif.update_params(extra_params)
+				notif.spray()
 				return notif
 			return map(create_notif, projects)
 
