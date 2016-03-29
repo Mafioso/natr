@@ -497,9 +497,9 @@ class ReportViewSet(ProjectBasedViewSet):
             context=report,
             **data
         )
-        print signature
-        serializer = self.get_serializer(report)
-        return response.Response(serializer.data)
+        serializer = self.get_serializer(instance=report)
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"report": report.id}, headers=headers)
 
     @detail_route(methods=['get'], url_path='gen_excel_report')
     def get_excel_report(self, request, *a, **kw):
