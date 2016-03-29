@@ -538,7 +538,7 @@ class Project(models.Model):
         logs = []
 
         funding_type_data = validated_data.get('funding_type')
-        if self.funding_type.name != funding_type_data.get('name'):
+        if funding_type_data and self.funding_type.name != funding_type_data.get('name'):
             old_cap = self.funding_type.get_name_display()
             new_cap = get_field_display(self.funding_type.__class__, 'name', funding_type_data.get('name'))
             _log = LogItem(

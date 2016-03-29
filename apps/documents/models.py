@@ -376,14 +376,16 @@ class AgreementDocument(models.Model):
         logs = []
         funding_updated = validated_data.get('funding')
         document_data = validated_data.get('document')
-        if self.funding.amount != funding_updated.amount:
+
+        if funding_updated and self.funding.amount != funding_updated.amount:
             _log = LogItem(
                     context=self, account=account,
                     log_type=LogItem.AGGREEMENT_FUNDING_CHANGE,
                     old_value=self.funding.amount,
                     new_value=funding_updated.amount)
             logs.append(_log)
-        if self.document.number != document_data.get('number'):
+
+        if document_data and self.document.number != document_data.get('number'):
             _log = LogItem(
                     context=self, account=account,
                     log_type=LogItem.AGGREEMENT_NUMBER_CHANGE,

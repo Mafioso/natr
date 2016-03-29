@@ -199,16 +199,19 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
         _f = (
             'id', 'name', 'status', 'current_milestone',
             'status_cap', 'agreement', 'journal_id',
-            'risk_degree', 'number_of_milestones', 'authorized_grantee' )
+            'risk_degree', 'number_of_milestones', 'authorized_grantee',
+            'grantee_name' )
         fields = _f
         read_only_fields = _f
 
 
     current_milestone = serializers.SerializerMethodField()
     authorized_grantee = AuthorizedToInteractGranteeSerializer(source='organization_details.authorized_grantee', required=False)
-    status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    status_cap = serializers.CharField(source='get_status_cap')
     agreement = serializers.SerializerMethodField()
-    risk_degree = serializers.IntegerField(read_only=True)
+    risk_degree = serializers.IntegerField()
+    grantee_name =  serializers.CharField(source='organization_details.name')
+
 
     def get_current_milestone(self, instance):
         cur_milestone = instance.current_milestone
