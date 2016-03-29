@@ -91,14 +91,14 @@ class Notification(models.Model):
 
 	subscribers = models.ManyToManyField('auth2.Account', through='NotificationSubscribtion')
 
-	def spray(self, extra_params):
+	def spray(self):
 		# 1 prepare message
 		default_params = {
 			'notif_type': self.notif_type,
 			'context_type': self.context_type.model,
 			'context_id': self.context_id,
 			'status': NotificationSubscribtion.SENT}
-		notif_params = self.prepare_msg(extra_params)
+		notif_params = self.prepare_msg()
 		notif_params.update(default_params)
 		# 2 spray msg
 		for uid, chnl, sid, counter in self.store_by_subscriber():
@@ -107,27 +107,19 @@ class Notification(models.Model):
 				'id': sid,
 				'ack': sid,
 			})
-			print notif_params
 			centrifugo_client.publish(chnl, {
 				'notification': params,
 				'counter': counter})
 		# propogate error if it happens
 		return centrifugo_client.send()
 
-	def prepare_msg(self, extra_params):
+	def prepare_msg(self):
 		if not self.params:
 			notif_params = self.context.notification(
 				self.context_type, self.context_id, self.notif_type)
 			self.params = JSONRenderer().render(notif_params)
 			self.save()
-
-		params = json.loads(self.params)
-		if extra_params:
-			params.update(extra_params)
-			self.params = JSONRenderer().render(params)
-			self.save()
-
-		return params
+		return json.loads(self.params)
 
 	def store_by_subscriber(self):
 		users = self.context.notification_subscribers()
@@ -142,11 +134,16 @@ class Notification(models.Model):
 		Caution: Do not use this method."""
 		return self.context_id
 
-
 	@classmethod
 	def build(cls, tp, context):
 		return Notification.objects.create(
 			notif_type=tp, context=context)
+
+	def update_params(self, extra_params):
+		_params = self.prepare_msg()
+		_params.update(extra_params)
+		self.params = JSONRenderer().render(_params)
+		self.save()
 
 
 class NotificationSubscribtionManager(models.Manager):
