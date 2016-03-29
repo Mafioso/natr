@@ -403,6 +403,7 @@ class ReportViewSet(ProjectBasedViewSet):
         """
         id_value = self.request.query_params.get('id', None)
         is_active = self.request.query_params.get('isActive', None)
+        status = self.request.query_params.get('status', None)
         queryset = super(ReportViewSet, self).get_queryset()
         qs_filter_args = {}
         if not self.request.user.is_superuser:
@@ -416,6 +417,9 @@ class ReportViewSet(ProjectBasedViewSet):
 
         if id_value:
             qs_filter_args["id__in"] = id_value.split(',')
+
+        if status:
+            qs_filter_args['status__in'] = status.split(',')
 
         filtered_qs = ReportFilter(qs_filter_args, queryset)
         return filtered_qs.qs
