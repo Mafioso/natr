@@ -925,6 +925,14 @@ class Report(ProjectBasedModel):
                         fail_silently=False
                     )
 
+    def log_changes(self, account):
+        if self.status == Report.APPROVED:
+            LogItem.objects.create(log_type=LogItem.REPORT_APPROVED, context=self, account=account)
+        if self.status == Report.REWORK:
+            LogItem.objects.create(log_type=LogItem.REPORT_REWORK, context=self, account=account)
+        if self.status == Report.CHECK:
+            LogItem.objects.create(log_type=LogItem.REPORT_CHECK, context=self, account=account)
+
     def get_print_context(self, **kwargs):
         context = self.__dict__
         context['org_name'] = self.project.organization_details.name

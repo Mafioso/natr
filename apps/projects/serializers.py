@@ -370,6 +370,11 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
     def update(self, instance, validated_data):
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+
         # if status changed we need to notify gp about that
         # so before updating the instance we check whether monitoring status gonna be changed
         changed = instance.status != validated_data.get('status', instance.status)
@@ -378,6 +383,16 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
             if instance.status == 2:
                 try:
                     mailing.send_monitoring_plan_agreed(instance)
+                except Exception as e:
+                    print str(e)
+            elif instance.status == Monitoring.APPROVED:
+                try:
+                    LogItem.objects.create(log_type=LogItem.MONITORING_PLAN_APPROVED, context=instance, account=user)
+                except Exception as e:
+                    print str(e)
+            elif instance.status == Monitoring.ON_REWORK:
+                try:
+                    LogItem.objects.create(log_type=LogItem.MONITORING_PLAN_REWORK, context=instance, account=user)
                 except Exception as e:
                     print str(e)
             elif instance.status == Monitoring.ON_GRANTEE_APPROVE:

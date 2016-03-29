@@ -26,17 +26,25 @@ class LogItem(models.Model):
 	PROJECT_FUNDING_DATE_CHANGE = 6
 	PROJECT_NUMBER_OF_MILESTONES_CHANGE = 7
 	# UPLOADS
-	# ACTIONS
+	MONITORING_PLAN_APPROVED = 8
+	MONITORING_PLAN_REWORK = 9
+	REPORT_APPROVED = 10
+	REPORT_REWORK = 11
+	REPORT_CHECK = 12
 
 	LOG_TYPES = (
-		AGGREEMENT_NUMBER_CHANGE, AGGREEMENT_FUNDING_CHANGE, ORGANIZATION_DETAILS_IIK_CHANGE,
-		ORGANIZATION_DETAILS_EMAIL_CHANGE, PROJECT_FUNDING_TYPE_CHANGE, PROJECT_FUNDING_DATE_CHANGE,
-		PROJECT_NUMBER_OF_MILESTONES_CHANGE)
+		AGGREEMENT_NUMBER_CHANGE, AGGREEMENT_FUNDING_CHANGE,
+		ORGANIZATION_DETAILS_IIK_CHANGE, ORGANIZATION_DETAILS_EMAIL_CHANGE,
+		PROJECT_FUNDING_TYPE_CHANGE, PROJECT_FUNDING_DATE_CHANGE, PROJECT_NUMBER_OF_MILESTONES_CHANGE,
+		MONITORING_PLAN_APPROVED, MONITORING_PLAN_REWORK,
+		REPORT_APPROVED, REPORT_REWORK, REPORT_CHECK)
 
 	LOG_TYPES_CAPS = (
 		u'изменение: номер договора', u'изменение: сумма договора', u'изменение: ИИК грантополучателя',
 		u'изменение:контактные данные по проекту(E-mail)', u'изменение: вид гранта', u'изменение: дата оплаты первого транша',
-		u'изменение: количество этапов по проекту')
+		u'изменение: количество этапов по проекту',
+		u'план мониторинга: утвердить', u'план мониторинга: отправить на доработку',
+		u'отчет: был утвержден', u'отчет: отправлен на доработку', u'отчет: отправлен на проверку')
 
 	LOG_TYPES_OPTIONS = zip(LOG_TYPES, LOG_TYPES_CAPS)
 

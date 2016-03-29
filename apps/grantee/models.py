@@ -143,7 +143,8 @@ class Organization(models.Model):
                     old_value=self.iik,
                     new_value=validated_data.get('iik'))
             logs.append(_log)
-        if self.contact_details.email != contact_details.get('email'):
+        if contact_details and hasattr(self, 'contact_details') and\
+                self.contact_details.email != contact_details.get('email'):
             _log = LogItem(
                     context=self, account=account,
                     log_type=LogItem.ORGANIZATION_DETAILS_EMAIL_CHANGE,
