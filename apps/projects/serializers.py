@@ -179,9 +179,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             user = request.user
 
         # get logs
-        project_logs = instance.log_changes(validated_data, user)
-        aggreement_logs = instance.aggreement.log_changes(validated_data.get('aggreement'), user)
-        organization_details_logs = instance.organization_details.log_changes(validated_data.get('organization_details'), user)
+        project_logs = instance.get_log_changes(validated_data, user)
+        aggreement_logs = instance.aggreement.get_log_changes(validated_data.get('aggreement'), user)
+        organization_details_logs = instance.organization_details.get_log_changes(validated_data.get('organization_details'), user)
         # save logs
         logs = itertools.chain(project_logs, aggreement_logs, organization_details_logs)
         LogItem.bulk_save(logs)

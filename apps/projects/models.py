@@ -534,7 +534,7 @@ class Project(models.Model):
     def notification_subscribers(self):
         return self.stakeholders
 
-    def log_changes(self, validated_data, account):
+    def get_log_changes(self, validated_data, account):
         logs = []
 
         funding_type_data = validated_data.get('funding_type')

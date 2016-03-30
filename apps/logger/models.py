@@ -71,3 +71,8 @@ class LogItem(models.Model):
 
 	def get_log_type_cap(self):
 		return filter(lambda opt: opt[0]==self.log_type, LogItem.LOG_TYPES_OPTIONS)[0][1]
+
+	@property
+	def get_project(self):
+		#TODO except account Groups
+		return self.context.get_project()

@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
-from natr.override_rest_framework.serializers import AccountNameSerializer
+from natr.override_rest_framework.serializers import AccountNameSerializer, ProjectNameSerializer
 
 from logger import models
 
@@ -18,8 +18,9 @@ class LogItemSerializer(serializers.ModelSerializer):
 	class Meta:
 		model = models.LogItem
 		exclude = ('context_id', 'context_type')
-		include = ('account',)
-		read_only_fields = ('account', 'log_type_cap')
+		include = ('account', 'project')
+		read_only_fields = ('account', 'project')
 
 	account = AccountNameSerializer(required=True)
 	log_type_cap = serializers.CharField(source='get_log_type_cap')
+	project = ProjectNameSerializer(source='get_project', required=False)
