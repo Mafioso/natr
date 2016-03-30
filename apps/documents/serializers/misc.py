@@ -11,6 +11,7 @@ from natr.override_rest_framework.mixins import ExcludeCurrencyFields, EmptyObje
 from .common import DocumentCompositionSerializer, DocumentSerializer, AttachmentSerializer
 from collections import OrderedDict
 
+
 __all__ = (
     'DocumentSerializer',
     'AgreementDocumentSerializer',
@@ -41,12 +42,23 @@ class AgreementDocumentSerializer(DocumentCompositionSerializer):
     funding = SerializerMoneyField(required=False)
 
     def create(self, validated_data):
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+
         doc = models.Document.dml.create_agreement(**validated_data)
+        doc.log_upload_attach(user)
         return doc
 
     def update(self, instance, validated_data):
-        doc = models.Document.dml.update_agreement(instance, **validated_data)
-        return doc
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+
+        instance.log_changes(validated_data, user)
+        return models.Document.dml.update_agreement(instance, **validated_data)
 
 class OtherAgreementItemSerializer(serializers.ModelSerializer):
 
@@ -200,7 +212,7 @@ class InnovativeProjectPasportSerializer(DocumentCompositionSerializer):
 
 
         return True, u""
-        
+
 
 class StatementDocumentSerializer(DocumentCompositionSerializer):
 
@@ -239,7 +251,7 @@ class CalendarPlanDocumentSerializer(DocumentCompositionSerializer):
     document = DocumentSerializer(required=False)
 
     items = CalendarPlanItemSerializer(many=True, required=False)
-    
+
     def create(self, validated_data):
         doc = models.Document.dml.create_calendar_plan(**validated_data)
         return doc

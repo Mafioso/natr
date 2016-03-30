@@ -44,8 +44,7 @@ class ProjectFilter(ListOfIdFilter):
 		queryset = queryset.filter(
 			Q(name__icontains=value) |
 			(Q(document__type='agreement') & Q(document__number__contains=value)) |
-			# Q(organization_details__authorized_grantee__full_name__contains=value) - related fields do not support lookups
-			Q(organization_details__first_head_fio__contains=value)
+			Q(organization_details__name__icontains=value)
 		)
 		return queryset.distinct()
 

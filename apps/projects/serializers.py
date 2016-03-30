@@ -179,9 +179,9 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
             user = request.user
 
         # get logs
-        project_logs = instance.log_changes(validated_data, user)
-        aggreement_logs = instance.aggreement.log_changes(validated_data.get('aggreement'), user)
-        organization_details_logs = instance.organization_details.log_changes(validated_data.get('organization_details'), user)
+        project_logs = instance.get_log_changes(validated_data, user)
+        aggreement_logs = instance.aggreement.get_log_changes(validated_data.get('aggreement'), user)
+        organization_details_logs = instance.organization_details.get_log_changes(validated_data.get('organization_details'), user)
         # save logs
         logs = itertools.chain(project_logs, aggreement_logs, organization_details_logs)
         LogItem.bulk_save(logs)
@@ -199,16 +199,19 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
         _f = (
             'id', 'name', 'status', 'current_milestone',
             'status_cap', 'agreement', 'journal_id',
-            'risk_degree', 'number_of_milestones', 'authorized_grantee' )
+            'risk_degree', 'number_of_milestones', 'authorized_grantee',
+            'grantee_name' )
         fields = _f
         read_only_fields = _f
 
 
     current_milestone = serializers.SerializerMethodField()
     authorized_grantee = AuthorizedToInteractGranteeSerializer(source='organization_details.authorized_grantee', required=False)
-    status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    status_cap = serializers.CharField(source='get_status_cap')
     agreement = serializers.SerializerMethodField()
-    risk_degree = serializers.IntegerField(read_only=True)
+    risk_degree = serializers.IntegerField()
+    grantee_name =  serializers.CharField(source='organization_details.name')
+
 
     def get_current_milestone(self, instance):
         cur_milestone = instance.current_milestone
@@ -367,6 +370,11 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
     def update(self, instance, validated_data):
+        user = None
+        request = self.context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+
         # if status changed we need to notify gp about that
         # so before updating the instance we check whether monitoring status gonna be changed
         changed = instance.status != validated_data.get('status', instance.status)
@@ -375,6 +383,16 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
             if instance.status == 2:
                 try:
                     mailing.send_monitoring_plan_agreed(instance)
+                except Exception as e:
+                    print str(e)
+            elif instance.status == Monitoring.APPROVED:
+                try:
+                    LogItem.objects.create(log_type=LogItem.MONITORING_PLAN_APPROVED, context=instance, account=user)
+                except Exception as e:
+                    print str(e)
+            elif instance.status == Monitoring.ON_REWORK:
+                try:
+                    LogItem.objects.create(log_type=LogItem.MONITORING_PLAN_REWORK, context=instance, account=user)
                 except Exception as e:
                     print str(e)
             elif instance.status == Monitoring.ON_GRANTEE_APPROVE:

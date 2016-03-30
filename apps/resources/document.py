@@ -66,7 +66,7 @@ class BasicProjectPasportDocumentViewSet(ProjectBasedViewSet):
         item_obj = item_ser.save()
 
         is_valid, message = item_ser.validate_docx_context(instance=item_obj)
-        
+
         if not is_valid:
             return HttpResponse({"message": message}, status=400)
 
@@ -104,7 +104,7 @@ class InnovativeProjectPasportDocumentViewSet(ProjectBasedViewSet):
         item_obj = item_ser.save()
 
         is_valid, message = item_ser.validate_docx_context(instance=item_obj)
-        
+
         if not is_valid:
             return HttpResponse({"message": message}, status=400)
 
@@ -183,7 +183,7 @@ class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
     @detail_route(methods=['get'], url_path='gen_docx')
     def gen_docx(self, request, *a, **kw):
         instance = self.get_object()
-        
+
         _file, filename = DocumentPrint(object=instance).generate_docx()
 
         if not _file or not filename:
@@ -202,7 +202,7 @@ class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
         item_obj = item_ser.save()
 
         is_valid, message = item_ser.validate_docx_context(instance=item_obj)
-        
+
         if not is_valid:
             return HttpResponse({"message": message}, status=400)
 
@@ -447,7 +447,7 @@ class UseOfBudgetDocumentItemViewSet(viewsets.ModelViewSet):
         use_of_b_item.save()
         serializer = self.get_serializer(instance=use_of_b_item)
         return response.Response(serializer.data)
-    
+
 
 class CostTypeViewSet(ProjectBasedViewSet):
     serializer_class = natr_serializers.CostTypeSerializer

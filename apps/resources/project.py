@@ -445,6 +445,7 @@ class ReportViewSet(ProjectBasedViewSet):
         report = self.get_object()
         report.status = prj_models.Report.REWORK
         report.save()
+        report.log_changes(request.user)
 
         item_def = request.data
 
@@ -467,6 +468,7 @@ class ReportViewSet(ProjectBasedViewSet):
         prev_status = report.status
         report.status = prj_models.Report.REWORK
         report.save()
+        report.log_changes(request.user)
         comment = None
 
         if data.get('comment_text', None):
@@ -488,6 +490,7 @@ class ReportViewSet(ProjectBasedViewSet):
         report.status = int(data['status'])
         report.save()
         report.send_status_changed_notification(prev_status, report.status, request.user)
+        report.log_changes(request.user)
         serializer = self.get_serializer(instance=report)
         headers = self.get_success_headers(serializer.data)
         return response.Response({"report": report.id}, headers=headers)

@@ -133,7 +133,7 @@ class Organization(models.Model):
         except ObjectDoesNotExist:
             return None
 
-    def log_changes(self, validated_data, account):
+    def get_log_changes(self, validated_data, account):
         logs = []
         contact_details = validated_data.get('contact_details')
         if self.iik != validated_data.get('iik'):
@@ -143,7 +143,8 @@ class Organization(models.Model):
                     old_value=self.iik,
                     new_value=validated_data.get('iik'))
             logs.append(_log)
-        if self.contact_details.email != contact_details.get('email'):
+        if contact_details and hasattr(self, 'contact_details') and\
+                self.contact_details.email != contact_details.get('email'):
             _log = LogItem(
                     context=self, account=account,
                     log_type=LogItem.ORGANIZATION_DETAILS_EMAIL_CHANGE,
@@ -151,6 +152,9 @@ class Organization(models.Model):
                     new_value=contact_details.get('email'))
             logs.append(_log)
         return logs
+
+    def get_project(self):
+        return self.project
 
 
 class ShareHolder(models.Model):

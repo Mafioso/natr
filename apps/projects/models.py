@@ -534,11 +534,11 @@ class Project(models.Model):
     def notification_subscribers(self):
         return self.stakeholders
 
-    def log_changes(self, validated_data, account):
+    def get_log_changes(self, validated_data, account):
         logs = []
 
         funding_type_data = validated_data.get('funding_type')
-        if self.funding_type.name != funding_type_data.get('name'):
+        if funding_type_data and self.funding_type.name != funding_type_data.get('name'):
             old_cap = self.funding_type.get_name_display()
             new_cap = get_field_display(self.funding_type.__class__, 'name', funding_type_data.get('name'))
             _log = LogItem(
@@ -924,6 +924,14 @@ class Report(ProjectBasedModel):
                         [grantee.account.email],
                         fail_silently=False
                     )
+
+    def log_changes(self, account):
+        if self.status == Report.APPROVED:
+            LogItem.objects.create(log_type=LogItem.REPORT_APPROVED, context=self, account=account)
+        if self.status == Report.REWORK:
+            LogItem.objects.create(log_type=LogItem.REPORT_REWORK, context=self, account=account)
+        if self.status == Report.CHECK:
+            LogItem.objects.create(log_type=LogItem.REPORT_CHECK, context=self, account=account)
 
     def get_print_context(self, **kwargs):
         context = self.__dict__
