@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import json
+import itertools
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
 from notifications import models
 from projects.models import Milestone, Project
+from auth2.models import Account, NatrGroup
 from projects.serializers import MilestoneSerializer
 from natr.override_rest_framework.serializers import ProjectNameSerializer
 from datetime import datetime
@@ -95,23 +97,14 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 			return notif
 		return map(create_notif, projects)
 
-	def create_for_managers(self):
-		project_context_type = ContentType.objects.get_for_model(Project)
-		def create_notif(project):
-			notif = models.Notification.objects.create(
-				notif_type=self.notif_type,
-				context_id=project['id'],
-				context_type=project_context_type)
-			notif.update_params(self.extra_params)
-			notif.spray()
-			return notif
-		return map(create_notif, projects)
-
-	def create_for_gp_users(self):
-		pass
-
-	def create_for_experts(self):
-		pass
+	def create_for_group(self, group_name):
+		group = NatrGroup.objects.get(name=group_name)
+		notif = models.Notification.objects.create(
+			notif_type=self.notif_type,
+			context=group)
+		notif.update_params(self.extra_params)
+		notif.spray()
+		return [notif]
 
 	def init_extra_params(self, validated_data):
 		date = validated_data.get('date', datetime.now())
@@ -141,13 +134,17 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 
 		elif self.notif_type in models.Notification.ANNOUNCEMENT_USERS_NOTIFS:
 			if self.notif_type == models.Notification.ANNOUNCEMENT_USERS_MANAGER:
-				return self.create_for_managers()
+				return self.create_for_group(NatrGroup.MANAGER)
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS_GP:
-				return self.create_for_gp_users()
+				return self.create_for_group(NatrGroup.GRANTEE)
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS_EXPERT:
-				return self.create_for_experts()
+				return self.create_for_group(NatrGroup.EXPERT)
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS:
-				return itertools.chain(self.create_for_managers(), self.create_for_gp_users(), self.create_for_experts())
+				notifs = []
+				notifs.extend( self.create_for_group(NatrGroup.MANAGER) )
+				notifs.extend( self.create_for_group(NatrGroup.GRANTEE) )
+				notifs.extend( self.create_for_group(NatrGroup.EXPERT) )
+				return notifs
 
 		else:
 			raise "%s is incorrect notif_type" % (notif_type)

@@ -6,6 +6,7 @@ __author__ = 'xepa4ep'
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, post_delete
@@ -13,7 +14,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import get_app, get_models
 from grantee.models import Grantee
 from natr import mailing
-
+from natr.models import NatrGroup
 
 def get_relevant_permissions():
     models = []
@@ -49,7 +50,7 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, False, **extra_fields)
 
     def create_superuser(self, email, password, **extra_fields):
-        admin_group = Group.objects.filter(name=NatrUser.ADMIN_GROUP).first()
+        admin_group = NatrGroup.objects.filter(name=NatrGroup.ADMIN).first()
         admin_group.permissions = Permission.objects.all()
         admin_group.save()
 
@@ -69,6 +70,9 @@ class UserManager(BaseUserManager):
         return user
 
     def create_grantee(self, email, password, organization=None, **extra_fields):
+        groups = extra_fields.pop('groups', [NatrGroup.objects.get(name=NatrGroup.GRANTEE)])
+        extra_fields['groups'] = groups
+
         account = self._create_user(email, password, False, **extra_fields)
         grantee = Grantee.objects.create(
             account=account,
@@ -78,7 +82,6 @@ class UserManager(BaseUserManager):
         except Exception as e:
             print str(e)
         return grantee
-
 
 class Account(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
@@ -91,7 +94,6 @@ class Account(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(u'дата добавления', default=timezone.now)
 
     objects = UserManager()
-
 
     @property
     def is_staff(self):
@@ -126,13 +128,13 @@ class Account(AbstractBaseUser, PermissionsMixin):
     def get_user_type(self):
         if hasattr(self, 'user'):
             if self.user.is_manager():
-                return NatrUser.MANAGER
+                return NatrGroup.MANAGER
             elif self.user.is_expert():
-                return NatrUser.EXPERT
+                return NatrGroup.EXPERT
             elif self.user.is_risk_expert():
-                return NatrUser.RISK_EXPERT
+                return NatrGroup.RISK_EXPERT
             else:
-                return NatrUser.EXPERT
+                return NatrGroup.EXPERT
         elif hasattr(self, 'grantee'):
             return 'grantee'
 
@@ -147,8 +149,6 @@ class NatrUser(models.Model):
         relevant_for_permission = True
         verbose_name = u'Пользователи ИСЭМ'
 
-    DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT, ADMIN_GROUP = ('expert', 'manager', 'risk_expert', 'admin')
-
     departments = models.ManyToManyField(Department, blank=True)
 
     account = models.OneToOneField('Account', related_name='user', on_delete=models.CASCADE)
@@ -157,25 +157,25 @@ class NatrUser(models.Model):
         return self.account.get_full_name()
 
     def add_to_experts(self):
-        group = Group.objects.get(name=NatrUser.EXPERT)
+        group = NatrGroup.objects.get(name=NatrGroup.EXPERT)
         self.account.groups.add(group)
         return self
 
     def is_expert(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.EXPERT).first()
+        return groups.filter(name=NatrGroup.EXPERT).first()
 
     def is_manager(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.MANAGER).first()
+        return groups.filter(name=NatrGroup.MANAGER).first()
 
     def is_admin(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.ADMIN_GROUP).first()
+        return groups.filter(name=NatrGroup.ADMIN).first()
 
     def is_risk_expert(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.RISK_EXPERT).first()
+        return groups.filter(name=NatrGroup.RISK_EXPERT).first()
 
     def get_groups(self):
         return self.account.groups.all()
@@ -203,7 +203,7 @@ def delete_account(sender, instance, **kwargs):
 def set_new_perm_to_admin(sender, instance, created=False, **kwargs):
     if not created:
         return
-    admin_group = Group.objects.get(name=NatrUser.ADMIN_GROUP)
+    admin_group = NatrGroup.objects.get(name=NatrGroup.ADMIN)
     if admin_group:
         admin_group.permissions.add(instance)
 

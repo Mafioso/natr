@@ -20,7 +20,7 @@ def create_admin_group(apps, schema_editor):
 
 def reverse_func(apps, schema_editor):
     try:
-        Group.objects.get(name=NatrUser.ADMIN_GROUP).delete()
+        Group.objects.get(name='admin').delete()
     except Exception as e:
         print 'There is no Admin Group'
 
