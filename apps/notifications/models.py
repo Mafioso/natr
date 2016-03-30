@@ -156,7 +156,7 @@ class Notification(models.Model):
 
 	def store_by_subscriber(self):
 		users = self._context.notification_subscribers()
-		for u in users.distinct():
+		for u in users:
 			s, counter = NotificationSubscribtion.objects.create(
 				account=u, notification=self)
 			yield (u.id, utils.prepare_channel(u.id), s.id, counter.counter)

@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from django.db import models
+from django.db.models import Q
 from .mixins import ProjectBasedModel
 from django.db.models.signals import post_init
 from django.contrib.auth.models import Group
@@ -16,7 +17,7 @@ class NatrGroup(Group):
 
     def get_active_accounts(self):
         # Project.MONITOR = 0
-        return self.user_set.filter(user__projects__status=0)
+        return self.user_set.filter((Q(user__projects__status=0) | Q(grantee__projects__status=0))).distinct()
 
     def notification_subscribers(self):
         return self.get_active_accounts()

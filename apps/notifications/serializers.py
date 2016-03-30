@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
+import itertools
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
 from notifications import models
@@ -97,7 +98,7 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 		return map(create_notif, projects)
 
 	def create_for_group(self, group_name):
-		group = NatrGroup.objects.filter(name=group_name)[0]
+		group = NatrGroup.objects.get(name=group_name)
 		notif = models.Notification.objects.create(
 			notif_type=self.notif_type,
 			context=group)
@@ -139,7 +140,12 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS_EXPERT:
 				return self.create_for_group(NatrGroup.EXPERT)
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS:
-				return itertools.chain(self.create_for_group(MANAGER), self.create_for_group(GRANTEE), self.create_for_group(EXPERT))
+				users = []
+				users.extend( self.create_for_group(NatrGroup.MANAGER) )
+				users.extend( self.create_for_group(NatrGroup.GRANTEE) )
+				users.extend( self.create_for_group(NatrGroup.EXPERT) )
+				user_ids = set(map(lambda u: u.id, users))
+				return Account.objects.filter(id__in=user_ids)
 
 		else:
 			raise "%s is incorrect notif_type" % (notif_type)
