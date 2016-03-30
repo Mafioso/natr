@@ -20,6 +20,8 @@ from django.db import models
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.auth.models import Group
+from natr.models import NatrGroup
 from natr.mixins import ProjectBasedModel
 from natr.realtime import centrifugo_client
 from notifications import utils
@@ -113,6 +115,15 @@ class Notification(models.Model):
 
 	subscribers = models.ManyToManyField('auth2.Account', through='NotificationSubscribtion')
 
+
+	@property
+	def _context(self):
+		# there is no ContentType for proxy model NatrGroup
+		# which has used instead Group
+		if self.context_type is ContentType.objects.get_for_model(Group):
+			return NatrGroup.objects.get(id=self.context_id)
+		return self.context
+
 	def spray(self):
 		# 1 prepare message
 		default_params = {
@@ -137,15 +148,15 @@ class Notification(models.Model):
 
 	def prepare_msg(self):
 		if not self.params:
-			notif_params = self.context.notification(
+			notif_params = self._context.notification(
 				self.context_type, self.context_id, self.notif_type)
 			self.params = JSONRenderer().render(notif_params)
 			self.save()
 		return json.loads(self.params)
 
 	def store_by_subscriber(self):
-		users = self.context.notification_subscribers()
-		for u in users:
+		users = self._context.notification_subscribers()
+		for u in users.distinct():
 			s, counter = NotificationSubscribtion.objects.create(
 				account=u, notification=self)
 			yield (u.id, utils.prepare_channel(u.id), s.id, counter.counter)

@@ -96,21 +96,14 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 			return notif
 		return map(create_notif, projects)
 
-	def create_for_managers(self):
-		group = NatrGroup.objects.filter(name=NatrGroup.MANAGER)[0]
+	def create_for_group(self, group_name):
+		group = NatrGroup.objects.filter(name=group_name)[0]
 		notif = models.Notification.objects.create(
 			notif_type=self.notif_type,
 			context=group)
-		print notif.context_id, notif.context_type, notif.context
 		notif.update_params(self.extra_params)
 		notif.spray()
-		return notif
-
-	def create_for_gp_users(self):
-		pass
-
-	def create_for_experts(self):
-		pass
+		return [notif]
 
 	def init_extra_params(self, validated_data):
 		date = validated_data.get('date', datetime.now())
@@ -140,13 +133,13 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 
 		elif self.notif_type in models.Notification.ANNOUNCEMENT_USERS_NOTIFS:
 			if self.notif_type == models.Notification.ANNOUNCEMENT_USERS_MANAGER:
-				return self.create_for_managers()
+				return self.create_for_group(NatrGroup.MANAGER)
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS_GP:
-				return self.create_for_gp_users()
+				return self.create_for_group(NatrGroup.GRANTEE)
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS_EXPERT:
-				return self.create_for_experts()
+				return self.create_for_group(NatrGroup.EXPERT)
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS:
-				return itertools.chain(self.create_for_managers(), self.create_for_gp_users(), self.create_for_experts())
+				return itertools.chain(self.create_for_group(MANAGER), self.create_for_group(GRANTEE), self.create_for_group(EXPERT))
 
 		else:
 			raise "%s is incorrect notif_type" % (notif_type)

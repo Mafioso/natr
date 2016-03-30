@@ -6,6 +6,7 @@ __author__ = 'xepa4ep'
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, post_delete
@@ -13,7 +14,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import get_app, get_models
 from grantee.models import Grantee
 from natr import mailing
-
+from natr.models import NatrGroup
 
 def get_relevant_permissions():
     models = []
@@ -24,34 +25,6 @@ def get_relevant_permissions():
         )
     cttypes = ContentType.objects.get_for_models(*models).values()
     return Permission.objects.filter(content_type__in=cttypes)
-
-
-class NatrGroup(Group):
-
-    ROLES = GRANTEE, EXPERT, MANAGER, RISK_EXPERT, ADMIN = ('grantee', 'expert', 'manager', 'risk_expert', 'admin')
-
-    class Meta:
-        proxy = True
-
-    @classmethod
-    def get_active_accounts():
-        return self.user_set.filter(user__projects__status=Project.MONITOR)
-
-    def notification_subscribers(self):
-        qs = self.__class__.get_active_accounts()
-
-    def notification(self, cttype, ctid, notif_type):
-        """Prepare notification data to send to client (user agent, mobile)."""
-        assert notif_type in Notification.ANNOUNCEMENT_USERS_NOTIFS, "Expected ANNOUNCEMENT_USERS_NOTIFS"
-        data = {
-            'group': self.name,
-        }
-        return data
-
-class NatrGroupManager(BaseUserManager):
-    def get_query_set(self):
-        qs = super(NatrGroupManager, self).get_query_set()
-        return NatrGroup.objects.filter(name__in=qs.values_list('name', flat=True))
 
 
 class UserManager(BaseUserManager):
@@ -77,7 +50,7 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, False, **extra_fields)
 
     def create_superuser(self, email, password, **extra_fields):
-        admin_group = Group.objects.filter(name=NatrGroup.ADMIN).first()
+        admin_group = NatrGroup.objects.filter(name=NatrGroup.ADMIN).first()
         admin_group.permissions = Permission.objects.all()
         admin_group.save()
 
@@ -97,6 +70,9 @@ class UserManager(BaseUserManager):
         return user
 
     def create_grantee(self, email, password, organization=None, **extra_fields):
+        groups = extra_fields.pop('groups', [NatrGroup.objects.get(name=NatrGroup.GRANTEE)])
+        extra_fields['groups'] = groups
+
         account = self._create_user(email, password, False, **extra_fields)
         grantee = Grantee.objects.create(
             account=account,
@@ -106,7 +82,6 @@ class UserManager(BaseUserManager):
         except Exception as e:
             print str(e)
         return grantee
-
 
 class Account(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = 'email'
@@ -119,8 +94,6 @@ class Account(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(u'дата добавления', default=timezone.now)
 
     objects = UserManager()
-    groups = NatrGroupManager()
-
 
     @property
     def is_staff(self):
@@ -176,8 +149,6 @@ class NatrUser(models.Model):
         relevant_for_permission = True
         verbose_name = u'Пользователи ИСЭМ'
 
-    DEFAULT_GROUPS = (NatrGroup.EXPERT, NatrGroup.MANAGER, NatrGroup.RISK_EXPERT, NatrGroup.ADMIN)
-
     departments = models.ManyToManyField(Department, blank=True)
 
     account = models.OneToOneField('Account', related_name='user', on_delete=models.CASCADE)
@@ -186,7 +157,7 @@ class NatrUser(models.Model):
         return self.account.get_full_name()
 
     def add_to_experts(self):
-        group = Group.objects.get(name=NatrGroup.EXPERT)
+        group = NatrGroup.objects.get(name=NatrGroup.EXPERT)
         self.account.groups.add(group)
         return self
 
@@ -232,7 +203,7 @@ def delete_account(sender, instance, **kwargs):
 def set_new_perm_to_admin(sender, instance, created=False, **kwargs):
     if not created:
         return
-    admin_group = Group.objects.get(name=NatrGroup.ADMIN)
+    admin_group = NatrGroup.objects.get(name=NatrGroup.ADMIN)
     if admin_group:
         admin_group.permissions.add(instance)
 

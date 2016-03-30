@@ -4,6 +4,30 @@
 from django.db import models
 from .mixins import ProjectBasedModel
 from django.db.models.signals import post_init
+from django.contrib.auth.models import Group
+
+
+class NatrGroup(Group):
+
+    ROLES = GRANTEE, EXPERT, MANAGER, RISK_EXPERT, ADMIN = ('grantee', 'expert', 'manager', 'risk_expert', 'admin')
+
+    class Meta:
+        proxy = True
+
+    def get_active_accounts(self):
+        # Project.MONITOR = 0
+        return self.user_set.filter(user__projects__status=0)
+
+    def notification_subscribers(self):
+        return self.get_active_accounts()
+
+    def notification(self, cttype, ctid, notif_type):
+        """Prepare notification data to send to client (user agent, mobile)."""
+        data = {
+            'group': self.name,
+        }
+        return data
+
 
 class CostType(ProjectBasedModel):
     u"""Вид статьи расходов (статья затрат)"""
@@ -32,20 +56,20 @@ class CostType(ProjectBasedModel):
 def track_data(*fields):
     """
     Tracks property changes on a model instance.
-    
+
     The changed list of properties is refreshed on model initialization
     and save.
-    
+
     >>> @track_data('name')
     >>> class Post(models.Model):
     >>>     name = models.CharField(...)
-    >>> 
+    >>>
     >>>     @classmethod
     >>>     def post_save(cls, sender, instance, created, **kwargs):
     >>>         if instance.has_changed('name'):
     >>>             print "Hooray!"
     """
-    
+
     UNSAVED = dict()
 
     def _store(self):
