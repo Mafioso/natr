@@ -47,6 +47,10 @@ class Notification(models.Model):
 	ANNOUNCEMENT_USERS_GP = 5
 	ANNOUNCEMENT_USERS_MANAGER = 6
 	ANNOUNCEMENT_USERS_EXPERT = 7
+	ATTACHMENT_UPLOAD_AGREEMENT = 8
+	ATTACHMENT_UPLOAD_APPLICATION = 9
+	ATTACHMENT_UPLOAD_PASPORT = 10
+
 
 	MILESTONE_NOTIFS = (
 		TRANSH_PAY,
@@ -77,9 +81,27 @@ class Notification(models.Model):
 		u'рассылка объявления по Проектам',
 	)
 
+	ATTACHMENT_NOTIFS = (
+		ATTACHMENT_UPLOAD_AGREEMENT,
+		ATTACHMENT_UPLOAD_APPLICATION,
+		ATTACHMENT_UPLOAD_PASPORT,
+	)
+
+	ATTACHMENT_NOTIFS_CAPS = (
+		u'загрузка: Сканированная версия договора',
+		u'загрузка: Сканированная версия  заявления на грант',
+		u'загрузка: Дополнительные файлы в паспорте проекта',
+		u'удаление: Сканированная версия договора',
+		u'удаление: Сканированная версия  заявления на грант',
+		u'удаление: Дополнительные файлы в паспорте проекта',
+		u'замена: Сканированная версия договора',
+		u'замена: Сканированная версия  заявления на грант',
+		u'замена: Дополнительные файлы в паспорте проекта',
+	)
+
 	NOTIF_TYPES_CAPS = zip(
-		itertools.chain(MILESTONE_NOTIFS, MONITORING_NOTIFS, ANNOUNCEMENT_PROJECTS_NOTIFS, ANNOUNCEMENT_USERS_NOTIFS),
-		itertools.chain(MILESTONE_NOTIFS_CAPS, MONITORING_NOTIFS_CAPS, ANNOUNCEMENT_PROJECTS_NOTIFS_CAPS, ANNOUNCEMENT_USERS_NOTIFS_CAPS)
+		itertools.chain(MILESTONE_NOTIFS, MONITORING_NOTIFS, ANNOUNCEMENT_PROJECTS_NOTIFS, ANNOUNCEMENT_USERS_NOTIFS, ATTACHMENT_NOTIFS),
+		itertools.chain(MILESTONE_NOTIFS_CAPS, MONITORING_NOTIFS_CAPS, ANNOUNCEMENT_PROJECTS_NOTIFS_CAPS, ANNOUNCEMENT_USERS_NOTIFS_CAPS, ATTACHMENT_NOTIFS_CAPS)
 	)
 
 	context_type = models.ForeignKey(ContentType, null=True)

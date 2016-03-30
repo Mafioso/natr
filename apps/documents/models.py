@@ -372,7 +372,7 @@ class AgreementDocument(models.Model):
     def get_project(self):
         return self.document.get_project()
 
-    def log_changes(self, validated_data, account):
+    def get_log_changes(self, validated_data, account):
         logs = []
         funding_updated = validated_data.get('funding')
         document_data = validated_data.get('document')
@@ -385,14 +385,36 @@ class AgreementDocument(models.Model):
                     new_value=funding_updated.amount)
             logs.append(_log)
 
-        if document_data and self.document.number != document_data.get('number'):
+        if document_data:
+            if self.document.number != document_data.get('number'):
+                _log = LogItem(
+                        context=self, account=account,
+                        log_type=LogItem.AGGREEMENT_NUMBER_CHANGE,
+                        old_value=self.document.number,
+                        new_value=document_data.get('number'))
+                logs.append(_log)
+
+            old_attachments = self.document.attachments
+            incoming_attachments = [a['id'] for a in document_data.get('attachments', [])]
+            new_attachments = Attachment.objects.filter(pk__in=incoming_attachments)
+            print old_attachments.values_list('id', 'name'), new_attachments.values_list('id', 'name')
+
+        return logs
+
+    def log_changes(self, validated_data, account):
+        logs = self.get_log_changes(validated_data, account)
+        LogItem.bulk_save(logs)
+
+    def log_upload_attach(self, account):
+        logs = []
+        for attachment in self.document.attachments:
             _log = LogItem(
                     context=self, account=account,
-                    log_type=LogItem.AGGREEMENT_NUMBER_CHANGE,
-                    old_value=self.document.number,
-                    new_value=document_data.get('number'))
+                    log_type=LogItem.ATTACHMENT_UPLOAD_AGREEMENT,
+                    new_value=attachment.name)
             logs.append(_log)
-        return logs
+        LogItem.bulk_save(logs)
+
 
 class OtherAgreementsDocument(models.Model):
     tp="other_agreements"

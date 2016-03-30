@@ -133,7 +133,7 @@ class Organization(models.Model):
         except ObjectDoesNotExist:
             return None
 
-    def log_changes(self, validated_data, account):
+    def get_log_changes(self, validated_data, account):
         logs = []
         contact_details = validated_data.get('contact_details')
         if self.iik != validated_data.get('iik'):
@@ -152,6 +152,9 @@ class Organization(models.Model):
                     new_value=contact_details.get('email'))
             logs.append(_log)
         return logs
+
+    def get_project(self):
+        return self.project
 
 
 class ShareHolder(models.Model):

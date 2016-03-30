@@ -14,7 +14,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
     document = serializers.PrimaryKeyRelatedField(
         queryset=models.Document.objects.all(), required=False)
     id = serializers.IntegerField(required=False)
-    
+
 
 
 class DocumentSerializer(serializers.ModelSerializer):
@@ -27,7 +27,7 @@ class DocumentSerializer(serializers.ModelSerializer):
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     type = serializers.CharField(required=False)
     # project = serializers.IntegerField(source='project_id', required=False)
-    
+
     def create(self, validated_data):
         return models.Document.dml.create_doc_(**validated_data)
 
@@ -43,4 +43,3 @@ class DocumentCompositionSerializer(EmptyObjectDMLMixin, serializers.ModelSerial
                 raise serializers.ValidationError("Document should has tp field.")
             data['document']['type'] = self.Meta.model.tp
         return super(DocumentCompositionSerializer, self).to_internal_value(data)
-
