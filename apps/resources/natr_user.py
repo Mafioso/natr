@@ -54,7 +54,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 	def get_plan(self, request, *a, **kw):
 		monitorings = []
 		if request.user.user.is_manager():
-			for natr_user in models.NatrUser.objects.filter(account__groups__name=models.NatrUser.EXPERT):
+			for natr_user in models.NatrUser.objects.filter(account__groups__name=models.NatrGroup.EXPERT):
 				monitorings.extend(list(Monitoring.objects.filter(project__in=natr_user.projects.all())))
 		else:
 			monitorings = Monitoring.objects.filter(

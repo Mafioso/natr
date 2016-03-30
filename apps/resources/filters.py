@@ -110,7 +110,7 @@ class NatrUserFilter(django_filters.FilterSet):
 
 	def filter_expert_only(self, queryset, value):
 		if value == 'true':
-			queryset = queryset.filter(account__groups__name__in=[auth2_models.NatrUser.EXPERT, auth2_models.NatrUser.RISK_EXPERT])
+			queryset = queryset.filter(account__groups__name__in=[auth2_models.NatrGroup.EXPERT, auth2_models.NatrGroup.RISK_EXPERT])
 		return queryset
 
 	def filter_search(self, queryset, value):

@@ -4,6 +4,7 @@ from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
 from notifications import models
 from projects.models import Milestone, Project
+from auth2.models import Account, NatrGroup
 from projects.serializers import MilestoneSerializer
 from natr.override_rest_framework.serializers import ProjectNameSerializer
 from datetime import datetime
@@ -96,16 +97,14 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 		return map(create_notif, projects)
 
 	def create_for_managers(self):
-		project_context_type = ContentType.objects.get_for_model(Project)
-		def create_notif(project):
-			notif = models.Notification.objects.create(
-				notif_type=self.notif_type,
-				context_id=project['id'],
-				context_type=project_context_type)
-			notif.update_params(self.extra_params)
-			notif.spray()
-			return notif
-		return map(create_notif, projects)
+		group = NatrGroup.objects.filter(name=NatrGroup.MANAGER)[0]
+		notif = models.Notification.objects.create(
+			notif_type=self.notif_type,
+			context=group)
+		print notif.context_id, notif.context_type, notif.context
+		notif.update_params(self.extra_params)
+		notif.spray()
+		return notif
 
 	def create_for_gp_users(self):
 		pass

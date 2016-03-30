@@ -26,6 +26,34 @@ def get_relevant_permissions():
     return Permission.objects.filter(content_type__in=cttypes)
 
 
+class NatrGroup(Group):
+
+    ROLES = GRANTEE, EXPERT, MANAGER, RISK_EXPERT, ADMIN = ('grantee', 'expert', 'manager', 'risk_expert', 'admin')
+
+    class Meta:
+        proxy = True
+
+    @classmethod
+    def get_active_accounts():
+        return self.user_set.filter(user__projects__status=Project.MONITOR)
+
+    def notification_subscribers(self):
+        qs = self.__class__.get_active_accounts()
+
+    def notification(self, cttype, ctid, notif_type):
+        """Prepare notification data to send to client (user agent, mobile)."""
+        assert notif_type in Notification.ANNOUNCEMENT_USERS_NOTIFS, "Expected ANNOUNCEMENT_USERS_NOTIFS"
+        data = {
+            'group': self.name,
+        }
+        return data
+
+class NatrGroupManager(BaseUserManager):
+    def get_query_set(self):
+        qs = super(NatrGroupManager, self).get_query_set()
+        return NatrGroup.objects.filter(name__in=qs.values_list('name', flat=True))
+
+
 class UserManager(BaseUserManager):
     use_in_migrations = True
 
@@ -49,7 +77,7 @@ class UserManager(BaseUserManager):
         return self._create_user(email, password, False, **extra_fields)
 
     def create_superuser(self, email, password, **extra_fields):
-        admin_group = Group.objects.filter(name=NatrUser.ADMIN_GROUP).first()
+        admin_group = Group.objects.filter(name=NatrGroup.ADMIN).first()
         admin_group.permissions = Permission.objects.all()
         admin_group.save()
 
@@ -91,6 +119,7 @@ class Account(AbstractBaseUser, PermissionsMixin):
     date_joined = models.DateTimeField(u'дата добавления', default=timezone.now)
 
     objects = UserManager()
+    groups = NatrGroupManager()
 
 
     @property
@@ -126,13 +155,13 @@ class Account(AbstractBaseUser, PermissionsMixin):
     def get_user_type(self):
         if hasattr(self, 'user'):
             if self.user.is_manager():
-                return NatrUser.MANAGER
+                return NatrGroup.MANAGER
             elif self.user.is_expert():
-                return NatrUser.EXPERT
+                return NatrGroup.EXPERT
             elif self.user.is_risk_expert():
-                return NatrUser.RISK_EXPERT
+                return NatrGroup.RISK_EXPERT
             else:
-                return NatrUser.EXPERT
+                return NatrGroup.EXPERT
         elif hasattr(self, 'grantee'):
             return 'grantee'
 
@@ -147,7 +176,7 @@ class NatrUser(models.Model):
         relevant_for_permission = True
         verbose_name = u'Пользователи ИСЭМ'
 
-    DEFAULT_GROUPS = EXPERT, MANAGER, RISK_EXPERT, ADMIN_GROUP = ('expert', 'manager', 'risk_expert', 'admin')
+    DEFAULT_GROUPS = (NatrGroup.EXPERT, NatrGroup.MANAGER, NatrGroup.RISK_EXPERT, NatrGroup.ADMIN)
 
     departments = models.ManyToManyField(Department, blank=True)
 
@@ -157,25 +186,25 @@ class NatrUser(models.Model):
         return self.account.get_full_name()
 
     def add_to_experts(self):
-        group = Group.objects.get(name=NatrUser.EXPERT)
+        group = Group.objects.get(name=NatrGroup.EXPERT)
         self.account.groups.add(group)
         return self
 
     def is_expert(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.EXPERT).first()
+        return groups.filter(name=NatrGroup.EXPERT).first()
 
     def is_manager(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.MANAGER).first()
+        return groups.filter(name=NatrGroup.MANAGER).first()
 
     def is_admin(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.ADMIN_GROUP).first()
+        return groups.filter(name=NatrGroup.ADMIN).first()
 
     def is_risk_expert(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrUser.RISK_EXPERT).first()
+        return groups.filter(name=NatrGroup.RISK_EXPERT).first()
 
     def get_groups(self):
         return self.account.groups.all()
@@ -203,7 +232,7 @@ def delete_account(sender, instance, **kwargs):
 def set_new_perm_to_admin(sender, instance, created=False, **kwargs):
     if not created:
         return
-    admin_group = Group.objects.get(name=NatrUser.ADMIN_GROUP)
+    admin_group = Group.objects.get(name=NatrGroup.ADMIN)
     if admin_group:
         admin_group.permissions.add(instance)
 
