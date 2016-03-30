@@ -140,12 +140,11 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS_EXPERT:
 				return self.create_for_group(NatrGroup.EXPERT)
 			elif self.notif_type == models.Notification.ANNOUNCEMENT_USERS:
-				users = []
-				users.extend( self.create_for_group(NatrGroup.MANAGER) )
-				users.extend( self.create_for_group(NatrGroup.GRANTEE) )
-				users.extend( self.create_for_group(NatrGroup.EXPERT) )
-				user_ids = set(map(lambda u: u.id, users))
-				return Account.objects.filter(id__in=user_ids)
+				notifs = []
+				notifs.extend( self.create_for_group(NatrGroup.MANAGER) )
+				notifs.extend( self.create_for_group(NatrGroup.GRANTEE) )
+				notifs.extend( self.create_for_group(NatrGroup.EXPERT) )
+				return notifs
 
 		else:
 			raise "%s is incorrect notif_type" % (notif_type)

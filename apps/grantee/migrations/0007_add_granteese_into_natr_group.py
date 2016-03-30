@@ -2,14 +2,15 @@
 from __future__ import unicode_literals
 
 from django.db import migrations, models
-from natr.models import NatrGroup
+# from natr.models import NatrGroup
 
 def add_into_group(apps, schema_editor):
     Account = apps.get_model('auth2', 'Account')
+    NatrGroup = apps.get_model('natr', 'NatrGroup')
 
     grantee_list = Account.objects.filter(grantee__isnull=False)
 
-    group = NatrGroup.objects.get(name=NatrGroup.GRANTEE)
+    group, created = NatrGroup.objects.get_or_create(name='grantee') #NatrGroup.GRANTEE
     group.user_set.add(*grantee_list.values_list('id', flat=True))
     group.save()
 
@@ -26,6 +27,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('grantee', '0006_auto_20160126_1103'),
+        ('natr', '0003_natrgroup')
     ]
 
     operations = [
