@@ -1726,13 +1726,13 @@ class Monitoring(ProjectBasedModel):
     STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED, ON_GRANTEE_APPROVE, GRANTEE_APPROVED, ON_REWORK = range(7)
 
     STATUS_CAPS = (
-        u'формирование',
-        u'на согласовании руководством',
-        u'Утвержден руководством"',
-        u'не согласован',
-        u'на согласовании ГП',
-        u'утвержден ГП',
-        u'на доработке')
+        u'Формирование',
+        u'На утверждении у руководства',
+        u'Утвержден руководством',
+        u'Не согласован',
+        u'На согласовании ГП',
+        u'Согласован ГП',
+        u'На доработке')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
