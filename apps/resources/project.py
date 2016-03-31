@@ -336,7 +336,8 @@ class MonitoringViewSet(ProjectBasedViewSet):
             projects = self.request.user.grantee.projects.all()
         ms = self.get_queryset().filter(project__in=projects)
         qs = prj_models.MonitoringTodo.objects.filter(
-            monitoring__in=ms, date_end__gt=datetime.now()+timedelta(days=31)).order_by('date_end')
+            monitoring__in=ms, date_start__gte=datetime.now(),
+            date_start__lte=datetime.now()+timedelta(days=31)).order_by('date_start')
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
