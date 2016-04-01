@@ -462,6 +462,9 @@ class ReportViewSet(ProjectBasedViewSet):
         data = request.data
         prev_status = report.status
         report.status = prj_models.Report.REWORK
+        if report.signature.all():
+            report.signature.first().delete()
+            
         report.save()
         comment = None
 
