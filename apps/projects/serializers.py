@@ -14,10 +14,11 @@ from django.core.exceptions import ObjectDoesNotExist
 from documents import models as doc_models
 from grantee import models as grantee_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature
 from auth2.models import NatrUser
 from notifications.models import send_notification, Notification
 from grantee.models import LogItem
+from projects import utils as prj_utils
 
 
 __all__ = (
@@ -36,8 +37,16 @@ __all__ = (
     'RiskDefinitionSerializer',
     'ProjectLogEntrySerializer',
     'ActSerializer',
-    'MonitoringOfContractPerformanceSerializer'
+    'MonitoringOfContractPerformanceSerializer',
+    'DigitalSignatureSerializer'
 )
+
+
+class DigitalSignatureSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = DigitalSignature
+        fields = ('info', 'value', 'date_created')
 
 
 class RiskCategorySerializer(serializers.ModelSerializer):
@@ -240,6 +249,7 @@ class ReportSerializer(serializers.ModelSerializer):
     period = serializers.IntegerField(read_only=True)
     protection_document = ProtectionDocumentSerializer(required=False)
     attachments = AttachmentSerializer(many=True, required=False)
+    signature = serializers.SerializerMethodField()
 
     def create(self, validated_data):
         milestone = validated_data.pop('milestone', None)
@@ -263,6 +273,7 @@ class ReportSerializer(serializers.ModelSerializer):
             instance.save()
 
         report = super(ReportSerializer, self).update(instance, validated_data)
+        prj_utils.resetSignature(report)
         return report
 
     def validate_docx_context(self, instance):
@@ -277,6 +288,11 @@ class ReportSerializer(serializers.ModelSerializer):
 
         return True, u""
 
+    def get_signature(self, instance):
+        signature = instance.signature.first()
+        if signature is not None:
+            return DigitalSignatureSerializer(signature).data
+        return None
 
 class CorollaryTotalsSerializer(ExcludeCurrencyFields, serializers.Serializer):
     natr_fundings = SerializerMoneyField()
@@ -368,6 +384,7 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(), required=True)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    signature = serializers.SerializerMethodField()
 
     def update(self, instance, validated_data):
         user = None
@@ -425,6 +442,12 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
                 return False, u"Заполните поле \"Завершение\" для мероприятия №%s"%cnt
 
         return True, u""
+
+    def get_signature(self, instance):
+        signature = instance.signature.first()
+        if signature is not None:
+            return DigitalSignatureSerializer(signature).data
+        return None
 
 class MonitoringTodoSerializer(serializers.ModelSerializer):
 

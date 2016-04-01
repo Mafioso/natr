@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import datetime
 import dateutil.parser
 from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpResponse
@@ -395,6 +396,19 @@ class MonitoringViewSet(ProjectBasedViewSet):
         headers = self.get_success_headers(serializer.data)
         return response.Response({"monitoring": monitoring.id}, headers=headers)
 
+    @detail_route(methods=['patch'], url_path='sign')
+    def sign(self, request, *a, **kw):
+        monitoring = self.get_object()
+        data = request.data
+        monitoring.signature.all().delete()
+        signature = prj_models.DigitalSignature.objects.create(
+            context=monitoring,
+            **data
+        )
+        serializer = self.get_serializer(instance=monitoring)
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"project": monitoring.project.id}, headers=headers)
+
 class ReportViewSet(ProjectBasedViewSet):
     queryset = prj_models.Report.objects.all()
     serializer_class = ReportSerializer
@@ -468,6 +482,9 @@ class ReportViewSet(ProjectBasedViewSet):
         data = request.data
         prev_status = report.status
         report.status = prj_models.Report.REWORK
+        if report.signature.all():
+            report.signature.first().delete()
+            
         report.save()
         report.log_changes(request.user)
         comment = None
@@ -492,6 +509,19 @@ class ReportViewSet(ProjectBasedViewSet):
         report.save()
         report.send_status_changed_notification(prev_status, report.status, request.user)
         report.log_changes(request.user)
+        serializer = self.get_serializer(instance=report)
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"report": report.id}, headers=headers)
+
+    @detail_route(methods=['patch'], url_path='sign')
+    def sign(self, request, *a, **kw):
+        report = self.get_object()
+        data = request.data
+        report.signature.all().delete()
+        signature = prj_models.DigitalSignature.objects.create(
+            context=report,
+            **data
+        )
         serializer = self.get_serializer(instance=report)
         headers = self.get_success_headers(serializer.data)
         return response.Response({"report": report.id}, headers=headers)
