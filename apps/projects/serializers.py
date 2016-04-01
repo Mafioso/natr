@@ -18,6 +18,7 @@ from projects.models import FundingType, Project, Milestone, Report, Monitoring,
 from auth2.models import NatrUser
 from notifications.models import send_notification, Notification
 from grantee.models import LogItem
+from projects import utils as prj_utils
 
 
 __all__ = (
@@ -269,6 +270,7 @@ class ReportSerializer(serializers.ModelSerializer):
             instance.save()
 
         report = super(ReportSerializer, self).update(instance, validated_data)
+        prj_utils.resetSignature(report)
         return report
 
     def validate_docx_context(self, instance):

@@ -430,3 +430,8 @@ class ExcelReport:
         wb.save(filename)
         return filename
 
+def resetSignature(report):
+    if(report.signature.all()):
+        report.signature.first().delete()
+
+    return report

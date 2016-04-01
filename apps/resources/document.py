@@ -14,7 +14,7 @@ from documents.utils import DocumentPrint, store_file
 from projects import models as prj_models
 from .filters import AttachmentFilter
 from django.conf import settings
-
+from projects import utils as prj_utils
 pj = os.path.join
 
 Document = doc_models.Document
@@ -442,6 +442,7 @@ class UseOfBudgetDocumentItemViewSet(viewsets.ModelViewSet):
     @detail_route(methods=['patch'], url_path='update_note')
     def get_report_costs(self, request, *a, **kw):
         use_of_b_item = self.get_object()
+        prj_utils.resetSignature(use_of_b_item.use_of_budget_doc.report)
         data = request.data
         use_of_b_item.notes = data['notes']
         use_of_b_item.save()

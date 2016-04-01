@@ -8,6 +8,7 @@ from natr.override_rest_framework.fields import SerializerMoneyField
 from natr.override_rest_framework.mixins import ExcludeCurrencyFields, EmptyObjectDMLMixin
 from .common import DocumentCompositionSerializer, DocumentSerializer
 from .cost import CostDocumentSerializer
+from projects import utils as prj_utils
 
 
 class GPDocumentTypeSerializer(serializers.ModelSerializer):
@@ -123,10 +124,12 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
         costs_data = validated_data.pop('costs', [])
         instance.notes = validated_data.get('notes', '')
         instance.save()
+        prj_utils.resetSignature(instance.use_of_budget_doc.report)
         self.update_costs(
             instance=instance.costs.all(),
             validated_data=costs_data,
             budget_item=instance)
+
         return models.UseOfBudgetDocumentItem.objects.filter(pk=instance.pk).first()
 
     def update_costs(self, instance, validated_data, budget_item):
@@ -156,7 +159,6 @@ class UseOfBudgetDocumentItemSerializer(ExcludeCurrencyFields, serializers.Model
 
     def create_cost_item(self, validated_data, budget_item):
         gp_docs = validated_data.pop('gp_docs', [])
-        print "create", gp_docs
         obj = models.FactMilestoneCostRow.objects.create(**validated_data)
         obj.budget_item = budget_item
         obj.save()
