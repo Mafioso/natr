@@ -396,6 +396,19 @@ class MonitoringViewSet(ProjectBasedViewSet):
         headers = self.get_success_headers(serializer.data)
         return response.Response({"monitoring": monitoring.id}, headers=headers)
 
+    @detail_route(methods=['patch'], url_path='sign')
+    def sign(self, request, *a, **kw):
+        monitoring = self.get_object()
+        data = request.data
+        monitoring.signature.all().delete()
+        signature = prj_models.DigitalSignature.objects.create(
+            context=monitoring,
+            **data
+        )
+        serializer = self.get_serializer(instance=monitoring)
+        headers = self.get_success_headers(serializer.data)
+        return response.Response({"project": monitoring.project.id}, headers=headers)
+
 class ReportViewSet(ProjectBasedViewSet):
     queryset = prj_models.Report.objects.all()
     serializer_class = ReportSerializer

@@ -1744,7 +1744,8 @@ class Monitoring(ProjectBasedModel):
     approved_date = MonitorField(monitor='status', when=[APPROVED])
     sed = GenericRelation(SEDEntity, content_type_field='context_type')
     attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
-
+    signature = GenericRelation('DigitalSignature', content_type_field='context_type')
+    
     UPCOMING_RNG = (-1000, +3)
 
     class Meta:

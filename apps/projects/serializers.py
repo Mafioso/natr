@@ -384,6 +384,7 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
     project = serializers.PrimaryKeyRelatedField(
         queryset=Project.objects.all(), required=True)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    signature = serializers.SerializerMethodField()
 
     def update(self, instance, validated_data):
         user = None
@@ -441,6 +442,12 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
                 return False, u"Заполните поле \"Завершение\" для мероприятия №%s"%cnt
 
         return True, u""
+
+    def get_signature(self, instance):
+        signature = instance.signature.first()
+        if signature is not None:
+            return DigitalSignatureSerializer(signature).data
+        return None
 
 class MonitoringTodoSerializer(serializers.ModelSerializer):
 
