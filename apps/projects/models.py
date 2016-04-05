@@ -77,8 +77,6 @@ class ProjectManager(models.Manager):
         # now is required by default
         prj.funding_type = FundingType.objects.create(**funding_type_data)
 
-        if prj.funding_type.name == FundingType.COMMERCIALIZATION:
-            CostType.objects.create(project=prj, name=u"Расходы на патентование в РК")
 
         if statement_data:
             Document.dml.create_statement(project=prj, **statement_data)
@@ -93,6 +91,9 @@ class ProjectManager(models.Manager):
 
         CostType.create_default(prj)
 
+        if prj.funding_type.name == FundingType.COMMERCIALIZATION:
+            CostType.objects.create(project=prj, name=u"Расходы на патентование в РК")
+            
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
             if i == 0 and data.get('funding_date', None) is not None:
