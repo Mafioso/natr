@@ -1104,6 +1104,14 @@ class ProjectStartDescription(models.Model):
         context['total_tax_fact'] = self.total_tax_fact
         context['total_tax_plan'] = self.total_tax_plan
         context['total_tax_avrg'] = self.total_tax_avrg
+
+        if self.type == ProjectStartDescription.START:
+            context['title'] = u"Показатели по состоянию на начало реализации проекта"
+            context['col_name'] = u"Факт"
+        else:
+            context['title'] = u"Показатели эффективности проекта"
+            context['col_name'] = u"Предыдущие показатели"
+
         return context
 
     @classmethod
