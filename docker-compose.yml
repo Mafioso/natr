@@ -51,11 +51,11 @@ centrifugo:
   volumes:
     - ./conf/centrifugo.json:/centrifugo/config.json   # centrifugo -c config.json -w /opt/centrifugo/web
 
-# celery:
-#   image: anguis/natr_app:latest
-#   working_dir: /natr
-#   command: celery -A natr worker -l debug --concurrency=2
-#   volumes:
-#     - .:/natr
-#   links:
-#     - rabbitmq
+celery:
+  image: anguis/natr_app:latest
+  working_dir: /natr
+  command: celery -A natr worker --loglevel=info --concurrency=2
+  volumes:
+    - .:/natr
+  links:
+    - rabbitmq

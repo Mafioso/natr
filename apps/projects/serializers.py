@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import itertools
 from rest_framework import serializers
 from natr import utils, mailing, models as natr_models
 from natr.override_rest_framework.fields import SerializerMoneyField
@@ -17,7 +16,7 @@ from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature
 from auth2.models import NatrUser
 from notifications.models import send_notification, Notification
-from grantee.models import LogItem
+from logger.models import LogItem
 from projects import utils as prj_utils
 
 
@@ -192,7 +191,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         aggreement_logs = instance.aggreement.get_log_changes(validated_data.get('aggreement'), user)
         organization_details_logs = instance.organization_details.get_log_changes(validated_data.get('organization_details'), user)
         # save logs
-        logs = itertools.chain(project_logs, aggreement_logs, organization_details_logs)
+        logs = project_logs + aggreement_logs + organization_details_logs
         LogItem.bulk_save(logs)
 
         if self.partial:

@@ -543,8 +543,8 @@ class Project(models.Model):
             _log = LogItem(
                     context=self, account=account,
                     log_type=LogItem.PROJECT_FUNDING_DATE_CHANGE,
-                    old_value=self.funding_date,
-                    new_value=validated_data.get('funding_date'))
+                    old_value=self.funding_date.isoformat(),
+                    new_value=validated_data.get('funding_date').isoformat())
             logs.append(_log)
 
         if self.number_of_milestones != validated_data.get('number_of_milestones'):

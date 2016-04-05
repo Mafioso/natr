@@ -8,6 +8,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from logger.tasks import save_logs_task, dumps_logitems
 
 
 class LogItem(models.Model):
@@ -65,9 +66,7 @@ class LogItem(models.Model):
 
 	@classmethod
 	def bulk_save(self, logs):
-		for item in logs:
-			item.save()
-			# print item
+		save_logs_task.delay( dumps_logitems(logs) )
 
 	def get_log_type_cap(self):
 		return filter(lambda opt: opt[0]==self.log_type, LogItem.LOG_TYPES_OPTIONS)[0][1]

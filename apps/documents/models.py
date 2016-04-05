@@ -381,8 +381,9 @@ class AgreementDocument(models.Model):
             _log = LogItem(
                     context=self, account=account,
                     log_type=LogItem.AGGREEMENT_FUNDING_CHANGE,
-                    old_value=self.funding.amount,
-                    new_value=funding_updated.amount)
+                    old_value=str(self.funding.amount),
+                    new_value=str(funding_updated.amount)
+                    )
             logs.append(_log)
 
         if document_data:
@@ -391,7 +392,8 @@ class AgreementDocument(models.Model):
                         context=self, account=account,
                         log_type=LogItem.AGGREEMENT_NUMBER_CHANGE,
                         old_value=self.document.number,
-                        new_value=document_data.get('number'))
+                        new_value=document_data.get('number')
+                        )
                 logs.append(_log)
 
             old_attachments = self.document.attachments
