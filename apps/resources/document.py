@@ -12,7 +12,7 @@ from documents.serializers.misc import TechStageSerializer
 from documents import models as doc_models
 from documents.utils import DocumentPrint, store_file
 from projects import models as prj_models
-from .filters import AttachmentFilter
+from .filters import AttachmentFilter, ProjectStartDescriptionFilter
 from django.conf import settings
 from projects import utils as prj_utils
 pj = os.path.join
@@ -179,6 +179,24 @@ class ProjectStartDescriptionViewSet(ProjectBasedViewSet):
 
     serializer_class = ProjectStartDescriptionSerializer
     queryset = ProjectStartDescription.objects.all()
+
+    def get_queryset(self):
+        """
+        Override get_queryset() to filter on multiple values for 'id',
+        and for filtering by type
+        """
+        id_value = self.request.query_params.get('id', None)
+        type = self.request.query_params.get('type', None)
+        qs_filter_args = {}
+        if id_value:
+            qs_filter_args["id__in"] = id_value.split(',')
+
+        if type:
+            qs_filter_args['type'] = type.upper()
+
+        queryset = super(self.__class__, self).get_queryset()
+        filtered_qs = ProjectStartDescriptionFilter(qs_filter_args, queryset)
+        return filtered_qs.qs
 
     @detail_route(methods=['get'], url_path='gen_docx')
     def gen_docx(self, request, *a, **kw):

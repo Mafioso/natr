@@ -170,7 +170,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     pasport_type = serializers.CharField(read_only=True, required=False)
     pasport_id = serializers.IntegerField(source='get_pasport_id', read_only=True, required=False)
     monitoring_id = serializers.IntegerField(source='get_monitoring_id', read_only=True, required=False)
-    start_description_id = serializers.IntegerField(source='get_start_description_id', read_only=True, required=False)
+    efficiency_ids = serializers.ListField(source='get_efficiency_ids', read_only=True, required=False)
     current_milestone = MilestoneSerializer(required=False, read_only=True)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
     milestone_set = MilestoneBaseInfo(many=True, required=False, read_only=True)

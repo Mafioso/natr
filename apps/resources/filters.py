@@ -182,3 +182,17 @@ class JournalActivityFilter(django_filters.FilterSet):
 			Q(subject_name__icontains=value) |
 			Q(result__icontains=value)
 		)
+
+class ProjectStartDescriptionFilter(django_filters.FilterSet):
+
+	class Meta:
+		model = doc_models.ProjectStartDescription
+
+	id__in = django_filters.MethodFilter()
+	type = django_filters.MethodFilter() 
+
+	def filter_id__in(self, queryset, value):
+		return queryset.filter(id__in=value)
+
+	def filter_type(self, queryset, value):
+		return queryset.filter(type=value)

@@ -129,7 +129,7 @@ class ProjectManager(models.Manager):
             prj_pasport = BasicProjectPasportDocument.objects.build_empty(project=prj)
 
         # 6. create project start description
-        prj_std = ProjectStartDescription.objects.build_empty(project=prj)
+        prj_stds = ProjectStartDescription.build_default(project=prj)
 
         # 7. assign owner as assignee by default
         prj.assigned_experts.add(user.user)
@@ -345,13 +345,6 @@ class Project(models.Model):
         return self.monitoring_set.first()
 
     @cached_property
-    def start_description(self):
-        try:
-            return ProjectStartDescription.objects.get(document__project=self)
-        except ObjectDoesNotExist:
-            return None
-
-    @cached_property
     def other_agreements(self):
         other_agreements = None
         try:
@@ -493,13 +486,8 @@ class Project(models.Model):
 
         return self.monitoring.id
 
-    def get_start_description_id(self):
-        try:
-            monitoring = ProjectStartDescription.objects.get(document__project=self)
-        except ProjectStartDescription.DoesNotExist:
-            return None
-
-        return self.start_description.id
+    def get_efficiency_ids(self):
+        return ProjectStartDescription.objects.filter(document__project=self).values_list('id', flat=True)
 
     def get_project(self):
         return self

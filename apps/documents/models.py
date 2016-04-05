@@ -990,8 +990,28 @@ class ProjectStartDescription(models.Model):
     class Meta:
         filter_by_project = 'document__project__in'
 
+    TYPE_KEYS = (START,
+                    FIRST,
+                    SECOND,
+                    THIRD,
+                    FOURTH,
+                    FIFTH,
+                    SIXTH) = ('START', 'FIRST', 'SECOND', 'THIRD',
+                                        'FOURTH', 'FIFTH', 'SIXTH')
+    TYPE_VALUES = (
+        u'На начало проекта',
+        u'Первый год первое полугодие',
+        u'Первый год второе полугодие',
+        u'Второй год первое полугодие',
+        u'Второй год второе полугодие',
+        u'Третий год первое полугодие',
+        u'Третий год второе полугодие',
+    )
+    TYPE_OPTIONS = zip(TYPE_KEYS, TYPE_VALUES)
+
     document = models.OneToOneField(Document, related_name='startdescription', on_delete=models.CASCADE)
 
+    type = models.CharField(max_length=10, choices=TYPE_OPTIONS, default=START)
     report_date = models.DateTimeField(null=True, blank=True)
 
     workplaces_fact = models.IntegerField(u'Количество рабочих мест (Факт)', null=True, blank=True)
@@ -1085,6 +1105,17 @@ class ProjectStartDescription(models.Model):
         context['total_tax_plan'] = self.total_tax_plan
         context['total_tax_avrg'] = self.total_tax_avrg
         return context
+
+    @classmethod
+    def build_default(cls, project, **kwargs):
+        objs = []
+        for _type in ProjectStartDescription.TYPE_KEYS:
+            kwargs['type'] = _type
+            doc = Document(type='startdescription', project=project)
+            doc.save()
+            objs.append(cls.objects.create(document=doc, **kwargs))
+        
+        return objs
 
 
 class Attachment(models.Model):
