@@ -2062,6 +2062,7 @@ class RiskDefinition(models.Model):
 
     class Meta:
         relevant_for_permission = True
+        verbose_name = u'Виды рисков'
 
     @property
     def indicator(self):
