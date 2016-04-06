@@ -1,5 +1,5 @@
 from celery.task.schedules import crontab
-from celery.decorators import periodic_task
+from celery.decorators import periodic_task, task
 from celery.utils.log import get_task_logger
 from projects.models import Monitoring, MonitoringTodo, Project
 import datetime
@@ -10,7 +10,8 @@ from natr.utils import get_date_query_range
 logger = get_task_logger(__name__)
 
 #crontab(hour='9') - runs every day at 9am
-@periodic_task(run_every=(crontab(hour='9')), name="send_email_before_5_10_30_days__monitoring_todo", ignore_result=True)
+# @task(name="send_email_before_5_10_30_days__monitoring_todo")
+@periodic_task(run_every=(crontab(minute=0, hour=9)))
 def send_email_before_5_10_30_days__monitoring_todo():
     today = timezone.now()
     before5day = today + datetime.timedelta(days=5)
