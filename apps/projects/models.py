@@ -884,13 +884,16 @@ class Report(ProjectBasedModel):
                     send_mail(
                         u'Отправлен отчет на %s, по проекту %s'%(status_cap, self.project.name),
                         u"""Здравствуйте, %(name)s!
+                        
                         Грантополучатель, %(grantee)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.
-                        Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s""" % {
+
+                        Ссылка на отчет: {host_address}/#/report/%(report_id)s""" % {
                             'name': expert.account.get_full_name(),
                             'grantee': account.get_full_name(),
                             'project': self.project.name,
                             'status_cap': status_cap,
-                            'report_id': self.id
+                            'report_id': self.id,
+                            'host_address': settings.DOCKER_APP_ADDRESS
                         },
                         settings.DEFAULT_FROM_EMAIL,
                         [expert.account.email],
@@ -903,15 +906,18 @@ class Report(ProjectBasedModel):
                     send_mail(
                         u'Отправлен отчет на %s, по проекту %s'%(status_cap, self.project.name),
                         u"""Здравствуйте, %(name)s!
+
                         Эксперт, %(expert)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.
                         %(comment)s
-                        Ссылка на отчет: http://178.88.64.87:8000/#/report/%(report_id)s """ % {
+
+                        Ссылка на отчет: {host_address}/#/report/%(report_id)s """ % {
                             'name': grantee.account.get_full_name(),
                             'expert': account.get_full_name(),
                             'project': self.project.name,
                             'status_cap': status_cap,
                             'comment': u"Комментарий: %s"%comment.comment_text if comment else "",
                             'report_id': self.id,
+                            'host_address': settings.DOCKER_APP_ADDRESS
                         },
                         settings.DEFAULT_FROM_EMAIL,
                         [grantee.account.email],
@@ -1942,6 +1948,32 @@ class MonitoringTodo(ProjectBasedModel):
     def notification_subscribers(self):
         return [exp.account for exp in self.project.assigned_experts.all()]
 
+    def send_days_left(self, days):
+        for grantee in self.project.assigned_grantees.all():
+            send_mail(
+                u'Напоминанием о запланированном мероприятии, по проекту %s'%(self.project.name),
+                u"""Здравствуйте, {name}!
+
+                По проекту {project_name},
+                с {date_start} по {date_end} (до завершения остается {days} дней)
+                запланировано мероприятие: {event_name}.
+                Форма завершения: {report_type}
+
+                Ссылка на План Мониторинга: {host_address}/#/project/{project_id}/monitoring_plan """.format(**{
+                    'name': grantee.account.get_full_name(),
+                    'project_name': self.project.name,
+                    'project_id': self.project.id,
+                    'date_start': self.date_start and self.date_start.strftime("%d.%m.%Y") or '?',
+                    'date_end': self.date_end and self.date_end.strftime("%d.%m.%Y") or '?',
+                    'event_name': self.event_name,
+                    'report_type': self.report_type,
+                    'days': days,
+                    'host_address': settings.DOCKER_APP_ADDRESS
+                }),
+                settings.DEFAULT_FROM_EMAIL,
+                [grantee.account.email],
+                fail_silently=False
+            )
 
     @classmethod
     def post_save(cls, sender, instance, created=False, **kwargs):
