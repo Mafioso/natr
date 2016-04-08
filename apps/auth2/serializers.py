@@ -7,6 +7,7 @@ import grantee.models as grantee_models
 import projects.models as projects_models
 from django.core.exceptions import ObjectDoesNotExist
 from natr.override_rest_framework.serializers import ContactDetailsSerializer, ProjectNameSerializer
+from django.utils import six
 
 __all__ = (
 	'AccountSerializer',
@@ -16,6 +17,7 @@ __all__ = (
 class PermissionSerializer(serializers.ModelSerializer):
 
 	content_type_name = serializers.SerializerMethodField()
+	name = serializers.SerializerMethodField()
 
 	class Meta:
 		model = models.Permission
@@ -23,6 +25,19 @@ class PermissionSerializer(serializers.ModelSerializer):
 	def get_content_type_name(self, instance):
 		return instance.content_type.model_class()._meta.verbose_name
 
+	def get_name(self, instance):
+	    class_name = six.text_type(instance.content_type)
+	    permission_name = six.text_type(instance.name)
+	    if 'Can delete' in permission_name:
+	        permission_name = u'Удаление'
+	    elif 'Can add' in permission_name:
+	        permission_name = u'Создание'
+	    elif 'Can change' in permission_name:
+	        permission_name = u'Изменение'
+	    elif 'Can view' in permission_name:
+	        permission_name = u'Просмотр'
+
+	    return u'%s - %s' % ( class_name.title(), permission_name)
 
 class GroupSerializer(serializers.ModelSerializer):
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import itertools
 from rest_framework import serializers
 from natr import utils, mailing, models as natr_models
 from natr.override_rest_framework.fields import SerializerMoneyField
@@ -17,7 +16,7 @@ from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature
 from auth2.models import NatrUser
 from notifications.models import send_notification, Notification
-from grantee.models import LogItem
+from logger.models import LogItem
 from projects import utils as prj_utils
 
 
@@ -170,7 +169,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     pasport_type = serializers.CharField(read_only=True, required=False)
     pasport_id = serializers.IntegerField(source='get_pasport_id', read_only=True, required=False)
     monitoring_id = serializers.IntegerField(source='get_monitoring_id', read_only=True, required=False)
-    start_description_id = serializers.IntegerField(source='get_start_description_id', read_only=True, required=False)
+    efficiency_ids = serializers.ListField(source='get_efficiency_ids', read_only=True, required=False)
     current_milestone = MilestoneSerializer(required=False, read_only=True)
     other_agreements = OtherAgreementsDocumentSerializer(required=False)
     milestone_set = MilestoneBaseInfo(many=True, required=False, read_only=True)
@@ -192,7 +191,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
         aggreement_logs = instance.aggreement.get_log_changes(validated_data.get('aggreement'), user)
         organization_details_logs = instance.organization_details.get_log_changes(validated_data.get('organization_details'), user)
         # save logs
-        logs = itertools.chain(project_logs, aggreement_logs, organization_details_logs)
+        logs = project_logs + aggreement_logs + organization_details_logs
         LogItem.bulk_save(logs)
 
         if self.partial:

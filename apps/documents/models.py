@@ -381,8 +381,9 @@ class AgreementDocument(models.Model):
             _log = LogItem(
                     context=self, account=account,
                     log_type=LogItem.AGGREEMENT_FUNDING_CHANGE,
-                    old_value=self.funding.amount,
-                    new_value=funding_updated.amount)
+                    old_value=str(self.funding.amount),
+                    new_value=str(funding_updated.amount)
+                    )
             logs.append(_log)
 
         if document_data:
@@ -391,7 +392,8 @@ class AgreementDocument(models.Model):
                         context=self, account=account,
                         log_type=LogItem.AGGREEMENT_NUMBER_CHANGE,
                         old_value=self.document.number,
-                        new_value=document_data.get('number'))
+                        new_value=document_data.get('number')
+                        )
                 logs.append(_log)
 
             old_attachments = self.document.attachments
@@ -990,8 +992,28 @@ class ProjectStartDescription(models.Model):
     class Meta:
         filter_by_project = 'document__project__in'
 
+    TYPE_KEYS = (START,
+                    FIRST,
+                    SECOND,
+                    THIRD,
+                    FOURTH,
+                    FIFTH,
+                    SIXTH) = ('START', 'FIRST', 'SECOND', 'THIRD',
+                                        'FOURTH', 'FIFTH', 'SIXTH')
+    TYPE_VALUES = (
+        u'На начало проекта',
+        u'Первый год первое полугодие',
+        u'Первый год второе полугодие',
+        u'Второй год первое полугодие',
+        u'Второй год второе полугодие',
+        u'Третий год первое полугодие',
+        u'Третий год второе полугодие',
+    )
+    TYPE_OPTIONS = zip(TYPE_KEYS, TYPE_VALUES)
+
     document = models.OneToOneField(Document, related_name='startdescription', on_delete=models.CASCADE)
 
+    type = models.CharField(max_length=10, choices=TYPE_OPTIONS, default=START)
     report_date = models.DateTimeField(null=True, blank=True)
 
     workplaces_fact = models.IntegerField(u'Количество рабочих мест (Факт)', null=True, blank=True)
@@ -1084,7 +1106,26 @@ class ProjectStartDescription(models.Model):
         context['total_tax_fact'] = self.total_tax_fact
         context['total_tax_plan'] = self.total_tax_plan
         context['total_tax_avrg'] = self.total_tax_avrg
+
+        if self.type == ProjectStartDescription.START:
+            context['title'] = u"Показатели по состоянию на начало реализации проекта"
+            context['col_name'] = u"Факт"
+        else:
+            context['title'] = u"Показатели эффективности проекта"
+            context['col_name'] = u"Предыдущие показатели"
+
         return context
+
+    @classmethod
+    def build_default(cls, project, **kwargs):
+        objs = []
+        for _type in ProjectStartDescription.TYPE_KEYS:
+            kwargs['type'] = _type
+            doc = Document(type='startdescription', project=project)
+            doc.save()
+            objs.append(cls.objects.create(document=doc, **kwargs))
+        
+        return objs
 
 
 class Attachment(models.Model):

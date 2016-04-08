@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import json
-import itertools
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
 from notifications import models

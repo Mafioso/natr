@@ -206,6 +206,7 @@ def set_new_perm_to_admin(sender, instance, created=False, **kwargs):
     admin_group = NatrGroup.objects.get(name=NatrGroup.ADMIN)
     if admin_group:
         admin_group.permissions.add(instance)
+    print 'added new perm to NatrGroup.ADMIN', instance
 
 
 post_save.connect(assign_user_group, sender=NatrUser)

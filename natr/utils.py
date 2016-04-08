@@ -11,6 +11,10 @@ from collections import OrderedDict
 
 f = faker.Faker()
 
+def get_date_query_range(datetime_value):
+    return (tz.make_aware(datetime.combine(datetime_value, time.min)), 
+            tz.make_aware(datetime.combine(datetime_value, time.max)))
+
 def get_field_display(klass, field, value):
     f = klass._meta.get_field(field)
     return dict(f.flatchoices).get(value, value)

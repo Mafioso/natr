@@ -1,12 +1,14 @@
 import django_filters
 from django.db.models import Q
+from django.contrib.contenttypes.models import ContentType
 from natr.override_rest_framework.filters import IntegerListFilter
 from projects import models
 from documents import models as doc_models
 from auth2 import models as auth2_models
 from grantee import models as grantee_models
 from journals import models as journals_models
-
+from logger import models as logger_models
+import datetime
 
 class ListOfIdFilter(django_filters.FilterSet):
 	ids = IntegerListFilter(name='id',lookup_type='in')
@@ -182,3 +184,56 @@ class JournalActivityFilter(django_filters.FilterSet):
 			Q(subject_name__icontains=value) |
 			Q(result__icontains=value)
 		)
+
+class ProjectStartDescriptionFilter(django_filters.FilterSet):
+
+	class Meta:
+		model = doc_models.ProjectStartDescription
+
+	id__in = django_filters.MethodFilter()
+	type = django_filters.MethodFilter() 
+
+	def filter_id__in(self, queryset, value):
+		return queryset.filter(id__in=value)
+
+	def filter_type(self, queryset, value):
+		return queryset.filter(type=value)
+
+
+
+class LogItemFilter(django_filters.FilterSet):
+
+	class Meta:
+		model = logger_models.LogItem
+
+	project = django_filters.MethodFilter()
+	date_from = django_filters.MethodFilter()
+	date_to = django_filters.MethodFilter()
+
+	def filter_project(self, queryset, value):
+		project_ct = ContentType.objects.get_for_model(models.Project)
+		aggreement_ct = ContentType.objects.get_for_model(models.AgreementDocument)
+		report_ct = ContentType.objects.get_for_model(models.Report)
+		monitoring_ct = ContentType.objects.get_for_model(models.Monitoring)
+		organization_ct = ContentType.objects.get_for_model(grantee_models.Organization)
+
+		project = models.Project(id=value)
+
+		queryset = queryset.filter(
+			Q(context_type=project_ct, context_id=value) |
+			Q(context_type=aggreement_ct, context_id=project.aggreement.id) |
+			Q(context_type=report_ct, context_id__in=models.Report.objects.filter(project_id=value)) |
+			Q(context_type=monitoring_ct, context_id=project.monitoring.id) |
+			Q(context_type=organization_ct, context_id=project.organization_details.id)
+		)
+		return queryset
+
+	def filter_date_from(self, queryset, value):
+		date_from = datetime.datetime.strptime(value, '%Y-%m-%d')
+		queryset = queryset.filter(date_created__gte=date_from)
+		return queryset
+
+	def filter_date_to(self, queryset, value):
+		date_to = datetime.datetime.strptime(value, '%Y-%m-%d')
+		queryset = queryset.filter(date_created__lte=date_to)
+		return queryset

@@ -105,6 +105,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    # 'auth2.middleware.PermissionsLocaleURLMiddleware',
     #'django.middleware.clickjacking.XFrameOptionsMiddleware',
     #'django.middleware.security.SecurityMiddleware',
 )
@@ -244,6 +245,7 @@ BROKER_HOST = os.getenv('RABBITMQ_PORT_5672_TCP_ADDR', '127.0.0.1')
 BROKER_PORT = os.getenv('RABBITMQ_PORT_5672_TCP_PORT', 5672)
 BROKER_USER_PASSWORD = os.getenv('RABBITMQ_ENV_RABBITMQ_USER_PASSWD', 'guest:guest')
 BROKER_VHOST = os.getenv('RABBITMQ_ENV_RABBITMQ_DEFAULT_VHOST', '/')
+BROKER_POOL_LIMIT = 0
 
 BROKER_URL = 'amqp://{user_passwd}@{host}/{vhost}'.format(**{
     'user_passwd': BROKER_USER_PASSWORD,
@@ -276,6 +278,8 @@ NOTIFICATION_CHANNEL = 'notification'
 CHAT_CHANNEL = 'chat'
 HOST = 'natr.kz'
 DOCKER_HOST = '172.17.0.1'
+DOCKER_APP_PORT = '8000'
+DOCKER_APP_ADDRESS = 'http://{}:{}'.format(DOCKER_HOST, DOCKER_APP_PORT)
 CENTRIFUGO_HOST = os.getenv('CENTRIFUGO_PORT_8001_TCP_ADDR', 'centrifugo.natr.kz')
 CENTRIFUGO_PORT = os.getenv('CENTRIFUGO_PORT_8001_TCP_PORT', 8001)
 CENTRIFUGE_ADDRESS = 'http://{}:{}'.format(CENTRIFUGO_HOST, CENTRIFUGO_PORT)

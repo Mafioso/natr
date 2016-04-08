@@ -332,9 +332,12 @@ class MonitoringViewSet(ProjectBasedViewSet):
     @patch_serializer_class(MonitoringTodoSerializer)
     def get_recent_todos(self, request, *a, **kw):
         if hasattr(self.request.user, 'user'):
-            projects = self.request.user.user.projects.all()
+            if self.request.user.user.is_manager() or self.request.user.user.is_admin():
+                projects = prj_models.Project.objects.all()
+            else:
+                projects = self.request.user.user.projects.all()
         else:
-            projects = self.request.user.grantee.projects.all()
+            projects = self.request.user.grantee.projects.all()         
         ms = self.get_queryset().filter(project__in=projects)
         qs = prj_models.MonitoringTodo.objects.filter(
             monitoring__in=ms, date_start__gte=datetime.now(),
