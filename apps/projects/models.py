@@ -648,7 +648,7 @@ class FundingType(models.Model):
         u'Повышение квалификации инженерно-технического персонала за рубежом', #without pasport
         u'Поддержку деятельности по производству высокотехнологичной продукции на начальном этапе развития',
         u'Патентование в зарубежных странах и (или) региональных патентных организациях',
-        u'Коммерциализацию технологий',
+        u'Коммерциализация технологий',
         u'Привлечение высококвалифицированных иностранных специалистов', #without pasport
         u'Привлечение квалифицированных организаций', #without pasport
         u'Внедрение управленческих и производственных технологий', #without pasport,
@@ -1208,8 +1208,8 @@ class Corollary(ProjectBasedModel):
 
                     if hasattr(obj, 'stats'):
                         savings = sum([stat.savings.amount if stat.savings else 0 for stat in obj.stats.all()])
-                        rows[cnt].cells[4].text = utils.get_stringed_value(savings.amount if savings else 0)
-                        rows[cnt].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=savings.amount if savings else 0, denominator=milestone.fundings.amount if milestone.fundings else 0))
+                        rows[cnt].cells[4].text = utils.get_stringed_value(savings if savings else 0)
+                        rows[cnt].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=savings if savings else 0, denominator=milestone.fundings.amount if milestone.fundings else 0))
 
                     cnt += 1
             else:
@@ -1222,8 +1222,8 @@ class Corollary(ProjectBasedModel):
 
                 if hasattr(obj, 'stats'):
                     savings = sum([stat.savings.amount if stat.savings else 0 for stat in obj.stats.all()])
-                    rows[1].cells[4].text = utils.get_stringed_value(savings.amount if savings else 0)
-                    rows[1].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=savings.amount if savings else 0, denominator=obj.milestone.fundings.amount if obj.milestone.fundings else 0))
+                    rows[1].cells[4].text = utils.get_stringed_value(savings if savings else 0)
+                    rows[1].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=savings if savings else 0, denominator=obj.milestone.fundings.amount if obj.milestone.fundings else 0))
 
                 cnt += 1
 
