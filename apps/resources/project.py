@@ -291,10 +291,17 @@ class MilestoneViewSet(ProjectBasedViewSet):
                 attachment = doc_models.Attachment(**attachment)
                 attachment.save()
                 obj.attachments.add(attachment)
+            agency_attachments = request.data.pop('agency_attachments')
+            for attachment in agency_attachments:
+                attachment = doc_models.Attachment(**attachment)
+                attachment.save()
+                obj.agency_attachments.add(attachment)
             obj.save()
 
-        serializer = self.get_serializer(obj.attachments, many=True)
-        return response.Response(serializer.data)
+        att_serializer = self.get_serializer(obj.attachments, many=True)
+        ag_att_serializer = self.get_serializer(obj.agency_attachments, many=True)
+        return response.Response({'attachments': att_serializer.data,
+                                  'agency_attachments': ag_att_serializer.data})
 
 
 class MonitoringTodoViewSet(ProjectBasedViewSet):

@@ -1578,6 +1578,7 @@ class Milestone(ProjectBasedModel):
     conclusion = models.TextField(null=True, blank=True)
 
     attachments = models.ManyToManyField('documents.Attachment', related_name='milestones', null=True, blank=True)
+    agency_attachments = models.ManyToManyField('documents.Attachment', related_name='agency_milestones', null=True, blank=True)
 
     def notification(self, cttype, ctid, notif_type):
         """Prepare notification data to send to client (user agent, mobile)."""
