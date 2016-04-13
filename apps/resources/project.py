@@ -343,7 +343,8 @@ class MonitoringViewSet(ProjectBasedViewSet):
             monitoring__in=ms, date_start__gte=datetime.now(),
             date_start__lte=datetime.now()+timedelta(days=31))
         qs_started = prj_models.MonitoringTodo.objects.filter(
-            monitoring__in=ms, date_end__gte=datetime.now())
+            monitoring__in=ms, date_start__lte=datetime.now(),
+            date_end__gte=datetime.now())
         qs = list(chain(qs_not_started, qs_started))
         page = self.paginate_queryset(qs)
         if page is not None:
@@ -441,7 +442,12 @@ class ReportViewSet(ProjectBasedViewSet):
             qs_filter_args["id__in"] = id_value.split(',')
 
         if status:
-            qs_filter_args['status__in'] = status.split(',')
+            status = status.split(',')
+            
+            if hasattr(self.request.user, 'grantee') and 1 not in status:
+                status.append(1)
+
+            qs_filter_args['status__in'] = status
 
         filtered_qs = ReportFilter(qs_filter_args, queryset)
         return filtered_qs.qs
