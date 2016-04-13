@@ -27,7 +27,7 @@ from documents.utils import DocumentPrint
 from natr import mailing
 from datetime import datetime, timedelta
 from natr.utils import end_of
-
+from itertools import chain
 
 class ProjectViewSet(viewsets.ModelViewSet):
 
@@ -345,9 +345,12 @@ class MonitoringViewSet(ProjectBasedViewSet):
         else:
             projects = self.request.user.grantee.projects.all()         
         ms = self.get_queryset().filter(project__in=projects)
-        qs = prj_models.MonitoringTodo.objects.filter(
+        qs_not_started = prj_models.MonitoringTodo.objects.filter(
             monitoring__in=ms, date_start__gte=datetime.now(),
-            date_start__lte=datetime.now()+timedelta(days=31)).order_by('date_start')
+            date_start__lte=datetime.now()+timedelta(days=31))
+        qs_started = prj_models.MonitoringTodo.objects.filter(
+            monitoring__in=ms, date_end__gte=datetime.now())
+        qs = list(chain(qs_not_started, qs_started))
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
