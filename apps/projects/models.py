@@ -14,6 +14,7 @@ from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKe
 from django.contrib.contenttypes.models import ContentType
 from model_utils.fields import MonitorField
 from djmoney.models.fields import MoneyField
+from moneyed import Money
 from natr.models import track_data
 from natr.mixins import ProjectBasedModel, ModelDiffMixin
 from natr import utils, mailing
@@ -539,7 +540,7 @@ class Project(models.Model):
                     new_value=new_cap)
             logs.append(_log)
 
-        if self.funding_date != validated_data.get('funding_date'):
+        if self.funding_date and self.funding_date != validated_data.get('funding_date'):
             _log = LogItem(
                     context=self, account=account,
                     log_type=LogItem.PROJECT_FUNDING_DATE_CHANGE,
@@ -1110,8 +1111,9 @@ class Corollary(ProjectBasedModel):
         for cost_type_id, stat_obj in stat_by_type.iteritems():
             plan_cost_objs = MilestoneCostRow.objects.filter(
                 cost_type_id=cost_type_id, milestone=self.milestone)
-            plan_total_costs = sum([item.costs for item in plan_cost_objs])
-            stat_obj.own_fundings = sum([item.own_costs for item in plan_cost_objs])
+            # there is error when sum empty list it returns 0 (int) therefore returns Money(0, KZT)
+            plan_total_costs = sum([item.costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
+            stat_obj.own_fundings = sum([item.own_costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
             stat_obj.natr_fundings = plan_total_costs - stat_obj.own_fundings
             stat_obj.planned_costs = plan_total_costs
             stat_obj.costs_approved_by_docs = stat_obj.fact_costs = self.use_of_budget_doc.calc_total_expense()
@@ -1645,18 +1647,23 @@ class Milestone(ProjectBasedModel):
 
     @cached_property
     def natr_costs(self):
+        # return as Money(amount and currency)
         return self.total_costs - self.own_costs
 
+# there is error when sum empty list it returns 0 (int) therefore returns Money(0, KZT)
     @cached_property
     def total_costs(self):
-        return sum([cost_obj.costs for cost_obj in self.costs])
+        # return as Money(amount and currency)
+        return sum([cost_obj.costs for cost_obj in self.costs] or [Money(amount=0, currency=settings.KZT)])
 
     @cached_property
     def own_costs(self):
-        return sum([cost_obj.own_costs for cost_obj in self.costs])
+        # return as Money(amount and currency)
+        return sum([cost_obj.own_costs for cost_obj in self.costs] or [Money(amount=0, currency=settings.KZT)])
 
     @cached_property
     def costs(self):
+        # return as list of Money(amount and currency)
         return list(self.project.cost_document.get_milestone_costs(self))
 
     @property
