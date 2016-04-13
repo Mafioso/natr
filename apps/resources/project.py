@@ -26,6 +26,7 @@ from projects.utils import ExcelReport
 from documents.utils import DocumentPrint
 from natr import mailing
 from datetime import datetime, timedelta
+from natr.utils import end_of
 
 
 class ProjectViewSet(viewsets.ModelViewSet):
@@ -145,8 +146,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         activities = project.get_journal()
         date_created = query_params.get('date_created', None)
+        only_past = query_params.get('only_past', None)
+        today = datetime.now()
+        if only_past and activities:
+            activities = activities.filter(date_created__lte=end_of(today))
         if date_created and activities:
-            activities = activities.filter(date_created__gte=dateutil.parser.parse(date_created))
+            date = dateutil.parser.parse(date_created)
+            activities = activities.filter(date_created__range=[end_of(date), end_of(today)])
 
         search_text = query_params.get('search_activity', None)
         if search_text and activities:
