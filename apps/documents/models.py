@@ -1170,7 +1170,8 @@ class UseOfBudgetDocument(models.Model):
         return use_of_budget_item
 
     def calc_total_expense(self):
-        return sum([item.total_expense for item in self.items.all()])
+        val = sum([item.total_expense.amount for item in self.items.all()])
+        return Money(amount=val, currency=settings.KZT)
 
     def get_project(self):
         return self.document.get_project()

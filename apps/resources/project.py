@@ -26,7 +26,8 @@ from projects.utils import ExcelReport
 from documents.utils import DocumentPrint
 from natr import mailing
 from datetime import datetime, timedelta
-
+from natr.utils import end_of
+from itertools import chain
 
 class ProjectViewSet(viewsets.ModelViewSet):
 
@@ -145,8 +146,13 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project = self.get_object()
         activities = project.get_journal()
         date_created = query_params.get('date_created', None)
+        only_past = query_params.get('only_past', None)
+        today = datetime.now()
+        if only_past and activities:
+            activities = activities.filter(date_created__lte=end_of(today))
         if date_created and activities:
-            activities = activities.filter(date_created__gte=dateutil.parser.parse(date_created))
+            date = dateutil.parser.parse(date_created)
+            activities = activities.filter(date_created__range=[end_of(date), end_of(today)])
 
         search_text = query_params.get('search_activity', None)
         if search_text and activities:
@@ -339,9 +345,12 @@ class MonitoringViewSet(ProjectBasedViewSet):
         else:
             projects = self.request.user.grantee.projects.all()         
         ms = self.get_queryset().filter(project__in=projects)
-        qs = prj_models.MonitoringTodo.objects.filter(
+        qs_not_started = prj_models.MonitoringTodo.objects.filter(
             monitoring__in=ms, date_start__gte=datetime.now(),
-            date_start__lte=datetime.now()+timedelta(days=31)).order_by('date_start')
+            date_start__lte=datetime.now()+timedelta(days=31))
+        qs_started = prj_models.MonitoringTodo.objects.filter(
+            monitoring__in=ms, date_end__gte=datetime.now())
+        qs = list(chain(qs_not_started, qs_started))
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
