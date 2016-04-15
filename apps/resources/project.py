@@ -437,7 +437,6 @@ class MonitoringViewSet(ProjectBasedViewSet):
                                              comment_text=data['comment_text'],
                                              account=request.user)
                 comment.save()
-                print comment
                 
             if data.get('date_created', None):
                 filter_data['date_created__gte'] = data.get('date_created')
