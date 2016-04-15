@@ -822,6 +822,8 @@ class Report(ProjectBasedModel):
 
     signature = GenericRelation('DigitalSignature', content_type_field='context_type')
 
+    comments = GenericRelation('Comment', content_type_field='content_type')
+
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
 
@@ -1741,6 +1743,7 @@ class Monitoring(ProjectBasedModel):
     sed = GenericRelation(SEDEntity, content_type_field='context_type')
     attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
     signature = GenericRelation('DigitalSignature', content_type_field='context_type')
+    comments = GenericRelation('Comment', content_type_field='content_type')
     
     UPCOMING_RNG = (-1000, +3)
 
@@ -2022,21 +2025,22 @@ class Comment(models.Model):
     """
 
     class Meta:
-        filter_by_project = 'report__project__in'
-        verbose_name = u'Комментарий к заключению'
+        filter_by_project = 'content__project__in'
+        verbose_name = u'Комментарий'
 
-    report = models.ForeignKey(Report, related_name='comments')
-    expert = models.ForeignKey('auth2.NatrUser', related_name='comments')
+    account = models.ForeignKey('auth2.Account', related_name='comments', on_delete=models.CASCADE, null=True)
     comment_text = models.TextField(null=True)
-    date_created = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content = GenericForeignKey('content_type', 'object_id')
 
     def get_project(self):
-        self.report.get_project()
+        return self.content.get_project()
 
     @property
     def expert_name(self):
-        return self.expert.account.get_full_name()
-
+        return self.account.get_full_name()
 
 class RiskCategory(models.Model):
     """
