@@ -60,8 +60,6 @@ sys.path.insert(0, rel('natr_spider'))
 SECRET_KEY = 'gw^bd_dd11*_c%89vk3p7bmn6jubn6o_(@8jjz^*2ixfy!ag!#'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
 ALLOWED_HOSTS = ['*']
 
 
@@ -105,6 +103,8 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.common.BrokenLinkEmailsMiddleware',
+    'natr.middleware.BadRequestEmailsMiddleware',
     # 'auth2.middleware.PermissionsLocaleURLMiddleware',
     #'django.middleware.clickjacking.XFrameOptionsMiddleware',
     #'django.middleware.security.SecurityMiddleware',
@@ -233,9 +233,11 @@ LOGGING = {
     }
 }
 
+ADMINS = (('Sattar', 'sattar94@outlook.com'),
+          ('Nurlan', 'abyken.nurlan@gmail.com'),
+          ('Tolkyn', 'tolkyn.baimukhanova@natd.gov.kz'))
 
-ADMINS = (('Rustem', 'r.kamun@gmail.com'),
-          ('Yernar', 'mailubai@gmail.com'),)
+MANAGERS = ADMINS
 
 
 AUTH_USER_MODEL = 'auth2.Account'
@@ -292,6 +294,7 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = 'test.ko@almasales.com'
 EMAIL_HOST_PASSWORD = '123qweasd'
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+SERVER_EMAIL = EMAIL_HOST_USER
 # DEFAULT_TO_EMAIL = 'to email'
 
 DOCUMENTOLOG_URL = 'http://kik.doc24.kz'

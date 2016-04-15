@@ -297,10 +297,17 @@ class MilestoneViewSet(ProjectBasedViewSet):
                 attachment = doc_models.Attachment(**attachment)
                 attachment.save()
                 obj.attachments.add(attachment)
+            agency_attachments = request.data.pop('agency_attachments')
+            for attachment in agency_attachments:
+                attachment = doc_models.Attachment(**attachment)
+                attachment.save()
+                obj.agency_attachments.add(attachment)
             obj.save()
 
-        serializer = self.get_serializer(obj.attachments, many=True)
-        return response.Response(serializer.data)
+        att_serializer = self.get_serializer(obj.attachments, many=True)
+        ag_att_serializer = self.get_serializer(obj.agency_attachments, many=True)
+        return response.Response({'attachments': att_serializer.data,
+                                  'agency_attachments': ag_att_serializer.data})
 
 
 class MonitoringTodoViewSet(ProjectBasedViewSet):
@@ -349,7 +356,8 @@ class MonitoringViewSet(ProjectBasedViewSet):
             monitoring__in=ms, date_start__gte=datetime.now(),
             date_start__lte=datetime.now()+timedelta(days=31))
         qs_started = prj_models.MonitoringTodo.objects.filter(
-            monitoring__in=ms, date_end__gte=datetime.now())
+            monitoring__in=ms, date_start__lte=datetime.now(),
+            date_end__gte=datetime.now())
         qs = list(chain(qs_not_started, qs_started))
         page = self.paginate_queryset(qs)
         if page is not None:
@@ -421,6 +429,33 @@ class MonitoringViewSet(ProjectBasedViewSet):
         headers = self.get_success_headers(serializer.data)
         return response.Response({"project": monitoring.project.id}, headers=headers)
 
+    @detail_route(methods=['get', 'post'], url_path='comments')
+    @patch_serializer_class(CommentSerializer)
+    def comments(self, request, *a, **kw):
+        monitoring = self.get_object()
+        filter_data = {}
+
+        if request.method == 'POST':
+            data = request.data
+
+            if data.get('comment_text', None):
+                comment = prj_models.Comment(content=monitoring, 
+                                             comment_text=data['comment_text'],
+                                             account=request.user)
+                comment.save()
+                
+            if data.get('date_created', None):
+                filter_data['date_created__gte'] = data.get('date_created')
+
+        else:
+            query_params = request.query_params
+            if query_params.get('date_created', None):
+                filter_data['date_created__gte'] = query_params.get('date_created')
+
+        comments = monitoring.comments.filter(**filter_data).order_by('-date_created')
+        serializer = self.get_serializer(comments, many=True)
+        return response.Response(serializer.data)
+
 class ReportViewSet(ProjectBasedViewSet):
     queryset = prj_models.Report.objects.all()
     serializer_class = ReportSerializer
@@ -447,7 +482,12 @@ class ReportViewSet(ProjectBasedViewSet):
             qs_filter_args["id__in"] = id_value.split(',')
 
         if status:
-            qs_filter_args['status__in'] = status.split(',')
+            status = status.split(',')
+            
+            if hasattr(self.request.user, 'grantee') and 1 not in status:
+                status.append(1)
+
+            qs_filter_args['status__in'] = status
 
         filtered_qs = ReportFilter(qs_filter_args, queryset)
         return filtered_qs.qs
@@ -502,10 +542,10 @@ class ReportViewSet(ProjectBasedViewSet):
         comment = None
 
         if data.get('comment_text', None):
-            data['expert'] = request.user.user.id
-            comment_ser = CommentSerializer(data=data)
-            comment_ser.is_valid(raise_exception=True)
-            comment = comment_ser.save()
+            comment = prj_models.Comment(content=report, 
+                              comment_text=data['comment_text'],
+                              account=request.user)
+            comment.save()
 
         report.send_status_changed_notification(prev_status, report.status, request.user, comment)
         serializer = self.get_serializer(instance=report)
