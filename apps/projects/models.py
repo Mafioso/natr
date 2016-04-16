@@ -823,6 +823,8 @@ class Report(ProjectBasedModel):
 
     signature = GenericRelation('DigitalSignature', content_type_field='context_type')
 
+    comments = GenericRelation('Comment', content_type_field='content_type')
+
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
 
@@ -1111,14 +1113,13 @@ class Corollary(ProjectBasedModel):
         for cost_type_id, stat_obj in stat_by_type.iteritems():
             plan_cost_objs = MilestoneCostRow.objects.filter(
                 cost_type_id=cost_type_id, milestone=self.milestone)
-            # there is error when sum empty list it returns 0 (int) therefore returns Money(0, KZT)
+            # there was error when sum empty list, it returned 0 (int) therefore returns Money(0, KZT)
             plan_total_costs = sum([item.costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
             stat_obj.own_fundings = sum([item.own_costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
             stat_obj.natr_fundings = plan_total_costs - stat_obj.own_fundings
             stat_obj.planned_costs = plan_total_costs
             stat_obj.costs_approved_by_docs = stat_obj.fact_costs = self.use_of_budget_doc.calc_total_expense()
             stat_obj.costs_received_by_natr = min(stat_obj.costs_approved_by_docs, stat_obj.natr_fundings)
-            stat_obj.savings = stat_obj.natr_fundings - stat_obj.costs_received_by_natr
             stat_obj.save()
         return stat_by_type.values()
 
@@ -1526,9 +1527,10 @@ class CorollaryStatByCostType(models.Model):
     costs_approved_by_docs = MoneyField(u'Сумма подтвержденная документами',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
-    savings = MoneyField(u'Экономия',
-        max_digits=20, decimal_places=2, default_currency=settings.KZT,
-        null=True, blank=True)
+
+    @property
+    def savings(self):
+        return self.natr_fundings - self.costs_received_by_natr
 
     def get_project(self):
         self.corollary.get_project()
@@ -1580,6 +1582,7 @@ class Milestone(ProjectBasedModel):
     conclusion = models.TextField(null=True, blank=True)
 
     attachments = models.ManyToManyField('documents.Attachment', related_name='milestones', null=True, blank=True)
+    agency_attachments = models.ManyToManyField('documents.Attachment', related_name='agency_milestones', null=True, blank=True)
 
     def notification(self, cttype, ctid, notif_type):
         """Prepare notification data to send to client (user agent, mobile)."""
@@ -1747,6 +1750,7 @@ class Monitoring(ProjectBasedModel):
     sed = GenericRelation(SEDEntity, content_type_field='context_type')
     attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
     signature = GenericRelation('DigitalSignature', content_type_field='context_type')
+    comments = GenericRelation('Comment', content_type_field='content_type')
     
     UPCOMING_RNG = (-1000, +3)
 
@@ -2028,21 +2032,22 @@ class Comment(models.Model):
     """
 
     class Meta:
-        filter_by_project = 'report__project__in'
-        verbose_name = u'Комментарий к заключению'
+        filter_by_project = 'content__project__in'
+        verbose_name = u'Комментарий'
 
-    report = models.ForeignKey(Report, related_name='comments')
-    expert = models.ForeignKey('auth2.NatrUser', related_name='comments')
+    account = models.ForeignKey('auth2.Account', related_name='comments', on_delete=models.CASCADE, null=True)
     comment_text = models.TextField(null=True)
-    date_created = models.DateTimeField(auto_now_add=True)
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content = GenericForeignKey('content_type', 'object_id')
 
     def get_project(self):
-        self.report.get_project()
+        return self.content.get_project()
 
     @property
     def expert_name(self):
-        return self.expert.account.get_full_name()
-
+        return self.account.get_full_name()
 
 class RiskCategory(models.Model):
     """

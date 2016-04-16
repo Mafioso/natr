@@ -145,7 +145,7 @@ class DocumentDMLManager(models.Manager):
 
         if dev_info_kw:
             try:
-                dev_info = DevelopersInfo.objects.get(id=dev_info_kw.pop('id', None))
+                dev_info = DevelopersInfo.objects.get(pasport=instance)
             except DevelopersInfo.DoesNotExist:
                 dev_info_kw['pasport'] = instance
                 tech_stages_ids = dev_info_kw.pop('tech_stages', [])
@@ -166,7 +166,7 @@ class DocumentDMLManager(models.Manager):
 
         if tech_char_kw:
             try:
-                tech_char = TechnologyCharacteristics.objects.get(id=tech_char_kw.pop('id', None))
+                tech_char = TechnologyCharacteristics.objects.get(pasport=instance)
             except TechnologyCharacteristics.DoesNotExist:
                 tech_char_kw['pasport'] = instance
                 tech_char = TechnologyCharacteristics.objects.create(**tech_char_kw)
@@ -191,7 +191,7 @@ class DocumentDMLManager(models.Manager):
                 intellectual_property_kw['licence_end_date'] = date_parser.parse(intellectual_property_kw['licence_end_date'])
 
             try:
-                intellectual_property = IntellectualPropertyAssesment.objects.get(id=intellectual_property_kw.pop('id', None))
+                intellectual_property = IntellectualPropertyAssesment.objects.get(pasport=instance)
             except IntellectualPropertyAssesment.DoesNotExist:
                 intellectual_property_kw['pasport'] = instance
                 intellectual_property = IntellectualPropertyAssesment.objects.create(**intellectual_property_kw)
@@ -204,7 +204,7 @@ class DocumentDMLManager(models.Manager):
 
         if tech_readiness_kw:
             try:
-                tech_readiness = TechnologyReadiness.objects.get(id=tech_readiness_kw.pop('id', None))
+                tech_readiness = TechnologyReadiness.objects.get(pasport=instance)
             except TechnologyReadiness.DoesNotExist:
                 tech_readiness_kw['pasport'] = instance
                 tech_readiness = TechnologyReadiness.objects.create(**tech_readiness_kw)

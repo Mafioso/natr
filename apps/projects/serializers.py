@@ -315,7 +315,7 @@ class CorollaryStatByCostTypeSerializer(ExcludeCurrencyFields, serializers.Model
     fact_costs = SerializerMoneyField()
     costs_received_by_natr = SerializerMoneyField()
     costs_approved_by_docs = SerializerMoneyField()
-    savings = SerializerMoneyField()
+    savings = SerializerMoneyField(read_only=True)
 
 
 class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
@@ -369,6 +369,11 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     def validate_docx_context(self, instance):
         return True, u""
 
+class CommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Comment
+    expert_name = serializers.CharField(read_only=True)
 
 class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
 
@@ -384,6 +389,7 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
         queryset=Project.objects.all(), required=True)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     signature = serializers.SerializerMethodField()
+    comments = CommentSerializer(many=True, read_only=True)
 
     def update(self, instance, validated_data):
         user = None
@@ -471,22 +477,6 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
         monitoring_todo = MonitoringTodo.objects.create(
             monitoring=monitoring, **validated_data)
         return monitoring_todo
-
-class CommentSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Comment
-
-    report = serializers.PrimaryKeyRelatedField(
-        queryset=Report.objects.all(), required=True)
-    expert = serializers.PrimaryKeyRelatedField(
-        queryset=NatrUser.objects.all(), required=True)
-    expert_name = serializers.CharField(read_only=True)
-
-    def create(self, validated_data):
-        comment = Comment.objects.create(**validated_data)
-        return comment
-
 
 class ProjectLogEntrySerializer(serializers.ModelSerializer):
 

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from .common import *
 
-
+DEBUG = False
 MEDIA_ROOT = '/uploads'
 NGINX_TMP_UPLOAD_ROOT = os.path.join(MEDIA_ROOT, 'tmp')
 HOST = '178.88.64.87'
