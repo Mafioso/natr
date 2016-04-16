@@ -315,7 +315,7 @@ class CorollaryStatByCostTypeSerializer(ExcludeCurrencyFields, serializers.Model
     fact_costs = SerializerMoneyField()
     costs_received_by_natr = SerializerMoneyField()
     costs_approved_by_docs = SerializerMoneyField()
-    savings = SerializerMoneyField()
+    savings = SerializerMoneyField(read_only=True)
 
 
 class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):

@@ -1113,14 +1113,13 @@ class Corollary(ProjectBasedModel):
         for cost_type_id, stat_obj in stat_by_type.iteritems():
             plan_cost_objs = MilestoneCostRow.objects.filter(
                 cost_type_id=cost_type_id, milestone=self.milestone)
-            # there is error when sum empty list it returns 0 (int) therefore returns Money(0, KZT)
+            # there was error when sum empty list, it returned 0 (int) therefore returns Money(0, KZT)
             plan_total_costs = sum([item.costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
             stat_obj.own_fundings = sum([item.own_costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
             stat_obj.natr_fundings = plan_total_costs - stat_obj.own_fundings
             stat_obj.planned_costs = plan_total_costs
             stat_obj.costs_approved_by_docs = stat_obj.fact_costs = self.use_of_budget_doc.calc_total_expense()
             stat_obj.costs_received_by_natr = min(stat_obj.costs_approved_by_docs, stat_obj.natr_fundings)
-            stat_obj.savings = stat_obj.natr_fundings - stat_obj.costs_received_by_natr
             stat_obj.save()
         return stat_by_type.values()
 
@@ -1528,9 +1527,10 @@ class CorollaryStatByCostType(models.Model):
     costs_approved_by_docs = MoneyField(u'Сумма подтвержденная документами',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
-    savings = MoneyField(u'Экономия',
-        max_digits=20, decimal_places=2, default_currency=settings.KZT,
-        null=True, blank=True)
+
+    @property
+    def savings(self):
+        return self.natr_fundings - self.costs_received_by_natr
 
     def get_project(self):
         self.corollary.get_project()

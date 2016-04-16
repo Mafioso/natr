@@ -637,6 +637,19 @@ class CorollaryViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(instance=corollary)
         return response.Response(serializer.data)
 
+    @detail_route(methods=['post'], url_path='update_stat')
+    def update_stat(self, request, *a, **kw):
+        corollary = self.get_object()
+        data = request.data
+        stat_id = data.get('id')
+        stat_instance = prj_models.CorollaryStatByCostType.objects.get(id=stat_id)
+
+        stat_serializer = CorollaryStatByCostTypeSerializer(stat_instance, data=data)
+        stat_serializer.is_valid(raise_exception=True)
+        updated_stat_instance = stat_serializer.save()
+
+        return response.Response({"milestone_id": corollary.milestone.id}, status=202)
+
     @detail_route(methods=['post'], url_path='change_status')
     def change_status(self, request, *a, **kw):
         corollary = self.get_object()
