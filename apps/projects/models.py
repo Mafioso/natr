@@ -24,7 +24,6 @@ from django.contrib.auth import get_user_model
 from django.utils.functional import cached_property
 from notifications.models import Notification
 from django.core.mail import send_mail
-from natr.models import CostType
 import integrations.documentolog as documentolog
 from integrations.models import SEDEntity
 from documents.utils import store_from_temp, DocumentPrint
@@ -94,7 +93,7 @@ class ProjectManager(models.Manager):
 
         if prj.funding_type.name == FundingType.COMMERCIALIZATION:
             CostType.objects.create(project=prj, name=u"Расходы на патентование в РК")
-            
+
         # 4. generate empty milestones
         for i in xrange(prj.number_of_milestones):
             if i == 0 and data.get('funding_date', None) is not None:
@@ -1122,6 +1121,20 @@ class Corollary(ProjectBasedModel):
             stat_obj.costs_received_by_natr = min(stat_obj.costs_approved_by_docs, stat_obj.natr_fundings)
             stat_obj.save()
         return stat_by_type.values()
+
+    def create_empty_stat(self, cost_type):
+        stat_obj = CorollaryStatByCostType(
+            corollary=self, cost_type=cost_type)
+        plan_cost_objs = MilestoneCostRow.objects.filter(
+                cost_type_id=cost_type.id, milestone=self.milestone)
+        # there was error when sum empty list, it returned 0 (int) therefore returns Money(0, KZT)
+        plan_total_costs = sum([item.costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
+        stat_obj.own_fundings = sum([item.own_costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
+        stat_obj.natr_fundings = plan_total_costs - stat_obj.own_fundings
+        stat_obj.planned_costs = plan_total_costs
+        stat_obj.costs_approved_by_docs = stat_obj.fact_costs = self.use_of_budget_doc.calc_total_expense()
+        stat_obj.costs_received_by_natr = min(stat_obj.costs_approved_by_docs, stat_obj.natr_fundings)
+        stat_obj.save()
 
     @property
     def use_of_budget_doc(self):
@@ -2175,7 +2188,17 @@ class DigitalSignature(models.Model):
     context = GenericForeignKey('context_type', 'object_id')
 
 
+def on_cost_type_created(sender, instance, created=False, **kwargs):
+    if not created:
+        return
+
+    project = instance.project
+    for report in Report.objects.by_project(project):
+        report.corollary.create_empty_stat(instance)
+
+
 post_save.connect(on_report_created, sender=Report)
+post_save.connect(on_cost_type_created, sender=CostType)
 post_save.connect(Report.post_save, sender=Report)
 post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)

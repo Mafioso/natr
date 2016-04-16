@@ -114,7 +114,6 @@ def track_data(*fields):
 
         # Ensure we are updating local attributes on model save
         def save(self, *args, **kwargs):
-            print self, args, kwargs
             save._original(self, *args, **kwargs)
             _store(self)
         save._original = cls.save
