@@ -1200,6 +1200,9 @@ class Corollary(ProjectBasedModel):
         corollary.build_stat()
         return corollary
 
+    def get_project(self):
+        return self.project
+
     def get_print_context(self, **kwargs):
         def conc_table(obj, table, final=False):
             prj_fundings = obj.project.fundings.amount if obj.project.fundings else 0
@@ -1522,15 +1525,7 @@ class CorollaryStatByCostType(models.Model):
 
     corollary = models.ForeignKey('Corollary', related_name='stats')
     cost_type = models.ForeignKey('natr.CostType')
-    natr_fundings = MoneyField(u'Средства гранта',
-        max_digits=20, decimal_places=2, default_currency=settings.KZT,
-        null=True, blank=True)
-    own_fundings = MoneyField(u'Собственные средства',
-        max_digits=20, decimal_places=2, default_currency=settings.KZT,
-        null=True, blank=True)
-    planned_costs = MoneyField(u'Сумма согласно договора',
-        max_digits=20, decimal_places=2, default_currency=settings.KZT,
-        null=True, blank=True)
+
     fact_costs = MoneyField(u'Сумма представленная ГП',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
@@ -1545,8 +1540,27 @@ class CorollaryStatByCostType(models.Model):
     def savings(self):
         return self.natr_fundings - self.costs_received_by_natr
 
+    @property
+    def natr_fundings(self):
+        return self.get_cost_row().grant_costs
+
+    @property
+    def own_fundings(self):
+        return self.get_cost_row().own_costs
+
+    @property
+    def planned_costs(self):
+        return self.get_cost_row().costs
+
+    def get_cost_row(self):
+        m = self.corollary.milestone
+        ct = self.cost_type
+        cd = self.get_project().cost_document
+        cost_row = MilestoneCostRow.objects.filter(cost_document=cd, milestone=m, cost_type=ct)
+        return cost_row[0]
+
     def get_project(self):
-        self.corollary.get_project()
+        return self.corollary.milestone.project
 
 
 @track_data('status')
