@@ -648,7 +648,7 @@ class CorollaryViewSet(ProjectBasedViewSet):
         stat_serializer.is_valid(raise_exception=True)
         updated_stat_instance = stat_serializer.save()
 
-        return response.Response({"milestone_id": corollary.milestone.id}, status=202)
+        return response.Response({"milestone_id": corollary.milestone.id}, status=200)
 
     @detail_route(methods=['post'], url_path='change_status')
     def change_status(self, request, *a, **kw):
