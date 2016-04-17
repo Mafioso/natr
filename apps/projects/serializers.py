@@ -308,13 +308,13 @@ class CorollaryStatByCostTypeSerializer(ExcludeCurrencyFields, serializers.Model
     class Meta:
         model = CorollaryStatByCostType
 
-
-    natr_fundings = SerializerMoneyField()
-    own_fundings = SerializerMoneyField()
-    planned_costs = SerializerMoneyField()
     fact_costs = SerializerMoneyField()
     costs_received_by_natr = SerializerMoneyField()
     costs_approved_by_docs = SerializerMoneyField()
+
+    natr_fundings = SerializerMoneyField(read_only=True)
+    own_fundings = SerializerMoneyField(read_only=True)
+    planned_costs = SerializerMoneyField(read_only=True)
     savings = SerializerMoneyField(read_only=True)
 
 
@@ -343,6 +343,9 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     # use_of_budget_doc = UseOfBudgetDocumentSerializer(read_only=True)
     report_date = serializers.DateTimeField(read_only=True)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
+    calendar_plan_description = serializers.CharField(read_only=True)
+    work_description = serializers.CharField(required=False)
+    work_description_note = serializers.CharField(required=False)
     stats = CorollaryStatByCostTypeSerializer(read_only=True, many=True)
     totals = serializers.SerializerMethodField()
     next_funding = serializers.SerializerMethodField()

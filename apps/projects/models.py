@@ -1098,6 +1098,8 @@ class Corollary(ProjectBasedModel):
     report = models.OneToOneField('Report')
     milestone = models.OneToOneField('Milestone', related_name='corollary', null=True)
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
+    work_description = models.TextField(u'Представлено описание фактически проведенных работ', null=True, blank=True)
+    work_description_note = models.TextField(u'Примечание к описанию фактически проведенных работ', null=True, blank=True)
 
     def get_status_cap(self):
         return Corollary.STATUS_CAPS[self.status]
@@ -1190,11 +1192,16 @@ class Corollary(ProjectBasedModel):
     def agreement(self):
         return self.project.aggreement
 
+    @cached_property
+    def calendar_plan_description(self):
+        cp_item = self.project.calendar_plan.items.get(number=self.milestone.number)
+        return u"""Согласно календарному плану:\n %s""" % cp_item.description
+
     @classmethod
     def gen_by_report(cls, report_id):
         report = Report.objects.get(pk=report_id)
         corollary, _ = Corollary.objects.get_or_create(
-            report=report, defaults={
+            report=report, work_description=report.description, defaults={
                 'milestone': report.milestone,
                 'project': report.project})
         corollary.build_stat()
