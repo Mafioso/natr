@@ -950,7 +950,7 @@ class CalendarPlanItem(models.Model):
 
     number = models.IntegerField(u'Номер этапа', null=True, blank=True)
     description = models.TextField(u'Наименование работ по этапу', null=True, blank=True)
-    deadline = models.IntegerField(u'Срок выполнения работ (месяцев)', null=True, blank=True)
+    deadline = models.FloatField(u'Срок выполнения работ (месяцев)', null=True, blank=True)
     reporting = models.TextField(u'Форма и вид отчетности', null=True, blank=True)
 
     fundings = MoneyField(
