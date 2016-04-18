@@ -190,7 +190,6 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.SessionAuthentication',
         'natr.override_rest_framework.authentication.DummyAuthentication',
         'rest_framework.authentication.BasicAuthentication',
-
     ),
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',

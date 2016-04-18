@@ -38,6 +38,7 @@ from .grantee_user import GranteeUserViewSet
 from .mioadps import ArticleLinkViewSet
 from .documentlog import DocumentologViewSet
 from .loggers import LogItemViewSet
+from django.conf import settings, urls
 
 
 router = DefaultRouter()
@@ -90,3 +91,8 @@ urlpatterns = [
 	url(r'', include(monitoring_router.urls)),
 	url(r'initial-state/$', get_initial_state)
 ]
+
+urlpatterns += urls.patterns('',
+    url(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.STATIC_ROOT}),
+    url(r'^uploads/(?P<path>.*)$', 'django.views.static.serve', {'document_root': settings.MEDIA_ROOT}),
+)

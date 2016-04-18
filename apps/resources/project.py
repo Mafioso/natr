@@ -631,6 +631,14 @@ class CorollaryViewSet(ProjectBasedViewSet):
     queryset = prj_models.Corollary.objects.all()
     serializer_class = CorollarySerializer
 
+    @list_route(methods=['get'], url_path='for_project')
+    def for_project(self, request, *a, **kw):
+        project_id = request.query_params.get('id')
+        corollaries = prj_models.Corollary.objects.filter(project_id=project_id)
+
+        serializer = self.get_serializer(instance=corollaries, many=True)
+        return response.Response(serializer.data)
+
     @list_route(methods=['post'], url_path='build')
     def build(self, request, *a, **kw):
         corollary = prj_models.Corollary.gen_by_report(request.data.get('report'))
