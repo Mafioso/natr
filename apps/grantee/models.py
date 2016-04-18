@@ -99,7 +99,7 @@ class Organization(models.Model):
     bin = models.CharField(u'БИН', max_length=255, null=True)
     bik = models.CharField(u'БИК-ИИН', max_length=255, null=True)
     iik = models.CharField(u'ИИК', max_length=255, null=True)
-    address_region = models.IntegerField(u'Регион', null=True, default=0, choices=ADDRESS_REGION_OPTS)
+    address_region = models.IntegerField(u'Регион', null=True, blank=True, choices=ADDRESS_REGION_OPTS)
     address_1 = models.TextField(u'Юридический адрес', null=True)
     address_2 = models.TextField(u'Фактический адрес', null=True)
     requisites = models.TextField(u'Банковский реквизиты', null=True)
