@@ -282,9 +282,11 @@ class Project(models.Model):
         'FundingType', null=True, on_delete=models.SET_NULL)
 
     fundings = MoneyField(
+        u'Сумма гранта',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     own_fundings = MoneyField(
+        u'Сумма собственных средств',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     funding_date = models.DateTimeField(null=True)
@@ -297,6 +299,11 @@ class Project(models.Model):
 
     def __unicode__(self):
         return unicode(self.name) or u''
+
+    @property
+    def natr_fundings(self):
+        val = self.fundings.amount + self.own_fundings.amount
+        return Money(amount=val, currency=settings.KZT)
 
     @property
     def current_milestone(self):
@@ -1150,13 +1157,18 @@ class Corollary(ProjectBasedModel):
 
     @property
     def planned_costs(self):
-        u"""Расходы согласно договора"""
+        u"""Расходы согласно договору"""
         return self.cost_document.get_milestone_costs(self.milestone)
 
     @property
-    def planned_fundings(self):
-        u"""Бюджетные средства согласно договора"""
-        return self.cost_document.get_milestone_fundings(self.milestone)
+    def total_costs(self):
+        u"""Сумма расходов согласно договору"""
+        return self.cost_document.costs_by_milestone(self.milestone)
+
+    @property
+    def total_fundings(self):
+        u"""Сумма бюджетных средств согласно договору"""
+        return self.cost_document.fundings_by_milestone(self.milestone)
 
     @property
     def number_of_milestones(self):
@@ -1209,6 +1221,21 @@ class Corollary(ProjectBasedModel):
 
     def get_project(self):
         return self.project
+
+    def get_totals(instance):
+        rv = {
+            'natr_fundings': utils.zero_money(),
+            'own_fundings': utils.zero_money(),
+            'planned_costs': utils.zero_money(),
+            'fact_costs': utils.zero_money(),
+            'costs_received_by_natr': utils.zero_money(),
+            'costs_approved_by_docs': utils.zero_money(),
+            'savings': utils.zero_money()
+        }
+        for stat_key in rv:
+            for stat_obj in instance.stats.all():
+                rv[stat_key] += getattr(stat_obj, stat_key)
+        return rv
 
     def get_print_context(self, **kwargs):
         def conc_table(obj, table, final=False):
@@ -1286,19 +1313,6 @@ class Corollary(ProjectBasedModel):
                             })
 
             return row_data
-
-        def get_totals(instance):
-            rv = {
-                'planned_costs': utils.zero_money(),
-                'fact_costs': utils.zero_money(),
-                'costs_received_by_natr': utils.zero_money(),
-                'costs_approved_by_docs': utils.zero_money(),
-                'savings': utils.zero_money()
-            }
-            for stat_key in rv:
-                for stat_obj in instance.stats.all():
-                    rv[stat_key] += getattr(stat_obj, stat_key)
-            return rv
 
         def fill_corollary_table(obj, table):
             current_row = 3

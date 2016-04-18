@@ -1375,6 +1375,13 @@ class CostDocument(models.Model):
         ])
         return Money(amount=total, currency=settings.KZT)
 
+    def fundings_by_milestone(self, milestone):
+        total = sum([
+            cost_cell.fundings.amount
+            for cost_cell in self.get_milestone_costs(milestone)
+        ])
+        return Money(amount=total, currency=settings.KZT)
+
     def get_costs_rows(self):
         return map(self.get_milestone_costs_row, list(self.cost_types.all()))
 
@@ -1384,6 +1391,7 @@ class CostDocument(models.Model):
 
     def get_milestone_costs(self, milestone):
         return self.milestone_costs.filter(milestone=milestone).order_by('cost_type__date_created')
+
 
     @property
     def cost_types(self):

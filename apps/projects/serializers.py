@@ -94,6 +94,7 @@ class MilestoneSerializer(
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
+    natr_fundings = SerializerMoneyField(read_only=True, required=False)
     report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
@@ -141,7 +142,7 @@ class MilestoneBaseInfo(serializers.ModelSerializer):
 
     class Meta:
         model = Milestone
-        fields = ('id', 'number', 'status_cap')
+        fields = ('id', 'number', 'status_cap', 'date_funded')
 
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
@@ -159,6 +160,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     fundings = SerializerMoneyField(required=False)
     own_fundings = SerializerMoneyField(required=False)
+    natr_fundings = SerializerMoneyField(read_only=True, required=False)
     funding_type = FundingTypeSerializer(required=True)
     aggreement = AgreementDocumentSerializer(required=False)
     statement = StatementDocumentSerializer(required=False)
@@ -351,19 +353,7 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     next_funding = serializers.SerializerMethodField()
 
     def get_totals(self, instance):
-        rv = {
-            'natr_fundings': utils.zero_money(),
-            'own_fundings': utils.zero_money(),
-            'planned_costs': utils.zero_money(),
-            'fact_costs': utils.zero_money(),
-            'costs_received_by_natr': utils.zero_money(),
-            'costs_approved_by_docs': utils.zero_money(),
-            'savings': utils.zero_money()
-        }
-        for stat_key in rv:
-            for stat_obj in instance.stats.all():
-                rv[stat_key] += getattr(stat_obj, stat_key)
-        return CorollaryTotalsSerializer(rv).data
+        return CorollaryTotalsSerializer(instance.get_totals()).data
 
     def get_next_funding(self, instance):
         milestone = instance.project.take_next_milestone()
