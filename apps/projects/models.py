@@ -1533,9 +1533,6 @@ class CorollaryStatByCostType(models.Model):
     corollary = models.ForeignKey('Corollary', related_name='stats')
     cost_type = models.ForeignKey('natr.CostType')
 
-    fact_costs = MoneyField(u'Сумма представленная ГП',
-        max_digits=20, decimal_places=2, default_currency=settings.KZT,
-        null=True, blank=True)
     costs_received_by_natr = MoneyField(u'Сумма принимаемая НАТР',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
@@ -1545,7 +1542,7 @@ class CorollaryStatByCostType(models.Model):
 
     @property
     def savings(self):
-        return self.natr_fundings - self.costs_received_by_natr
+        return self.planned_costs - self.costs_received_by_natr
 
     @property
     def natr_fundings(self):
@@ -1558,6 +1555,10 @@ class CorollaryStatByCostType(models.Model):
     @property
     def planned_costs(self):
         return self.get_cost_row().costs
+
+    @property
+    def fact_costs(self):
+        return self.corollary.report.use_of_budget_doc.items.get(cost_type=self.cost_type).total_expense
 
     def get_cost_row(self):
         m = self.corollary.milestone

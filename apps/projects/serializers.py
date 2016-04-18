@@ -308,10 +308,10 @@ class CorollaryStatByCostTypeSerializer(ExcludeCurrencyFields, serializers.Model
     class Meta:
         model = CorollaryStatByCostType
 
-    fact_costs = SerializerMoneyField()
     costs_received_by_natr = SerializerMoneyField()
     costs_approved_by_docs = SerializerMoneyField()
 
+    fact_costs = SerializerMoneyField(read_only=True)
     natr_fundings = SerializerMoneyField(read_only=True)
     own_fundings = SerializerMoneyField(read_only=True)
     planned_costs = SerializerMoneyField(read_only=True)
