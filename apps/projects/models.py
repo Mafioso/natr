@@ -572,7 +572,7 @@ class Project(models.Model):
                         "grantee_name",
                         "project_name",
                         "grant_type",
-                        "region",
+                        "address_region",
                         "total_month",
                         "fundings",
                         "transhes",
