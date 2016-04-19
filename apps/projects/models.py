@@ -1084,9 +1084,11 @@ class Corollary(ProjectBasedModel):
         verbose_name = u"Заключение КМ"
         permissions = (
             ('approve_corollary', u"Утверждение документа"),
-            ('sendto_approve_corollary', u"Отправлять документ на  согласование"),
+            ('sendto_approve_corollary', u"Отправлять на согласование рукводителю"),
             ('sendto_rework_corollary', u"Отправлять документ на доработку"),
             ('start_next_milestone', u"Начинать следующий этап"),
+            ('send_to_director', u"Отправлять на согласование директору"),
+            ('corollary_add_comment', u'Добавлять комментарий к заключению')
         )
 
     STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH, DIRECTOR_CHECK = range(8)
@@ -1094,11 +1096,11 @@ class Corollary(ProjectBasedModel):
         u'неактивно',
         u'формирование',
         u'на проверке',
-        u'утверждение',
+        u'на согласовании у руководителя',
         u'утверждено',
         u'отправлено на доработку',
         u'завершено',
-        u'на согласовании')
+        u'на согласовании у директора')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul

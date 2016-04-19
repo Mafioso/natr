@@ -157,17 +157,23 @@ def send_monitoring_plan_was_send_to_rework(monitoring, user=None):
     mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
     mail.send(fail_silently=True)
 
-def send_corollary_approved(corollary):
+def send_corollary_approved(corollary, user=None):
     send_mail(
         u'Заключение по проекту \"%s\" утверждено.' % corollary.project.name,
-        u"""Здравствуйте!\nЗаключение по проекту \"%s\" утверждено.""" % corollary.project.name,
+        u"""Здравствуйте!\n %s утвердил заключение по проекту \"%s\".""" % (user.get_full_name(), corollary.project.name),
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
         fail_silently=True
     )
 
-def send_corollary_to_rework(corollary, user=None):
-    message_text = u"Заключение, по проекту \"%s\", было отправлено на доработку" % corollary.project.name
+def send_corollary_to_rework(corollary, user=None, comment=None):
+    if comment:
+        comment = u"Комментарий: \n%s"%comment.comment_text
+    else:
+        comment = u""
+
+    message_text = u"Заключение, по проекту \"%s\", было отправлено на доработку. %s" % (corollary.project.name, comment)
+
     if user:
         user_type = ""
         if hasattr(user, 'user'):
@@ -175,7 +181,7 @@ def send_corollary_to_rework(corollary, user=None):
         elif hasattr(user, 'grantee'):
             user_type = u"Грантополучатель"
 
-        message_text = user_type + u" " +user.get_full_name()+u" отправил(а) заключение, по проекту \"%s\", на доработку."%corollary.project.name
+        message_text = user_type + u" " +user.get_full_name()+u" отправил(а) заключение, по проекту \"%s\", на доработку. %s"%(corollary.project.name, comment)
 
     send_mail(
         u'Заключение по проекту \"%s\" было отправлено на доработку.' % corollary.project.name,
@@ -188,7 +194,7 @@ def send_corollary_to_rework(corollary, user=None):
 def send_corollary_to_approve(corollary, user=None):
     message_text = u"Заключение, по проекту \"%s\", было отправлено на доработку" % corollary.project.name
     if user:
-        message_text = user.get_full_name()+u" отправил(а) заключение, по проекту \"%s\", на согласование."%corollary.project.name
+        message_text = user.get_full_name()+u" отправил(а) заключение, по проекту \"%s\", на согласование руководителем."%corollary.project.name
 
     send_mail(
         u'Заключение по проекту \"%s\" было отправлено на согласование.' % corollary.project.name,
@@ -248,10 +254,10 @@ def send_chat_activity(text_line, from_account):
         fail_silently = True
     )
 
-def send_corollary_dir_check(corollary):
+def send_corollary_dir_check(corollary, user):
     send_mail(
         u'Заключение по проекту \"%s\" согласовано руководителем, и отправлено на утверждение.' % corollary.project.name,
-        u"""Здравствуйте!\nЗаключение по проекту \"%s\" согласовано руководителем, и отправлено на утверждение.""" % corollary.project.name,
+        u"""Здравствуйте!\nЗаключение по проекту \"%s\" согласовано руководителем, %s, и отправлено на утверждение.""" % (corollary.project.name, user.get_full_name()),
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
         fail_silently=True

@@ -665,11 +665,21 @@ class CorollaryViewSet(ProjectBasedViewSet):
         changed = corollary.status != request.data.get('status', corollary.status)
         corollary.status = request.data['status']
         corollary.save()
+        comment = None
+
+        if 'comment_text' in request.data:
+            comment = prj_models.Comment(content=corollary, 
+                                         comment_text=request.data.get('comment_text', ""),
+                                         account=request.user)
+            comment.save()
 
         if changed:
             if corollary.status == prj_models.Corollary.APPROVED:
+                user = None
+                if request and hasattr(request, "user"):
+                    user = request.user
                 try:
-                    mailing.send_corollary_approved(corollary)
+                    mailing.send_corollary_approved(corollary, user)
                     send_notification(Notification.COROLLARY_APPROVED, corollary)
                 except Exception as e:
                     print str(e), "EXCEPTION ********"
@@ -679,7 +689,7 @@ class CorollaryViewSet(ProjectBasedViewSet):
                 if request and hasattr(request, "user"):
                     user = request.user
                 try:
-                    mailing.send_corollary_to_rework(corollary, user)
+                    mailing.send_corollary_to_rework(corollary, user, comment)
                     send_notification(Notification.COROLLARY_TO_REWORK, corollary)
                 except Exception as e:
                     print str(e), "EXCEPTION ********"
@@ -695,14 +705,18 @@ class CorollaryViewSet(ProjectBasedViewSet):
                     print str(e), "EXCEPTION ********"
 
             elif corollary.status == prj_models.Corollary.DIRECTOR_CHECK:
+                user = None
+                if request and hasattr(request, "user"):
+                    user = request.user
                 try:
-                    mailing.send_corollary_dir_check(corollary)
+                    mailing.send_corollary_dir_check(corollary, user)
                     send_notification(Notification.COROLLARY_DIR_CHECK, corollary)
                 except Exception as e:
                     print str(e), "EXCEPTION ********"
 
 
-        return response.Response({"milestone_id": corollary.milestone.id}, status=200)
+        return response.Response({"project_id": corollary.project.id,
+                                  "corollary_id": corollary.id}, status=200)
 
     @detail_route(methods=['get'], url_path='gen_docx')
     def gen_docx(self, request, *a, **kw):
