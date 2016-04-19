@@ -185,6 +185,19 @@ def send_corollary_to_rework(corollary, user=None):
         fail_silently=True
     )
 
+def send_corollary_to_approve(corollary, user=None):
+    message_text = u"Заключение, по проекту \"%s\", было отправлено на доработку" % corollary.project.name
+    if user:
+        message_text = user.get_full_name()+u" отправил(а) заключение, по проекту \"%s\", на согласование."%corollary.project.name
+
+    send_mail(
+        u'Заключение по проекту \"%s\" было отправлено на согласование.' % corollary.project.name,
+        message_text,
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
+        fail_silently=True
+    )
+
 def send_project_status_changed(project):
     message_text = u"Здравствуйте. Настоящим письмом уведомляем Вас о %s договора по вашему проекту \"%s\""%(u"завершении" if project.status == 1 else u"расторжении", project.name)
 
@@ -233,4 +246,13 @@ def send_chat_activity(text_line, from_account):
         settings.DEFAULT_FROM_EMAIL,
         to_accounts,
         fail_silently = True
+    )
+
+def send_corollary_dir_check(corollary):
+    send_mail(
+        u'Заключение по проекту \"%s\" согласовано руководителем, и отправлено на утверждение.' % corollary.project.name,
+        u"""Здравствуйте!\nЗаключение по проекту \"%s\" согласовано руководителем, и отправлено на утверждение.""" % corollary.project.name,
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
+        fail_silently=True
     )

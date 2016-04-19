@@ -28,6 +28,7 @@ from natr import mailing
 from datetime import datetime, timedelta
 from natr.utils import end_of
 from itertools import chain
+from notifications.models import send_notification, Notification
 
 class ProjectViewSet(viewsets.ModelViewSet):
 
@@ -669,8 +670,9 @@ class CorollaryViewSet(ProjectBasedViewSet):
             if corollary.status == prj_models.Corollary.APPROVED:
                 try:
                     mailing.send_corollary_approved(corollary)
+                    send_notification(Notification.COROLLARY_APPROVED, corollary)
                 except Exception as e:
-                    print str(e)
+                    print str(e), "EXCEPTION ********"
 
             elif corollary.status == prj_models.Corollary.REWORK:
                 user = None
@@ -678,8 +680,26 @@ class CorollaryViewSet(ProjectBasedViewSet):
                     user = request.user
                 try:
                     mailing.send_corollary_to_rework(corollary, user)
+                    send_notification(Notification.COROLLARY_TO_REWORK, corollary)
                 except Exception as e:
-                    print str(e)
+                    print str(e), "EXCEPTION ********"
+
+            elif corollary.status == prj_models.Corollary.APPROVE:
+                user = None
+                if request and hasattr(request, "user"):
+                    user = request.user
+                try:
+                    mailing.send_corollary_to_approve(corollary, user)
+                    send_notification(Notification.COROLLARY_TO_APPROVE, corollary)
+                except Exception as e:
+                    print str(e), "EXCEPTION ********"
+
+            elif corollary.status == prj_models.Corollary.DIRECTOR_CHECK:
+                try:
+                    mailing.send_corollary_dir_check(corollary)
+                    send_notification(Notification.COROLLARY_DIR_CHECK, corollary)
+                except Exception as e:
+                    print str(e), "EXCEPTION ********"
 
 
         return response.Response({"milestone_id": corollary.milestone.id}, status=200)
