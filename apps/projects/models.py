@@ -1524,7 +1524,7 @@ class Corollary(ProjectBasedModel):
         milestone = instance.milestone
         if new_val == Corollary.APPROVE:
             milestone.set_status(Milestone.COROLLARY_APROVING)
-        elif new_val == Corollary.DIRECTOR_CHECK:
+        elif new_val == Corollary.APPROVED:
             attachment = instance.build_printed()
             title = u'Итоговое заключение по КМ' if instance.report.type == Report.FINAL else u'Промежуточное заключение по КМ'
             corollary_type = 'corollary_final' if instance.report.type == Report.FINAL else 'corollary_cameral'
