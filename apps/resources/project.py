@@ -727,6 +727,33 @@ class CorollaryViewSet(ProjectBasedViewSet):
         headers = self.get_success_headers(serializer.data)
         return response.Response({"instance": instance.id}, headers=headers)
 
+    @detail_route(methods=['get', 'post'], url_path='comments')
+    @patch_serializer_class(CommentSerializer)
+    def comments(self, request, *a, **kw):
+        corollary = self.get_object()
+        filter_data = {}
+
+        if request.method == 'POST':
+            data = request.data
+
+            if data.get('comment_text', None):
+                comment = prj_models.Comment(content=corollary, 
+                                             comment_text=data['comment_text'],
+                                             account=request.user)
+                comment.save()
+                
+            if data.get('date_created', None):
+                filter_data['date_created__gte'] = data.get('date_created')
+
+        else:
+            query_params = request.query_params
+            if query_params.get('date_created', None):
+                filter_data['date_created__gte'] = query_params.get('date_created')
+
+        comments = corollary.comments.filter(**filter_data).order_by('-date_created')
+        serializer = self.get_serializer(comments, many=True)
+        return response.Response(serializer.data)
+
 
 class RiskCategoryViewSet(viewsets.ModelViewSet):
     queryset = prj_models.RiskCategory.objects.all()

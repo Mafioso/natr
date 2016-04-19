@@ -1108,7 +1108,8 @@ class Corollary(ProjectBasedModel):
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
     work_description = models.TextField(u'Представлено описание фактически проведенных работ', null=True, blank=True)
     work_description_note = models.TextField(u'Примечание к описанию фактически проведенных работ', null=True, blank=True)
-
+    comments = GenericRelation('Comment', content_type_field='content_type')
+    
     def get_status_cap(self):
         return Corollary.STATUS_CAPS[self.status]
 
