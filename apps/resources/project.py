@@ -640,12 +640,6 @@ class CorollaryViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(instance=corollaries, many=True)
         return response.Response(serializer.data)
 
-    @list_route(methods=['post'], url_path='build')
-    def build(self, request, *a, **kw):
-        corollary = prj_models.Corollary.gen_by_report(request.data.get('report'))
-        serializer = self.get_serializer(instance=corollary)
-        return response.Response(serializer.data)
-
     @detail_route(methods=['post'], url_path='update_stat')
     def update_stat(self, request, *a, **kw):
         corollary = self.get_object()
