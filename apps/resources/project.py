@@ -28,6 +28,7 @@ from natr import mailing
 from datetime import datetime, timedelta
 from natr.utils import end_of
 from itertools import chain
+from notifications.models import send_notification, Notification
 
 class ProjectViewSet(viewsets.ModelViewSet):
 
@@ -663,8 +664,9 @@ class CorollaryViewSet(ProjectBasedViewSet):
             if corollary.status == prj_models.Corollary.APPROVED:
                 try:
                     mailing.send_corollary_approved(corollary)
+                    send_notification(Notification.COROLLARY_APPROVED, corollary)
                 except Exception as e:
-                    print str(e)
+                    print str(e), "EXCEPTION ********"
 
             elif corollary.status == prj_models.Corollary.REWORK:
                 user = None
@@ -672,8 +674,26 @@ class CorollaryViewSet(ProjectBasedViewSet):
                     user = request.user
                 try:
                     mailing.send_corollary_to_rework(corollary, user)
+                    send_notification(Notification.COROLLARY_TO_REWORK, corollary)
                 except Exception as e:
-                    print str(e)
+                    print str(e), "EXCEPTION ********"
+
+            elif corollary.status == prj_models.Corollary.APPROVE:
+                user = None
+                if request and hasattr(request, "user"):
+                    user = request.user
+                try:
+                    mailing.send_corollary_to_approve(corollary, user)
+                    send_notification(Notification.COROLLARY_TO_APPROVE, corollary)
+                except Exception as e:
+                    print str(e), "EXCEPTION ********"
+
+            elif corollary.status == prj_models.Corollary.DIRECTOR_CHECK:
+                try:
+                    mailing.send_corollary_dir_check(corollary)
+                    send_notification(Notification.COROLLARY_DIR_CHECK, corollary)
+                except Exception as e:
+                    print str(e), "EXCEPTION ********"
 
 
         return response.Response({"milestone_id": corollary.milestone.id}, status=200)
@@ -700,6 +720,33 @@ class CorollaryViewSet(ProjectBasedViewSet):
 
         headers = self.get_success_headers(serializer.data)
         return response.Response({"instance": instance.id}, headers=headers)
+
+    @detail_route(methods=['get', 'post'], url_path='comments')
+    @patch_serializer_class(CommentSerializer)
+    def comments(self, request, *a, **kw):
+        corollary = self.get_object()
+        filter_data = {}
+
+        if request.method == 'POST':
+            data = request.data
+
+            if data.get('comment_text', None):
+                comment = prj_models.Comment(content=corollary, 
+                                             comment_text=data['comment_text'],
+                                             account=request.user)
+                comment.save()
+                
+            if data.get('date_created', None):
+                filter_data['date_created__gte'] = data.get('date_created')
+
+        else:
+            query_params = request.query_params
+            if query_params.get('date_created', None):
+                filter_data['date_created__gte'] = query_params.get('date_created')
+
+        comments = corollary.comments.filter(**filter_data).order_by('-date_created')
+        serializer = self.get_serializer(comments, many=True)
+        return response.Response(serializer.data)
 
 
 class RiskCategoryViewSet(viewsets.ModelViewSet):

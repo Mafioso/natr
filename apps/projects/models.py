@@ -1086,12 +1086,12 @@ class Corollary(ProjectBasedModel):
         verbose_name = u"Заключение КМ"
         permissions = (
             ('approve_corollary', u"Утверждение документа"),
-            ('sendto_approve_corollary', u"Отправлять документ на утверждение"),
+            ('sendto_approve_corollary', u"Отправлять документ на  согласование"),
             ('sendto_rework_corollary', u"Отправлять документ на доработку"),
             ('start_next_milestone', u"Начинать следующий этап"),
         )
 
-    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
+    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH, DIRECTOR_CHECK = range(8)
     STATUS_CAPS = (
         u'неактивно',
         u'формирование',
@@ -1099,7 +1099,8 @@ class Corollary(ProjectBasedModel):
         u'утверждение',
         u'утверждено',
         u'отправлено на доработку',
-        u'завершено')
+        u'завершено',
+        u'на согласовании')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul
@@ -1109,7 +1110,8 @@ class Corollary(ProjectBasedModel):
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
     work_description = models.TextField(u'Представлено описание фактически проведенных работ', null=True, blank=True)
     work_description_note = models.TextField(u'Примечание к описанию фактически проведенных работ', null=True, blank=True)
-
+    comments = GenericRelation('Comment', content_type_field='content_type')
+    
     def get_status_cap(self):
         return Corollary.STATUS_CAPS[self.status]
 
@@ -1217,6 +1219,21 @@ class Corollary(ProjectBasedModel):
         return rv
 
     def get_print_context(self, **kwargs):
+        def get_totals(instance):
+            rv = {
+                'natr_fundings': utils.zero_money(),
+                'own_fundings': utils.zero_money(),
+                'planned_costs': utils.zero_money(),
+                'fact_costs': utils.zero_money(),
+                'costs_received_by_natr': utils.zero_money(),
+                'costs_approved_by_docs': utils.zero_money(),
+                'savings': utils.zero_money()
+            }
+            for stat_key in rv:
+                for stat_obj in instance.stats.all():
+                    rv[stat_key] += getattr(stat_obj, stat_key)
+            return rv
+
         def conc_table(obj, table, final=False):
             prj_fundings = obj.project.fundings.amount if obj.project.fundings else 0
             rows = []
@@ -1505,9 +1522,8 @@ class Corollary(ProjectBasedModel):
         milestone = instance.milestone
         if new_val == Corollary.APPROVE:
             milestone.set_status(Milestone.COROLLARY_APROVING)
-        elif new_val == Corollary.APPROVED:
+        elif new_val == Corollary.DIRECTOR_CHECK:
             attachment = instance.build_printed()
-            # if instance.report.type == Report.FINAL:
             title = u'Итоговое заключение по КМ' if instance.report.type == Report.FINAL else u'Промежуточное заключение по КМ'
             corollary_type = 'corollary_final' if instance.report.type == Report.FINAL else 'corollary_cameral'
             SEDEntity.pin_to_sed(

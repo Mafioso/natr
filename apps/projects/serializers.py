@@ -335,6 +335,11 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
+class CommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Comment
+    expert_name = serializers.CharField(read_only=True)
 
 class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
@@ -351,7 +356,8 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     stats = CorollaryStatByCostTypeSerializer(read_only=True, many=True)
     totals = serializers.SerializerMethodField()
     next_funding = serializers.SerializerMethodField()
-
+    comments = CommentSerializer(many=True, read_only=True)
+    
     def get_totals(self, instance):
         return CorollaryTotalsSerializer(instance.get_totals()).data
 
@@ -362,11 +368,6 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     def validate_docx_context(self, instance):
         return True, u""
 
-class CommentSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Comment
-    expert_name = serializers.CharField(read_only=True)
 
 class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
 
