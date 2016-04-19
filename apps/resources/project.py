@@ -310,6 +310,16 @@ class MilestoneViewSet(ProjectBasedViewSet):
                                   'agency_attachments': ag_att_serializer.data})
 
 
+class MilestoneConclusionViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.MilestoneConclusion.objects.all()
+    serializer_class = MilestoneConclusionSerializer
+
+
+class MilestoneConclusionItemViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.MilestoneConclusionItem.objects.all()
+    serializer_class = MilestoneConclusionItemSerializer
+
+
 class MonitoringTodoViewSet(ProjectBasedViewSet):
     queryset = prj_models.MonitoringTodo.objects.all()
     serializer_class = MonitoringTodoSerializer
@@ -455,6 +465,7 @@ class MonitoringViewSet(ProjectBasedViewSet):
         comments = monitoring.comments.filter(**filter_data).order_by('-date_created')
         serializer = self.get_serializer(comments, many=True)
         return response.Response(serializer.data)
+
 
 class ReportViewSet(ProjectBasedViewSet):
     queryset = prj_models.Report.objects.all()

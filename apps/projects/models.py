@@ -1762,6 +1762,132 @@ class Milestone(ProjectBasedModel):
             instance.report.set_building()
 
 
+class MilestoneConclusion(models.Model):
+    TYPES = CAMERAL, FINAL = range(2)
+    TYPES_CAPS = (
+        u'камеральный',
+        u'итоговый')
+
+    TYPES_OPTS = zip(TYPES, TYPES_CAPS)
+    type = models.IntegerField(null=True, choices=TYPES_OPTS, default=CAMERAL)
+    milestone = models.OneToOneField('Milestone', related_name='conclusions')
+
+    @classmethod
+    def create_default(cls, milestone):
+        if milestone.report.type == Report.CAMERAL:
+            instance = cls(milestone=milestone, type=MilestoneConclusion.CAMERAL)
+            instance.save()
+            MilestoneConclusionItem.create_cameral_defaults(instance)
+        elif milestone.report.type == Report.FINAL:
+            instance = cls(milestone=milestone, type=MilestoneConclusion.FINAL)
+            instance.save()
+            MilestoneConclusionItem.create_final_defaults(instance)
+
+        return instance
+
+
+class MilestoneConclusionItem(models.Model):
+    conclusion = models.ForeignKey('MilestoneConclusion', related_name='items')
+    number = models.IntegerField(null=True)
+    title = models.TextField(u'Наименование', null=True)
+    cost = MoneyField(max_digits=20, decimal_places=2, default_currency=settings.KZT,
+                      null=True, blank=True)
+
+    @property
+    def _cost(self):
+        return self.get_cameral_cost() if self.conclusion.type == MilestoneConclusion.CAMERAL else self.get_final_cost()
+
+    def get_cameral_cost(self):
+        return 1
+
+    def get_final_cost(self):
+        return 1
+
+
+    @classmethod
+    def create_cameral_defaults(cls, conclusion):
+        items = []
+        items.append( cls(conclusion=conclusion,
+                          number=1,
+                          title=u'В результате камерального мониторинга по данному проекту замечаний не выявлено') )
+        items.append( cls(conclusion=conclusion,
+                          number=2,
+                          title=u'В представленном промежуточном отчете указано освоение средств инновационного гранта по %s-му этапу на сумму:'%conclusion.milestone.number) )
+        items.append( cls(conclusion=conclusion,
+                          number=3,
+                          title=u'Экономия средств инновационного гранта по %s-му этапу составила:'%conclusion.milestone.number) )
+        items.append( cls(conclusion=conclusion,
+                          number=4,
+                          title=u'Смета расходов %s-го этапа составляет (Приложение №1 к Договору), из них:'%(conclusion.milestone.number+1)) )
+        items.append( cls(conclusion=conclusion,
+                          number=5,
+                          title=u'средства гранта') )
+        items.append( cls(conclusion=conclusion,
+                          number=6,
+                          title=u'собственные средства') )
+        items.append( cls(conclusion=conclusion,
+                          number=7,
+                          title=u'Рекомендуемая сумма финансирования %s-го этапа с учетом образовавшейся экономии по %s-му этапу составляет:'%(conclusion.milestone.number+1, conclusion.milestone.number)) )
+        items.append( cls(conclusion=conclusion,
+                          number=8,
+                          title=u'По итогам камерального мониторинга, на основании представленных Грантополучателем документов, считаем целесообразным дальнейшее финансирование проекта.') )
+        
+        for item in items:
+            item.save()
+
+        return items
+
+    @classmethod
+    def create_final_defaults(cls, conclusion):
+        items = []
+        items.append( cls(conclusion=conclusion,
+                          number=1,
+                          title=u'В результате камерального мониторинга по данному проекту замечаний не выявлено') )
+        milestones_number = conclusion.milestone.project.milestone_set.count()
+        cnt = 2
+        for milestone in conclusion.milestone.project.milestone_set.all():
+            try:
+                milestone_conclusion = MilestoneConclusion.objects.get(milestone=milestone)
+            except MilestoneConclusion.DoesNotExist:
+                milestone_conclusion = MilestoneConclusion(milestone=milestone)
+                milestone_conclusion.save()
+            finally:
+                items.append( cls(conclusion=milestone_conclusion,
+                                  number=cnt,
+                                  title=u'В представленном отчете указано освоение средств инновационного гранта по %s-му этапу работ в размере'%milestone.number) )
+                items.append( cls(conclusion=milestone_conclusion,
+                                  number=cnt+1,
+                                  title=u'средства гранта') )
+                items.append( cls(conclusion=milestone_conclusion,
+                                  number=cnt+2,
+                                  title=u'собственные средства') )
+                items.append( cls(conclusion=milestone_conclusion,
+                                  number=cnt+milestones_number,
+                                  title=u'По %s-му этапу проекта, Грантополучателем выполнена следующая работа:'%milestone.number) )
+                cnt += 1
+        cnt = cnt+milestones_number
+        items.append( cls(conclusion=conclusion,
+                          number=cnt,
+                          title=u'Общая освоенная сумма проекта составляет:') )
+        items.append( cls(conclusion=conclusion,
+                          number=cnt+1,
+                          title=u'средства гранта') )
+        items.append( cls(conclusion=conclusion,
+                          number=cnt+2,
+                          title=u'собственные средства') )
+        items.append( cls(conclusion=conclusion,
+                          number=cnt+3,
+                          title=u'Общая экономия по проекту составляет:') )
+        items.append( cls(conclusion=conclusion,
+                          number=cnt+4,
+                          title=u'По итогам камерального мониторинга на основании представленных Грантополучателем документов, поскольку средства инновационного гранта использованы по целевому назначению, работы по проекту, выполнены в соответствии с календарным планом, считаем возможным закрытие инновационного гранта.') )
+        
+        for item in items:
+            item.save()
+
+        return items
+
+
 @track_data('status')
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
