@@ -240,15 +240,17 @@ class ProjectStatisticsSerializer(ExcludeCurrencyFields, serializers.ModelSerial
 
     class Meta:
         model = Project
-        fields = ('risk_degree',)
-
-    def __init__(self, *args, **kwargs):
-        self.fields['assigned_experts'].read_only = True
-        self.fields['assigned_grantees'].read_only = True
-        super(ProjectSerializer, self).__init__(*args, **kwargs)
+        fields = (
+            'id', 'name', 'address_region', 'risk_degree', 'fundings', 'own_fundings', 
+            'funding_type', 'funding_type_name', 'total_month', 'status', 'status_cap')
+        read_only_fields = fields
 
     fundings = SerializerMoneyField(required=False)
     own_fundings = SerializerMoneyField(required=False)
+    funding_type = serializers.PrimaryKeyRelatedField(queryset=FundingType.objects.all())
+    status_cap = serializers.CharField(source='get_status_cap')
+    funding_type_name = serializers.CharField(source='get_funding_type_name')
+    address_region = serializers.IntegerField(source='get_address_region')
 
 
 class ReportSerializer(serializers.ModelSerializer):

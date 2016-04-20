@@ -26,6 +26,8 @@ class ProjectFilter(ListOfIdFilter):
 	status = django_filters.MethodFilter()
 	has_grantee = django_filters.MethodFilter()
 	user = django_filters.MethodFilter()
+	date_from = django_filters.MethodFilter()
+	date_to = django_filters.MethodFilter()
 
 	def filter_status(self, queryset, value):
 		value = map(int,value.split('_'))
@@ -49,6 +51,16 @@ class ProjectFilter(ListOfIdFilter):
 			Q(organization_details__name__icontains=value)
 		)
 		return queryset.distinct()
+
+	def filter_date_from(self, queryset, value):
+		date_from = datetime.datetime.strptime(value, '%Y-%m-%d')
+		queryset = queryset.filter(date_start__gte=date_from)
+		return queryset
+
+	def filter_date_to(self, queryset, value):
+		date_to = datetime.datetime.strptime(value, '%Y-%m-%d')
+		queryset = queryset.filter(date_end__lte=date_to)
+		return queryset
 
 
 class ReportFilter(django_filters.FilterSet):

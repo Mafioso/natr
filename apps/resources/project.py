@@ -179,7 +179,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @list_route(methods=['get'], url_path='statistics')
     @patch_serializer_class(ProjectStatisticsSerializer)
     def statistics(self, request, *a, **kw):
-        pass
+        projects = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(projects, many=True)
+        return response.Response(serializer.data)
 
     @detail_route(methods=['post'], url_path='risks')
     def risks(self, request, *a, **kw):
