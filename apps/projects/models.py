@@ -1110,7 +1110,7 @@ class Corollary(ProjectBasedModel):
         u'утверждено',
         u'отправлено на доработку',
         u'завершено',
-        u'на согласовании у директора')
+        u'на утверждении у директора')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul
