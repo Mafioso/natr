@@ -385,23 +385,23 @@ class Project(models.Model):
             risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
             score = risk_index.score
             if score < 15:
-                return 0
+                return Project.SMALL_R
             if score >= 15 and score < 25:
-                return 1
-            return 2
+                return Project.MEDIUM_R
+            return Project.HIGH_R
         except ProjectRiskIndex.DoesNotExist:
             fundings = self.fundings.amount if self.fundings else 0
             if self.organization_details.org_type == 0 or \
                fundings > 50000000 or \
                self.total_month > 12 or \
                self.funding_type.name != FundingType.COMMERCIALIZATION:
-                return 2
+                return Project.HIGH_R
             if self.organization_details.org_type == 1 and \
                fundings <= 50000000 and \
                self.total_month == 12 and \
                self.funding_type.name == FundingType.COMMERCIALIZATION:
-               return 1
-            return 0
+               return Project.MEDIUM_R
+            return Project.SMALL_R
 
     @property
     def risks(self):

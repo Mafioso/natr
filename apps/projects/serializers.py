@@ -235,6 +235,21 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
         return None
 
 
+class ProjectStatisticsSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = Project
+        fields = ('risk_degree',)
+
+    def __init__(self, *args, **kwargs):
+        self.fields['assigned_experts'].read_only = True
+        self.fields['assigned_grantees'].read_only = True
+        super(ProjectSerializer, self).__init__(*args, **kwargs)
+
+    fundings = SerializerMoneyField(required=False)
+    own_fundings = SerializerMoneyField(required=False)
+
+
 class ReportSerializer(serializers.ModelSerializer):
 
     class Meta:
