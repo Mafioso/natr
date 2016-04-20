@@ -199,7 +199,7 @@ def assign_user_group(sender, instance, created=False, **kwargs):
     """If natr user does not belong to any group, assign expert by default."""
     if not created:
         return
-    if instance.is_expert() or instance.is_manager() or instance.is_risk_expert():
+    if instance.is_expert() or instance.is_manager() or instance.is_risk_expert() or instance.is_director():
         return
     instance.add_to_experts()
 
