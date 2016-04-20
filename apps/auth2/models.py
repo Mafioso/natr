@@ -173,7 +173,7 @@ class NatrUser(models.Model):
 
     def is_manager(self):
         groups = self.get_groups()
-        return groups.filter(name=NatrGroup.MANAGER).first()
+        return groups.filter(name=NatrGroup.MANAGER).first() or groups.filter(name=NatrGroup.DIRECTOR).first()
 
     def is_admin(self):
         groups = self.get_groups()
