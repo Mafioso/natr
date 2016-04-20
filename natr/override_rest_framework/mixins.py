@@ -45,7 +45,7 @@ class ProjectBasedViewSet(viewsets.ModelViewSet):
         else:
             if hasattr(self.request.user, 'user'):
                 user = self.request.user.user
-                if user.is_manager():
+                if user.is_manager() or user.is_director():
                     return qs
                 projects = prj_models.Project.objects.filter(assigned_experts=user)
                 return qs.filter(**{
