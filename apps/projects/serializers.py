@@ -24,6 +24,7 @@ __all__ = (
     'FundingTypeSerializer',
     'ProjectSerializer',
     'ProjectBasicInfoSerializer',
+    'ProjectStatisticsSerializer',
     'ReportSerializer',
     'MonitoringSerializer',
     'MonitoringTodoSerializer',
@@ -235,6 +236,21 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
         return None
 
 
+class ProjectStatisticsSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = Project
+        fields = ('risk_degree',)
+
+    def __init__(self, *args, **kwargs):
+        self.fields['assigned_experts'].read_only = True
+        self.fields['assigned_grantees'].read_only = True
+        super(ProjectSerializer, self).__init__(*args, **kwargs)
+
+    fundings = SerializerMoneyField(required=False)
+    own_fundings = SerializerMoneyField(required=False)
+
+
 class ReportSerializer(serializers.ModelSerializer):
 
     class Meta:
@@ -335,6 +351,11 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
 
+class CommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Comment
+    expert_name = serializers.CharField(read_only=True)
 
 class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
@@ -351,7 +372,8 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     stats = CorollaryStatByCostTypeSerializer(read_only=True, many=True)
     totals = serializers.SerializerMethodField()
     next_funding = serializers.SerializerMethodField()
-
+    comments = CommentSerializer(many=True, read_only=True)
+    
     def get_totals(self, instance):
         return CorollaryTotalsSerializer(instance.get_totals()).data
 
@@ -362,11 +384,6 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     def validate_docx_context(self, instance):
         return True, u""
 
-class CommentSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Comment
-    expert_name = serializers.CharField(read_only=True)
 
 class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
 

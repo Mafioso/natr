@@ -127,7 +127,9 @@ class Account(AbstractBaseUser, PermissionsMixin):
     @property
     def get_user_type(self):
         if hasattr(self, 'user'):
-            if self.user.is_manager():
+            if self.user.is_director():
+                return NatrGroup.DIRECTOR
+            elif self.user.is_manager():
                 return NatrGroup.MANAGER
             elif self.user.is_expert():
                 return NatrGroup.EXPERT
@@ -164,6 +166,10 @@ class NatrUser(models.Model):
     def is_expert(self):
         groups = self.get_groups()
         return groups.filter(name=NatrGroup.EXPERT).first()
+
+    def is_director(self):
+        groups = self.get_groups()
+        return groups.filter(name=NatrGroup.DIRECTOR).first()
 
     def is_manager(self):
         groups = self.get_groups()

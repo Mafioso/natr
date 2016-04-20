@@ -10,7 +10,7 @@ from django.contrib.auth.models import Group
 
 class NatrGroup(Group):
 
-    ROLES = GRANTEE, EXPERT, MANAGER, RISK_EXPERT, ADMIN = ('grantee', 'expert', 'manager', 'risk_expert', 'admin')
+    ROLES = GRANTEE, EXPERT, MANAGER, RISK_EXPERT, ADMIN, DIRECTOR = ('grantee', 'expert', 'manager', 'risk_expert', 'admin', 'director')
 
     class Meta:
         proxy = True

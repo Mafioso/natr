@@ -15,8 +15,8 @@ DOCUMENTOLOG_EDIT_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/edit?wsdl'
 DOCUMENTOLOG_MOVE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/move?wsdl'
 DOCUMENTOLOG_WSDL_USERNAME = 'documentolog'
 DOCUMENTOLOG_WSDL_PASSWORD = 'secret'
-DOCUMENTOLOG_LOGIN = 'R.Amanzholov@natd.gov.kz'
-DOCUMENTOLOG_PASSWORD = '1q2w3e4R'
+DOCUMENTOLOG_LOGIN = 'tolkyn.baimukhanova@natd.gov.kz'
+DOCUMENTOLOG_PASSWORD = '1q2w3e4r%T'
 DOCUMENTOLOG_LOGIN_URL = DOCUMENTOLOG_URL + '/user/login'
 DOCUMENTOLOG_DOCUMENTS = {
     'plan_monitoring': {

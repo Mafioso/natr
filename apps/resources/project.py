@@ -28,6 +28,7 @@ from natr import mailing
 from datetime import datetime, timedelta
 from natr.utils import end_of
 from itertools import chain
+from notifications.models import send_notification, Notification
 
 class ProjectViewSet(viewsets.ModelViewSet):
 
@@ -175,6 +176,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project_tupples = self.get_queryset().values_list('id','name')
         return response.Response(project_tupples)
 
+    @list_route(methods=['get'], url_path='statistics')
+    @patch_serializer_class(ProjectStatisticsSerializer)
+    def statistics(self, request, *a, **kw):
+        pass
+
     @detail_route(methods=['post'], url_path='risks')
     def risks(self, request, *a, **kw):
         project = self.get_object()
@@ -262,6 +268,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(project)
         return response.Response(serializer.data)
+
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
@@ -639,12 +646,6 @@ class CorollaryViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(instance=corollaries, many=True)
         return response.Response(serializer.data)
 
-    @list_route(methods=['post'], url_path='build')
-    def build(self, request, *a, **kw):
-        corollary = prj_models.Corollary.gen_by_report(request.data.get('report'))
-        serializer = self.get_serializer(instance=corollary)
-        return response.Response(serializer.data)
-
     @detail_route(methods=['post'], url_path='update_stat')
     def update_stat(self, request, *a, **kw):
         corollary = self.get_object()
@@ -664,25 +665,58 @@ class CorollaryViewSet(ProjectBasedViewSet):
         changed = corollary.status != request.data.get('status', corollary.status)
         corollary.status = request.data['status']
         corollary.save()
+        comment = None
+
+        if 'comment_text' in request.data:
+            comment = prj_models.Comment(content=corollary, 
+                                         comment_text=request.data.get('comment_text', ""),
+                                         account=request.user)
+            comment.save()
 
         if changed:
             if corollary.status == prj_models.Corollary.APPROVED:
+                user = None
+                if request and hasattr(request, "user"):
+                    user = request.user
                 try:
-                    mailing.send_corollary_approved(corollary)
+                    mailing.send_corollary_approved(corollary, user)
+                    send_notification(Notification.COROLLARY_APPROVED, corollary)
                 except Exception as e:
-                    print str(e)
+                    print str(e), "EXCEPTION ********"
 
             elif corollary.status == prj_models.Corollary.REWORK:
                 user = None
                 if request and hasattr(request, "user"):
                     user = request.user
                 try:
-                    mailing.send_corollary_to_rework(corollary, user)
+                    mailing.send_corollary_to_rework(corollary, user, comment)
+                    send_notification(Notification.COROLLARY_TO_REWORK, corollary)
                 except Exception as e:
-                    print str(e)
+                    print str(e), "EXCEPTION ********"
+
+            elif corollary.status == prj_models.Corollary.APPROVE:
+                user = None
+                if request and hasattr(request, "user"):
+                    user = request.user
+                try:
+                    mailing.send_corollary_to_approve(corollary, user)
+                    send_notification(Notification.COROLLARY_TO_APPROVE, corollary)
+                except Exception as e:
+                    print str(e), "EXCEPTION ********"
+
+            elif corollary.status == prj_models.Corollary.DIRECTOR_CHECK:
+                user = None
+                if request and hasattr(request, "user"):
+                    user = request.user
+                try:
+                    mailing.send_corollary_dir_check(corollary, user)
+                    send_notification(Notification.COROLLARY_DIR_CHECK, corollary)
+                except Exception as e:
+                    print str(e), "EXCEPTION ********"
 
 
-        return response.Response({"milestone_id": corollary.milestone.id}, status=200)
+        return response.Response({"project_id": corollary.project.id,
+                                  "corollary_id": corollary.id}, status=200)
 
     @detail_route(methods=['get'], url_path='gen_docx')
     def gen_docx(self, request, *a, **kw):
@@ -706,6 +740,33 @@ class CorollaryViewSet(ProjectBasedViewSet):
 
         headers = self.get_success_headers(serializer.data)
         return response.Response({"instance": instance.id}, headers=headers)
+
+    @detail_route(methods=['get', 'post'], url_path='comments')
+    @patch_serializer_class(CommentSerializer)
+    def comments(self, request, *a, **kw):
+        corollary = self.get_object()
+        filter_data = {}
+
+        if request.method == 'POST':
+            data = request.data
+
+            if data.get('comment_text', None):
+                comment = prj_models.Comment(content=corollary, 
+                                             comment_text=data['comment_text'],
+                                             account=request.user)
+                comment.save()
+                
+            if data.get('date_created', None):
+                filter_data['date_created__gte'] = data.get('date_created')
+
+        else:
+            query_params = request.query_params
+            if query_params.get('date_created', None):
+                filter_data['date_created__gte'] = query_params.get('date_created')
+
+        comments = corollary.comments.filter(**filter_data).order_by('-date_created')
+        serializer = self.get_serializer(comments, many=True)
+        return response.Response(serializer.data)
 
 
 class RiskCategoryViewSet(viewsets.ModelViewSet):
