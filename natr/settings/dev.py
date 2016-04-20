@@ -34,4 +34,4 @@ DOCKER_HOST = '172.17.0.1'
 # CORS_ORIGIN_WHITELIST = (
 #     'portal.natd.gov.kz',
 #     '195.12.114.15'
-)
+# )

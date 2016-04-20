@@ -2224,17 +2224,17 @@ class DigitalSignature(models.Model):
     context = GenericForeignKey('context_type', 'object_id')
 
 
-def onsignal__create_protection_doc(sender, report, created=False, **kwargs):
+def onsignal__create_protection_doc(sender, instance, created, **kwargs):
     if not created:
         return
-    ProtectionDocument.build_empty(report.project)
+    ProtectionDocument.build_empty(instance.project)
 
-def onsignal__add_stat_by_cost_type__in_corollary(sender, cost_type, created=False, **kwargs):
+def onsignal__add_stat_by_cost_type__in_corollary(sender, instance, created, **kwargs):
     if not created:
         return
-    project = cost_type.project
+    project = instance.project
     for report in Report.objects.by_project(project):
-        report.corollary.add_stat_by_cost_type(cost_type)
+        report.corollary.add_stat_by_cost_type(instance)
 
 
 post_save.connect(onsignal__create_protection_doc, sender=Report)
