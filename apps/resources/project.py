@@ -661,7 +661,7 @@ class CorollaryViewSet(ProjectBasedViewSet):
 
         return response.Response({"milestone_id": corollary.milestone.id}, status=200)
 
-    @detail_route(methods=['post'], url_path='change_status')
+    @detail_route(methods=['patch'], url_path='change_status')
     def change_status(self, request, *a, **kw):
         corollary = self.get_object()
         changed = corollary.status != request.data.get('status', corollary.status)
