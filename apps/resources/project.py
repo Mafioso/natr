@@ -176,6 +176,11 @@ class ProjectViewSet(viewsets.ModelViewSet):
         project_tupples = self.get_queryset().values_list('id','name')
         return response.Response(project_tupples)
 
+    @list_route(methods=['get'], url_path='statistics')
+    @patch_serializer_class(ProjectStatisticsSerializer)
+    def statistics(self, request, *a, **kw):
+        pass
+
     @detail_route(methods=['post'], url_path='risks')
     def risks(self, request, *a, **kw):
         project = self.get_object()
@@ -263,6 +268,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(project)
         return response.Response(serializer.data)
+
 
 class MilestoneViewSet(ProjectBasedViewSet):
     queryset = prj_models.Milestone.objects.all()
