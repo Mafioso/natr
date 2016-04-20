@@ -423,6 +423,14 @@ class Project(models.Model):
     def get_status_cap(self):
         return Project.STATUS_CAPS[self.status]
 
+    @property
+    def get_funding_type_name(self):
+        return self.funding_type.get_name_display()
+
+    @property
+    def get_address_region(self):
+        return self.organization_details.address_region
+
     def get_reports(self):
         return Report.objects.by_project(self).filter(status__gt=Report.NOT_ACTIVE)
 
