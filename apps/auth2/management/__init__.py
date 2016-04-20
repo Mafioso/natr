@@ -8,7 +8,7 @@ import auth2.models
 def create_default_groups(sender, **kwargs):
 	for def_group in NatrGroup.ROLES:
 		group = NatrGroup.objects.get_or_create(name=def_group)[0]
-		if def_group == NatrGroup.ADMIN or def_group == NatrGroup.DIRECTOR:
+		if def_group == NatrGroup.ADMIN:
 			group.permissions = Permission.objects.all()
 			group.save()
 			print '%s permissions added into %s group' % (group.permissions.count(), def_group)
