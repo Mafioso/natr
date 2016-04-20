@@ -68,19 +68,38 @@ class OrganizationManager(models.Manager):
 
 class Organization(models.Model):
     ORG_TYPES = INDIVIDUAL, COMPANY = range(2)
-
     ORG_TYPES_CAPS = (
         u'Физическое лицо',
         u'Юридическое лицо'
     )
-
     ORG_TYPES_OPTS = zip(ORG_TYPES, ORG_TYPES_CAPS)
+    
+    ADDRESS_REGION_CAPS = (
+        u'Астана - 01',
+        u'Алматы - 02',
+        u'Акмолинская область - 03',
+        u'Актюбинская область - 04',
+        u'Алматинская область - 05',
+        u'Атырауская область - 06',
+        u'Западно-Казахстанская область - 07',
+        u'Жамбылская область - 08',
+        u'Карагандинская область - 09',
+        u'Костанайская область - 10',
+        u'Кызылординская область - 11',
+        u'Мангистауская область - 12',
+        u'Южно-Казахстанская область - 13',
+        u'Павлодарская область - 14',
+        u'Северо-Казахстанская область - 15',
+        u'Восточно-Казахстанская область - 16',
+    )
+    ADDRESS_REGION_OPTS = zip(range(len(ADDRESS_REGION_CAPS)), ADDRESS_REGION_CAPS)
 
     name = models.CharField(u'Название грантополучателя', max_length=255, null=True)
     org_type = models.IntegerField(u'Вид грантополучателя', default=INDIVIDUAL, choices=ORG_TYPES_OPTS)
     bin = models.CharField(u'БИН', max_length=255, null=True)
     bik = models.CharField(u'БИК-ИИН', max_length=255, null=True)
     iik = models.CharField(u'ИИК', max_length=255, null=True)
+    address_region = models.IntegerField(u'Регион', null=True, blank=True, choices=ADDRESS_REGION_OPTS)
     address_1 = models.TextField(u'Юридический адрес', null=True)
     address_2 = models.TextField(u'Фактический адрес', null=True)
     requisites = models.TextField(u'Банковский реквизиты', null=True)
@@ -118,6 +137,10 @@ class Organization(models.Model):
         if self.authorized_grantees:
             return self.authorized_grantees.last()
         return None
+
+    @property
+    def address_region_cap(self):
+        return self.ADDRESS_REGION_CAPS[self.address_region]
 
     @property
     def contact_details_id(self):

@@ -282,9 +282,11 @@ class Project(models.Model):
         'FundingType', null=True, on_delete=models.SET_NULL)
 
     fundings = MoneyField(
+        u'Сумма гранта',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     own_fundings = MoneyField(
+        u'Сумма собственных средств',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
     funding_date = models.DateTimeField(null=True)
@@ -297,6 +299,11 @@ class Project(models.Model):
 
     def __unicode__(self):
         return unicode(self.name) or u''
+
+    @property
+    def natr_fundings(self):
+        val = self.fundings.amount + self.own_fundings.amount
+        return Money(amount=val, currency=settings.KZT)
 
     @property
     def current_milestone(self):
@@ -378,23 +385,23 @@ class Project(models.Model):
             risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
             score = risk_index.score
             if score < 15:
-                return 0
+                return Project.SMALL_R
             if score >= 15 and score < 25:
-                return 1
-            return 2
+                return Project.MEDIUM_R
+            return Project.HIGH_R
         except ProjectRiskIndex.DoesNotExist:
             fundings = self.fundings.amount if self.fundings else 0
             if self.organization_details.org_type == 0 or \
                fundings > 50000000 or \
                self.total_month > 12 or \
                self.funding_type.name != FundingType.COMMERCIALIZATION:
-                return 2
+                return Project.HIGH_R
             if self.organization_details.org_type == 1 and \
                fundings <= 50000000 and \
                self.total_month == 12 and \
                self.funding_type.name == FundingType.COMMERCIALIZATION:
-               return 1
-            return 0
+               return Project.MEDIUM_R
+            return Project.SMALL_R
 
     @property
     def risks(self):
@@ -565,7 +572,7 @@ class Project(models.Model):
                         "grantee_name",
                         "project_name",
                         "grant_type",
-                        "region",
+                        "address_region",
                         "total_month",
                         "fundings",
                         "transhes",
@@ -854,8 +861,12 @@ class Report(ProjectBasedModel):
             type=report_type,
             status=Report.NOT_ACTIVE)
         r.save()
+
         for cost_type in r.project.costtype_set.all():
             budget_doc.add_empty_item(cost_type)
+
+        c = Corollary.gen_by_report(r)
+
         return r
 
     @classmethod
@@ -1040,6 +1051,15 @@ class Report(ProjectBasedModel):
 
         return context
 
+    def create_protection_doc(self, **protection_document_data):
+        protection_document = ProtectionDocument.build_empty(project=self.project)
+        protection_document.update(**protection_document_data)
+        self.protection_document = protection_document
+        return self
+
+    @classmethod
+    def all_active(cls):
+        return Report.objects.filter(status__gt=Report.NOT_ACTIVE)
 
     @classmethod
     def post_save(cls, sender, instance, created, **kwargs):
@@ -1057,17 +1077,6 @@ class Report(ProjectBasedModel):
         milestone.save()
 
 
-    @classmethod
-    def all_active(cls):
-        return Report.objects.filter(status__gt=Report.NOT_ACTIVE)
-
-    def create_protection_doc(self, **protection_document_data):
-        protection_document = ProtectionDocument.build_empty(project=self.project)
-        protection_document.update(**protection_document_data)
-        self.protection_document = protection_document
-        return self
-
-
 @track_data('status')
 class Corollary(ProjectBasedModel):
 
@@ -1077,20 +1086,23 @@ class Corollary(ProjectBasedModel):
         verbose_name = u"Заключение КМ"
         permissions = (
             ('approve_corollary', u"Утверждение документа"),
-            ('sendto_approve_corollary', u"Отправлять документ на утверждение"),
+            ('sendto_approve_corollary', u"Отправлять на согласование рукводителю"),
             ('sendto_rework_corollary', u"Отправлять документ на доработку"),
             ('start_next_milestone', u"Начинать следующий этап"),
+            ('send_to_director', u"Отправлять на согласование директору"),
+            ('corollary_add_comment', u'Добавлять комментарий к заключению')
         )
 
-    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH = range(7)
+    STATUSES = NOT_ACTIVE, BUILD, CHECK, APPROVE, APPROVED, REWORK, FINISH, DIRECTOR_CHECK = range(8)
     STATUS_CAPS = (
         u'неактивно',
         u'формирование',
         u'на проверке',
-        u'утверждение',
+        u'на согласовании у руководителя',
         u'утверждено',
         u'отправлено на доработку',
-        u'завершено')
+        u'завершено',
+        u'на согласовании у директора')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul
@@ -1100,43 +1112,22 @@ class Corollary(ProjectBasedModel):
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
     work_description = models.TextField(u'Представлено описание фактически проведенных работ', null=True, blank=True)
     work_description_note = models.TextField(u'Примечание к описанию фактически проведенных работ', null=True, blank=True)
-
+    comments = GenericRelation('Comment', content_type_field='content_type')
+    
     def get_status_cap(self):
         return Corollary.STATUS_CAPS[self.status]
 
-    def build_stat(self):
+    def build_stats(self):
         self.stats.all().delete()
-        planned_costs = {cost.cost_type_id: cost for cost in self.planned_costs}
-        stat_by_type = {
-            cost_type.id: CorollaryStatByCostType(
-                corollary=self, cost_type=cost_type)
-            for cost_type in self.project.costtype_set.all()}
-        for cost_type_id, stat_obj in stat_by_type.iteritems():
-            plan_cost_objs = MilestoneCostRow.objects.filter(
-                cost_type_id=cost_type_id, milestone=self.milestone)
-            # there was error when sum empty list, it returned 0 (int) therefore returns Money(0, KZT)
-            plan_total_costs = sum([item.costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
-            stat_obj.own_fundings = sum([item.own_costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
-            stat_obj.natr_fundings = plan_total_costs - stat_obj.own_fundings
-            stat_obj.planned_costs = plan_total_costs
-            stat_obj.costs_approved_by_docs = stat_obj.fact_costs = self.use_of_budget_doc.calc_total_expense()
-            stat_obj.costs_received_by_natr = min(stat_obj.costs_approved_by_docs, stat_obj.natr_fundings)
-            stat_obj.save()
-        return stat_by_type.values()
+        return map(self.add_stat_by_cost_type, self.project.costtype_set.all())
 
-    def create_empty_stat(self, cost_type):
+    def add_stat_by_cost_type(self, cost_type):
         stat_obj = CorollaryStatByCostType(
             corollary=self, cost_type=cost_type)
-        plan_cost_objs = MilestoneCostRow.objects.filter(
-                cost_type_id=cost_type.id, milestone=self.milestone)
-        # there was error when sum empty list, it returned 0 (int) therefore returns Money(0, KZT)
-        plan_total_costs = sum([item.costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
-        stat_obj.own_fundings = sum([item.own_costs for item in plan_cost_objs] or [Money(amount=0, currency=settings.KZT)])
-        stat_obj.natr_fundings = plan_total_costs - stat_obj.own_fundings
-        stat_obj.planned_costs = plan_total_costs
-        stat_obj.costs_approved_by_docs = stat_obj.fact_costs = self.use_of_budget_doc.calc_total_expense()
+        stat_obj.costs_approved_by_docs = self.use_of_budget_doc.calc_total_expense()
         stat_obj.costs_received_by_natr = min(stat_obj.costs_approved_by_docs, stat_obj.natr_fundings)
         stat_obj.save()
+        return stat_obj
 
     @property
     def use_of_budget_doc(self):
@@ -1150,13 +1141,18 @@ class Corollary(ProjectBasedModel):
 
     @property
     def planned_costs(self):
-        u"""Расходы согласно договора"""
+        u"""Расходы согласно договору"""
         return self.cost_document.get_milestone_costs(self.milestone)
 
     @property
-    def planned_fundings(self):
-        u"""Бюджетные средства согласно договора"""
-        return self.cost_document.get_milestone_fundings(self.milestone)
+    def total_costs(self):
+        u"""Сумма расходов согласно договору"""
+        return self.cost_document.costs_by_milestone(self.milestone)
+
+    @property
+    def total_fundings(self):
+        u"""Сумма бюджетных средств согласно договору"""
+        return self.cost_document.fundings_by_milestone(self.milestone)
 
     @property
     def number_of_milestones(self):
@@ -1198,19 +1194,48 @@ class Corollary(ProjectBasedModel):
         return u"""Согласно календарному плану:\n %s""" % cp_item.description
 
     @classmethod
-    def gen_by_report(cls, report_id):
-        report = Report.objects.get(pk=report_id)
+    def gen_by_report(cls, report):
         corollary, _ = Corollary.objects.get_or_create(
             report=report, work_description=report.description, defaults={
                 'milestone': report.milestone,
                 'project': report.project})
-        corollary.build_stat()
+        corollary.build_stats()
         return corollary
 
     def get_project(self):
         return self.project
 
+    def get_totals(instance):
+        rv = {
+            'natr_fundings': utils.zero_money(),
+            'own_fundings': utils.zero_money(),
+            'planned_costs': utils.zero_money(),
+            'fact_costs': utils.zero_money(),
+            'costs_received_by_natr': utils.zero_money(),
+            'costs_approved_by_docs': utils.zero_money(),
+            'savings': utils.zero_money()
+        }
+        for stat_key in rv:
+            for stat_obj in instance.stats.all():
+                rv[stat_key] += getattr(stat_obj, stat_key)
+        return rv
+
     def get_print_context(self, **kwargs):
+        def get_totals(instance):
+            rv = {
+                'natr_fundings': utils.zero_money(),
+                'own_fundings': utils.zero_money(),
+                'planned_costs': utils.zero_money(),
+                'fact_costs': utils.zero_money(),
+                'costs_received_by_natr': utils.zero_money(),
+                'costs_approved_by_docs': utils.zero_money(),
+                'savings': utils.zero_money()
+            }
+            for stat_key in rv:
+                for stat_obj in instance.stats.all():
+                    rv[stat_key] += getattr(stat_obj, stat_key)
+            return rv
+
         def conc_table(obj, table, final=False):
             prj_fundings = obj.project.fundings.amount if obj.project.fundings else 0
             rows = []
@@ -1286,19 +1311,6 @@ class Corollary(ProjectBasedModel):
                             })
 
             return row_data
-
-        def get_totals(instance):
-            rv = {
-                'planned_costs': utils.zero_money(),
-                'fact_costs': utils.zero_money(),
-                'costs_received_by_natr': utils.zero_money(),
-                'costs_approved_by_docs': utils.zero_money(),
-                'savings': utils.zero_money()
-            }
-            for stat_key in rv:
-                for stat_obj in instance.stats.all():
-                    rv[stat_key] += getattr(stat_obj, stat_key)
-            return rv
 
         def fill_corollary_table(obj, table):
             current_row = 3
@@ -1514,7 +1526,6 @@ class Corollary(ProjectBasedModel):
             milestone.set_status(Milestone.COROLLARY_APROVING)
         elif new_val == Corollary.APPROVED:
             attachment = instance.build_printed()
-            # if instance.report.type == Report.FINAL:
             title = u'Итоговое заключение по КМ' if instance.report.type == Report.FINAL else u'Промежуточное заключение по КМ'
             corollary_type = 'corollary_final' if instance.report.type == Report.FINAL else 'corollary_cameral'
             SEDEntity.pin_to_sed(
@@ -1533,9 +1544,6 @@ class CorollaryStatByCostType(models.Model):
     corollary = models.ForeignKey('Corollary', related_name='stats')
     cost_type = models.ForeignKey('natr.CostType')
 
-    fact_costs = MoneyField(u'Сумма представленная ГП',
-        max_digits=20, decimal_places=2, default_currency=settings.KZT,
-        null=True, blank=True)
     costs_received_by_natr = MoneyField(u'Сумма принимаемая НАТР',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
         null=True, blank=True)
@@ -1545,7 +1553,7 @@ class CorollaryStatByCostType(models.Model):
 
     @property
     def savings(self):
-        return self.natr_fundings - self.costs_received_by_natr
+        return self.planned_costs - self.costs_received_by_natr
 
     @property
     def natr_fundings(self):
@@ -1558,6 +1566,10 @@ class CorollaryStatByCostType(models.Model):
     @property
     def planned_costs(self):
         return self.get_cost_row().costs
+
+    @property
+    def fact_costs(self):
+        return self.corollary.report.use_of_budget_doc.items.get(cost_type=self.cost_type).total_expense
 
     def get_cost_row(self):
         m = self.corollary.milestone
@@ -2320,11 +2332,6 @@ class MonitoringOfContractPerformance(models.Model):
     subject = models.CharField(u"Предмет выездного", max_length=1024, null=True, blank=True)
     results = models.CharField(u"Результат выездного мониторинга", max_length=1024, null=True, blank=True)
 
-def on_report_created(sender, instance, created=False, **kwargs):
-    if not created:
-        return
-    ProtectionDocument.build_empty(instance.project)
-
 
 class DigitalSignature(models.Model):
     info = models.TextField(null=True, blank=True)
@@ -2335,18 +2342,22 @@ class DigitalSignature(models.Model):
     context = GenericForeignKey('context_type', 'object_id')
 
 
-def on_cost_type_created(sender, instance, created=False, **kwargs):
+def onsignal__create_protection_doc(sender, report, created=False, **kwargs):
     if not created:
         return
+    ProtectionDocument.build_empty(report.project)
 
-    project = instance.project
+def onsignal__add_stat_by_cost_type__in_corollary(sender, cost_type, created=False, **kwargs):
+    if not created:
+        return
+    project = cost_type.project
     for report in Report.objects.by_project(project):
-        report.corollary.create_empty_stat(instance)
+        report.corollary.add_stat_by_cost_type(cost_type)
 
 
-post_save.connect(on_report_created, sender=Report)
-post_save.connect(on_cost_type_created, sender=CostType)
+post_save.connect(onsignal__create_protection_doc, sender=Report)
 post_save.connect(Report.post_save, sender=Report)
+post_save.connect(onsignal__add_stat_by_cost_type__in_corollary, sender=CostType)
 post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)
 post_save.connect(Monitoring.post_save, sender=Monitoring)

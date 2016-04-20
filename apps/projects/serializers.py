@@ -24,6 +24,7 @@ __all__ = (
     'FundingTypeSerializer',
     'ProjectSerializer',
     'ProjectBasicInfoSerializer',
+    'ProjectStatisticsSerializer',
     'ReportSerializer',
     'MonitoringSerializer',
     'MonitoringTodoSerializer',
@@ -111,6 +112,7 @@ class MilestoneSerializer(
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     fundings = SerializerMoneyField(required=False)
     planned_fundings = SerializerMoneyField(required=False)
+    natr_fundings = SerializerMoneyField(read_only=True, required=False)
     report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
     conclusions = serializers.PrimaryKeyRelatedField(queryset=MilestoneConclusion.objects.all(), required=False)
@@ -159,7 +161,7 @@ class MilestoneBaseInfo(serializers.ModelSerializer):
 
     class Meta:
         model = Milestone
-        fields = ('id', 'number', 'status_cap')
+        fields = ('id', 'number', 'status_cap', 'date_funded')
 
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
@@ -177,6 +179,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     fundings = SerializerMoneyField(required=False)
     own_fundings = SerializerMoneyField(required=False)
+    natr_fundings = SerializerMoneyField(read_only=True, required=False)
     funding_type = FundingTypeSerializer(required=True)
     aggreement = AgreementDocumentSerializer(required=False)
     statement = StatementDocumentSerializer(required=False)
@@ -249,6 +252,21 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
         if instance.aggreement:
             return AgreementDocumentSerializer(instance.aggreement).data
         return None
+
+
+class ProjectStatisticsSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
+
+    class Meta:
+        model = Project
+        fields = ('risk_degree',)
+
+    def __init__(self, *args, **kwargs):
+        self.fields['assigned_experts'].read_only = True
+        self.fields['assigned_grantees'].read_only = True
+        super(ProjectSerializer, self).__init__(*args, **kwargs)
+
+    fundings = SerializerMoneyField(required=False)
+    own_fundings = SerializerMoneyField(required=False)
 
 
 class ReportSerializer(serializers.ModelSerializer):
@@ -326,10 +344,10 @@ class CorollaryStatByCostTypeSerializer(ExcludeCurrencyFields, serializers.Model
     class Meta:
         model = CorollaryStatByCostType
 
-    fact_costs = SerializerMoneyField()
     costs_received_by_natr = SerializerMoneyField()
     costs_approved_by_docs = SerializerMoneyField()
 
+    fact_costs = SerializerMoneyField(read_only=True)
     natr_fundings = SerializerMoneyField(read_only=True)
     own_fundings = SerializerMoneyField(read_only=True)
     planned_costs = SerializerMoneyField(read_only=True)
@@ -352,6 +370,12 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
     conclusions = serializers.PrimaryKeyRelatedField(queryset=MilestoneConclusion.objects.all(), required=False)
 
+class CommentSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Comment
+    expert_name = serializers.CharField(read_only=True)
+
 class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
@@ -367,21 +391,10 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     stats = CorollaryStatByCostTypeSerializer(read_only=True, many=True)
     totals = serializers.SerializerMethodField()
     next_funding = serializers.SerializerMethodField()
-
+    comments = CommentSerializer(many=True, read_only=True)
+    
     def get_totals(self, instance):
-        rv = {
-            'natr_fundings': utils.zero_money(),
-            'own_fundings': utils.zero_money(),
-            'planned_costs': utils.zero_money(),
-            'fact_costs': utils.zero_money(),
-            'costs_received_by_natr': utils.zero_money(),
-            'costs_approved_by_docs': utils.zero_money(),
-            'savings': utils.zero_money()
-        }
-        for stat_key in rv:
-            for stat_obj in instance.stats.all():
-                rv[stat_key] += getattr(stat_obj, stat_key)
-        return CorollaryTotalsSerializer(rv).data
+        return CorollaryTotalsSerializer(instance.get_totals()).data
 
     def get_next_funding(self, instance):
         milestone = instance.project.take_next_milestone()
@@ -390,11 +403,6 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     def validate_docx_context(self, instance):
         return True, u""
 
-class CommentSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Comment
-    expert_name = serializers.CharField(read_only=True)
 
 class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
 
