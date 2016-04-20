@@ -679,10 +679,11 @@ class CorollaryViewSet(ProjectBasedViewSet):
         comment = None
 
         if 'comment_text' in request.data:
-            comment = prj_models.Comment(content=corollary, 
-                                         comment_text=request.data.get('comment_text', ""),
-                                         account=request.user)
-            comment.save()
+            if request.data.get('comment_text', None):
+                comment = prj_models.Comment(content=corollary, 
+                                             comment_text=request.data.get('comment_text', ""),
+                                             account=request.user)
+                comment.save()
 
         if changed:
             if corollary.status == prj_models.Corollary.APPROVED:

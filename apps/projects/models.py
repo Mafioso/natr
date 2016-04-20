@@ -1102,7 +1102,7 @@ class Corollary(ProjectBasedModel):
         u'утверждено',
         u'отправлено на доработку',
         u'завершено',
-        u'на согласовании у директора')
+        u'на утверждении у директора')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul
@@ -1874,10 +1874,10 @@ class MilestoneConclusionItem(models.Model):
                                   number=cnt+2,
                                   title=u'собственные средства') )
                 items.append( cls(conclusion=milestone_conclusion,
-                                  number=cnt+milestones_number,
+                                  number=cnt+milestones_number+1,
                                   title=u'По %s-му этапу проекта, Грантополучателем выполнена следующая работа:'%milestone.number) )
                 cnt += 1
-        cnt = cnt+milestones_number
+        cnt = cnt+milestones_number+1
         items.append( cls(conclusion=conclusion,
                           number=cnt,
                           title=u'Общая освоенная сумма проекта составляет:') )
