@@ -86,8 +86,9 @@ class MilestoneConclusionItemSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = MilestoneConclusionItem
+        fields = ('id', 'conclusion', 'number', 'title', '_cost')
 
-    _cost = serializers.CharField(read_only=True)
+    _cost = serializers.DecimalField(max_digits=15, decimal_places=2, required=False)
 
 
 class MilestoneConclusionSerializer(serializers.ModelSerializer):

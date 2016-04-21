@@ -1799,6 +1799,10 @@ class MilestoneConclusion(models.Model):
 
 
 class MilestoneConclusionItem(models.Model):
+
+    class Meta:
+        ordering = ["number"]
+
     conclusion = models.ForeignKey('MilestoneConclusion', related_name='items')
     number = models.IntegerField(null=True)
     title = models.TextField(u'Наименование', null=True)
@@ -1809,11 +1813,29 @@ class MilestoneConclusionItem(models.Model):
     def _cost(self):
         return self.get_cameral_cost() if self.conclusion.type == MilestoneConclusion.CAMERAL else self.get_final_cost()
 
+    @_cost.setter
+    def _cost(self, value):
+        self.cost = Money(amount=value, currency=settings.KZT)
+        self.save()
+
     def get_cameral_cost(self):
+        if self.cost:
+            return self.cost.amount
+
         return 1
 
     def get_final_cost(self):
+        if self.cost:
+            return self.cost.amount
+
         return 1
+
+    def update(self, **kwargs):
+        milesonte_conc_id = kwargs.pop('conclusion', None)
+        for k, v in kwargs.iteritems():
+            setattr(self, k, v)
+        self.save()
+        return self
 
 
     @classmethod
@@ -1857,27 +1879,26 @@ class MilestoneConclusionItem(models.Model):
                           title=u'В результате камерального мониторинга по данному проекту замечаний не выявлено') )
         milestones_number = conclusion.milestone.project.milestone_set.count()
         cnt = 2
+        cnt_ = 2
         for milestone in conclusion.milestone.project.milestone_set.all():
-            try:
-                milestone_conclusion = MilestoneConclusion.objects.get(milestone=milestone)
-            except MilestoneConclusion.DoesNotExist:
-                milestone_conclusion = MilestoneConclusion(milestone=milestone)
-                milestone_conclusion.save()
-            finally:
-                items.append( cls(conclusion=milestone_conclusion,
-                                  number=cnt,
-                                  title=u'В представленном отчете указано освоение средств инновационного гранта по %s-му этапу работ в размере'%milestone.number) )
-                items.append( cls(conclusion=milestone_conclusion,
-                                  number=cnt+1,
-                                  title=u'средства гранта') )
-                items.append( cls(conclusion=milestone_conclusion,
-                                  number=cnt+2,
-                                  title=u'собственные средства') )
-                items.append( cls(conclusion=milestone_conclusion,
-                                  number=cnt+milestones_number+1,
-                                  title=u'По %s-му этапу проекта, Грантополучателем выполнена следующая работа:'%milestone.number) )
-                cnt += 1
-        cnt = cnt+milestones_number+1
+            items.append( cls(conclusion=conclusion,
+                              number=cnt,
+                              title=u'В представленном отчете указано освоение средств инновационного гранта по %s-му этапу работ в размере'%milestone.number) )
+            cnt += 1
+            items.append( cls(conclusion=conclusion,
+                              number=cnt,
+                              title=u'средства гранта') )
+            cnt += 1
+            items.append( cls(conclusion=conclusion,
+                              number=cnt,
+                              title=u'собственные средства') )
+            items.append( cls(conclusion=conclusion,
+                              number=cnt_+milestones_number*3,
+                              title=u'По %s-му этапу проекта, Грантополучателем выполнена следующая работа:'%milestone.number) )
+            cnt += 1
+            cnt_ += 1
+
+        cnt = cnt+milestones_number
         items.append( cls(conclusion=conclusion,
                           number=cnt,
                           title=u'Общая освоенная сумма проекта составляет:') )
@@ -2342,17 +2363,17 @@ class DigitalSignature(models.Model):
     context = GenericForeignKey('context_type', 'object_id')
 
 
-def onsignal__create_protection_doc(sender, report, created=False, **kwargs):
+def onsignal__create_protection_doc(sender, instance, created, **kwargs):
     if not created:
         return
-    ProtectionDocument.build_empty(report.project)
+    ProtectionDocument.build_empty(instance.project)
 
-def onsignal__add_stat_by_cost_type__in_corollary(sender, cost_type, created=False, **kwargs):
+def onsignal__add_stat_by_cost_type__in_corollary(sender, instance, created, **kwargs):
     if not created:
         return
-    project = cost_type.project
+    project = instance.project
     for report in Report.objects.by_project(project):
-        report.corollary.add_stat_by_cost_type(cost_type)
+        report.corollary.add_stat_by_cost_type(instance)
 
 
 post_save.connect(onsignal__create_protection_doc, sender=Report)

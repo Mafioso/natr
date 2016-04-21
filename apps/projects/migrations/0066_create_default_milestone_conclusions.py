@@ -42,29 +42,26 @@ def create_final_defaults(cls, conc_cls, conclusion):
                       title=u'В результате камерального мониторинга по данному проекту замечаний не выявлено') )
     milestones_number = conclusion.milestone.project.milestone_set.count()
     cnt = 2
+    cnt_ = 2
     for milestone in conclusion.milestone.project.milestone_set.all():
-        milestone_conclusion = None
-        try:
-            milestone_conclusion = conc_cls.objects.get(milestone=milestone)
-        except conc_cls.DoesNotExist:
-            milestone_conclusion = conc_cls(milestone=milestone)
-            milestone_conclusion.save()
-        finally:
-            if milestone_conclusion:
-                items.append( cls(conclusion=milestone_conclusion,
-                                  number=cnt,
-                                  title=u'В представленном отчете указано освоение средств инновационного гранта по %s-му этапу работ в размере'%milestone.number) )
-                items.append( cls(conclusion=milestone_conclusion,
-                                  number=cnt+1,
-                                  title=u'средства гранта') )
-                items.append( cls(conclusion=milestone_conclusion,
-                                  number=cnt+2,
-                                  title=u'собственные средства') )
-                items.append( cls(conclusion=milestone_conclusion,
-                                  number=cnt+milestones_number+1,
-                                  title=u'По %s-му этапу проекта, Грантополучателем выполнена следующая работа:'%milestone.number) )
-                cnt += 1
-    cnt = cnt+milestones_number+1
+        items.append( cls(conclusion=conclusion,
+                          number=cnt,
+                          title=u'В представленном отчете указано освоение средств инновационного гранта по %s-му этапу работ в размере'%milestone.number) )
+        cnt += 1
+        items.append( cls(conclusion=conclusion,
+                          number=cnt,
+                          title=u'средства гранта') )
+        cnt += 1
+        items.append( cls(conclusion=conclusion,
+                          number=cnt,
+                          title=u'собственные средства') )
+        items.append( cls(conclusion=conclusion,
+                          number=cnt_+milestones_number*3,
+                          title=u'По %s-му этапу проекта, Грантополучателем выполнена следующая работа:'%milestone.number) )
+        cnt += 1
+        cnt_ += 1
+
+    cnt = cnt+milestones_number
     items.append( cls(conclusion=conclusion,
                       number=cnt,
                       title=u'Общая освоенная сумма проекта составляет:') )
