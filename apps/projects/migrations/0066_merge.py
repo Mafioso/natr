@@ -8,7 +8,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('projects', '0065_auto_20160418_1131'),
-        ('projects', '0066_create_default_milestone_conclusions'),
+        ('projects', '0065_milestoneconclusion_type'),
     ]
 
     operations = [
