@@ -1482,7 +1482,9 @@ class Corollary(ProjectBasedModel):
 
             return obj
 
+    def get_print_context(self, **kwargs):
         context = self.__dict__
+
         if self.report.type == Report.CAMERAL:
             context['title'] = u"Заключение по камеральному мониторингу хода исполнения договора об инновационном гранте"
             conc_table(self, kwargs['doc'].tables[2])
@@ -1565,7 +1567,16 @@ class CorollaryStatByCostType(models.Model):
 
     @property
     def natr_fundings(self):
-        return self.get_cost_row().grant_costs
+        m = self.get_milestone()
+        if m.number == 1:
+            return self.get_cost_row().grant_costs
+        else:
+            prev_milestone = m.get_prev_milestone()
+            prev_corollary = prev_milestone.corollary
+            prev_corollary_stat = CorollaryStatByCostType.objects.get(
+                cost_type = self.cost_type, 
+                corollary = prev_corollary)
+            return self.get_cost_row().grant_costs - prev_corollary_stat.savings
 
     @property
     def own_fundings(self):
@@ -1580,14 +1591,17 @@ class CorollaryStatByCostType(models.Model):
         return self.corollary.report.use_of_budget_doc.items.get(cost_type=self.cost_type).total_expense
 
     def get_cost_row(self):
-        m = self.corollary.milestone
+        m = self.get_milestone()
         ct = self.cost_type
         cd = self.get_project().cost_document
         cost_row = MilestoneCostRow.objects.filter(cost_document=cd, milestone=m, cost_type=ct)
         return cost_row[0]
 
     def get_project(self):
-        return self.corollary.milestone.project
+        return self.get_milestone().project
+
+    def get_milestone(self):
+        return self.corollary.milestone
 
 
 @track_data('status')
@@ -1658,6 +1672,18 @@ class Milestone(ProjectBasedModel):
 
     def notification_subscribers(self):
         return self.project.stakeholders
+
+    def get_next_milestone(self):
+        if self.project.number_of_milestones == self.number:
+            return None
+        else:
+            return self.project.milestone_set.get(number=self.number + 1)
+
+    def get_prev_milestone(self):
+        if self.number == 1:
+            return None
+        else:
+            return self.project.milestone_set.get(number=self.number - 1)
 
     def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():
