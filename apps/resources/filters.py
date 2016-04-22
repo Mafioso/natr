@@ -54,12 +54,16 @@ class ProjectFilter(ListOfIdFilter):
 
 	def filter_date_from(self, queryset, value):
 		date_from = datetime.datetime.strptime(value, '%Y-%m-%d')
-		queryset = queryset.filter(date_start__gte=date_from)
+		queryset = queryset.filter(
+			(Q(document__type='agreement') & Q(document__date_sign__gte=date_from))
+		)
 		return queryset
 
 	def filter_date_to(self, queryset, value):
 		date_to = datetime.datetime.strptime(value, '%Y-%m-%d')
-		queryset = queryset.filter(date_end__lte=date_to)
+		queryset = queryset.filter(
+			(Q(document__type='agreement') & Q(document__date_sign__lte=date_to))
+		)
 		return queryset
 
 
