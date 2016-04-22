@@ -1895,6 +1895,13 @@ class MilestoneConclusionItem(models.Model):
         self.title = value
         self.save()
 
+    def get_total_by_milestones(self, milesone_set, key):
+        total = 0
+        for milestone in milesone_set:
+            total += milestone.corollary.get_total(key).amount
+
+        return total 
+
     def get_cameral_cost(self):
         milestone = None
         try:
@@ -1910,13 +1917,14 @@ class MilestoneConclusionItem(models.Model):
             return milestone.corollary.get_total('savings').amount
 
         elif self.type == MilestoneConclusionItem.COSTS:
-            return 1
+            return milestone.corollary.get_total('natr_fundings').amount + \
+                   milestone.corollary.get_total('own_fundings').amount
 
         elif self.type == MilestoneConclusionItem.COSTS_NATR:
-            return 1
+            return milestone.corollary.get_total('natr_fundings').amount
 
         elif self.type == MilestoneConclusionItem.COSTS_OWN:
-            return 1
+            return milestone.corollary.get_total('own_fundings').amount
 
         elif self.type == MilestoneConclusionItem.RECOMMENTDED_NEXT_FUNDS:
             return milestone.corollary.get_total('natr_fundings').amount
@@ -1940,16 +1948,22 @@ class MilestoneConclusionItem(models.Model):
             return milestone.corollary.get_total('own_fundings').amount
 
         elif self.type == MilestoneConclusionItem.TOTAL_FUNDINGS:
-            return milestone.corollary.get_total('costs_received_by_natr').amount
+            milestone_set = milestone.project.milestone_set.all()
+
+            return self.get_total_by_milestones(milestone_set, 'natr_fundings') + \
+                   self.get_total_by_milestones(milestone_set, 'own_fundings')
 
         elif self.type == MilestoneConclusionItem.TOTAL_NATR:
-            return milestone.corollary.get_total('costs_received_by_natr').amount
+            milestone_set = milestone.project.milestone_set.all()
+            return self.get_total_by_milestones(milestone_set, 'natr_fundings')
 
         elif self.type == MilestoneConclusionItem.TOTAL_OWN:
-            return milestone.corollary.get_total('costs_received_by_natr').amount
+            milestone_set = milestone.project.milestone_set.all()
+            return self.get_total_by_milestones(milestone_set, 'own_fundings')
 
         elif self.type == MilestoneConclusionItem.ECONOMY:
-            return milestone.corollary.get_total('costs_received_by_natr').amount
+            milestone_set = milestone.project.milestone_set.all()
+            return self.get_total_by_milestones(milestone_set, 'savings')
 
         return None
 
