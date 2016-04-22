@@ -13,7 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from documents import models as doc_models
 from grantee import models as grantee_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature, MilestoneConclusionItem, MilestoneConclusion
 from auth2.models import NatrUser
 from notifications.models import send_notification, Notification
 from logger.models import LogItem
@@ -29,6 +29,8 @@ __all__ = (
     'MonitoringSerializer',
     'MonitoringTodoSerializer',
     'MilestoneSerializer',
+    'MilestoneConclusionItemSerializer',
+    'MilestoneConclusionSerializer',
     'CommentSerializer',
     'CorollarySerializer',
     'CorollaryStatByCostTypeSerializer',
@@ -80,6 +82,23 @@ class FundingTypeSerializer(serializers.ModelSerializer):
 
     name_cap = serializers.CharField(read_only=True)
 
+class MilestoneConclusionItemSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MilestoneConclusionItem
+        fields = ('id', 'conclusion', 'number', '_title', '_cost')
+
+    _cost = serializers.DecimalField(max_digits=15, decimal_places=2, required=False)
+    _title = serializers.CharField(required=False)
+
+
+class MilestoneConclusionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MilestoneConclusion
+
+    items = MilestoneConclusionItemSerializer(many=True, required=False)
+
 
 class MilestoneSerializer(
         EmptyObjectDMLMixin,
@@ -98,6 +117,7 @@ class MilestoneSerializer(
     natr_fundings = SerializerMoneyField(read_only=True, required=False)
     report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
+    conclusions = serializers.PrimaryKeyRelatedField(queryset=MilestoneConclusion.objects.all(), required=False)
 
     def update(self, instance, validated_data):
         # if milestone changed we need to notify gp about that
@@ -352,6 +372,7 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     planned_fundings = SerializerMoneyField(required=False)
     report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
+    conclusions = serializers.PrimaryKeyRelatedField(queryset=MilestoneConclusion.objects.all(), required=False)
 
 class CommentSerializer(serializers.ModelSerializer):
 

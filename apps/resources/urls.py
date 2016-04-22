@@ -7,6 +7,8 @@ from .project import (
 	MonitoringViewSet,
 	ReportViewSet,
 	MilestoneViewSet,
+	MilestoneConclusionViewSet,
+	MilestoneConclusionItemViewSet,
 	CorollaryViewSet,
 	RiskCategoryViewSet,
 	RiskDefinitionViewSet,
@@ -46,6 +48,8 @@ router.register(r'documents', DocumentViewSet)
 router.register(r'calendar-plans', CalendarPlanDocumentViewSet, 'calendarplan')
 router.register(r'projects', ProjectViewSet)
 router.register(r'milestones', MilestoneViewSet, 'milestone')
+router.register(r'milestone_conc', MilestoneConclusionViewSet, 'milestone_conclusion')
+router.register(r'milestone_conc_item', MilestoneConclusionItemViewSet, 'milestone_conclusion_item')
 router.register(r'reports', ReportViewSet)
 router.register(r'comments', CommentViewSet)
 router.register(r'corollaries', CorollaryViewSet)
