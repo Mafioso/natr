@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width">
     <title>NATD</title>
     <link rel="shortcut icon" href="{% static 'images/favicon.png' %}" type="image/png">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/icons.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/icons.css' %}" id='icons_style'>
     <link rel="stylesheet" type="text/css" href="{% static 'css/handsontable.full.min.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/react-select.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/chartist.min.css' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/loading-spinner.css' %}">
-    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" id='main_style'>
   </head>
 
   <body data-csrfmiddlewaretoken="{{ csrf_token }}">
@@ -150,6 +150,25 @@
     </figure>
 
     <div class="app" id="app"></div>
+
+    <script type="text/javascript">
+      var largeScreen = true;
+      var resize = function() {
+        var width = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+        if (width > 1750 && !largeScreen) {
+          document.getElementById('icons_style').href = "{% static 'css/icons.css' %}";
+          document.getElementById('main_style').href = "{% static 'css/main.css' %}";
+          largeScreen = true;
+        } else if (width < 1750 && largeScreen) {
+          document.getElementById('icons_style').href = "{% static 'css/icons.75.css' %}";
+          document.getElementById('main_style').href = "{% static 'css/main.75.css' %}";
+          largeScreen = false;
+        }
+      };
+
+      resize();
+      window.addEventListener('resize', resize);
+    </script>
 
     <script type="text/javascript" src="{% static 'js/sockjs.min.js' %}"></script>
     <script type="text/javascript" src="{% static 'js/centrifuge.min.js' %}"></script>
