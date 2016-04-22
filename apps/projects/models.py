@@ -53,6 +53,10 @@ Q = models.Q
 class ProjectManager(models.Manager):
 
     def of_user(self, user):
+        if hasattr(user, 'user'):
+            if user.user.is_manager() or user.user.is_director():
+                return self.all()
+
         return self.filter(Q(assigned_experts__account=user) | Q(assigned_grantees__account=user))
 
     def create_new(self, **data):

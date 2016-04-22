@@ -102,6 +102,13 @@ class TextLine(ProjectBasedModel):
     date_created = models.DateTimeField(auto_now_add=True)
     objects = TextLineQuerySet.as_manager()
 
+    @property
+    def from_account_name(self):
+        if not self.from_account:
+            return None
+
+        return self.from_account.get_full_name()
+
     def spray(self, client_id=None):
         # 1 set sending timestamp
         self.set_ts(tz.now())
@@ -131,6 +138,7 @@ class TextLine(ProjectBasedModel):
             'to_account': self.to_account_id,
             'project': self.project_id,
             'ts': self.ts,
+            'from_account_name': self.from_account_name
         }
         if attachments:
             params['attachments'] = dump_attachments(self.attachments)
