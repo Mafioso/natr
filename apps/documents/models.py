@@ -1421,8 +1421,7 @@ class CostDocument(models.Model):
         return cd
 
     def update(self, project):
-        updated_project = project
-        project = self.get_project()
+        updated_project = self.get_project()
         prev_milestones_count = project.number_of_milestones
         next_milestones_count = updated_project.number_of_milestones
 
