@@ -586,8 +586,10 @@ class Project(models.Model):
         }
         r = requests.get(settings.GOOGLE_CUSTOM_SEARCH_ENGINE_LINK, params=payload)
         if r.status_code == requests.codes.ok:
-            items = r.json()['items']
-            for item in items:
+            response = r.json()
+            if 'items' not in response:
+                return
+            for item in response['items']:
                 try:
                     ArticleLink.objects.get(project=self, url=item['link'])
                 except ArticleLink.DoesNotExist:
