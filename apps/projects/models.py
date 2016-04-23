@@ -1588,6 +1588,7 @@ class CorollaryStatByCostType(models.Model):
             prev_corollary_stat = CorollaryStatByCostType.objects.get(
                 cost_type = self.cost_type, 
                 corollary = prev_corollary)
+
             return self.get_cost_row().grant_costs - prev_corollary_stat.savings
 
     @property

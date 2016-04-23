@@ -19,5 +19,8 @@ class Command(BaseCommand):
 		self.run_script()
 
 	def run_script(self):
-		for milestone in prj_models.Milestone.objects.filter(project__isnull=True).all():
-			milestone.delete()
+		empty_milestones = prj_models.Milestone.objects.filter(project__isnull=True)
+		print "Clean DB: %s milestones without project deleted" % empty_milestones.count()
+		empty_milestones.delete()
+		
+		
