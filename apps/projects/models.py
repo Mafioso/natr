@@ -5,6 +5,7 @@ __author__ = 'xepa4ep'
 
 import datetime
 import dateutil.parser
+import requests
 from django.conf import settings
 from django.utils import timezone
 from django.db import models
@@ -45,6 +46,7 @@ from documents.models import (
 from journals.models import Journal, JournalActivity
 from grantee.models import Organization, ContactDetails, ShareHolder, AuthorizedToInteractGrantee
 from logger.models import LogItem
+from mioadp.models import ArticleLink
 
 
 Q = models.Q
@@ -298,6 +300,7 @@ class Project(models.Model):
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
     assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
     directors_attachments = models.ManyToManyField('documents.Attachment', related_name='projects', null=True, blank=True)
+    keywords = models.TextField(u'Ключевые слова', null=True, blank=True)
 
     objects = ProjectManager()
 
@@ -571,6 +574,31 @@ class Project(models.Model):
                     new_value=validated_data.get('number_of_milestones'))
             logs.append(_log)
         return logs
+
+    def prepare_keywords(self):
+        return u" ".join([u"\"{}\"".format(keyword.strip()) for keyword in self.keywords.split(',')])
+
+    def refresh_article_links(self):
+        payload = {
+            'q': self.prepare_keywords(), 
+            'cx': settings.GOOGLE_CUSTOM_SEARCH_ENGINE_ID,
+            'key': settings.GOOGLE_CUSTOM_SEARCH_ENGINE_API_KEY
+        }
+        r = requests.get(settings.GOOGLE_CUSTOM_SEARCH_ENGINE_LINK, params=payload)
+        if r.status_code == requests.codes.ok:
+            items = r.json()['items']
+            for item in items:
+                try:
+                    ArticleLink.objects.get(project=self, url=item['link'])
+                except ArticleLink.DoesNotExist:
+                    article_link = ArticleLink(
+                        url=item['link'],
+                        title=item['title'],
+                        htmlSnippet=item['htmlSnippet'],
+                        project=self
+                    )
+                    article_link.save()
+
 
     @classmethod
     def gen_registry_data(cls, projects, data):
