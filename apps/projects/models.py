@@ -98,7 +98,7 @@ class ProjectManager(models.Manager):
         if prj.funding_type.name == FundingType.COMMERCIALIZATION:
             CostType.objects.create(project=prj, name=u"Расходы на патентование в РК")
 
-        # 4. generate empty milestones
+        # 0. generate empty milestones
         for i in xrange(prj.number_of_milestones):
             if i == 0 and data.get('funding_date', None) is not None:
                 m = Milestone.objects.build_empty(
@@ -109,11 +109,6 @@ class ProjectManager(models.Manager):
             else:
                 m = Milestone.objects.build_empty(
                     project=prj, number=i+1)
-
-            if i == prj.number_of_milestones - 1:
-                Report.build_empty(m, report_type=Report.FINAL)
-            else:
-                Report.build_empty(m)
 
         # 1. create journal
         prj_journal = Journal.objects.build_empty(project=prj)
@@ -127,16 +122,23 @@ class ProjectManager(models.Manager):
         # 4. create costs document
         prj_cd = CostDocument.build_empty(project=prj)
 
-        # 5. create project pasport which depends on funding type
+        # 5. generate reports with corollaries
+        for m in Milestone.objects.filter(project=prj, number__in=xrange(1, prj.number_of_milestones + 1)).all():
+            if m.number == prj.number_of_milestones:
+                Report.build_empty(m, report_type=Report.FINAL)
+            else:
+                Report.build_empty(m)
+
+        # 6. create project pasport which depends on funding type
         if prj.funding_type is not None and prj.funding_type.name in ('INDS_RES', 'COMMERCIALIZATION'):
             prj_pasport = InnovativeProjectPasportDocument.objects.build_empty(project=prj)
         else:
             prj_pasport = BasicProjectPasportDocument.objects.build_empty(project=prj)
 
-        # 6. create project start description
+        # 7. create project start description
         prj_stds = ProjectStartDescription.build_default(project=prj)
 
-        # 7. assign owner as assignee by default
+        # 8. assign owner as assignee by default
         prj.assigned_experts.add(user.user)
         return prj
 
@@ -219,7 +221,7 @@ class ProjectManager(models.Manager):
             Milestone.objects.filter(pk=instance.current_milestone.pk
                 ).update(**current_milestone_data)
 
-        # 3. add empty or delete exist milestones from right
+        # 1. add empty or delete exist milestones from right
         if old_milestones == new_milestones:
             return prj
 
@@ -227,24 +229,26 @@ class ProjectManager(models.Manager):
             for i in xrange(old_milestones, new_milestones):
                 m = Milestone.objects.build_empty(
                     project=prj, number=i+1)
-                if i == new_milestones - 1:
-                    Report.build_empty(m, report_type=Report.FINAL)
-                else:
-                    Report.build_empty(m)
 
         elif old_milestones > new_milestones:
             for milestone in prj.milestone_set.all()[new_milestones:old_milestones]:
-                for report in milestone.reports.all():
-                    report.delete()
                 milestone.delete()
 
-        # 4. update calendar plan with new milestones
+        # 2. update calendar plan with new milestones
         prj_cp = prj.calendar_plan
         prj_cp.update(project=prj)
 
-        # 5. update cost with new milestones
+        # 3. update cost with new milestones
         prj_cd = prj.cost_document
         prj_cd.update(project=prj)
+
+        # 4. generate reports with corollaries
+        if old_milestones < new_milestones:
+            for m in Milestone.objects.filter(project=prj, number__in=xrange(old_milestones+1, new_milestones+1)).all():
+                if m.number == new_milestones:
+                    Report.build_empty(m, report_type=Report.FINAL)
+                else:
+                    Report.build_empty(m)
 
         return prj
 
@@ -1116,13 +1120,13 @@ class Corollary(ProjectBasedModel):
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul
     type = models.IntegerField(null=True)
-    report = models.OneToOneField('Report')
+    report = models.OneToOneField('Report', on_delete=models.CASCADE)
     milestone = models.OneToOneField('Milestone', related_name='corollary', null=True)
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
     work_description = models.TextField(u'Представлено описание фактически проведенных работ', null=True, blank=True)
     work_description_note = models.TextField(u'Примечание к описанию фактически проведенных работ', null=True, blank=True)
     comments = GenericRelation('Comment', content_type_field='content_type')
-    
+
     def get_status_cap(self):
         return Corollary.STATUS_CAPS[self.status]
 
@@ -1559,8 +1563,8 @@ class CorollaryStatByCostType(models.Model):
     class Meta:
         filter_by_project = 'cost_type__project__in'
 
-    corollary = models.ForeignKey('Corollary', related_name='stats')
-    cost_type = models.ForeignKey('natr.CostType')
+    corollary = models.ForeignKey('Corollary', related_name='stats', on_delete=models.CASCADE)
+    cost_type = models.ForeignKey('natr.CostType', on_delete=models.CASCADE)
 
     costs_received_by_natr = MoneyField(u'Сумма принимаемая НАТР',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
@@ -1602,8 +1606,7 @@ class CorollaryStatByCostType(models.Model):
         m = self.get_milestone()
         ct = self.cost_type
         cd = self.get_project().cost_document
-        cost_row = MilestoneCostRow.objects.filter(cost_document=cd, milestone=m, cost_type=ct)
-        return cost_row[0]
+        return MilestoneCostRow.objects.get(cost_document=cd, milestone=m, cost_type=ct)
 
     def get_project(self):
         return self.get_milestone().project
@@ -2590,16 +2593,16 @@ def onsignal__add_stat_by_cost_type__in_corollary(sender, instance, created, **k
 def onsignal__create_conclusion(sender, instance, created, **kwargs):
     if not created:
         return
-
+    print instance.milestone
     MilestoneConclusion.create_default(instance.milestone)
 
 post_save.connect(onsignal__create_protection_doc, sender=Report)
 post_save.connect(Report.post_save, sender=Report)
+post_save.connect(onsignal__create_conclusion, sender=Report)
 post_save.connect(onsignal__add_stat_by_cost_type__in_corollary, sender=CostType)
 post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)
 post_save.connect(Monitoring.post_save, sender=Monitoring)
 post_save.connect(MonitoringTodo.post_save, sender=MonitoringTodo)
-post_save.connect(onsignal__create_conclusion, sender=Report)
 
 
