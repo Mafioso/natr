@@ -577,6 +577,24 @@ class Project(models.Model):
         return logs
 
     @classmethod
+    def filter_by_risk_degree(cls, projects, keys):
+        risk_degrees = []
+        if "small_risk" in keys:
+            risk_degrees.append(Project.SMALL_R)
+
+        if "medium_risk" in keys:
+            risk_degrees.append(Project.MEDIUM_R)
+
+        if "high_risk" in keys:
+            risk_degrees.append(Project.HIGH_R)
+
+        if not risk_degrees:
+            return projects
+
+        return filter(lambda x: x.risk_degree in risk_degrees, projects)
+
+
+    @classmethod
     def gen_registry_data(cls, projects, data):
         registry_data = {
             'projects': projects,
@@ -592,7 +610,7 @@ class Project(models.Model):
                         "expert",
                         "balance",
                         "status",
-                        "total_fundings",
+                        "total_fundings"
                     ]
         }
 
@@ -600,8 +618,13 @@ class Project(models.Model):
             registry_data['date_from'] = dateutil.parser.parse(data['date_from'])
             registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
 
+            keys = []
+            if 'keys' in data:
+                keys = data['keys'][1:-1].split(',')
+                registry_data['keys'] = keys
+
             _projects = []
-            for project in projects:
+            for project in Project.filter_by_risk_degree(projects, registry_data['keys']):
                 if project.aggreement:
                     if project.aggreement.document.date_sign:
                         if project.aggreement.document.date_sign >= registry_data['date_from'] and \
@@ -610,10 +633,6 @@ class Project(models.Model):
 
             registry_data['projects'] = _projects
 
-            keys = []
-            if 'keys' in data:
-                keys = data['keys'][1:-1].split(',')
-                registry_data['keys'] = keys
 
 
         return registry_data
