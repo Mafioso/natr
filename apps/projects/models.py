@@ -1514,9 +1514,30 @@ class Corollary(ProjectBasedModel):
                     except:
                         print "ERROR: OUT OF LIST"
 
+            row = table.add_row()
+            row.cells[1].text = utils.get_stringed_value(obj.calendar_plan_description)
+            row.cells[6].text = utils.get_stringed_value(obj.work_description)
+            row.cells[11].text = utils.get_stringed_value(obj.work_description_note)
+
+            try:
+                    a = table.cell(current_row+1, 1)
+                    b = table.cell(current_row+1, 5)
+                    A = a.merge(b)
+                    a = table.cell(current_row+1, 6)
+                    b = table.cell(current_row+1, 10)
+                    A = a.merge(b)
+            except:
+                print "ERROR: OUT OF LIST"
+
             return obj
 
-    def get_print_context(self, **kwargs):
+        def fill_conclusion_table(obj, table):
+            for item in obj.conclusions.items.all().order_by('number'):
+                row = table.add_row()
+                row.cells[0].text = utils.get_stringed_value(item.number)
+                row.cells[1].text = utils.get_stringed_value(item._title)
+                row.cells[2].text = utils.get_stringed_value(item._cost)
+
         context = self.__dict__
 
         if self.report.type == Report.CAMERAL:
@@ -1538,6 +1559,8 @@ class Corollary(ProjectBasedModel):
         if self.project.organization_details:
             context['organization_name'] = self.project.organization_details.name
             context['organization_address'] = self.project.organization_details.address_2
+            context['region'] = self.project.organization_details.address_region
+
         if self.project.funding_type:
             context['funding_type'] = self.project.funding_type.get_name_display()
         if self.project.aggreement:
@@ -1549,9 +1572,11 @@ class Corollary(ProjectBasedModel):
             context['milestone_period'] = self.milestone.period
 
         fill_corollary_table(self, kwargs['doc'].tables[3])
+        fill_conclusion_table(self.milestone, kwargs['doc'].tables[4])
 
         kwargs['doc'].tables[2].style="TableGrid"
         kwargs['doc'].tables[3].style="TableGrid"
+        kwargs['doc'].tables[4].style="TableGrid"
         return context
 
     def build_printed(self):
