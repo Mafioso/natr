@@ -576,7 +576,7 @@ class Project(models.Model):
         return logs
 
     def prepare_keywords(self):
-        return u" ".join([u"{}".format(keyword.strip()) for keyword in self.keywords.split(',')])
+        return u" ".join([u"{}".format(keyword.strip()) for keyword in self.keywords.split(';')])
 
     def refresh_article_links(self):
         payload = {
