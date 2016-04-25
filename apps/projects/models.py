@@ -600,17 +600,20 @@ class Project(models.Model):
             'projects': projects,
             'keys': [
                         "aggreement",
+                        "other_agreements",
                         "grantee_name",
                         "project_name",
                         "grant_type",
                         "address_region",
                         "total_month",
+                        "region",
                         "fundings",
+                        "number_of_milesones"
                         "transhes",
                         "expert",
                         "balance",
                         "status",
-                        "total_fundings"
+                        "total_fundings",
                     ]
         }
 
