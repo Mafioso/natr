@@ -2643,7 +2643,6 @@ def onsignal__add_stat_by_cost_type__in_corollary(sender, instance, created, **k
 def onsignal__create_conclusion(sender, instance, created, **kwargs):
     if not created:
         return
-    print instance.milestone
     MilestoneConclusion.create_default(instance.milestone)
 
 post_save.connect(onsignal__create_protection_doc, sender=Report)
