@@ -1150,27 +1150,27 @@ class ProjectStartDescription(models.Model):
                 next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.FIRST, document__project=instance.get_project())[0]
             except:
                 pass
-        if instance.type == ProjectStartDescription.FIRST:
+        elif instance.type == ProjectStartDescription.FIRST:
             try:
                 next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.SECOND, document__project=instance.get_project())[0]
             except:
                 pass
-        if instance.type == ProjectStartDescription.SECOND:
+        elif instance.type == ProjectStartDescription.SECOND:
             try:
                 next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.THIRD, document__project=instance.get_project())[0]
             except:
                 pass
-        if instance.type == ProjectStartDescription.THIRD:
+        elif instance.type == ProjectStartDescription.THIRD:
             try:
                 next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.FOURTH, document__project=instance.get_project())[0]
             except:
                 pass
-        if instance.type == ProjectStartDescription.FOURTH:
+        elif instance.type == ProjectStartDescription.FOURTH:
             try:
                 next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.FIFTH, document__project=instance.get_project())[0]
             except:
                 pass
-        if instance.type == ProjectStartDescription.FIFTH:
+        elif instance.type == ProjectStartDescription.FIFTH:
             try:
                 next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.SIXTH, document__project=instance.get_project())[0]
             except:
