@@ -15,6 +15,7 @@ from grantee import models as grantee_models
 from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature, MilestoneConclusionItem, MilestoneConclusion
 from auth2.models import NatrUser
+from auth2.serializers import NatrUserSerializer
 from notifications.models import send_notification, Notification
 from logger.models import LogItem
 from projects import utils as prj_utils
@@ -199,6 +200,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     risk_degree = serializers.IntegerField(required=False, read_only=True)
     risks = RiskDefinitionSerializer(many=True, read_only=True)
     directors_attachments = AttachmentSerializer(many=True, required=False)
+    assigned_experts = NatrUserSerializer(many=True, read_only=True)
 
     def create(self, validated_data):
         return Project.objects.create_new(**validated_data)

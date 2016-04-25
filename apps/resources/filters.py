@@ -9,6 +9,7 @@ from grantee import models as grantee_models
 from journals import models as journals_models
 from logger import models as logger_models
 import datetime
+import dateutil.parser
 
 class ListOfIdFilter(django_filters.FilterSet):
 	ids = IntegerListFilter(name='id',lookup_type='in')
@@ -53,14 +54,14 @@ class ProjectFilter(ListOfIdFilter):
 		return queryset.distinct()
 
 	def filter_date_from(self, queryset, value):
-		date_from = datetime.datetime.strptime(value, '%Y-%m-%d')
+		date_from = dateutil.parser.parse(value)
 		queryset = queryset.filter(
 			(Q(document__type='agreement') & Q(document__date_sign__gte=date_from))
 		)
 		return queryset
 
 	def filter_date_to(self, queryset, value):
-		date_to = datetime.datetime.strptime(value, '%Y-%m-%d')
+		date_to = dateutil.parser.parse(value)
 		queryset = queryset.filter(
 			(Q(document__type='agreement') & Q(document__date_sign__lte=date_to))
 		)
