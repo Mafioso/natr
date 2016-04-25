@@ -261,14 +261,16 @@ class ProjectStatisticsSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     class Meta:
         model = Project
         fields = (
-            'id', 'name', 'address_region', 'risk_degree', 'fundings', 'own_fundings', 
-            'funding_type', 'funding_type_name', 'total_month', 'status', 'status_cap')
+            'id', 'name', 'grantee_name', 'aggreement_number', 'address_region', 'risk_degree', 'fundings', 'own_fundings', 
+            'funding_type_key', 'funding_type_name', 'total_month', 'status', 'status_cap')
         read_only_fields = fields
 
+    grantee_name = serializers.CharField(source='organization_details.name')
+    aggreement_number = serializers.CharField()
     fundings = SerializerMoneyField(required=False)
     own_fundings = SerializerMoneyField(required=False)
-    funding_type = serializers.PrimaryKeyRelatedField(queryset=FundingType.objects.all())
     status_cap = serializers.CharField(source='get_status_cap')
+    funding_type_key = serializers.CharField(source='get_funding_type_key')
     funding_type_name = serializers.CharField(source='get_funding_type_name')
     address_region = serializers.IntegerField(source='get_address_region')
 

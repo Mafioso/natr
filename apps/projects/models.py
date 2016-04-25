@@ -379,6 +379,13 @@ class Project(models.Model):
         return aggreement
 
     @cached_property
+    def aggreement_number(self):
+        if self.aggreement:
+            return self.aggreement.document.number
+        else:
+            return None
+
+    @cached_property
     def statement(self):
         stm = None
         try:
@@ -434,6 +441,10 @@ class Project(models.Model):
     @property
     def get_funding_type_name(self):
         return self.funding_type.get_name_display()
+
+    @property
+    def get_funding_type_key(self):
+        return self.funding_type.name
 
     @property
     def get_address_region(self):
