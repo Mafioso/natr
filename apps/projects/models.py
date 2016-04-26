@@ -2004,6 +2004,9 @@ class MilestoneConclusionItem(models.Model):
 
     @_cost.setter
     def _cost(self, value):
+        if not value:
+            return
+            
         self.cost = Money(amount=value, currency=settings.KZT)
         self.save()
 
