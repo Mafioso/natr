@@ -251,6 +251,53 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return r
 
+    @list_route(methods=['get'], url_path='gen_efficiency_report')
+    @patch_serializer_class(ProjectBasicInfoSerializer)
+    def get_efficiency_report(self, request, *a, **kw):
+        data = request.query_params
+
+        if 'projects' in data:
+            projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
+        else:
+            projects = prj_models.Project.get_projects_within_date(data['date_from'], data['date_to'])
+
+        filename = ExcelReport(projects=projects).generate_efficiency_report()
+        fs = filename.split('/')
+        f = open(filename, 'r')
+        os.remove(filename)
+        filename = fs[len(fs)-1]
+        r = HttpResponse(f, content_type='application/vnd.ms-excel')
+        r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+
+        return r
+
+    @list_route(methods=['get'], url_path='gen_archive_report')
+    @patch_serializer_class(ProjectBasicInfoSerializer)
+    def get_archive_report(self, request, *a, **kw):
+        data = request.query_params
+
+        registry_data = {
+            "keys": ["chat", "monitoring_plan", "report", "corollary"],
+        }
+
+        if 'projects' in data:
+            projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
+        else:
+            projects = prj_models.Project.get_projects_within_date(data['date_from'], data['date_to'])
+
+        if "keys" in data:
+            registry_data['keys'] = data['keys'][1:-1].split(',')
+
+        filename = ExcelReport(projects=projects, registry_data = registry_data).generate_archive_report()
+        fs = filename.split('/')
+        f = open(filename, 'r')
+        os.remove(filename)
+        filename = fs[len(fs)-1]
+        r = HttpResponse(f, content_type='application/vnd.ms-excel')
+        r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+
+        return r
+
     @list_route(methods=['get'], url_path='validate_report_context')
     def validate_report_context(self, request, *a, **kw):
         data = request.query_params

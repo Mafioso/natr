@@ -636,6 +636,21 @@ class Project(models.Model):
 
 
     @classmethod
+    def get_projects_within_date(cls, date_from, date_to):
+        date_from = dateutil.parser.parse(date_from)
+        date_to = dateutil.parser.parse(date_to)
+
+        _projects = []
+        for project in cls.objects.all():
+            if project.aggreement:
+                if project.aggreement.document.date_sign:
+                    if project.aggreement.document.date_sign >= date_from and \
+                       project.aggreement.document.date_sign <= date_to:
+                        _projects.append(project)
+
+        return _projects
+
+    @classmethod
     def gen_registry_data(cls, projects, data):
         registry_data = {
             'projects': projects,

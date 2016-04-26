@@ -471,6 +471,69 @@ class ExcelReport:
         wb.save(filename)
         return filename
 
+    #project efficiency report
+    def generate_efficiency_report(self):
+        wb = Workbook()
+        ws = wb.active
+        projects = self.projects
+
+        if len(projects) == 0:
+            ws = self.insert_into_cell(ws, 'A', '1', u'Отчет по эффективности проектов')
+            ws = self.insert_into_cell(ws, 'A', '2', u'Проектов не найдено')
+            ws.merge_cells('A1:B1')
+            ws['A1'].alignment = self.alignment_center
+            ws['A1'].font = Font(bold=True)
+
+            file_dir = EXCEL_REPORTS_DIR
+            if not os.path.exists(EXCEL_REPORTS_DIR):
+                os.makedirs(EXCEL_REPORTS_DIR)
+
+            filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по эффективности проектов.xlsx'
+            wb.save(filename)
+            return filename
+
+
+        file_dir = EXCEL_REPORTS_DIR
+        if not os.path.exists(EXCEL_REPORTS_DIR):
+            os.makedirs(EXCEL_REPORTS_DIR)
+
+        filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по эффективности проектов.xlsx'
+
+        wb.save(filename)
+        return filename
+
+    #comments and archive report
+    def generate_archive_report(self):
+        wb = Workbook()
+        ws = wb.active
+        projects = self.projects
+
+        if len(projects) == 0:
+            ws = self.insert_into_cell(ws, 'A', '1', u'Архив сообщений и комментариев')
+            ws = self.insert_into_cell(ws, 'A', '2', u'Проектов не найдено')
+            ws.merge_cells('A1:B1')
+            ws['A1'].alignment = self.alignment_center
+            ws['A1'].font = Font(bold=True)
+
+            file_dir = EXCEL_REPORTS_DIR
+            if not os.path.exists(EXCEL_REPORTS_DIR):
+                os.makedirs(EXCEL_REPORTS_DIR)
+
+            filename = EXCEL_REPORTS_DIR+'/'+u'Архив сообщений и комментариев.xlsx'
+            wb.save(filename)
+            return filename
+
+
+        file_dir = EXCEL_REPORTS_DIR
+        if not os.path.exists(EXCEL_REPORTS_DIR):
+            os.makedirs(EXCEL_REPORTS_DIR)
+
+        filename = EXCEL_REPORTS_DIR+'/'+u'Архив сообщений и комментариев.xlsx'
+
+        wb.save(filename)
+        return filename
+
+
 def resetSignature(report):
     if(report.signature.all()):
         report.signature.first().delete()
