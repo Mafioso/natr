@@ -215,6 +215,7 @@ class ExcelReport:
         wb.save(filename)
         return filename
 
+    #projects registry
     def generate_experts_report(self):
         projects = self.projects
         max_milestone_num = 0
@@ -278,6 +279,27 @@ class ExcelReport:
                 
                 col_num += 1
                 
+            if 'other_agreements' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'№ и дата доп. согл.' )
+
+                try:
+                    other_agreements = project.other_agreements
+                    items = []
+                    if hasattr(other_agreements, "items"):
+                        for item in other_agreements.items.all():
+                            date_sign = ""
+                            if item.date_sign:
+                                date_sign = u' от ' + item.date_sign.strftime("%d.%m.%y")
+
+                            items.append(item.number + date_sign)
+
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "\n".join(items))
+                except ObjectDoesNotExist:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+
+                col_num += 1
+
             if 'grantee_name' in self.registry_data['keys']:
                 if first:
                     ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Наименование Грантополучателя' )
@@ -303,6 +325,10 @@ class ExcelReport:
             if 'region' in self.registry_data['keys']:
                 if first:
                     ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Регион' )
+                try:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.address_region)
+                except ObjectDoesNotExist:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
                 col_num += 1
 
             if 'total_month' in self.registry_data['keys']:
@@ -322,26 +348,55 @@ class ExcelReport:
                 ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(sum_fundings))
                 col_num += 1
 
+            if 'number_of_milesones' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Количество этапов' )
+                try:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.number_of_milestones)
+                except ObjectDoesNotExist:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+                col_num += 1
 
             money_sum = 0
             temp_col_num = col_num
-            for milestone in project.milestone_set.all():
+            for milestone in project.milestone_set.all().order_by('number'):
                 if milestone.fundings:
                     money_sum += milestone.fundings.amount
 
                 if 'transhes' in self.registry_data['keys']: 
                     try:
-                        ws = self.insert_into_cell(ws, greyFillet_column_letter(col_num), row, str(project.milestone_set.all()[i-10].fundings.amount))
+                        ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(milestone.fundings.amount))
                     except:
                         ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(0))
                     col_num += 1
             
             if 'transhes' in self.registry_data['keys']: 
                 if first:
-                    for i in range(col_num, col_num+max_milestone_num):
-                        ws = self.build_header_cell(ws, get_column_letter(i), row-1, u'{} транш'.format(str(i-col_num+1)) )
+                    for i in range(temp_col_num, temp_col_num+max_milestone_num):
+                        ws = self.build_header_cell(ws, get_column_letter(i), row-1, u'{} транш'.format(str(i-temp_col_num+1)) )
                 col_num = temp_col_num + max_milestone_num    
                 
+            if 'balance' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Остаток денежных средств,  (тенге)' )
+                if not project.fundings:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(0))
+                else:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(project.fundings.amount - money_sum))
+                col_num += 1
+
+            if 'total_fundings' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Итого перечислено')
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(money_sum))
+                col_num += 1
+
+            if 'status' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Статус ' )     
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())               
+                col_num += 1
+
             if 'expert' in self.registry_data['keys']:
                 if first:
                     ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Исполнитель' )
@@ -353,30 +408,9 @@ class ExcelReport:
                 ws = self.build_header_cell( ws, get_column_letter(col_num), row, ",".join(assigned_experts) )
                 col_num += 1
 
-            if 'balance' in self.registry_data['keys']:
-                if first:
-                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Остаток денежных средств,  (тенге)' )
-                if not project.fundings:
-                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(0))
-                else:
-                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(project.fundings.amount - money_sum))
-                col_num += 1
-
-            if 'status' in self.registry_data['keys']:
-                if first:
-                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Статус ' )     
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())               
-                col_num += 1
-
-            if 'total_fundings' in self.registry_data['keys']:
-                if first:
-                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Итого перечислено')
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(money_sum))
-                col_num += 1
-
-            all_cols_number = col_num
             first = False
-
+            
+        all_cols_number = col_num
         ws = self.insert_into_cell(ws, 'A', '1', u'Отчет по грантам')
         ws.merge_cells('A1:%s1'%get_column_letter(all_cols_number-1 if all_cols_number > 1 else 1))
         ws['A1'].alignment = self.alignment_center
@@ -402,9 +436,15 @@ class ExcelReport:
                     except:
                         pass
                 ws = self.insert_into_cell(ws, get_column_letter(i), row, str(sum))
+        
+        greyFill = PatternFill(start_color='B3B3B3',
+                   end_color='B3B3B3',
+                   fill_type='solid')
 
-        for i in range(all_cols_number):
+        for i in range(all_cols_number-1):
             ws.column_dimensions[get_column_letter(i+1)].width = 20.0
+            ws[get_column_letter(i+1)+"3"].font = Font(bold=True)
+            ws[get_column_letter(i+1)+"3"].fill = greyFill
 
         file_dir = EXCEL_REPORTS_DIR
         if not os.path.exists(EXCEL_REPORTS_DIR):
@@ -426,6 +466,7 @@ class ExcelReport:
             ws["A{}".format(row)].alignment = self.alignment_right
 
             filename = EXCEL_REPORTS_DIR + '/' + u'Реестр проектов ' + dates + '.xlsx'
+
 
         wb.save(filename)
         return filename

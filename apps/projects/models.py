@@ -5,6 +5,7 @@ __author__ = 'xepa4ep'
 
 import datetime
 import dateutil.parser
+import requests
 from django.conf import settings
 from django.utils import timezone
 from django.db import models
@@ -45,6 +46,7 @@ from documents.models import (
 from journals.models import Journal, JournalActivity
 from grantee.models import Organization, ContactDetails, ShareHolder, AuthorizedToInteractGrantee
 from logger.models import LogItem
+from mioadp.models import ArticleLink
 
 
 Q = models.Q
@@ -302,6 +304,7 @@ class Project(models.Model):
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
     assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
     directors_attachments = models.ManyToManyField('documents.Attachment', related_name='projects', null=True, blank=True)
+    keywords = models.TextField(u'Ключевые слова', null=True, blank=True)
 
     objects = ProjectManager()
 
@@ -379,6 +382,13 @@ class Project(models.Model):
         return aggreement
 
     @cached_property
+    def aggreement_number(self):
+        if self.aggreement:
+            return self.aggreement.document.number
+        else:
+            return None
+
+    @cached_property
     def statement(self):
         stm = None
         try:
@@ -434,6 +444,10 @@ class Project(models.Model):
     @property
     def get_funding_type_name(self):
         return self.funding_type.get_name_display()
+
+    @property
+    def get_funding_type_key(self):
+        return self.funding_type.name
 
     @property
     def get_address_region(self):
@@ -576,18 +590,66 @@ class Project(models.Model):
             logs.append(_log)
         return logs
 
+    def prepare_keywords(self):
+        return u" ".join([u"{}".format(keyword.strip()) for keyword in self.keywords.split(';')])
+
+    def refresh_article_links(self):
+        payload = {
+            'q': self.prepare_keywords(), 
+            'cx': settings.GOOGLE_CUSTOM_SEARCH_ENGINE_ID,
+            'key': settings.GOOGLE_CUSTOM_SEARCH_ENGINE_API_KEY
+        }
+        r = requests.get(settings.GOOGLE_CUSTOM_SEARCH_ENGINE_LINK, params=payload)
+        if r.status_code == requests.codes.ok:
+            response = r.json()
+            if 'items' not in response:
+                return
+            for item in response['items']:
+                try:
+                    ArticleLink.objects.get(project=self, url=item['link'])
+                except ArticleLink.DoesNotExist:
+                    article_link = ArticleLink(
+                        url=item['link'],
+                        title=item['title'],
+                        htmlSnippet=item['htmlSnippet'],
+                        project=self
+                    )
+                    article_link.save()
+
+
+    @classmethod
+    def filter_by_risk_degree(cls, projects, keys):
+        risk_degrees = []
+        if "small_risk" in keys:
+            risk_degrees.append(Project.SMALL_R)
+
+        if "medium_risk" in keys:
+            risk_degrees.append(Project.MEDIUM_R)
+
+        if "high_risk" in keys:
+            risk_degrees.append(Project.HIGH_R)
+
+        if not risk_degrees:
+            return projects
+
+        return filter(lambda x: x.risk_degree in risk_degrees, projects)
+
+
     @classmethod
     def gen_registry_data(cls, projects, data):
         registry_data = {
             'projects': projects,
             'keys': [
                         "aggreement",
+                        "other_agreements",
                         "grantee_name",
                         "project_name",
                         "grant_type",
                         "address_region",
                         "total_month",
+                        "region",
                         "fundings",
+                        "number_of_milesones"
                         "transhes",
                         "expert",
                         "balance",
@@ -600,8 +662,13 @@ class Project(models.Model):
             registry_data['date_from'] = dateutil.parser.parse(data['date_from'])
             registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
 
+            keys = []
+            if 'keys' in data:
+                keys = data['keys'][1:-1].split(',')
+                registry_data['keys'] = keys
+
             _projects = []
-            for project in projects:
+            for project in Project.filter_by_risk_degree(projects, registry_data['keys']):
                 if project.aggreement:
                     if project.aggreement.document.date_sign:
                         if project.aggreement.document.date_sign >= registry_data['date_from'] and \
@@ -610,10 +677,6 @@ class Project(models.Model):
 
             registry_data['projects'] = _projects
 
-            keys = []
-            if 'keys' in data:
-                keys = data['keys'][1:-1].split(',')
-                registry_data['keys'] = keys
 
 
         return registry_data
@@ -1492,9 +1555,30 @@ class Corollary(ProjectBasedModel):
                     except:
                         print "ERROR: OUT OF LIST"
 
+            row = table.add_row()
+            row.cells[1].text = utils.get_stringed_value(obj.calendar_plan_description)
+            row.cells[6].text = utils.get_stringed_value(obj.work_description)
+            row.cells[11].text = utils.get_stringed_value(obj.work_description_note)
+
+            try:
+                    a = table.cell(current_row+1, 1)
+                    b = table.cell(current_row+1, 5)
+                    A = a.merge(b)
+                    a = table.cell(current_row+1, 6)
+                    b = table.cell(current_row+1, 10)
+                    A = a.merge(b)
+            except:
+                print "ERROR: OUT OF LIST"
+
             return obj
 
-    def get_print_context(self, **kwargs):
+        def fill_conclusion_table(obj, table):
+            for item in obj.conclusions.items.all().order_by('number'):
+                row = table.add_row()
+                row.cells[0].text = utils.get_stringed_value(item.number)
+                row.cells[1].text = utils.get_stringed_value(item._title)
+                row.cells[2].text = utils.get_stringed_value(item._cost)
+
         context = self.__dict__
 
         if self.report.type == Report.CAMERAL:
@@ -1516,6 +1600,8 @@ class Corollary(ProjectBasedModel):
         if self.project.organization_details:
             context['organization_name'] = self.project.organization_details.name
             context['organization_address'] = self.project.organization_details.address_2
+            context['region'] = self.project.organization_details.address_region
+
         if self.project.funding_type:
             context['funding_type'] = self.project.funding_type.get_name_display()
         if self.project.aggreement:
@@ -1527,9 +1613,11 @@ class Corollary(ProjectBasedModel):
             context['milestone_period'] = self.milestone.period
 
         fill_corollary_table(self, kwargs['doc'].tables[3])
+        fill_conclusion_table(self.milestone, kwargs['doc'].tables[4])
 
         kwargs['doc'].tables[2].style="TableGrid"
         kwargs['doc'].tables[3].style="TableGrid"
+        kwargs['doc'].tables[4].style="TableGrid"
         return context
 
     def build_printed(self):
@@ -1663,6 +1751,8 @@ class Milestone(ProjectBasedModel):
 
     attachments = models.ManyToManyField('documents.Attachment', related_name='milestones', null=True, blank=True)
     agency_attachments = models.ManyToManyField('documents.Attachment', related_name='agency_milestones', null=True, blank=True)
+
+    additional = models.TextField(null=True, blank=True)
 
     def notification(self, cttype, ctid, notif_type):
         """Prepare notification data to send to client (user agent, mobile)."""
@@ -2594,7 +2684,6 @@ def onsignal__add_stat_by_cost_type__in_corollary(sender, instance, created, **k
 def onsignal__create_conclusion(sender, instance, created, **kwargs):
     if not created:
         return
-    print instance.milestone
     MilestoneConclusion.create_default(instance.milestone)
 
 post_save.connect(onsignal__create_protection_doc, sender=Report)

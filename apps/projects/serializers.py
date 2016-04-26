@@ -15,6 +15,7 @@ from grantee import models as grantee_models
 from journals.serializers import *
 from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature, MilestoneConclusionItem, MilestoneConclusion
 from auth2.models import NatrUser
+from auth2.serializers import NatrUserSerializer
 from notifications.models import send_notification, Notification
 from logger.models import LogItem
 from projects import utils as prj_utils
@@ -199,6 +200,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     risk_degree = serializers.IntegerField(required=False, read_only=True)
     risks = RiskDefinitionSerializer(many=True, read_only=True)
     directors_attachments = AttachmentSerializer(many=True, required=False)
+    assigned_experts = NatrUserSerializer(many=True, read_only=True)
 
     def create(self, validated_data):
         return Project.objects.create_new(**validated_data)
@@ -261,14 +263,16 @@ class ProjectStatisticsSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     class Meta:
         model = Project
         fields = (
-            'id', 'name', 'address_region', 'risk_degree', 'fundings', 'own_fundings', 
-            'funding_type', 'funding_type_name', 'total_month', 'status', 'status_cap')
+            'id', 'name', 'grantee_name', 'aggreement_number', 'address_region', 'risk_degree', 'fundings', 'own_fundings', 
+            'funding_type_key', 'funding_type_name', 'total_month', 'status', 'status_cap')
         read_only_fields = fields
 
+    grantee_name = serializers.CharField(source='organization_details.name')
+    aggreement_number = serializers.CharField()
     fundings = SerializerMoneyField(required=False)
     own_fundings = SerializerMoneyField(required=False)
-    funding_type = serializers.PrimaryKeyRelatedField(queryset=FundingType.objects.all())
     status_cap = serializers.CharField(source='get_status_cap')
+    funding_type_key = serializers.CharField(source='get_funding_type_key')
     funding_type_name = serializers.CharField(source='get_funding_type_name')
     address_region = serializers.IntegerField(source='get_address_region')
 

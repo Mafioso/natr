@@ -1116,6 +1116,18 @@ class ProjectStartDescription(models.Model):
 
         return context
 
+    def set_previous(self, previous):
+        self.workplaces_fact = previous.workplaces_fact
+        self.types_fact = previous.types_fact
+        self.prod_fact = previous.prod_fact
+        self.rlzn_fact = previous.rlzn_fact
+        self.rlzn_exp_fact = previous.rlzn_exp_fact
+        self.tax_fact = previous.tax_fact
+        self.tax_local_fact = previous.tax_local_fact
+        self.innovs_fact = previous.innovs_fact
+        self.kaz_part_fact = previous.kaz_part_fact
+        self.save()
+
     @classmethod
     def build_default(cls, project, **kwargs):
         objs = []
@@ -1126,6 +1138,49 @@ class ProjectStartDescription(models.Model):
             objs.append(cls.objects.create(document=doc, **kwargs))
         
         return objs
+
+    @classmethod
+    def post_save(cls, sender, instance, created, **kwargs):
+        if created:
+            return None
+        
+        next_report = None
+        if instance.type == ProjectStartDescription.START:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.FIRST, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.FIRST:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.SECOND, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.SECOND:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.THIRD, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.THIRD:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.FOURTH, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.FOURTH:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.FIFTH, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.FIFTH:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.SIXTH, document__project=instance.get_project())[0]
+            except:
+                pass
+
+        if next_report:
+            next_report.set_previous(instance)
+
+        return instance
+
 
 
 class Attachment(models.Model):
@@ -1655,3 +1710,4 @@ def on_cost_type_create(sender, instance, created=False, **kwargs):
 
 post_save.connect(on_cost_type_create, sender=CostType)
 post_save.connect(CalendarPlanItem.post_save, sender=CalendarPlanItem)
+post_save.connect(ProjectStartDescription.post_save, sender=ProjectStartDescription)

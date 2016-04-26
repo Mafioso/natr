@@ -209,6 +209,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(article)
             return response.Response(serializer.data)
 
+    @detail_route(methods=['GET'], url_path='article_links/refresh')
+    @patch_serializer_class(ArticleLinkSerializer)
+    def refresh_article_links(self, request, *a, **kw):
+        project = self.get_object()
+
+        project.refresh_article_links()
+        article_links = project.articlelink_set.order_by('-date_created')
+        serializer = self.get_serializer(article_links, many=True)
+        return response.Response(serializer.data)
+
     @detail_route(methods=['get'], url_path='log')
     @patch_serializer_class(ProjectLogEntrySerializer)
     def log(self, request, *a, **kw):
