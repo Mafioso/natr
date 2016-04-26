@@ -256,6 +256,9 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def get_efficiency_report(self, request, *a, **kw):
         data = request.query_params
 
+        if not data:
+            return HttpResponse({"message": "bad query"}, status=status.HTTP_400_BAD_REQUEST)
+
         if 'projects' in data:
             projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
         else:
@@ -278,12 +281,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         registry_data = {
             "keys": ["chat", "monitoring_plan", "report", "corollary"],
+            "date_from": dateutil.parser.parse(data['date_from']),
+            "date_to": dateutil.parser.parse(data['date_to'])
         }
-
-        if 'projects' in data:
-            projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
-        else:
-            projects = prj_models.Project.get_projects_within_date(data['date_from'], data['date_to'])
+        projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
 
         if "keys" in data:
             registry_data['keys'] = data['keys'][1:-1].split(',')
@@ -301,6 +302,8 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @list_route(methods=['get'], url_path='validate_report_context')
     def validate_report_context(self, request, *a, **kw):
         data = request.query_params
+        if not data:
+            return HttpResponse({"message": "bad query"}, status=status.HTTP_400_BAD_REQUEST)
 
         registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
         projects = registry_data.pop("projects", [])
