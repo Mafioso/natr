@@ -20,6 +20,7 @@ class ArticleLink(ProjectBasedModel):
 	date_created = models.DateTimeField(u'Дата', null=True)
 	title = models.TextField(u'Заголовок', null=True)
 	body = models.TextField(u'Основной текст', null=True)
+	htmlSnippet = models.TextField(u'Краткий текст с найденным словом', null=True, blank=True)
 
 	date_created = models.DateTimeField(auto_now_add=True, blank=True)
 

@@ -340,3 +340,7 @@ SCRAPY_SETTINGS = {
     'SPIDER_MODULES': 'natr_spider.spiders',
     'NEWSPIDER_MODULE': 'natr_spider.spiders'
 }
+
+GOOGLE_CUSTOM_SEARCH_ENGINE_ID = '004191578755616029812:2vgnomqkm6g'
+GOOGLE_CUSTOM_SEARCH_ENGINE_API_KEY = 'AIzaSyB4Jj-12dtHvI4C1KLdjZn9Bq3ehnrZ48A'
+GOOGLE_CUSTOM_SEARCH_ENGINE_LINK = 'https://www.googleapis.com/customsearch/v1'
