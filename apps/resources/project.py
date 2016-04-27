@@ -259,12 +259,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
         if not data:
             return HttpResponse({"message": "bad query"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if 'projects' in data:
-            projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
-        else:
-            projects = prj_models.Project.get_projects_within_date(data['date_from'], data['date_to'])
+        projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
 
-        filename = ExcelReport(projects=projects).generate_efficiency_report()
+        filename = ExcelReport(projects=projects, registry_data={"date_from": data.get('date_from', None),
+                                                                 "date_to": data.get('date_to', None)}).generate_efficiency_report()
         fs = filename.split('/')
         f = open(filename, 'r')
         os.remove(filename)

@@ -8,7 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import QuerySet
 import decimal
 import os
-
+import dateutil.parser
 
 class ExcelReport:
     assignments = []
@@ -76,6 +76,19 @@ class ExcelReport:
         ws.alignment = self.alignment_center
         ws.font = Font(bold=True)
         return ws
+
+    def set_border(self, ws, cell_range):
+        thin_border = Border(
+                                left=Side(style='thin'), 
+                                right=Side(style='thin'), 
+                                top=Side(style='thin'), 
+                                bottom=Side(style='thin')
+                            )
+
+        ws.cell(row=3, column=2).border = thin_border
+        for row in range(cell_range['row_start'], cell_range['row_finish']):
+            for col in range(cell_range['col_start'], cell_range['col_finish']):
+                ws.cell(row=row, column=col).border = thin_border
 
     def insert_into_cell(self, ws, column, cell_number, string):
         if not string:
@@ -227,7 +240,7 @@ class ExcelReport:
         ws = wb.active
 
         if len(projects) == 0:
-            ws = self.insert_into_cell(ws, 'A', '1', u'Реестр проектов')
+            ws = self.insert_into_cell(ws, 'A', '1', u'Сводный отчет по грантам')
             ws = self.insert_into_cell(ws, 'A', '2', u'Проектов не найдено')
             ws.merge_cells('A1:B1')
             ws['A1'].alignment = self.alignment_center
@@ -261,6 +274,86 @@ class ExcelReport:
             ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(cnt+1))
 
             col_num += 1
+
+            if 'grantee_name' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Наименование ГП' )
+                try:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.name)
+                except ObjectDoesNotExist:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+                col_num += 1
+
+            if 'project_name' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Наименование проекта')
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.name) 
+                col_num += 1
+
+            
+            if 'project_description' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Краткое описание проекта')
+
+                try:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.description)
+                except: 
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+                
+                col_num += 1
+
+            if 'project_innovation' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Инновационность проекта')
+
+                try:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.innovation)
+                except: 
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+                
+                col_num += 1
+
+            if 'grant_type' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Вид гранта' )
+                if project.funding_type:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.funding_type.get_name_display())
+                col_num += 1
+
+            if 'region' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Регион' )
+                try:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.address_region)
+                except:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+                col_num += 1
+
+            if 'contact_details' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Контактные данные' )
+                try:
+                    contact_details = project.organization_details.contact_details
+                    project_contact_details = project.organization_details.address_1 + "\n" + \
+                                              contact_details.phone_number + "\n" + \
+                                              contact_details.email
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project_contact_details)
+                except:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+                col_num += 1
+
+            if 'bin' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'БИН или ИИН' )
+                try:
+                    bin_details = project.organization_details.bin + "\n" + \
+                                              project.organization_details.bik + "\n" + \
+                                              project.organization_details.iik
+
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, bin_details)
+                except:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+                col_num += 1
 
             if 'aggreement' in self.registry_data['keys']:
                 if first:
@@ -300,35 +393,15 @@ class ExcelReport:
 
                 col_num += 1
 
-            if 'grantee_name' in self.registry_data['keys']:
+            if 'grant_period' in self.registry_data['keys']:
                 if first:
-                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Наименование Грантополучателя' )
-                try:
-                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.name)
-                except ObjectDoesNotExist:
-                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
-                col_num += 1
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Период предоставления гранта' )
+                
+                agreement_date = ""
+                if project.aggreement and project.aggreement.document.date_sign:
+                    agreement_date = project.aggreement.document.date_sign.year
 
-            if 'project_name' in self.registry_data['keys']:
-                if first:
-                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Наименование проекта')
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.name) 
-                col_num += 1
-
-            if 'grant_type' in self.registry_data['keys']:
-                if first:
-                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Вид гранта' )
-                if project.funding_type:
-                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.funding_type.get_name_display())
-                col_num += 1
-
-            if 'region' in self.registry_data['keys']:
-                if first:
-                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Регион' )
-                try:
-                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.address_region)
-                except ObjectDoesNotExist:
-                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, agreement_date)
                 col_num += 1
 
             if 'total_month' in self.registry_data['keys']:
@@ -340,12 +413,41 @@ class ExcelReport:
             if 'fundings' in self.registry_data['keys']:
                 if first:
                     ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Сумма по Договору, (тенге)')
-                sum_fundings = 0
-                if project.fundings:
-                    sum_fundings += project.fundings.amount
-                if project.own_fundings:
-                    sum_fundings += project.own_fundings.amount
+                sum_fundings = "0"
+                if project.aggreement and project.aggreement.funding:
+                    sum_fundings = project.aggreement.funding.amount
+
                 ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(sum_fundings))
+                col_num += 1
+
+            if 'natr_fundings' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Сумма гранта')
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(project.fundings.amount) if project.fundings else "0" )
+                col_num += 1
+
+            if 'own_fundings' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Cобственные средства')
+
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(project.own_fundings.amount) if project.own_fundings else "0" )
+                col_num += 1
+
+            if 'expert' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Исполнитель' )
+                assigned_experts = []
+
+                for expert in project.assigned_experts.all():
+                    assigned_experts.append(expert.get_full_name())
+
+                ws = self.build_header_cell( ws, get_column_letter(col_num), row, ",".join(assigned_experts) )
+                col_num += 1
+
+            if 'status' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Статус ' )     
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())               
                 col_num += 1
 
             if 'number_of_milesones' in self.registry_data['keys']:
@@ -353,7 +455,7 @@ class ExcelReport:
                     ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Количество этапов' )
                 try:
                     ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.number_of_milestones)
-                except ObjectDoesNotExist:
+                except:
                     ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
                 col_num += 1
 
@@ -391,22 +493,24 @@ class ExcelReport:
                 ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(money_sum))
                 col_num += 1
 
-            if 'status' in self.registry_data['keys']:
+            if 'gp_type' in self.registry_data['keys']:
                 if first:
-                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Статус ' )     
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())               
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Вид ГП' )
+                try:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.get_org_type_display())
+                except ObjectDoesNotExist:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
                 col_num += 1
 
-            if 'expert' in self.registry_data['keys']:
+            if 'risks' in self.registry_data['keys']:
                 if first:
-                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Исполнитель' )
-                assigned_experts = []
-
-                for expert in project.assigned_experts.all():
-                    assigned_experts.append(expert.get_full_name())
-
-                ws = self.build_header_cell( ws, get_column_letter(col_num), row, ",".join(assigned_experts) )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Риски' )
+                try:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.risk_title)
+                except:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
                 col_num += 1
+            
 
             first = False
             
@@ -416,18 +520,20 @@ class ExcelReport:
         ws['A1'].alignment = self.alignment_center
         ws['A1'].font = Font(bold=True)
 
-        row += 2
-        ws = self.insert_into_cell(ws, 'A', row, u'Итого по договорам на мониторинге ')
-        ws.merge_cells("A%s:%s%s"%(row, get_column_letter(all_cols_number-1 if all_cols_number > 1 else 1), row))
-        ws["A{}".format(row)].alignment = self.alignment_center
-        row += 1
+        row += 3
 
         ws = self.insert_into_cell(ws, 'A', row, u'ВСЕГО по Договорам 2015 года:')
-        ws.merge_cells("A%s:%s%s"%(row, get_column_letter(temp_col_num-2 if temp_col_num > 2 else 1), row))
+        ws.merge_cells("A%s:%s%s"%(row, get_column_letter(temp_col_num-1 if temp_col_num > 2 else 1), row))
         ws["A{}".format(row)].alignment = self.alignment_right
 
+        last_cols = 0
+        if 'gp_type' in self.registry_data['keys']:
+            last_cols += 1
+        if 'risks' in self.registry_data['keys']:
+            last_cols += 1
+
         if temp_col_num > 2 and all_cols_number > 2:
-            for i in range(temp_col_num-1, all_cols_number):
+            for i in range(temp_col_num, all_cols_number - last_cols):
                 sum = 0
                 for j in range(2, row-1):
                     val = ws['{}{}'.format(get_column_letter(i), j)].value
@@ -446,6 +552,11 @@ class ExcelReport:
             ws[get_column_letter(i+1)+"3"].font = Font(bold=True)
             ws[get_column_letter(i+1)+"3"].fill = greyFill
 
+        self.set_border(ws, {'col_start': 1,
+                             'col_finish': all_cols_number, 
+                             'row_start': 3,
+                             'row_finish': 7+p_len})
+
         file_dir = EXCEL_REPORTS_DIR
         if not os.path.exists(EXCEL_REPORTS_DIR):
             os.makedirs(EXCEL_REPORTS_DIR)
@@ -456,7 +567,7 @@ class ExcelReport:
             dates = self.registry_data['date_from'].strftime("%d.%m.%y") + \
                     "-" + self.registry_data['date_to'].strftime("%d.%m.%y")
             
-            ws = self.insert_into_cell(ws, 'A', '1', u'Реестр проектов ' + dates)
+            ws = self.insert_into_cell(ws, 'A', '1', u'Сводный отчет по грантам за период' + dates)
             ws.merge_cells('A1:%s1'%get_column_letter(all_cols_number-1 if all_cols_number > 1 else 1))
             ws['A1'].alignment = self.alignment_center
             ws['A1'].font = Font(bold=True)
@@ -477,27 +588,327 @@ class ExcelReport:
         ws = wb.active
         projects = self.projects
 
+        file_dir = EXCEL_REPORTS_DIR
+        if not os.path.exists(EXCEL_REPORTS_DIR):
+            os.makedirs(EXCEL_REPORTS_DIR)
+
         if len(projects) == 0:
-            ws = self.insert_into_cell(ws, 'A', '1', u'Отчет по эффективности проектов')
+            ws = self.insert_into_cell(ws, 'A', '1', u'Оценка эффективности реализации проектов')
             ws = self.insert_into_cell(ws, 'A', '2', u'Проектов не найдено')
             ws.merge_cells('A1:B1')
             ws['A1'].alignment = self.alignment_center
             ws['A1'].font = Font(bold=True)
 
-            file_dir = EXCEL_REPORTS_DIR
-            if not os.path.exists(EXCEL_REPORTS_DIR):
-                os.makedirs(EXCEL_REPORTS_DIR)
-
-            filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по эффективности проектов.xlsx'
+            filename = EXCEL_REPORTS_DIR+'/'+u'Оценка эффективности реализации проектов.xlsx'
             wb.save(filename)
             return filename
 
+        all_cols_number = 0
+        temp_col_num = 0
+        col_num = 1
+        first = True
+        p_len = 0
 
-        file_dir = EXCEL_REPORTS_DIR
-        if not os.path.exists(EXCEL_REPORTS_DIR):
-            os.makedirs(EXCEL_REPORTS_DIR)
+        if type(projects) == list:
+            p_len = len(projects)
+        elif type(projects) == QuerySet:
+            p_len = projects.count()
+
+
+        for project, cnt in zip( self.projects, range(p_len) ):
+            col_num = 1
+            row = cnt+7
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'№ п/п' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(cnt+1))
+
+            col_num += 1
+
+            #region aggreement date and number
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'№/дата договора' )
+
+            if project.aggreement: 
+                agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
+            else:
+                agreement_number = ""
+
+            if project.aggreement and project.aggreement.document.date_sign:
+                agreement_date = u' от ' + project.aggreement.document.date_sign.strftime("%d.%m.%y")
+            else:
+                agreement_date = ""
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, agreement_number + agreement_date)
+            
+            col_num += 1
+            #endregion
+
+            #region grantee name
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Наименование грантополучателя' )
+            try:
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.name)
+            except ObjectDoesNotExist:
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+            col_num += 1
+            #endregion
+
+            #region project status
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Статус проекта ' )     
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())               
+            col_num += 1
+            #endregion
+
+            #region directors conclusion
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Решение Правления Агентства ' )  
+            col_num += 1
+            #endregion
+
+            #region created job places
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Количество создан-х раб.мест ' ) 
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            #endregion
+
+            #region product types
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Количество видов производимой продукции, шт ' ) 
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            #endregion
+
+            #region product names
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Наименование вида выпускаемой продукции ' ) 
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            #endregion
+
+            #region product volume
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Объем выпущенной продукции, тенге ' ) 
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'в натуральном выражении (шт./тонн/литр и т.п.) ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-2, u'в денежном выражении, тенге ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-1, u'факт ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-1, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+3), row-1, u'факт ' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            #endregion
+
+            #region realized volume
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Объем реализованной продукции, тенге ' ) 
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'всего ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-2, u'на внутренний рынок ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-2, u'на внешний рынок (экспорт) ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-1, u'факт ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-1, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+3), row-1, u'факт ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-1, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+5), row-1, u'факт ' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            #endregion
+
+            #region taxes volume
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Сумма уплаченных налоговых средств, тенге ' ) 
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'всего ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-2, u'в республиканский бюджет ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-2, u'в местный бюджет ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-1, u'факт ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-1, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+3), row-1, u'факт ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-1, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+5), row-1, u'факт ' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            #endregion
+
+            #region crated innovative products
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Количество внедренных инновационных продуктов, ед. ' ) 
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            #endregion
+
+            #region kazakh market products share
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Доля казахстанского содержания в продукци, работах и услугах, % ' ) 
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            #endregion
+
+            #region safety documents
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Наименование охранных документов (при наличии) ' )     
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")               
+            col_num += 1
+            #endregion
+
+            #region project power
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Проектная мощность, в натуральном выражении (шт./тонн/литр и т.п.) ' ) 
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+            col_num += 1
+            #endregion
+
+            #region performance index
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Индекс производительности труда по итогам получения инновационного гранта, в процентах** ' )     
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")               
+            col_num += 1
+            #endregion
+
+            #region results
+            if first:
+                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Результат по итогам реализации проекта (технология, новый вид продукции и т.п.) ' )     
+
+            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")               
+            col_num += 1
+            #endregion
+
+            first = False
+
+        greyFill = PatternFill(start_color='B3B3B3',
+                   end_color='B3B3B3',
+                   fill_type='solid')
+
+        all_cols_number = col_num
+        for i in range(all_cols_number-1):
+            ws.column_dimensions[get_column_letter(i+1)].width = 20.0
+            ws[get_column_letter(i+1)+"4"].font = Font(bold=True)
+            ws[get_column_letter(i+1)+"4"].fill = greyFill
+            ws[get_column_letter(i+1)+"5"].font = Font(bold=True)
+            ws[get_column_letter(i+1)+"5"].fill = greyFill
+            ws[get_column_letter(i+1)+"6"].font = Font(bold=True)
+            ws[get_column_letter(i+1)+"6"].fill = greyFill
+            ws.merge_cells('A4:A6')
+            ws.merge_cells('B4:B6')
+            ws.merge_cells('C4:C6')
+            ws.merge_cells('D4:D6')
+            ws.merge_cells('E4:E6')
+            ws.merge_cells('F4:G4')
+            ws.merge_cells('F5:F6')
+            ws.merge_cells('G5:G6')
+            ws.merge_cells('H4:I4')
+            ws.merge_cells('H5:H6')
+            ws.merge_cells('I5:I6')
+            ws.merge_cells('J4:K4')
+            ws.merge_cells('J5:J6')
+            ws.merge_cells('K5:K6')
+            ws.merge_cells('L4:O4')
+            ws.merge_cells('L5:M5')
+            ws.merge_cells('N5:O5')
+            ws.merge_cells('P4:U4')
+            ws.merge_cells('P5:Q5')
+            ws.merge_cells('R5:S5')
+            ws.merge_cells('T5:U5')
+            ws.merge_cells('V4:AA4')
+            ws.merge_cells('V5:W5')
+            ws.merge_cells('X5:Y5')
+            ws.merge_cells('Z5:AA5')
+            ws.merge_cells('AB4:AC4')
+            ws.merge_cells('AB5:AB6')
+            ws.merge_cells('AC5:AC6')
+            ws.merge_cells('AD4:AE4')
+            ws.merge_cells('AD5:AD6')
+            ws.merge_cells('AE5:AE6')
+            ws.merge_cells('AF4:AF6')
+            ws.merge_cells('AG4:AH4')
+            ws.merge_cells('AG5:AG6')
+            ws.merge_cells('AH5:AH6')
+            ws.merge_cells('AI4:AI6')
+            ws.merge_cells('AJ4:AJ6')
+
+        self.set_border(ws, {'col_start': 1,
+                             'col_finish': all_cols_number, 
+                             'row_start': 4,
+                             'row_finish': 7+p_len})
 
         filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по эффективности проектов.xlsx'
+
+        date_from = dateutil.parser.parse(self.registry_data['date_from']) if self.registry_data['date_from'] else None
+        date_to = dateutil.parser.parse(self.registry_data['date_to']) if self.registry_data['date_to'] else None
+
+        if date_from and date_to:
+            dates = date_from.strftime("%d.%m.%y") + "-" + date_to.strftime("%d.%m.%y")
+            
+            ws = self.insert_into_cell(ws, 'A', '1', u'Оценка эффективности реализации проектов по итогам ' + dates)
+            ws.merge_cells('A1:%s1'%get_column_letter(all_cols_number-1 if all_cols_number > 1 else 1))
+            ws['A1'].alignment = self.alignment_center
+            ws['A1'].font = Font(bold=True)
+
+            filename = EXCEL_REPORTS_DIR + '/' + u'Отчет по эффективности проектов ' + dates + '.xlsx'
 
         wb.save(filename)
         return filename
