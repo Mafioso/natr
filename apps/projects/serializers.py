@@ -292,6 +292,7 @@ class ReportSerializer(serializers.ModelSerializer):
     period = serializers.IntegerField(read_only=True)
     protection_document = ProtectionDocumentSerializer(required=False)
     attachments = AttachmentSerializer(many=True, required=False)
+    cover_letter_atch = AttachmentSerializer(many=True, required=False)
     signature = serializers.SerializerMethodField()
 
     def create(self, validated_data):
@@ -313,6 +314,14 @@ class ReportSerializer(serializers.ModelSerializer):
                 attachment = doc_models.Attachment(**attachment)
                 attachment.save()
                 instance.attachments.add(attachment)
+            instance.save()
+
+        if 'cover_letter_atch' in validated_data:
+            cover_letter_atch = validated_data.pop('cover_letter_atch')
+            for attachment in cover_letter_atch:
+                attachment = doc_models.Attachment(**attachment)
+                attachment.save()
+                instance.cover_letter_atch.add(attachment)
             instance.save()
 
         report = super(ReportSerializer, self).update(instance, validated_data)
