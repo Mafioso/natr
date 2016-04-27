@@ -902,7 +902,7 @@ class Report(ProjectBasedModel):
     results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)
     protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
     attachments = models.ManyToManyField('documents.Attachment', related_name='reports', null=True, blank=True)
-
+    cover_letter_atch  = models.ManyToManyField('documents.Attachment', related_name='letter_reports', null=True, blank=True)
     signature = GenericRelation('DigitalSignature', content_type_field='context_type')
 
     comments = GenericRelation('Comment', content_type_field='content_type')
