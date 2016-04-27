@@ -426,6 +426,13 @@ class Project(models.Model):
         risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
         return risk_index.risks.all()
 
+    @property
+    def risk_title(self):
+        try:
+            return Project.RISK_DEGREE_CAPS[self.risk_degree]
+        except:
+            return None
+
     def get_grantees(self):
         try:
             return self.organization_details.grantee_set.all()
@@ -502,7 +509,7 @@ class Project(models.Model):
             try:
                 pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
             except InnovativeProjectPasportDocument.DoesNotExist:
-                pass
+                return None
 
         return pasport
 
@@ -636,25 +643,48 @@ class Project(models.Model):
 
 
     @classmethod
+    def get_projects_within_date(cls, date_from, date_to):
+        date_from = dateutil.parser.parse(date_from)
+        date_to = dateutil.parser.parse(date_to)
+
+        _projects = []
+        for project in cls.objects.all():
+            if project.aggreement:
+                if project.aggreement.document.date_sign:
+                    if project.aggreement.document.date_sign >= date_from and \
+                       project.aggreement.document.date_sign <= date_to:
+                        _projects.append(project)
+
+        return _projects
+
+    @classmethod
     def gen_registry_data(cls, projects, data):
         registry_data = {
             'projects': projects,
             'keys': [
-                        "aggreement",
-                        "other_agreements",
                         "grantee_name",
                         "project_name",
+                        "project_description",
+                        "project_innovation",
                         "grant_type",
-                        "address_region",
-                        "total_month",
                         "region",
+                        "contact_details",
+                        "bin",
+                        "aggreement",
+                        "other_agreements",
+                        "grant_period",
+                        "total_month",
                         "fundings",
-                        "number_of_milesones"
-                        "transhes",
+                        "natr_fundings",
+                        "own_fundings",
                         "expert",
-                        "balance",
                         "status",
+                        "number_of_milesones",
+                        "transhes",
+                        "balance",
                         "total_fundings",
+                        "gp_type",
+                        "risks",
                     ]
         }
 
@@ -668,7 +698,7 @@ class Project(models.Model):
                 registry_data['keys'] = keys
 
             _projects = []
-            for project in Project.filter_by_risk_degree(projects, registry_data['keys']):
+            for project in projects:
                 if project.aggreement:
                     if project.aggreement.document.date_sign:
                         if project.aggreement.document.date_sign >= registry_data['date_from'] and \
