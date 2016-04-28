@@ -71,13 +71,13 @@ class ProjectFilter(ListOfIdFilter):
 class OfficialEmailFilter(django_filters.FilterSet):
 	
 	class Meta:
-		model = models.Report
+		model = doc_models.OfficialEmail
 
 	search = django_filters.MethodFilter()
 
 	def filter_search(self, queryset, value):
 		return queryset.filter(
-			Q(reg_name__icontains=value)
+			Q(reg_number__icontains=value)
 		)
 
 
