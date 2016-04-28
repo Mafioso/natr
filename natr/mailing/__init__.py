@@ -4,7 +4,7 @@ import os
 from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.core.mail import send_mail, EmailMessage, EmailMultiAlternatives
 from django.conf import settings
-
+from documents.utils import DocumentPrint
 def send_create_natrexpert(name, email, password):
     send_mail(
         u'Добро пожаловать в ИСЭМ',
@@ -62,7 +62,6 @@ def send_milestone_status_implementation(milestone):
 
 # TODO: "по отчету ГП уведомления должны приходить .."
 def send_milestone_status_revision(milestone):
-    print '..here', milestone.project.get_grantees()
     send_mail(
         u'Смена статуса этапа по проекту \"%s\"' % milestone.project.name,
         u"""Здравствуйте!\nВаш отчет отправлен на доработку. Проверьте кабинет""",
@@ -262,3 +261,23 @@ def send_corollary_dir_check(corollary, user):
         map(lambda x: x.account.email, corollary.project.assigned_experts.all()),
         fail_silently=True
     )
+
+def send_milestone_status_payment(report):
+    mail = EmailMessage(
+                u'Отправлен отчет на проверку по проекту \"%s\"' % report.project.name,
+                u"""Здравствуйте! Отправлен отчет, по проекту \"%s\", на проверку """ %(report.project.name),
+                settings.DEFAULT_FROM_EMAIL,
+                ['abyken.nurlan@gmail.com']
+            )
+
+    for cover_letter in report.cover_letter_atch.all():
+        with open(cover_letter.file_path, "rb") as f:
+            mail.attach(u"Soprovoditelnoje pismo.docx", f.read(), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    
+    try:
+        _file, filename = DocumentPrint(object=report).generate_docx()
+        mail.attach(u"Otchet.docx", _file.read(), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
+    except:
+        pass
+
+    mail.send(fail_silently=True)
