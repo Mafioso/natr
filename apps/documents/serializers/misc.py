@@ -29,7 +29,8 @@ __all__ = (
     'CalendarPlanDocumentSerializer',
     'CalendarPlanItemSerializer',
     'ProjectStartDescriptionSerializer',
-    'AttachmentSerializer'
+    'AttachmentSerializer',
+    'OfficialEmailSerializer'
 )
 
 
@@ -326,3 +327,15 @@ class ProjectStartDescriptionSerializer(DocumentCompositionSerializer):
             return False, u"Пожалуйста, заполните поле \"Вид предоставленного гранта\" в основных данных проекта"
 
         return True, u""
+
+
+class OfficialEmailSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.OfficialEmail
+
+    reg_number = serializers.CharField(required=False)
+    reg_date = serializers.CharField(required=False)
+    date_sign = serializers.CharField(required=False)
+    attachments = AttachmentSerializer(many=True, required=False)
+
