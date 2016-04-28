@@ -334,8 +334,8 @@ class OfficialEmailSerializer(serializers.ModelSerializer):
     class Meta:
         model = models.OfficialEmail
 
+    id = serializers.IntegerField(required=False)
     reg_number = serializers.CharField(required=False)
     reg_date = serializers.CharField(required=False)
-    date_sign = serializers.CharField(required=False)
     attachments = AttachmentSerializer(many=True, required=False)
 

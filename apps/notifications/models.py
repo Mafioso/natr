@@ -36,7 +36,8 @@ class Notification(models.Model):
 			('sent_all', u'Отправка уведомлений всем пользователям ИСЭМ'),
 			('sent_manager', u'Отправка уведомлений всем Руководителям'),
 			('sent_expert', u'Отправка уведомлений всем Экспертам'),
-			('sent_gp', u'Отправка уведомлений всем ГП')
+			('sent_gp', u'Отправка уведомлений всем ГП'),
+			('sent_official_email', u'Отправка официальных писем')
 		)
 		verbose_name = u'Отправка уведомлений'
 		relevant_for_permission = True
@@ -55,6 +56,8 @@ class Notification(models.Model):
 	COROLLARY_TO_APPROVE = 12
 	COROLLARY_DIR_CHECK = 13
 	COROLLARY_APPROVED = 14
+	ANNOUNCEMENT_PROJECT_OFFICIAL_EMAIL = 15
+
 
 	MILESTONE_NOTIFS = (
 		TRANSH_PAY,
@@ -80,9 +83,11 @@ class Notification(models.Model):
 	)
 	ANNOUNCEMENT_PROJECTS_NOTIFS = (
 		ANNOUNCEMENT_PROJECTS,
+		ANNOUNCEMENT_PROJECT_OFFICIAL_EMAIL
 	)
 	ANNOUNCEMENT_PROJECTS_NOTIFS_CAPS = (
 		u'рассылка объявления по Проектам',
+		u'рассылка официального письма по Проекту',
 	)
 
 	ATTACHMENT_NOTIFS = (
