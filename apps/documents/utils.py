@@ -11,9 +11,7 @@ from docx.shared import Pt
 from djmoney.models.fields import MoneyPatched
 from cStringIO import StringIO
 from datetime import datetime
-import urllib2, base64
-
-
+import urllib2, base64, requests
 pj = os.path.join
 
 
@@ -184,10 +182,8 @@ def store_from_documentolog(file_link, fname):
     fname = fname.split(' (')[0]
     # request to download
     req_file = fetch_documentolog_file(file_link)
-    # store it
-    buf = StringIO()
+    buf = StringIO(req_file.content)
     buf.seek(0)
-    shutil.copyfileobj(req_file, buf)
     return store_from_temp(buf, fname)
 
 
@@ -200,19 +196,10 @@ def replace_from_temp(temp_file, file_path):
 
 
 def fetch_documentolog_file(file_link):
-    request = urllib2.Request(settings.DOCUMENTOLOG_URL + file_link)
-    username = settings.DOCUMENTOLOG_LOGIN
-    password = settings.DOCUMENTOLOG_PASSWORD
-    request.add_header('Authorization', b'Basic ' + base64.b64encode(username + b':' + password))
-    f = None
-    try:
-        f = urllib2.urlopen(request)
-    except urllib2.HTTPError, e:
-        print "HTTP Error:", e.code, url
-    except urllib2.URLError, e:
-        print "URL Error:", e.reason, url
-    finally:
-        return f
+    payload = {'login': settings.DOCUMENTOLOG_LOGIN, 'password': settings.DOCUMENTOLOG_PASSWORD}
+    r = requests.post(settings.DOCUMENTOLOG_LOGIN_URL, data=payload)
+    req = requests.get(settings.DOCUMENTOLOG_URL + file_link, cookies=r.cookies)
+    return req
 
 
 
