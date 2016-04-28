@@ -1707,7 +1707,7 @@ class OfficialEmail(models.Model):
         verbose_name = u'Официальное письмо'
 
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
-    reg_number = models.CharField(null=True, max_length=255)
+    reg_number = models.CharField(unique=True, max_length=255)
     reg_date = models.DateTimeField(null=True)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
     object_id = models.PositiveIntegerField(null=True)
@@ -1717,7 +1717,10 @@ class OfficialEmail(models.Model):
     def get_project(self):
         return self.content.get_project()
 
-    
+    @classmethod
+    def is_exist(cls, reg_number):
+        return cls.objects.filter(reg_number=reg_number).count() == 1
+
 
 from django.db.models.signals import post_save
 

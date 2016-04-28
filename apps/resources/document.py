@@ -552,6 +552,10 @@ class OfficialEmailViewSet(viewsets.ModelViewSet):
         data = request.data
         links = data.pop('links')
         reg_date = data.pop('reg_date')
+        reg_number = data.get('reg_number')
+
+        if OfficialEmail.is_exist(reg_number):
+            return response.Response(None, status=status.HTTP_406_NOT_ACCEPTABLE)
 
         data['reg_date'] = datetime.datetime.strptime(reg_date, '%d.%m.%Y').isoformat()
         ser = self.get_serializer(data=data)
