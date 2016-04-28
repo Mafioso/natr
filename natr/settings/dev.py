@@ -4,15 +4,15 @@ from .common import *
 DEBUG = True
 DOCKER_HOST = '172.17.0.1'
 
-# DOCUMENTOLOG_URL = 'http://portal.natd.gov.kz'
-# DOCUMENTOLOG_CREATE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/create?wsdl'
-# DOCUMENTOLOG_EDIT_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/edit?wsdl'
-# DOCUMENTOLOG_MOVE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/move?wsdl'
-# DOCUMENTOLOG_WSDL_USERNAME = 'documentolog'
-# DOCUMENTOLOG_WSDL_PASSWORD = 'secret'
-# DOCUMENTOLOG_LOGIN = 'tolkyn.baimukhanova@natd.gov.kz'
-# DOCUMENTOLOG_PASSWORD = '1q2w3e4r%T'
-# DOCUMENTOLOG_LOGIN_URL = DOCUMENTOLOG_URL + '/user/login'
+DOCUMENTOLOG_URL = 'http://portal.natd.gov.kz'
+DOCUMENTOLOG_CREATE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/create?wsdl'
+DOCUMENTOLOG_EDIT_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/edit?wsdl'
+DOCUMENTOLOG_MOVE_WSDL = DOCUMENTOLOG_URL + '/ws_kik/workflow/move?wsdl'
+DOCUMENTOLOG_WSDL_USERNAME = 'documentolog'
+DOCUMENTOLOG_WSDL_PASSWORD = 'secret'
+DOCUMENTOLOG_LOGIN = 'tolkyn.baimukhanova@natd.gov.kz'
+DOCUMENTOLOG_PASSWORD = '1q2w3e4r%T'
+DOCUMENTOLOG_LOGIN_URL = DOCUMENTOLOG_URL + '/user/login'
 # DOCUMENTOLOG_DOCUMENTS = {
 #     'plan_monitoring': {
 #         'title': u'План_мониторинга',

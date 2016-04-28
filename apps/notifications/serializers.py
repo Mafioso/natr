@@ -5,7 +5,9 @@ from django.contrib.contenttypes.models import ContentType
 from notifications import models
 from projects.models import Milestone, Project
 from auth2.models import Account, NatrGroup
+from documents.models import OfficialEmail
 from projects.serializers import MilestoneSerializer
+from documents.serializers import OfficialEmailSerializer
 from natr.override_rest_framework.serializers import ProjectNameSerializer
 from datetime import datetime
 
@@ -75,6 +77,7 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 		include = ('projects', 'date', 'text', 'params')
 
 	projects = ProjectNameSerializer(write_only=True, many=True, required=False)
+	official_email = OfficialEmailSerializer(write_only=True, required=False)
 	date = serializers.DateTimeField(write_only=True, required=False)
 	text = serializers.CharField(write_only=True, required=True)
 	params = serializers.SerializerMethodField()
@@ -92,6 +95,27 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 				context_id=project['id'],
 				context_type=project_context_type)
 			notif.update_params(self.extra_params)
+			notif.spray()
+			return notif
+		return map(create_notif, projects)
+
+	def create_for_projects_with_official_email(self, projects, official_email_data):
+		project_context_type = ContentType.objects.get_for_model(Project)
+		official_email = OfficialEmail.objects.get(id=official_email_data['id'])
+
+		def create_notif(project):
+			notif = models.Notification.objects.create(
+				notif_type=self.notif_type,
+				context_id=project['id'],
+				context_type=project_context_type)
+
+			extra_params = self.extra_params.copy()
+			official_email_data = OfficialEmailSerializer(instance=official_email).data
+			extra_params.update({
+				'official_email': official_email_data
+			})
+
+			notif.update_params(extra_params)
 			notif.spray()
 			return notif
 		return map(create_notif, projects)
@@ -126,10 +150,13 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 
 		self.notif_type = validated_data.get('notif_type')
 		projects = validated_data.get('projects')
-
+		official_email = validated_data.get('official_email', None)
 
 		if self.notif_type == models.Notification.ANNOUNCEMENT_PROJECTS:
 			return self.create_for_projects(projects)
+
+		elif self.notif_type == models.Notification.ANNOUNCEMENT_PROJECT_OFFICIAL_EMAIL:
+			return self.create_for_projects_with_official_email(projects, official_email)
 
 		elif self.notif_type in models.Notification.ANNOUNCEMENT_USERS_NOTIFS:
 			if self.notif_type == models.Notification.ANNOUNCEMENT_USERS_MANAGER:

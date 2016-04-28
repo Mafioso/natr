@@ -8,6 +8,8 @@ from djmoney.models.fields import MoneyField
 from moneyed import Money
 from django.db import models
 from django.utils.functional import cached_property
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.conf import settings
 from dateutil import parser as date_parser
 from datetime import timedelta
@@ -1694,6 +1696,28 @@ class FactMilestoneCostRow(models.Model):
         return obj
 
 
+
+
+class OfficialEmail(models.Model):
+    u"""Официальное письмо из документолога"""
+    tp = 'official_email'
+
+    class Meta:
+        filter_by_project = 'content__project__in'
+        verbose_name = u'Официальное письмо'
+
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    reg_number = models.CharField(null=True, max_length=255)
+    reg_date = models.DateTimeField(null=True)
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
+    object_id = models.PositiveIntegerField(null=True)
+    content = GenericForeignKey('content_type', 'object_id')
+    attachments = models.ManyToManyField(Attachment, related_name='official_emails', null=True, blank=True)
+
+    def get_project(self):
+        return self.content.get_project()
+
+    
 
 from django.db.models.signals import post_save
 

@@ -68,6 +68,20 @@ class ProjectFilter(ListOfIdFilter):
 		return queryset
 
 
+class OfficialEmailFilter(django_filters.FilterSet):
+	
+	class Meta:
+		model = doc_models.OfficialEmail
+
+	search = django_filters.MethodFilter()
+
+	def filter_search(self, queryset, value):
+		return queryset.filter(
+			Q(reg_number__icontains=value)
+		)
+
+
+
 class ReportFilter(django_filters.FilterSet):
 
 	class Meta:

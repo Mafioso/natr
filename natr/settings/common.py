@@ -329,6 +329,7 @@ CORS_ORIGIN_WHITELIST = (
 
 CORS_ALLOW_HEADERS = (
     'authorization',
+    'Content-Type',
 )
 
 CORS_EXPOSE_HEADERS = ()
