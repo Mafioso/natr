@@ -1,4 +1,4 @@
-__VERSION__ = '1.0.47'
+__VERSION__ = '1.0.48'
 # import os
 import sys
 import os
