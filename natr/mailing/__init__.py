@@ -267,7 +267,7 @@ def send_milestone_status_payment(report):
                 u'Отправлен отчет на проверку по проекту \"%s\"' % report.project.name,
                 u"""Здравствуйте! Отправлен отчет, по проекту \"%s\", на проверку """ %(report.project.name),
                 settings.DEFAULT_FROM_EMAIL,
-                ['abyken.nurlan@gmail.com']
+                ['info@natd.gov.kz']
             )
 
     for cover_letter in report.cover_letter_atch.all():
