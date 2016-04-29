@@ -100,19 +100,22 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 		return map(create_notif, projects)
 
 	def create_for_projects_with_official_email(self, projects, official_email_data):
-		project_context_type = ContentType.objects.get_for_model(Project)
-		official_email = OfficialEmail.objects.get(id=official_email_data['id'])
+		official_email_instance = OfficialEmail.objects.get(id=official_email_data['id'])
 
 		def create_notif(project):
+			project_instance = Project.objects.get(id=project['id'])
+			
+			official_email_instance.context = project_instance
+			official_email_instance.save()
+
 			notif = models.Notification.objects.create(
 				notif_type=self.notif_type,
-				context_id=project['id'],
-				context_type=project_context_type)
+				context=official_email_instance)
 
 			extra_params = self.extra_params.copy()
-			official_email_data = OfficialEmailSerializer(instance=official_email).data
 			extra_params.update({
-				'official_email': official_email_data
+				'project': project_instance.id,
+				'project_name': project_instance.name,
 			})
 
 			notif.update_params(extra_params)

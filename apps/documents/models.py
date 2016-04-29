@@ -23,6 +23,7 @@ from statuses import (
 import utils as doc_utils
 from natr import utils as natr_utils
 from logger.models import LogItem
+from notifications.models import Notification
 
 
 class SimpleDocumentManager(models.Manager):
@@ -1703,23 +1704,39 @@ class OfficialEmail(models.Model):
     tp = 'official_email'
 
     class Meta:
-        filter_by_project = 'content__project__in'
+        filter_by_project = 'context__project__in'
         verbose_name = u'Официальное письмо'
 
     date_created = models.DateTimeField(auto_now_add=True, blank=True)
     reg_number = models.CharField(unique=True, max_length=255)
     reg_date = models.DateTimeField(null=True)
-    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE, null=True)
-    object_id = models.PositiveIntegerField(null=True)
-    content = GenericForeignKey('content_type', 'object_id')
+    context_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True)
+    context_id = models.PositiveIntegerField(null=True)
+    context = GenericForeignKey('context_type', 'context_id')
     attachments = models.ManyToManyField(Attachment, related_name='official_emails', null=True, blank=True)
 
     def get_project(self):
-        return self.content.get_project()
+        return self.context.get_project()
 
     @classmethod
     def is_exist(cls, reg_number):
         return cls.objects.filter(reg_number=reg_number).count() == 1
+
+    def notification(self, cttype, ctid, notif_type):
+        """Prepare notification data to send to client (user agent, mobile)."""
+        assert notif_type is Notification.ANNOUNCEMENT_PROJECT_OFFICIAL_EMAIL, "Expected ANNOUNCEMENT_PROJECT_OFFICIAL_EMAIL"
+        data = {
+            'official_email': {
+                'reg_number': self.reg_number,
+                'reg_date': self.reg_date,
+                'attachments': map(lambda a: {'id': a.id, 'name': a.name, 'url': a.url}, self.attachments.all())
+            }
+        }
+        return data
+
+    def notification_subscribers(self):
+        return [grantee.account for grantee in self.get_project().assigned_grantees.all()]
+
 
 
 from django.db.models.signals import post_save
