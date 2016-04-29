@@ -5,6 +5,9 @@ from django.contrib.staticfiles.templatetags.staticfiles import static
 from django.core.mail import send_mail, EmailMessage, EmailMultiAlternatives
 from django.conf import settings
 from documents.utils import DocumentPrint
+import mimetypes
+
+
 def send_create_natrexpert(name, email, password):
     send_mail(
         u'Добро пожаловать в ИСЭМ',
@@ -279,5 +282,27 @@ def send_milestone_status_payment(report):
         mail.attach(u"Otchet.docx", _file.read(), 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')
     except:
         pass
+
+    mail.send(fail_silently=True)
+
+
+def send_announcement_with_official_email(notification):
+    notif_params = notification.prepare_msg()
+    official_email = notification.context
+
+    mail = EmailMessage(
+                u'Уведомление официальным письмом \"%s\"' % official_email.reg_number,
+                u"""Здравствуйте! Получено уведомление, по проекту \"%s\", с коментарием: \"%s\". 
+                Официальное письмо во вложений к этому письму. 
+                Регистрационный номер письма - \"%s\", дата регистрации - \"%s\.""" %(
+                    notif_params['project_name'], notif_params['text'], official_email.reg_number, 
+                    official_email.reg_date),
+                settings.DEFAULT_FROM_EMAIL,
+                ['info@natd.gov.kz']
+            )
+
+    for attachment_data in official_email.attachments.all():
+        with open(attachment_data.file_path, "rb") as f:
+            mail.attach(attachment_data.name, f.read(), mimetypes.guess_type('f%s' % attachment_data.ext)[0])
 
     mail.send(fail_silently=True)

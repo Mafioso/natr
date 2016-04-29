@@ -10,6 +10,7 @@ from projects.serializers import MilestoneSerializer
 from documents.serializers import OfficialEmailSerializer
 from natr.override_rest_framework.serializers import ProjectNameSerializer
 from datetime import datetime
+from natr import mailing
 
 
 __all__ = (
@@ -120,6 +121,9 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 
 			notif.update_params(extra_params)
 			notif.spray()
+			
+			mailing.send_announcement_with_official_email(notif)
+
 			return notif
 		return map(create_notif, projects)
 

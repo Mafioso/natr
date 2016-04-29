@@ -1728,8 +1728,11 @@ class OfficialEmail(models.Model):
         data = {
             'official_email': {
                 'reg_number': self.reg_number,
-                'reg_date': self.reg_date,
-                'attachments': map(lambda a: {'id': a.id, 'name': a.name, 'url': a.url}, self.attachments.all())
+                'reg_date': self.reg_date.strftime('%d.%m.%Y'),
+                'attachments': map(lambda a: {
+                    'id': a.id, 'name': a.name, 'url': a.url, 'file_path': a.file_path,
+                    'ext': a.ext, 'size': a.size
+                    }, self.attachments.all())
             }
         }
         return data
