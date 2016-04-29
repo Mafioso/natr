@@ -4,7 +4,7 @@ import os
 import decimal
 import hashlib
 import shutil
-import models as doc_models
+from models import GPDocumentType
 from django.conf import settings
 from docxtpl import DocxTemplate, RichText
 from docx.shared import Pt
@@ -16,11 +16,11 @@ pj = os.path.join
 
 
 def get_default_gp_type():
-    doc_types = doc_models.GPDocumentType.objects.filter(name=u"договор")
+    doc_types = GPDocumentType.objects.filter(name=u"договор")
 
     if len(doc_types) == 0:
-        doc_models.GPDocumentType.create_default()
-        doc_types = doc_models.GPDocumentType.objects.filter(name=u"договор")
+        GPDocumentType.create_default()
+        doc_types = GPDocumentType.objects.filter(name=u"договор")
 
     return doc_types[0]
 

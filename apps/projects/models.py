@@ -1176,6 +1176,7 @@ class Report(ProjectBasedModel):
         milestone = instance.milestone
         if new_val == Report.REWORK:
             milestone.set_status(Milestone.REPORT_REWORK)
+            mailing.send_milestone_status_payment(instance)
         elif new_val == Report.CHECK:
             milestone.set_status(Milestone.REPORT_CHECK)
         # elif new_val == Report.BUILD:
