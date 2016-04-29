@@ -24,7 +24,6 @@ from natr.models import NatrGroup
 from natr.mixins import ProjectBasedModel
 from natr.realtime import centrifugo_client
 from notifications import utils
-from auth2.models import Account
 from rest_framework.renderers import JSONRenderer
 
 
@@ -267,16 +266,6 @@ class NotificationCounter(models.Model):
 			counter = NotificationCounter.objects.create(account=account)
 		return counter
 
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-
-@receiver(post_save, sender=Account)
-def on_user_create(sender, instance, created=False, **kwargs):
-	if not created:
-		return   # not interested
-	NotificationCounter.get_or_create(instance)
 
 
 def send_notification(notif_type, context):
