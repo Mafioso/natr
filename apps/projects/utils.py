@@ -324,7 +324,7 @@ class ExcelReport:
                 if first:
                     ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Регион' )
                 try:
-                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.address_region)
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.get_address_region_display())
                 except:
                     ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
                 col_num += 1

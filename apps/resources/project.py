@@ -107,6 +107,18 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(projects, many=True)
         return response.Response(serializer.data)
 
+    @list_route(methods=['get'], url_path='counted_by_statuses')
+    @patch_serializer_class(ProjectBasicInfoSerializer)
+    def counted_by_statuses(self, request, *a, **kw):
+        projects = self.filter_queryset(self.get_queryset())
+        data = [{"name": u"На мониторинге", "count": 0}, 
+                {"name": u"Завершен", "count": 0}, 
+                {"name": u"Расторгнут", "count": 0}]
+        for project in projects:
+            data[project.status]['count'] += 1
+        
+        return response.Response(data, status=200)
+
     @detail_route(methods=['get'], url_path='reports')
     @patch_serializer_class(ReportSerializer)
     def reports(self, request, *a, **kw):
@@ -635,9 +647,7 @@ class ReportViewSet(ProjectBasedViewSet):
             comment.save()
 
         report.send_status_changed_notification(prev_status, report.status, request.user, comment)
-        serializer = self.get_serializer(instance=report)
-        headers = self.get_success_headers(serializer.data)
-        return response.Response({"report": report.id}, headers=headers)
+        return response.Response({"report": report.id}, status=200)
 
     @detail_route(methods=['patch'], url_path='change_status')
     def change_status(self, request, *a, **kw):
