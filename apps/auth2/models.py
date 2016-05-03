@@ -10,11 +10,14 @@ from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models.signals import post_save, post_delete
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import get_app, get_models
+from django.dispatch import receiver
+from django.core.exceptions import ObjectDoesNotExist
 from grantee.models import Grantee
 from natr import mailing
 from natr.models import NatrGroup
+from notifications.models import NotificationCounter
+
 
 def get_relevant_permissions():
     models = []
@@ -213,6 +216,13 @@ def set_new_perm_to_admin(sender, instance, created=False, **kwargs):
     if admin_group:
         admin_group.permissions.add(instance)
     print 'added new perm to NatrGroup.ADMIN', instance
+
+
+@receiver(post_save, sender=Account)
+def on_user_create(sender, instance, created=False, **kwargs):
+	if not created:
+		return   # not interested
+	NotificationCounter.get_or_create(instance)
 
 
 post_save.connect(assign_user_group, sender=NatrUser)

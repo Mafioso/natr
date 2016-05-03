@@ -1,5 +1,6 @@
 import os
 import shutil
+import datetime
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import list_route, detail_route
@@ -10,9 +11,9 @@ from natr.override_rest_framework.mixins import ProjectBasedViewSet
 from documents.serializers import *
 from documents.serializers.misc import TechStageSerializer
 from documents import models as doc_models
-from documents.utils import DocumentPrint, store_file
+from documents.utils import DocumentPrint, store_file, store_from_documentolog
 from projects import models as prj_models
-from .filters import AttachmentFilter, ProjectStartDescriptionFilter
+from .filters import AttachmentFilter, ProjectStartDescriptionFilter, OfficialEmailFilter
 from django.conf import settings
 from projects import utils as prj_utils
 pj = os.path.join
@@ -27,6 +28,7 @@ CostDocument = doc_models.CostDocument
 ProjectStartDescription = doc_models.ProjectStartDescription
 CostType = doc_models.CostType
 GPDocumentType = doc_models.GPDocumentType
+OfficialEmail = doc_models.OfficialEmail
 
 
 class DocumentViewSet(ProjectBasedViewSet):
@@ -532,3 +534,44 @@ class TechStageViewSet(viewsets.ModelViewSet):
     queryset = doc_models.TechStage.objects.all()
     serializer_class = TechStageSerializer
     pagination_class = None
+
+
+class OfficialEmailViewSet(viewsets.ModelViewSet):
+
+    serializer_class = OfficialEmailSerializer
+    queryset = OfficialEmail.objects.all()
+
+    filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
+    filter_class = OfficialEmailFilter
+    permission_classes = tuple()
+
+    def get_authenticators(self):
+        return []
+
+    def create(self, request, *a, **kw):
+        data = request.data
+        links = data.pop('links')
+        reg_date = data.pop('reg_date')
+        reg_number = data.get('reg_number')
+
+        if OfficialEmail.is_exist(reg_number):
+            return response.Response(None, status=status.HTTP_406_NOT_ACCEPTABLE)
+
+        data['reg_date'] = datetime.datetime.strptime(reg_date, '%d.%m.%Y').isoformat()
+        ser = self.get_serializer(data=data)
+        ser.is_valid(raise_exception=True)
+        obj = ser.save()
+
+        attachments_data = []
+        for link in links:
+            file_data = store_from_documentolog(link['path'], link['title'])
+            attachments_data.append( file_data )
+
+        attachments_ser = AttachmentSerializer(many=True, data=attachments_data)
+        attachments_ser.is_valid(raise_exception=True)
+        attachments = attachments_ser.save()
+
+        obj.attachments.add(*attachments)
+
+        headers = self.get_success_headers(ser.data)
+        return response.Response(ser.data, headers=headers)

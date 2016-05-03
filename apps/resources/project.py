@@ -209,6 +209,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(article)
             return response.Response(serializer.data)
 
+    @detail_route(methods=['GET'], url_path='article_links/refresh')
+    @patch_serializer_class(ArticleLinkSerializer)
+    def refresh_article_links(self, request, *a, **kw):
+        project = self.get_object()
+
+        project.refresh_article_links()
+        article_links = project.articlelink_set.order_by('-date_created')
+        serializer = self.get_serializer(article_links, many=True)
+        return response.Response(serializer.data)
+
     @detail_route(methods=['get'], url_path='log')
     @patch_serializer_class(ProjectLogEntrySerializer)
     def log(self, request, *a, **kw):
@@ -241,9 +251,57 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
         return r
 
+    @list_route(methods=['get'], url_path='gen_efficiency_report')
+    @patch_serializer_class(ProjectBasicInfoSerializer)
+    def get_efficiency_report(self, request, *a, **kw):
+        data = request.query_params
+
+        if not data:
+            return HttpResponse({"message": "bad query"}, status=status.HTTP_400_BAD_REQUEST)
+
+        projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
+
+        filename = ExcelReport(projects=projects, registry_data={"date_from": data.get('date_from', None),
+                                                                 "date_to": data.get('date_to', None)}).generate_efficiency_report()
+        fs = filename.split('/')
+        f = open(filename, 'r')
+        os.remove(filename)
+        filename = fs[len(fs)-1]
+        r = HttpResponse(f, content_type='application/vnd.ms-excel')
+        r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+
+        return r
+
+    @list_route(methods=['get'], url_path='gen_archive_report')
+    @patch_serializer_class(ProjectBasicInfoSerializer)
+    def get_archive_report(self, request, *a, **kw):
+        data = request.query_params
+
+        registry_data = {
+            "keys": ["chat", "monitoring_plan", "report", "corollary"],
+            "date_from": dateutil.parser.parse(data['date_from']),
+            "date_to": dateutil.parser.parse(data['date_to'])
+        }
+        projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
+
+        if "keys" in data:
+            registry_data['keys'] = data['keys'][1:-1].split(',')
+
+        filename = ExcelReport(projects=projects, registry_data = registry_data).generate_archive_report()
+        fs = filename.split('/')
+        f = open(filename, 'r')
+        os.remove(filename)
+        filename = fs[len(fs)-1]
+        r = HttpResponse(f, content_type='application/vnd.ms-excel')
+        r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+
+        return r
+
     @list_route(methods=['get'], url_path='validate_report_context')
     def validate_report_context(self, request, *a, **kw):
         data = request.query_params
+        if not data:
+            return HttpResponse({"message": "bad query"}, status=status.HTTP_400_BAD_REQUEST)
 
         registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
         projects = registry_data.pop("projects", [])
@@ -317,6 +375,25 @@ class MilestoneViewSet(ProjectBasedViewSet):
         ag_att_serializer = self.get_serializer(obj.agency_attachments, many=True)
         return response.Response({'attachments': att_serializer.data,
                                   'agency_attachments': ag_att_serializer.data})
+
+
+class MilestoneConclusionViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.MilestoneConclusion.objects.all()
+    serializer_class = MilestoneConclusionSerializer
+
+
+class MilestoneConclusionItemViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.MilestoneConclusionItem.objects.all()
+    serializer_class = MilestoneConclusionItemSerializer
+
+    @detail_route(methods=['put'], url_path='update')
+    @patch_serializer_class(MilestoneConclusionSerializer)
+    def update_item(self, request, *a, **kw):
+        obj = self.get_object()
+        obj.update(**request.data)
+
+        serializer = self.get_serializer(obj.conclusion)
+        return response.Response(serializer.data)
 
 
 class MonitoringTodoViewSet(ProjectBasedViewSet):
@@ -464,6 +541,7 @@ class MonitoringViewSet(ProjectBasedViewSet):
         comments = monitoring.comments.filter(**filter_data).order_by('-date_created')
         serializer = self.get_serializer(comments, many=True)
         return response.Response(serializer.data)
+
 
 class ReportViewSet(ProjectBasedViewSet):
     queryset = prj_models.Report.objects.all()
@@ -670,10 +748,11 @@ class CorollaryViewSet(ProjectBasedViewSet):
         comment = None
 
         if 'comment_text' in request.data:
-            comment = prj_models.Comment(content=corollary, 
-                                         comment_text=request.data.get('comment_text', ""),
-                                         account=request.user)
-            comment.save()
+            if request.data.get('comment_text', None):
+                comment = prj_models.Comment(content=corollary, 
+                                             comment_text=request.data.get('comment_text', ""),
+                                             account=request.user)
+                comment.save()
 
         if changed:
             if corollary.status == prj_models.Corollary.APPROVED:

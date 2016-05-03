@@ -7,6 +7,8 @@ from .project import (
 	MonitoringViewSet,
 	ReportViewSet,
 	MilestoneViewSet,
+	MilestoneConclusionViewSet,
+	MilestoneConclusionItemViewSet,
 	CorollaryViewSet,
 	RiskCategoryViewSet,
 	RiskDefinitionViewSet,
@@ -27,7 +29,8 @@ from .document import (
 	FactMilestoneCostRowViewSet,
 	GPDocimentViewSet,
 	GPDocumentTypeViewSet,
-	TechStageViewSet
+	TechStageViewSet,
+	OfficialEmailViewSet
 )
 from .journal import JournalActivityViewSet, JournalViewSet
 from .notification import NotificationViewSet, NotificationSubscriptionViewSet, NotificationCounterViewSet
@@ -46,6 +49,8 @@ router.register(r'documents', DocumentViewSet)
 router.register(r'calendar-plans', CalendarPlanDocumentViewSet, 'calendarplan')
 router.register(r'projects', ProjectViewSet)
 router.register(r'milestones', MilestoneViewSet, 'milestone')
+router.register(r'milestone_conc', MilestoneConclusionViewSet, 'milestone_conclusion')
+router.register(r'milestone_conc_item', MilestoneConclusionItemViewSet, 'milestone_conclusion_item')
 router.register(r'reports', ReportViewSet)
 router.register(r'comments', CommentViewSet)
 router.register(r'corollaries', CorollaryViewSet)
@@ -85,6 +90,7 @@ router.register(r'departments', DepartmentViewSet, 'department')
 router.register(r'article_links', ArticleLinkViewSet, 'article_link')
 router.register(r'documentolog', DocumentologViewSet, 'documentolog')
 router.register(r'logs', LogItemViewSet, 'logs')
+router.register(r'official_emails', OfficialEmailViewSet, 'official_email')
 
 urlpatterns = [
 	url(r'', include(router.urls)),

@@ -8,6 +8,8 @@ from djmoney.models.fields import MoneyField
 from moneyed import Money
 from django.db import models
 from django.utils.functional import cached_property
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.conf import settings
 from dateutil import parser as date_parser
 from datetime import timedelta
@@ -21,6 +23,7 @@ from statuses import (
 import utils as doc_utils
 from natr import utils as natr_utils
 from logger.models import LogItem
+from notifications.models import Notification
 
 
 class SimpleDocumentManager(models.Manager):
@@ -1116,6 +1119,18 @@ class ProjectStartDescription(models.Model):
 
         return context
 
+    def set_previous(self, previous):
+        self.workplaces_fact = previous.workplaces_fact
+        self.types_fact = previous.types_fact
+        self.prod_fact = previous.prod_fact
+        self.rlzn_fact = previous.rlzn_fact
+        self.rlzn_exp_fact = previous.rlzn_exp_fact
+        self.tax_fact = previous.tax_fact
+        self.tax_local_fact = previous.tax_local_fact
+        self.innovs_fact = previous.innovs_fact
+        self.kaz_part_fact = previous.kaz_part_fact
+        self.save()
+
     @classmethod
     def build_default(cls, project, **kwargs):
         objs = []
@@ -1126,6 +1141,49 @@ class ProjectStartDescription(models.Model):
             objs.append(cls.objects.create(document=doc, **kwargs))
         
         return objs
+
+    @classmethod
+    def post_save(cls, sender, instance, created, **kwargs):
+        if created:
+            return None
+        
+        next_report = None
+        if instance.type == ProjectStartDescription.START:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.FIRST, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.FIRST:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.SECOND, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.SECOND:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.THIRD, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.THIRD:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.FOURTH, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.FOURTH:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.FIFTH, document__project=instance.get_project())[0]
+            except:
+                pass
+        elif instance.type == ProjectStartDescription.FIFTH:
+            try:
+                next_report = ProjectStartDescription.objects.filter(type=ProjectStartDescription.SIXTH, document__project=instance.get_project())[0]
+            except:
+                pass
+
+        if next_report:
+            next_report.set_previous(instance)
+
+        return instance
+
 
 
 class Attachment(models.Model):
@@ -1421,8 +1479,7 @@ class CostDocument(models.Model):
         return cd
 
     def update(self, project):
-        updated_project = project
-        project = self.get_project()
+        updated_project = self.get_project()
         prev_milestones_count = project.number_of_milestones
         next_milestones_count = updated_project.number_of_milestones
 
@@ -1641,6 +1698,50 @@ class FactMilestoneCostRow(models.Model):
 
 
 
+
+class OfficialEmail(models.Model):
+    u"""Официальное письмо из документолога"""
+    tp = 'official_email'
+
+    class Meta:
+        filter_by_project = 'context__project__in'
+        verbose_name = u'Официальное письмо'
+
+    date_created = models.DateTimeField(auto_now_add=True, blank=True)
+    reg_number = models.CharField(unique=True, max_length=255)
+    reg_date = models.DateTimeField(null=True)
+    context_type = models.ForeignKey(ContentType, on_delete=models.SET_NULL, null=True)
+    context_id = models.PositiveIntegerField(null=True)
+    context = GenericForeignKey('context_type', 'context_id')
+    attachments = models.ManyToManyField(Attachment, related_name='official_emails', null=True, blank=True)
+
+    def get_project(self):
+        return self.context.get_project()
+
+    @classmethod
+    def is_exist(cls, reg_number):
+        return cls.objects.filter(reg_number=reg_number).count() == 1
+
+    def notification(self, cttype, ctid, notif_type):
+        """Prepare notification data to send to client (user agent, mobile)."""
+        assert notif_type is Notification.ANNOUNCEMENT_PROJECT_OFFICIAL_EMAIL, "Expected ANNOUNCEMENT_PROJECT_OFFICIAL_EMAIL"
+        data = {
+            'official_email': {
+                'reg_number': self.reg_number,
+                'reg_date': self.reg_date.strftime('%d.%m.%Y'),
+                'attachments': map(lambda a: {
+                    'id': a.id, 'name': a.name, 'url': a.url, 'file_path': a.file_path,
+                    'ext': a.ext, 'size': a.size
+                    }, self.attachments.all())
+            }
+        }
+        return data
+
+    def notification_subscribers(self):
+        return [grantee.account for grantee in self.get_project().assigned_grantees.all()]
+
+
+
 from django.db.models.signals import post_save
 
 def on_cost_type_create(sender, instance, created=False, **kwargs):
@@ -1656,3 +1757,4 @@ def on_cost_type_create(sender, instance, created=False, **kwargs):
 
 post_save.connect(on_cost_type_create, sender=CostType)
 post_save.connect(CalendarPlanItem.post_save, sender=CalendarPlanItem)
+post_save.connect(ProjectStartDescription.post_save, sender=ProjectStartDescription)

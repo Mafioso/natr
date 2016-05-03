@@ -27,7 +27,8 @@ from .misc import (
     CalendarPlanItemSerializer,
     CalendarPlanDocumentSerializer,
     ProjectStartDescriptionSerializer,
-    AttachmentSerializer)
+    AttachmentSerializer,
+    OfficialEmailSerializer)
 
 
 budget_classes = (
@@ -57,6 +58,7 @@ misc = (
     CalendarPlanItemSerializer,
     CalendarPlanDocumentSerializer,
     ProjectStartDescriptionSerializer,
-    AttachmentSerializer)
+    AttachmentSerializer,
+    OfficialEmailSerializer)
 
 __all__ = map(lambda x: x.__name__, budget_classes + cost + misc)

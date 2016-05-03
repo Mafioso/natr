@@ -13,8 +13,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from documents import models as doc_models
 from grantee import models as grantee_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature
+from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature, MilestoneConclusionItem, MilestoneConclusion
 from auth2.models import NatrUser
+from auth2.serializers import NatrUserSerializer
 from notifications.models import send_notification, Notification
 from logger.models import LogItem
 from projects import utils as prj_utils
@@ -29,6 +30,8 @@ __all__ = (
     'MonitoringSerializer',
     'MonitoringTodoSerializer',
     'MilestoneSerializer',
+    'MilestoneConclusionItemSerializer',
+    'MilestoneConclusionSerializer',
     'CommentSerializer',
     'CorollarySerializer',
     'CorollaryStatByCostTypeSerializer',
@@ -80,6 +83,23 @@ class FundingTypeSerializer(serializers.ModelSerializer):
 
     name_cap = serializers.CharField(read_only=True)
 
+class MilestoneConclusionItemSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MilestoneConclusionItem
+        fields = ('id', 'conclusion', 'number', '_title', '_cost')
+
+    _cost = serializers.DecimalField(max_digits=15, decimal_places=2, required=False)
+    _title = serializers.CharField(required=False)
+
+
+class MilestoneConclusionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = MilestoneConclusion
+
+    items = MilestoneConclusionItemSerializer(many=True, required=False)
+
 
 class MilestoneSerializer(
         EmptyObjectDMLMixin,
@@ -98,6 +118,7 @@ class MilestoneSerializer(
     natr_fundings = SerializerMoneyField(read_only=True, required=False)
     report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
+    conclusions = serializers.PrimaryKeyRelatedField(queryset=MilestoneConclusion.objects.all(), required=False)
 
     def update(self, instance, validated_data):
         # if milestone changed we need to notify gp about that
@@ -179,6 +200,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     risk_degree = serializers.IntegerField(required=False, read_only=True)
     risks = RiskDefinitionSerializer(many=True, read_only=True)
     directors_attachments = AttachmentSerializer(many=True, required=False)
+    assigned_experts = NatrUserSerializer(many=True, read_only=True)
 
     def create(self, validated_data):
         return Project.objects.create_new(**validated_data)
@@ -241,14 +263,16 @@ class ProjectStatisticsSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     class Meta:
         model = Project
         fields = (
-            'id', 'name', 'address_region', 'risk_degree', 'fundings', 'own_fundings', 
-            'funding_type', 'funding_type_name', 'total_month', 'status', 'status_cap')
+            'id', 'name', 'grantee_name', 'aggreement_number', 'address_region', 'risk_degree', 'fundings', 'own_fundings', 
+            'funding_type_key', 'funding_type_name', 'total_month', 'status', 'status_cap')
         read_only_fields = fields
 
+    grantee_name = serializers.CharField(source='organization_details.name')
+    aggreement_number = serializers.CharField()
     fundings = SerializerMoneyField(required=False)
     own_fundings = SerializerMoneyField(required=False)
-    funding_type = serializers.PrimaryKeyRelatedField(queryset=FundingType.objects.all())
     status_cap = serializers.CharField(source='get_status_cap')
+    funding_type_key = serializers.CharField(source='get_funding_type_key')
     funding_type_name = serializers.CharField(source='get_funding_type_name')
     address_region = serializers.IntegerField(source='get_address_region')
 
@@ -268,6 +292,7 @@ class ReportSerializer(serializers.ModelSerializer):
     period = serializers.IntegerField(read_only=True)
     protection_document = ProtectionDocumentSerializer(required=False)
     attachments = AttachmentSerializer(many=True, required=False)
+    cover_letter_atch = AttachmentSerializer(many=True, required=False)
     signature = serializers.SerializerMethodField()
 
     def create(self, validated_data):
@@ -289,6 +314,14 @@ class ReportSerializer(serializers.ModelSerializer):
                 attachment = doc_models.Attachment(**attachment)
                 attachment.save()
                 instance.attachments.add(attachment)
+            instance.save()
+
+        if 'cover_letter_atch' in validated_data:
+            cover_letter_atch = validated_data.pop('cover_letter_atch')
+            for attachment in cover_letter_atch:
+                attachment = doc_models.Attachment(**attachment)
+                attachment.save()
+                instance.cover_letter_atch.add(attachment)
             instance.save()
 
         report = super(ReportSerializer, self).update(instance, validated_data)
@@ -352,6 +385,7 @@ class ExpandedMilestoneSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     planned_fundings = SerializerMoneyField(required=False)
     report = serializers.IntegerField(source="get_report", read_only=True, required=False)
     corollary = serializers.PrimaryKeyRelatedField(queryset=Corollary.objects.all(), required=False)
+    conclusions = serializers.PrimaryKeyRelatedField(queryset=MilestoneConclusion.objects.all(), required=False)
 
 class CommentSerializer(serializers.ModelSerializer):
 
@@ -477,6 +511,7 @@ class MonitoringTodoSerializer(serializers.ModelSerializer):
         queryset=Project.objects.all(), required=True)
     remaining_days = serializers.IntegerField()
     project_name = serializers.SerializerMethodField()
+    grantee_name = serializers.CharField(source='project.organization_details.name')
     event_name = serializers.CharField(required=False)
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
     act = serializers.CharField(read_only=True)

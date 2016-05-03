@@ -4,23 +4,23 @@ import os
 import decimal
 import hashlib
 import shutil
-import models as doc_models
+from models import GPDocumentType
 from django.conf import settings
 from docxtpl import DocxTemplate, RichText
 from docx.shared import Pt
 from djmoney.models.fields import MoneyPatched
 from cStringIO import StringIO
 from datetime import datetime
-
+import urllib2, base64, requests
 pj = os.path.join
 
 
 def get_default_gp_type():
-    doc_types = doc_models.GPDocumentType.objects.filter(name=u"договор")
+    doc_types = GPDocumentType.objects.filter(name=u"договор")
 
     if len(doc_types) == 0:
-        doc_models.GPDocumentType.create_default()
-        doc_types = doc_models.GPDocumentType.objects.filter(name=u"договор")
+        GPDocumentType.create_default()
+        doc_types = GPDocumentType.objects.filter(name=u"договор")
 
     return doc_types[0]
 
@@ -176,12 +176,31 @@ def store_from_temp(temp_file, fname):
         'size': os.path.getsize(file_path)
     }
 
+
+def store_from_documentolog(file_link, fname):
+    # "Справка по LSH  на совещание в МИР.docx (22.5 КБ)"
+    fname = fname.split(' (')[0]
+    # request to download
+    req_file = fetch_documentolog_file(file_link)
+    buf = StringIO(req_file.content)
+    buf.seek(0)
+    return store_from_temp(buf, fname)
+
+
 def replace_from_temp(temp_file, file_path):
     if(isinstance(temp_file, basestring)):
         temp_file = to_buf(temp_file)
     with open(file_path, 'w') as fd:
         temp_file.seek(0)
         shutil.copyfileobj(temp_file, fd)
+
+
+def fetch_documentolog_file(file_link):
+    payload = {'login': settings.DOCUMENTOLOG_LOGIN, 'password': settings.DOCUMENTOLOG_PASSWORD}
+    r = requests.post(settings.DOCUMENTOLOG_LOGIN_URL, data=payload)
+    req = requests.get(settings.DOCUMENTOLOG_URL + file_link, cookies=r.cookies)
+    return req
+
 
 
 def to_buf(content):

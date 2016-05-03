@@ -24,7 +24,6 @@ from natr.models import NatrGroup
 from natr.mixins import ProjectBasedModel
 from natr.realtime import centrifugo_client
 from notifications import utils
-from auth2.models import Account
 from rest_framework.renderers import JSONRenderer
 
 
@@ -36,7 +35,8 @@ class Notification(models.Model):
 			('sent_all', u'Отправка уведомлений всем пользователям ИСЭМ'),
 			('sent_manager', u'Отправка уведомлений всем Руководителям'),
 			('sent_expert', u'Отправка уведомлений всем Экспертам'),
-			('sent_gp', u'Отправка уведомлений всем ГП')
+			('sent_gp', u'Отправка уведомлений всем ГП'),
+			('sent_official_email', u'Отправка официальных писем')
 		)
 		verbose_name = u'Отправка уведомлений'
 		relevant_for_permission = True
@@ -55,6 +55,8 @@ class Notification(models.Model):
 	COROLLARY_TO_APPROVE = 12
 	COROLLARY_DIR_CHECK = 13
 	COROLLARY_APPROVED = 14
+	ANNOUNCEMENT_PROJECT_OFFICIAL_EMAIL = 15
+
 
 	MILESTONE_NOTIFS = (
 		TRANSH_PAY,
@@ -80,9 +82,11 @@ class Notification(models.Model):
 	)
 	ANNOUNCEMENT_PROJECTS_NOTIFS = (
 		ANNOUNCEMENT_PROJECTS,
+		ANNOUNCEMENT_PROJECT_OFFICIAL_EMAIL
 	)
 	ANNOUNCEMENT_PROJECTS_NOTIFS_CAPS = (
 		u'рассылка объявления по Проектам',
+		u'рассылка официального письма по Проекту',
 	)
 
 	ATTACHMENT_NOTIFS = (
@@ -262,16 +266,6 @@ class NotificationCounter(models.Model):
 			counter = NotificationCounter.objects.create(account=account)
 		return counter
 
-
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-
-@receiver(post_save, sender=Account)
-def on_user_create(sender, instance, created=False, **kwargs):
-	if not created:
-		return   # not interested
-	NotificationCounter.get_or_create(instance)
 
 
 def send_notification(notif_type, context):

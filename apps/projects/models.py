@@ -5,6 +5,7 @@ __author__ = 'xepa4ep'
 
 import datetime
 import dateutil.parser
+import requests
 from django.conf import settings
 from django.utils import timezone
 from django.db import models
@@ -45,6 +46,7 @@ from documents.models import (
 from journals.models import Journal, JournalActivity
 from grantee.models import Organization, ContactDetails, ShareHolder, AuthorizedToInteractGrantee
 from logger.models import LogItem
+from mioadp.models import ArticleLink
 
 
 Q = models.Q
@@ -53,6 +55,10 @@ Q = models.Q
 class ProjectManager(models.Manager):
 
     def of_user(self, user):
+        if hasattr(user, 'user'):
+            if user.user.is_manager() or user.user.is_director():
+                return self.all()
+
         return self.filter(Q(assigned_experts__account=user) | Q(assigned_grantees__account=user))
 
     def create_new(self, **data):
@@ -94,7 +100,7 @@ class ProjectManager(models.Manager):
         if prj.funding_type.name == FundingType.COMMERCIALIZATION:
             CostType.objects.create(project=prj, name=u"Расходы на патентование в РК")
 
-        # 4. generate empty milestones
+        # 0. generate empty milestones
         for i in xrange(prj.number_of_milestones):
             if i == 0 and data.get('funding_date', None) is not None:
                 m = Milestone.objects.build_empty(
@@ -105,11 +111,6 @@ class ProjectManager(models.Manager):
             else:
                 m = Milestone.objects.build_empty(
                     project=prj, number=i+1)
-
-            if i == prj.number_of_milestones - 1:
-                Report.build_empty(m, report_type=Report.FINAL)
-            else:
-                Report.build_empty(m)
 
         # 1. create journal
         prj_journal = Journal.objects.build_empty(project=prj)
@@ -123,16 +124,23 @@ class ProjectManager(models.Manager):
         # 4. create costs document
         prj_cd = CostDocument.build_empty(project=prj)
 
-        # 5. create project pasport which depends on funding type
+        # 5. generate reports with corollaries
+        for m in Milestone.objects.filter(project=prj, number__in=xrange(1, prj.number_of_milestones + 1)).all():
+            if m.number == prj.number_of_milestones:
+                Report.build_empty(m, report_type=Report.FINAL)
+            else:
+                Report.build_empty(m)
+
+        # 6. create project pasport which depends on funding type
         if prj.funding_type is not None and prj.funding_type.name in ('INDS_RES', 'COMMERCIALIZATION'):
             prj_pasport = InnovativeProjectPasportDocument.objects.build_empty(project=prj)
         else:
             prj_pasport = BasicProjectPasportDocument.objects.build_empty(project=prj)
 
-        # 6. create project start description
+        # 7. create project start description
         prj_stds = ProjectStartDescription.build_default(project=prj)
 
-        # 7. assign owner as assignee by default
+        # 8. assign owner as assignee by default
         prj.assigned_experts.add(user.user)
         return prj
 
@@ -215,7 +223,7 @@ class ProjectManager(models.Manager):
             Milestone.objects.filter(pk=instance.current_milestone.pk
                 ).update(**current_milestone_data)
 
-        # 3. add empty or delete exist milestones from right
+        # 1. add empty or delete exist milestones from right
         if old_milestones == new_milestones:
             return prj
 
@@ -223,24 +231,26 @@ class ProjectManager(models.Manager):
             for i in xrange(old_milestones, new_milestones):
                 m = Milestone.objects.build_empty(
                     project=prj, number=i+1)
-                if i == new_milestones - 1:
-                    Report.build_empty(m, report_type=Report.FINAL)
-                else:
-                    Report.build_empty(m)
 
         elif old_milestones > new_milestones:
             for milestone in prj.milestone_set.all()[new_milestones:old_milestones]:
-                for report in milestone.reports.all():
-                    report.delete()
                 milestone.delete()
 
-        # 4. update calendar plan with new milestones
+        # 2. update calendar plan with new milestones
         prj_cp = prj.calendar_plan
         prj_cp.update(project=prj)
 
-        # 5. update cost with new milestones
+        # 3. update cost with new milestones
         prj_cd = prj.cost_document
         prj_cd.update(project=prj)
+
+        # 4. generate reports with corollaries
+        if old_milestones < new_milestones:
+            for m in Milestone.objects.filter(project=prj, number__in=xrange(old_milestones+1, new_milestones+1)).all():
+                if m.number == new_milestones:
+                    Report.build_empty(m, report_type=Report.FINAL)
+                else:
+                    Report.build_empty(m)
 
         return prj
 
@@ -294,6 +304,7 @@ class Project(models.Model):
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
     assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
     directors_attachments = models.ManyToManyField('documents.Attachment', related_name='projects', null=True, blank=True)
+    keywords = models.TextField(u'Ключевые слова', null=True, blank=True)
 
     objects = ProjectManager()
 
@@ -371,6 +382,13 @@ class Project(models.Model):
         return aggreement
 
     @cached_property
+    def aggreement_number(self):
+        if self.aggreement:
+            return self.aggreement.document.number
+        else:
+            return None
+
+    @cached_property
     def statement(self):
         stm = None
         try:
@@ -408,6 +426,13 @@ class Project(models.Model):
         risk_index = self.projectriskindex_set.get(milestone=self.current_milestone)
         return risk_index.risks.all()
 
+    @property
+    def risk_title(self):
+        try:
+            return Project.RISK_DEGREE_CAPS[self.risk_degree]
+        except:
+            return None
+
     def get_grantees(self):
         try:
             return self.organization_details.grantee_set.all()
@@ -428,17 +453,18 @@ class Project(models.Model):
         return self.funding_type.get_name_display()
 
     @property
+    def get_funding_type_key(self):
+        return self.funding_type.name
+
+    @property
     def get_address_region(self):
         return self.organization_details.address_region
 
     def get_reports(self):
-        return Report.objects.by_project(self).filter(status__gt=Report.NOT_ACTIVE)
+        return Report.objects.by_project(self).all()
 
     def get_expert_reports(self):
-        return Report.objects.by_project(self).filter(status__in=[Report.CHECK,
-                                                                  Report.APPROVE,
-                                                                  Report.APPROVED,
-                                                                  Report.FINISH])
+        return Report.objects.by_project(self).all()
 
     def get_recent_todos(self):
         return MonitoringTodo.objects.by_project(self)
@@ -483,7 +509,7 @@ class Project(models.Model):
             try:
                 pasport = InnovativeProjectPasportDocument.objects.get(document__project=self)
             except InnovativeProjectPasportDocument.DoesNotExist:
-                pass
+                return None
 
         return pasport
 
@@ -571,29 +597,105 @@ class Project(models.Model):
             logs.append(_log)
         return logs
 
+    def prepare_keywords(self):
+        return u" ".join([u"{}".format(keyword.strip()) for keyword in self.keywords.split(';')])
+
+    def refresh_article_links(self):
+        payload = {
+            'q': self.prepare_keywords(), 
+            'cx': settings.GOOGLE_CUSTOM_SEARCH_ENGINE_ID,
+            'key': settings.GOOGLE_CUSTOM_SEARCH_ENGINE_API_KEY
+        }
+        r = requests.get(settings.GOOGLE_CUSTOM_SEARCH_ENGINE_LINK, params=payload)
+        if r.status_code == requests.codes.ok:
+            response = r.json()
+            if 'items' not in response:
+                return
+            for item in response['items']:
+                try:
+                    ArticleLink.objects.get(project=self, url=item['link'])
+                except ArticleLink.DoesNotExist:
+                    article_link = ArticleLink(
+                        url=item['link'],
+                        title=item['title'],
+                        htmlSnippet=item['htmlSnippet'],
+                        project=self
+                    )
+                    article_link.save()
+
+
+    @classmethod
+    def filter_by_risk_degree(cls, projects, keys):
+        risk_degrees = []
+        if "small_risk" in keys:
+            risk_degrees.append(Project.SMALL_R)
+
+        if "medium_risk" in keys:
+            risk_degrees.append(Project.MEDIUM_R)
+
+        if "high_risk" in keys:
+            risk_degrees.append(Project.HIGH_R)
+
+        if not risk_degrees:
+            return projects
+
+        return filter(lambda x: x.risk_degree in risk_degrees, projects)
+
+
+    @classmethod
+    def get_projects_within_date(cls, date_from, date_to):
+        date_from = dateutil.parser.parse(date_from)
+        date_to = dateutil.parser.parse(date_to)
+
+        _projects = []
+        for project in cls.objects.all():
+            if project.aggreement:
+                if project.aggreement.document.date_sign:
+                    if project.aggreement.document.date_sign >= date_from and \
+                       project.aggreement.document.date_sign <= date_to:
+                        _projects.append(project)
+
+        return _projects
+
     @classmethod
     def gen_registry_data(cls, projects, data):
         registry_data = {
             'projects': projects,
             'keys': [
-                        "aggreement",
                         "grantee_name",
                         "project_name",
+                        "project_description",
+                        "project_innovation",
                         "grant_type",
-                        "address_region",
+                        "region",
+                        "contact_details",
+                        "bin",
+                        "aggreement",
+                        "other_agreements",
+                        "grant_period",
                         "total_month",
                         "fundings",
-                        "transhes",
+                        "natr_fundings",
+                        "own_fundings",
                         "expert",
-                        "balance",
                         "status",
+                        "number_of_milesones",
+                        "transhes",
+                        "balance",
                         "total_fundings",
+                        "gp_type",
+                        "risks",
                     ]
         }
 
         if 'date_from' in data and 'date_to' in data:
             registry_data['date_from'] = dateutil.parser.parse(data['date_from'])
             registry_data['date_to'] = dateutil.parser.parse(data['date_to'])
+
+            keys = []
+            if 'keys' in data:
+                keys = data['keys'][1:-1].split(',')
+                registry_data['keys'] = keys
 
             _projects = []
             for project in projects:
@@ -605,10 +707,6 @@ class Project(models.Model):
 
             registry_data['projects'] = _projects
 
-            keys = []
-            if 'keys' in data:
-                keys = data['keys'][1:-1].split(',')
-                registry_data['keys'] = keys
 
 
         return registry_data
@@ -834,7 +932,7 @@ class Report(ProjectBasedModel):
     results = models.TextField(u'Достигнутые результаты грантового проекта', null=True, blank=True)
     protection_document = models.ForeignKey('documents.ProtectionDocument', related_name="reports", null=True)
     attachments = models.ManyToManyField('documents.Attachment', related_name='reports', null=True, blank=True)
-
+    cover_letter_atch  = models.ManyToManyField('documents.Attachment', related_name='letter_reports', null=True, blank=True)
     signature = GenericRelation('DigitalSignature', content_type_field='context_type')
 
     comments = GenericRelation('Comment', content_type_field='content_type')
@@ -1078,6 +1176,7 @@ class Report(ProjectBasedModel):
         milestone = instance.milestone
         if new_val == Report.REWORK:
             milestone.set_status(Milestone.REPORT_REWORK)
+            mailing.send_milestone_status_payment(instance)
         elif new_val == Report.CHECK:
             milestone.set_status(Milestone.REPORT_CHECK)
         # elif new_val == Report.BUILD:
@@ -1110,18 +1209,18 @@ class Corollary(ProjectBasedModel):
         u'утверждено',
         u'отправлено на доработку',
         u'завершено',
-        u'на согласовании у директора')
+        u'на утверждении у директора')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     # todo: wait @ainagul
     type = models.IntegerField(null=True)
-    report = models.OneToOneField('Report')
+    report = models.OneToOneField('Report', on_delete=models.CASCADE)
     milestone = models.OneToOneField('Milestone', related_name='corollary', null=True)
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=NOT_ACTIVE)
     work_description = models.TextField(u'Представлено описание фактически проведенных работ', null=True, blank=True)
     work_description_note = models.TextField(u'Примечание к описанию фактически проведенных работ', null=True, blank=True)
     comments = GenericRelation('Comment', content_type_field='content_type')
-    
+
     def get_status_cap(self):
         return Corollary.STATUS_CAPS[self.status]
 
@@ -1212,6 +1311,13 @@ class Corollary(ProjectBasedModel):
 
     def get_project(self):
         return self.project
+
+    def get_total(self, stat_key):
+        total = utils.zero_money()
+        for stat_obj in self.stats.all():
+            total += getattr(stat_obj, stat_key)
+
+        return total
 
     def get_totals(instance):
         rv = {
@@ -1480,9 +1586,32 @@ class Corollary(ProjectBasedModel):
                     except:
                         print "ERROR: OUT OF LIST"
 
+            row = table.add_row()
+            row.cells[1].text = utils.get_stringed_value(obj.calendar_plan_description)
+            row.cells[6].text = utils.get_stringed_value(obj.work_description)
+            row.cells[11].text = utils.get_stringed_value(obj.work_description_note)
+
+            try:
+                    a = table.cell(current_row+1, 1)
+                    b = table.cell(current_row+1, 5)
+                    A = a.merge(b)
+                    a = table.cell(current_row+1, 6)
+                    b = table.cell(current_row+1, 10)
+                    A = a.merge(b)
+            except:
+                print "ERROR: OUT OF LIST"
+
             return obj
 
+        def fill_conclusion_table(obj, table):
+            for item in obj.conclusions.items.all().order_by('number'):
+                row = table.add_row()
+                row.cells[0].text = utils.get_stringed_value(item.number)
+                row.cells[1].text = utils.get_stringed_value(item._title)
+                row.cells[2].text = utils.get_stringed_value(item._cost)
+
         context = self.__dict__
+
         if self.report.type == Report.CAMERAL:
             context['title'] = u"Заключение по камеральному мониторингу хода исполнения договора об инновационном гранте"
             conc_table(self, kwargs['doc'].tables[2])
@@ -1502,6 +1631,8 @@ class Corollary(ProjectBasedModel):
         if self.project.organization_details:
             context['organization_name'] = self.project.organization_details.name
             context['organization_address'] = self.project.organization_details.address_2
+            context['region'] = self.project.organization_details.address_region
+
         if self.project.funding_type:
             context['funding_type'] = self.project.funding_type.get_name_display()
         if self.project.aggreement:
@@ -1513,9 +1644,11 @@ class Corollary(ProjectBasedModel):
             context['milestone_period'] = self.milestone.period
 
         fill_corollary_table(self, kwargs['doc'].tables[3])
+        fill_conclusion_table(self.milestone, kwargs['doc'].tables[4])
 
         kwargs['doc'].tables[2].style="TableGrid"
         kwargs['doc'].tables[3].style="TableGrid"
+        kwargs['doc'].tables[4].style="TableGrid"
         return context
 
     def build_printed(self):
@@ -1549,8 +1682,8 @@ class CorollaryStatByCostType(models.Model):
     class Meta:
         filter_by_project = 'cost_type__project__in'
 
-    corollary = models.ForeignKey('Corollary', related_name='stats')
-    cost_type = models.ForeignKey('natr.CostType')
+    corollary = models.ForeignKey('Corollary', related_name='stats', on_delete=models.CASCADE)
+    cost_type = models.ForeignKey('natr.CostType', on_delete=models.CASCADE)
 
     costs_received_by_natr = MoneyField(u'Сумма принимаемая НАТР',
         max_digits=20, decimal_places=2, default_currency=settings.KZT,
@@ -1565,7 +1698,17 @@ class CorollaryStatByCostType(models.Model):
 
     @property
     def natr_fundings(self):
-        return self.get_cost_row().grant_costs
+        m = self.get_milestone()
+        if m.number == 1:
+            return self.get_cost_row().grant_costs
+        else:
+            prev_milestone = m.get_prev_milestone()
+            prev_corollary = prev_milestone.corollary
+            prev_corollary_stat = CorollaryStatByCostType.objects.get(
+                cost_type = self.cost_type, 
+                corollary = prev_corollary)
+
+            return self.get_cost_row().grant_costs - prev_corollary_stat.savings
 
     @property
     def own_fundings(self):
@@ -1580,14 +1723,16 @@ class CorollaryStatByCostType(models.Model):
         return self.corollary.report.use_of_budget_doc.items.get(cost_type=self.cost_type).total_expense
 
     def get_cost_row(self):
-        m = self.corollary.milestone
+        m = self.get_milestone()
         ct = self.cost_type
         cd = self.get_project().cost_document
-        cost_row = MilestoneCostRow.objects.filter(cost_document=cd, milestone=m, cost_type=ct)
-        return cost_row[0]
+        return MilestoneCostRow.objects.get(cost_document=cd, milestone=m, cost_type=ct)
 
     def get_project(self):
-        return self.corollary.milestone.project
+        return self.get_milestone().project
+
+    def get_milestone(self):
+        return self.corollary.milestone
 
 
 @track_data('status')
@@ -1638,6 +1783,8 @@ class Milestone(ProjectBasedModel):
     attachments = models.ManyToManyField('documents.Attachment', related_name='milestones', null=True, blank=True)
     agency_attachments = models.ManyToManyField('documents.Attachment', related_name='agency_milestones', null=True, blank=True)
 
+    additional = models.TextField(null=True, blank=True)
+
     def notification(self, cttype, ctid, notif_type):
         """Prepare notification data to send to client (user agent, mobile)."""
         assert notif_type in Notification.MILESTONE_NOTIFS, "Expected MILESTONE_NOTIFS"
@@ -1658,6 +1805,18 @@ class Milestone(ProjectBasedModel):
 
     def notification_subscribers(self):
         return self.project.stakeholders
+
+    def get_next_milestone(self):
+        if self.project.number_of_milestones == self.number:
+            return None
+        else:
+            return self.project.milestone_set.get(number=self.number + 1)
+
+    def get_prev_milestone(self):
+        if self.number == 1:
+            return None
+        else:
+            return self.project.milestone_set.get(number=self.number - 1)
 
     def set_start(self, fundings, dt=None):
         for milestone in self.project.milestone_set.all():
@@ -1689,6 +1848,19 @@ class Milestone(ProjectBasedModel):
         self.status = Milestone.TRANCHE_PAY
         self.save()
         return self
+
+    def get_next_milestone(self):
+        found = False
+        for milestone in self.project.milestone_set.all().order_by("number"):
+            if found:
+                return milestone
+
+            if self == milestone:
+                found = True
+
+        return None
+
+
 
     def get_status_cap(self):
         return Milestone.STATUS_CAPS[self.status]
@@ -1780,6 +1952,313 @@ class Milestone(ProjectBasedModel):
         new_val = instance.status
         if new_val == Milestone.TRANCHE_PAY:
             instance.report.set_building()
+
+
+class MilestoneConclusion(models.Model):
+    TYPES = CAMERAL, FINAL = range(2)
+    TYPES_CAPS = (
+        u'камеральный',
+        u'итоговый')
+
+    TYPES_OPTS = zip(TYPES, TYPES_CAPS)
+    type = models.IntegerField(null=True, choices=TYPES_OPTS, default=CAMERAL)
+    milestone = models.OneToOneField('Milestone', related_name='conclusions')
+
+    @classmethod
+    def create_default(cls, milestone):
+        if milestone.report.type == Report.CAMERAL:
+            instance = cls(milestone=milestone, type=MilestoneConclusion.CAMERAL)
+            instance.save()
+            MilestoneConclusionItem.create_cameral_defaults(instance)
+        elif milestone.report.type == Report.FINAL:
+            instance = cls(milestone=milestone, type=MilestoneConclusion.FINAL)
+            instance.save()
+            MilestoneConclusionItem.create_final_defaults(instance)
+
+        return instance
+
+
+class MilestoneConclusionItem(models.Model):
+
+    TYPES = (
+                EDITABLE, 
+                MILESTONE_FUNDS,
+                MILESTONE_NATR_FUNDS,
+                MIELSTONE_OWN_FUNDS,
+                ECONOMY,
+                COSTS,
+                COSTS_NATR,
+                COSTS_OWN,
+                MILESTONE_DONE_JOBS,
+                TOTAL_FUNDINGS,
+                TOTAL_NATR,
+                TOTAL_OWN,
+                RECOMMENTDED_NEXT_FUNDS
+            ) = range(13)
+    TYPES_CAPS = (
+        u'Редактируемая строка',
+        u'Освоенные средства этапа',
+        u'Освоенные средства НАТР',
+        u'Освоенные собственные средства',
+        u'Экономия',
+        u'Смета расходов',
+        u'Смета расходов НАТР',
+        u'Смета собственных расходов',
+        u'Выполненная работа по этапу',
+        u'Общая освоенная сумма',
+        u'Общая освоенная сумма НАТР',
+        u'Общая освоенная сумма собственных средств',
+        u'Рекомендуемая сумма финансирования следующего этапа')
+
+    TYPES_OPTS = zip(TYPES, TYPES_CAPS)
+
+    class Meta:
+        ordering = ["number"]
+
+    conclusion = models.ForeignKey('MilestoneConclusion', related_name='items')
+    number = models.IntegerField(null=True)
+    title = models.TextField(u'Наименование', null=True)
+    cost = MoneyField(max_digits=20, decimal_places=2, default_currency=settings.KZT,
+                      null=True, blank=True)
+    milestone_id = models.IntegerField(null=True)
+    type = models.IntegerField(choices=TYPES_OPTS, default=EDITABLE)
+
+    @property
+    def _cost(self):
+        if self.type == MilestoneConclusionItem.EDITABLE:
+            return self.cost.amount if self.cost else None
+        
+        elif self.type == MilestoneConclusionItem.MILESTONE_DONE_JOBS:
+            return None
+
+        return self.get_cameral_cost() if self.conclusion.type == MilestoneConclusion.CAMERAL else self.get_final_cost()
+
+    @_cost.setter
+    def _cost(self, value):
+        if not value:
+            return
+            
+        self.cost = Money(amount=value, currency=settings.KZT)
+        self.save()
+
+    @property
+    def _title(self):
+        if self.type != MilestoneConclusionItem.MILESTONE_DONE_JOBS:
+            return self.title
+        work_description = u""
+        milestone = None
+        try:
+            milestone = Milestone.objects.get(id=self.milestone_id)
+        except:
+            return self.title
+        else:
+            work_description = utils.get_stringed_value(milestone.corollary.work_description)
+
+        return self.title + u"\n" + work_description
+
+    @_title.setter
+    def _title(self, value):
+        self.title = value
+        self.save()
+
+    def get_total_by_milestones(self, milesone_set, key):
+        total = 0
+        for milestone in milesone_set:
+            total += milestone.corollary.get_total(key).amount
+
+        return total 
+
+    def get_cameral_cost(self):
+        milestone = None
+        try:
+            milestone = Milestone.objects.get(id=self.milestone_id)
+        except:
+            return None
+
+
+        if self.type == MilestoneConclusionItem.MILESTONE_FUNDS:
+            return milestone.corollary.get_total('costs_received_by_natr').amount
+
+        elif self.type == MilestoneConclusionItem.ECONOMY:
+            return milestone.corollary.get_total('savings').amount
+
+        elif self.type == MilestoneConclusionItem.COSTS:
+            return milestone.corollary.get_total('natr_fundings').amount + \
+                   milestone.corollary.get_total('own_fundings').amount
+
+        elif self.type == MilestoneConclusionItem.COSTS_NATR:
+            return milestone.corollary.get_total('natr_fundings').amount
+
+        elif self.type == MilestoneConclusionItem.COSTS_OWN:
+            return milestone.corollary.get_total('own_fundings').amount
+
+        elif self.type == MilestoneConclusionItem.RECOMMENTDED_NEXT_FUNDS:
+            return milestone.corollary.get_total('natr_fundings').amount
+
+        return None
+
+    def get_final_cost(self):
+        milestone = None
+        try:
+            milestone = Milestone.objects.get(id=self.milestone_id)
+        except:
+            return None
+
+        if self.type == MilestoneConclusionItem.MILESTONE_FUNDS:
+            return milestone.corollary.get_total('costs_received_by_natr').amount
+
+        elif self.type == MilestoneConclusionItem.MILESTONE_NATR_FUNDS:
+            return milestone.corollary.get_total('natr_fundings').amount
+
+        elif self.type == MilestoneConclusionItem.MIELSTONE_OWN_FUNDS:
+            return milestone.corollary.get_total('own_fundings').amount
+
+        elif self.type == MilestoneConclusionItem.TOTAL_FUNDINGS:
+            milestone_set = milestone.project.milestone_set.all()
+
+            return self.get_total_by_milestones(milestone_set, 'natr_fundings') + \
+                   self.get_total_by_milestones(milestone_set, 'own_fundings')
+
+        elif self.type == MilestoneConclusionItem.TOTAL_NATR:
+            milestone_set = milestone.project.milestone_set.all()
+            return self.get_total_by_milestones(milestone_set, 'natr_fundings')
+
+        elif self.type == MilestoneConclusionItem.TOTAL_OWN:
+            milestone_set = milestone.project.milestone_set.all()
+            return self.get_total_by_milestones(milestone_set, 'own_fundings')
+
+        elif self.type == MilestoneConclusionItem.ECONOMY:
+            milestone_set = milestone.project.milestone_set.all()
+            return self.get_total_by_milestones(milestone_set, 'savings')
+
+        return None
+
+    def update(self, **kwargs):
+        milesonte_conc_id = kwargs.pop('conclusion', None)
+        for k, v in kwargs.iteritems():
+            setattr(self, k, v)
+        self.save()
+        return self
+
+
+    @classmethod
+    def create_cameral_defaults(cls, conclusion):
+        items = []
+        next_milestone = conclusion.milestone.get_next_milestone()
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.EDITABLE, #0
+                          number=1,
+                          title=u'В результате камерального мониторинга по данному проекту замечаний не выявлено',
+                          milestone_id = conclusion.milestone.id) )   
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.MILESTONE_FUNDS, #1
+                          number=2,
+                          title=u'В представленном промежуточном отчете указано освоение средств инновационного гранта по %s-му этапу на сумму:'%conclusion.milestone.number,
+                          milestone_id = conclusion.milestone.id) )   
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.ECONOMY, #4
+                          number=3,
+                          title=u'Экономия средств инновационного гранта по %s-му этапу составила:'%conclusion.milestone.number,
+                          milestone_id = conclusion.milestone.id) )   
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.COSTS, #5
+                          number=4,
+                          title=u'Смета расходов %s-го этапа составляет (Приложение №1 к Договору), из них:'%(next_milestone.number if next_milestone else conclusion.milestone.number),
+                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )   
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.COSTS_NATR, #6
+                          number=5,
+                          title=u'средства гранта',
+                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.COSTS_OWN, #7
+                          number=6,
+                          title=u'собственные средства',
+                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )   
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.RECOMMENTDED_NEXT_FUNDS, #12
+                          number=7,
+                          title=u'Рекомендуемая сумма финансирования %s-го этапа с учетом образовавшейся экономии по %s-му этапу составляет:'%(next_milestone.number if next_milestone else conclusion.milestone.number, conclusion.milestone.number),
+                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )   
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.EDITABLE, #0
+                          number=8,
+                          title=u'По итогам камерального мониторинга, на основании представленных Грантополучателем документов, считаем целесообразным дальнейшее финансирование проекта.',
+                          milestone_id = conclusion.milestone.id) )
+        
+        for item in items:
+            item.save()
+
+        return items
+
+    @classmethod
+    def create_final_defaults(cls, conclusion):
+        items = []
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.EDITABLE, #0
+                          number=1,
+                          title=u'В результате камерального мониторинга по данному проекту замечаний не выявлено',
+                          milestone_id=conclusion.milestone.id) )
+        milestones_number = conclusion.milestone.project.milestone_set.count()
+        cnt = 2
+        cnt_ = 2
+        for milestone in conclusion.milestone.project.milestone_set.all():
+            items.append( cls(conclusion=conclusion,
+                              type=MilestoneConclusionItem.MILESTONE_FUNDS, #1
+                              number=cnt,
+                              milestone_id=milestone.id,
+                              title=u'В представленном отчете указано освоение средств инновационного гранта по %s-му этапу работ в размере'%milestone.number) )
+            cnt += 1
+            items.append( cls(conclusion=conclusion,
+                              type=MilestoneConclusionItem.MILESTONE_NATR_FUNDS, #2
+                              number=cnt,
+                              milestone_id=milestone.id,
+                              title=u'средства гранта') )
+            cnt += 1
+            items.append( cls(conclusion=conclusion,
+                              type=MilestoneConclusionItem.MIELSTONE_OWN_FUNDS, #3
+                              number=cnt,
+                              milestone_id=milestone.id,
+                              title=u'собственные средства') )
+            items.append( cls(conclusion=conclusion,
+                              type=MilestoneConclusionItem.MILESTONE_DONE_JOBS, #8
+                              number=cnt_+milestones_number*3,
+                              milestone_id=milestone.id,
+                              title=u'По %s-му этапу проекта, Грантополучателем выполнена следующая работа:'%milestone.number) )
+            cnt += 1
+            cnt_ += 1
+
+        cnt = cnt+milestones_number
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.TOTAL_FUNDINGS, #9
+                          milestone_id=conclusion.milestone.id,
+                          number=cnt,
+                          title=u'Общая освоенная сумма проекта составляет:') )
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.TOTAL_NATR, #10
+                          milestone_id=conclusion.milestone.id,
+                          number=cnt+1,
+                          title=u'средства гранта') )
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.TOTAL_OWN, #11
+                          milestone_id=conclusion.milestone.id,
+                          number=cnt+2,
+                          title=u'собственные средства') )
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.ECONOMY, #4
+                          milestone_id=conclusion.milestone.id,
+                          number=cnt+3,
+                          title=u'Общая экономия по проекту составляет:') )
+        items.append( cls(conclusion=conclusion,
+                          type=MilestoneConclusionItem.EDITABLE, #0
+                          milestone_id=conclusion.milestone.id,
+                          number=cnt+4,
+                          title=u'По итогам камерального мониторинга на основании представленных Грантополучателем документов, поскольку средства инновационного гранта использованы по целевому назначению, работы по проекту, выполнены в соответствии с календарным планом, считаем возможным закрытие инновационного гранта.') )
+        
+        for item in items:
+            item.save()
+
+        return items
 
 
 @track_data('status')
@@ -2224,23 +2703,30 @@ class DigitalSignature(models.Model):
     context = GenericForeignKey('context_type', 'object_id')
 
 
-def onsignal__create_protection_doc(sender, report, created=False, **kwargs):
+def onsignal__create_protection_doc(sender, instance, created, **kwargs):
     if not created:
         return
-    ProtectionDocument.build_empty(report.project)
+    ProtectionDocument.build_empty(instance.project)
 
-def onsignal__add_stat_by_cost_type__in_corollary(sender, cost_type, created=False, **kwargs):
+def onsignal__add_stat_by_cost_type__in_corollary(sender, instance, created, **kwargs):
     if not created:
         return
-    project = cost_type.project
+    project = instance.project
     for report in Report.objects.by_project(project):
-        report.corollary.add_stat_by_cost_type(cost_type)
+        report.corollary.add_stat_by_cost_type(instance)
 
+def onsignal__create_conclusion(sender, instance, created, **kwargs):
+    if not created:
+        return
+    MilestoneConclusion.create_default(instance.milestone)
 
 post_save.connect(onsignal__create_protection_doc, sender=Report)
 post_save.connect(Report.post_save, sender=Report)
+post_save.connect(onsignal__create_conclusion, sender=Report)
 post_save.connect(onsignal__add_stat_by_cost_type__in_corollary, sender=CostType)
 post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)
 post_save.connect(Monitoring.post_save, sender=Monitoring)
 post_save.connect(MonitoringTodo.post_save, sender=MonitoringTodo)
+
+
