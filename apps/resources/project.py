@@ -268,9 +268,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def get_efficiency_report(self, request, *a, **kw):
         data = request.query_params
 
-        if not data:
-            return HttpResponse({"message": "bad query"}, status=status.HTTP_400_BAD_REQUEST)
-
         projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
 
         filename = ExcelReport(projects=projects, registry_data={"date_from": data.get('date_from', None),
@@ -316,7 +313,10 @@ class ProjectViewSet(viewsets.ModelViewSet):
             return HttpResponse({"message": "bad query"}, status=status.HTTP_400_BAD_REQUEST)
 
         registry_data = prj_models.Project.gen_registry_data(self.filter_queryset(self.get_queryset()), data)
-        projects = registry_data.pop("projects", [])
+        if "projects" in data:
+            projects = prj_models.Project.objects.filter(id__in=data['projects'][1:-1].split(','))
+        else:
+            projects = registry_data.pop("projects", [])
 
         if not projects:
             return HttpResponse({"message": "projects not found"}, status=status.HTTP_400_BAD_REQUEST)

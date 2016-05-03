@@ -10,6 +10,18 @@ import decimal
 import os
 import dateutil.parser
 
+def get_money_amount(field):
+    if not field:
+        return 0
+
+    return field.amount
+
+def get_value(value):
+    if not value:
+        return ""
+
+    return value
+
 class ExcelReport:
     assignments = []
     assig_intervals = [
@@ -603,11 +615,16 @@ class ExcelReport:
             wb.save(filename)
             return filename
 
+        date_from = dateutil.parser.parse(self.registry_data['date_from'])
+        date_to = dateutil.parser.parse(self.registry_data['date_to'])
+
         all_cols_number = 0
         temp_col_num = 0
         col_num = 1
         first = True
         p_len = 0
+        row = 7
+        at_least_one = False
 
         if type(projects) == list:
             p_len = len(projects)
@@ -616,284 +633,318 @@ class ExcelReport:
 
 
         for project, cnt in zip( self.projects, range(p_len) ):
-            col_num = 1
-            row = cnt+7
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'№ п/п' )
+            efficiency_objs = project.get_efficiency_objs_in_period(date_from, date_to)
+            first_eff_obj = True
+            start_row = row
+            for efficiency_obj in efficiency_objs:
+                col_num = 1
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'№ п/п' )
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(cnt+1))
+                if first_eff_obj:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(cnt+1))
 
-            col_num += 1
+                col_num += 1
 
-            #region aggreement date and number
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'№/дата договора' )
+                #region aggreement date and number
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'№/дата договора' )
 
-            if project.aggreement: 
-                agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
-            else:
-                agreement_number = ""
+                if first_eff_obj:
+                    if project.aggreement: 
+                        agreement_number = project.aggreement.document.number if project.aggreement.document.number else ""
+                    else:
+                        agreement_number = ""
 
-            if project.aggreement and project.aggreement.document.date_sign:
-                agreement_date = u' от ' + project.aggreement.document.date_sign.strftime("%d.%m.%y")
-            else:
-                agreement_date = ""
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, agreement_number + agreement_date)
-            
-            col_num += 1
-            #endregion
+                    if project.aggreement and project.aggreement.document.date_sign:
+                        agreement_date = u' от ' + project.aggreement.document.date_sign.strftime("%d.%m.%y")
+                    else:
+                        agreement_date = ""
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, agreement_number + agreement_date)
+                
+                col_num += 1
+                #endregion
 
-            #region grantee name
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Наименование грантополучателя' )
-            try:
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.name)
-            except ObjectDoesNotExist:
-                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
-            col_num += 1
-            #endregion
+                #region grantee name
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Наименование грантополучателя' )
+                
+                if first_eff_obj:
+                    try:
+                        ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.organization_details.name)
+                    except ObjectDoesNotExist:
+                        ws = self.insert_into_cell(ws, get_column_letter(col_num), row, '')
+                col_num += 1
+                #endregion
 
-            #region project status
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Статус проекта ' )     
+                #region project status
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Статус проекта ' )     
+                if first_eff_obj:
+                    ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())               
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, project.get_status_cap())               
-            col_num += 1
-            #endregion
+                #region directors conclusion
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Решение Правления Агентства ' )  
+                col_num += 1
+                #endregion
 
-            #region directors conclusion
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Решение Правления Агентства ' )  
-            col_num += 1
-            #endregion
+                #region directors conclusion
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Дата Отчета' ) 
 
-            #region created job places
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Количество создан-х раб.мест ' ) 
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, efficiency_obj.report_date.strftime("%d.%m.%y") if efficiency_obj.report_date else "") 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            #endregion
 
-            #region product types
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Количество видов производимой продукции, шт ' ) 
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            #endregion
+                #region created job places
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Количество создан-х раб.мест ' ) 
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
 
-            #region product names
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Наименование вида выпускаемой продукции ' ) 
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.workplaces_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.workplaces_fact))) 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            #endregion
+                #region product types
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Количество видов производимой продукции, шт ' ) 
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
 
-            #region product volume
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Объем выпущенной продукции, тенге ' ) 
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'в натуральном выражении (шт./тонн/литр и т.п.) ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-2, u'в денежном выражении, тенге ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-1, u'факт ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-1, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+3), row-1, u'факт ' )
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.types_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.types_fact))) 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            #endregion
+                #region product names
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Наименование вида выпускаемой продукции ' ) 
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
 
-            #region realized volume
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Объем реализованной продукции, тенге ' ) 
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'всего ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-2, u'на внутренний рынок ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-2, u'на внешний рынок (экспорт) ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-1, u'факт ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-1, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+3), row-1, u'факт ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-1, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+5), row-1, u'факт ' )
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            #endregion
+                #region product volume
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Объем выпущенной продукции, тенге ' ) 
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'в натуральном выражении (шт./тонн/литр и т.п.) ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-2, u'в денежном выражении, тенге ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-1, u'факт ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-1, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+3), row-1, u'факт ' )
 
-            #region taxes volume
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Сумма уплаченных налоговых средств, тенге ' ) 
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'всего ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-2, u'в республиканский бюджет ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-2, u'в местный бюджет ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-1, u'факт ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-1, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+3), row-1, u'факт ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-1, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+5), row-1, u'факт ' )
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.prod_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.prod_fact))) 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            #endregion
+                #region realized volume
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Объем реализованной продукции, тенге ' ) 
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'всего ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-2, u'на внутренний рынок ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-2, u'на внешний рынок (экспорт) ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-1, u'факт ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-1, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+3), row-1, u'факт ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-1, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+5), row-1, u'факт ' )
 
-            #region crated innovative products
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Количество внедренных инновационных продуктов, ед. ' ) 
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.total_rlzn_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.total_rlzn_fact))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.rlzn_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.rlzn_fact))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.rlzn_exp_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.rlzn_exp_fact))) 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            #endregion
+                #region taxes volume
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Сумма уплаченных налоговых средств, тенге ' ) 
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'всего ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-2, u'в республиканский бюджет ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-2, u'в местный бюджет ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-1, u'факт ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+2), row-1, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+3), row-1, u'факт ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+4), row-1, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+5), row-1, u'факт ' )
 
-            #region kazakh market products share
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Доля казахстанского содержания в продукци, работах и услугах, % ' ) 
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.total_tax_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.total_tax_fact))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.tax_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.tax_fact))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.tax_local_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_money_amount(efficiency_obj.tax_local_fact))) 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            #endregion
+                #region crated innovative products
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Количество внедренных инновационных продуктов, ед. ' ) 
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
 
-            #region safety documents
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Наименование охранных документов (при наличии) ' )     
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.innovs_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.innovs_fact))) 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")               
-            col_num += 1
-            #endregion
+                #region kazakh market products share
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Доля казахстанского содержания в продукци, работах и услугах, % ' ) 
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
 
-            #region project power
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Проектная мощность, в натуральном выражении (шт./тонн/литр и т.п.) ' ) 
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
-                ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.kaz_part_plan))) 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, str(get_value(efficiency_obj.kaz_part_fact))) 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
-            col_num += 1
-            #endregion
+                #region safety documents
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Наименование охранных документов (при наличии) ' )     
 
-            #region performance index
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Индекс производительности труда по итогам получения инновационного гранта, в процентах** ' )     
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")               
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")               
-            col_num += 1
-            #endregion
+                #region project power
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Проектная мощность, в натуральном выражении (шт./тонн/литр и т.п.) ' ) 
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-2, u'план ' )
+                    ws = self.build_header_cell(ws, get_column_letter(col_num+1), row-2, u'факт ' )
 
-            #region results
-            if first:
-                ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Результат по итогам реализации проекта (технология, новый вид продукции и т.п.) ' )     
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+                col_num += 1
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "") 
+                col_num += 1
+                #endregion
 
-            ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")               
-            col_num += 1
-            #endregion
+                #region performance index
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Индекс производительности труда по итогам получения инновационного гранта, в процентах** ' )     
 
-            first = False
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")               
+                col_num += 1
+                #endregion
 
-        greyFill = PatternFill(start_color='B3B3B3',
-                   end_color='B3B3B3',
-                   fill_type='solid')
+                #region results
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-3, u'Результат по итогам реализации проекта (технология, новый вид продукции и т.п.) ' )     
 
-        all_cols_number = col_num
-        for i in range(all_cols_number-1):
-            ws.column_dimensions[get_column_letter(i+1)].width = 20.0
-            ws[get_column_letter(i+1)+"4"].font = Font(bold=True)
-            ws[get_column_letter(i+1)+"4"].fill = greyFill
-            ws[get_column_letter(i+1)+"5"].font = Font(bold=True)
-            ws[get_column_letter(i+1)+"5"].fill = greyFill
-            ws[get_column_letter(i+1)+"6"].font = Font(bold=True)
-            ws[get_column_letter(i+1)+"6"].fill = greyFill
-            ws.merge_cells('A4:A6')
-            ws.merge_cells('B4:B6')
-            ws.merge_cells('C4:C6')
-            ws.merge_cells('D4:D6')
-            ws.merge_cells('E4:E6')
-            ws.merge_cells('F4:G4')
-            ws.merge_cells('F5:F6')
-            ws.merge_cells('G5:G6')
-            ws.merge_cells('H4:I4')
-            ws.merge_cells('H5:H6')
-            ws.merge_cells('I5:I6')
-            ws.merge_cells('J4:K4')
-            ws.merge_cells('J5:J6')
-            ws.merge_cells('K5:K6')
-            ws.merge_cells('L4:O4')
-            ws.merge_cells('L5:M5')
-            ws.merge_cells('N5:O5')
-            ws.merge_cells('P4:U4')
-            ws.merge_cells('P5:Q5')
-            ws.merge_cells('R5:S5')
-            ws.merge_cells('T5:U5')
-            ws.merge_cells('V4:AA4')
-            ws.merge_cells('V5:W5')
-            ws.merge_cells('X5:Y5')
-            ws.merge_cells('Z5:AA5')
-            ws.merge_cells('AB4:AC4')
-            ws.merge_cells('AB5:AB6')
-            ws.merge_cells('AC5:AC6')
-            ws.merge_cells('AD4:AE4')
-            ws.merge_cells('AD5:AD6')
-            ws.merge_cells('AE5:AE6')
-            ws.merge_cells('AF4:AF6')
-            ws.merge_cells('AG4:AH4')
-            ws.merge_cells('AG5:AG6')
-            ws.merge_cells('AH5:AH6')
-            ws.merge_cells('AI4:AI6')
-            ws.merge_cells('AJ4:AJ6')
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, "")               
+                col_num += 1
+                #endregion
 
-        self.set_border(ws, {'col_start': 1,
-                             'col_finish': all_cols_number, 
-                             'row_start': 4,
-                             'row_finish': 7+p_len})
+                first = False
+                first_eff_obj = False
+                at_least_one = True
+                row += 1
+
+            ws.merge_cells("A%s:A%s"%(start_row, row-1))
+            ws.merge_cells("B%s:B%s"%(start_row, row-1))
+            ws.merge_cells("C%s:C%s"%(start_row, row-1))
+            ws.merge_cells("D%s:D%s"%(start_row, row-1))
+            ws.merge_cells("E%s:E%s"%(start_row, row-1))
+
+        if at_least_one:
+            greyFill = PatternFill(start_color='B3B3B3',
+                       end_color='B3B3B3',
+                       fill_type='solid')
+
+            all_cols_number = col_num
+            for i in range(all_cols_number-1):
+                ws.column_dimensions[get_column_letter(i+1)].width = 20.0
+                ws[get_column_letter(i+1)+"4"].font = Font(bold=True)
+                ws[get_column_letter(i+1)+"4"].fill = greyFill
+                ws[get_column_letter(i+1)+"5"].font = Font(bold=True)
+                ws[get_column_letter(i+1)+"5"].fill = greyFill
+                ws[get_column_letter(i+1)+"6"].font = Font(bold=True)
+                ws[get_column_letter(i+1)+"6"].fill = greyFill
+                ws.merge_cells('A4:A6')
+                ws.merge_cells('B4:B6')
+                ws.merge_cells('C4:C6')
+                ws.merge_cells('D4:D6')
+                ws.merge_cells('E4:E6')
+                ws.merge_cells('F4:F6')
+                ws.merge_cells('G4:H4')
+                ws.merge_cells('G5:G6')
+                ws.merge_cells('H5:H6')
+                ws.merge_cells('I4:J4')
+                ws.merge_cells('I5:I6')
+                ws.merge_cells('J5:J6')
+                ws.merge_cells('K4:L4')
+                ws.merge_cells('K5:K6')
+                ws.merge_cells('L5:L6')
+                ws.merge_cells('M4:P4')
+                ws.merge_cells('M5:N5')
+                ws.merge_cells('O5:P5')
+                ws.merge_cells('Q4:V4')
+                ws.merge_cells('Q5:R5')
+                ws.merge_cells('S5:T5')
+                ws.merge_cells('U5:V5')
+                ws.merge_cells('W4:AB4')
+                ws.merge_cells('W5:X5')
+                ws.merge_cells('Y5:Z5')
+                ws.merge_cells('AA5:AB5')
+                ws.merge_cells('AC4:AD4')
+                ws.merge_cells('AC5:AC6')
+                ws.merge_cells('AD5:AD6')
+                ws.merge_cells('AE4:AF4')
+                ws.merge_cells('AE5:AE6')
+                ws.merge_cells('AF5:AF6')
+                ws.merge_cells('AG4:AG6')
+                ws.merge_cells('AH4:AI4')
+                ws.merge_cells('AH5:AH6')
+                ws.merge_cells('AI5:AI6')
+                ws.merge_cells('AJ4:AJ6')
+                ws.merge_cells('AK4:AK6')
+
+            self.set_border(ws, {'col_start': 1,
+                                 'col_finish': all_cols_number, 
+                                 'row_start': 4,
+                                 'row_finish': row})
+        else:
+            ws = self.insert_into_cell(ws, 'A', '1', u'Оценка эффективности реализации проектов по итогам')
+            ws = self.insert_into_cell(ws, 'A', '2', u'Перепроверьте данные в отчете, за данный период отчетов не найдено')
+            ws.merge_cells('A1:B1')
+            ws['A1'].alignment = self.alignment_center
+            ws['A1'].font = Font(bold=True)
 
         filename = EXCEL_REPORTS_DIR+'/'+u'Отчет по эффективности проектов.xlsx'
 

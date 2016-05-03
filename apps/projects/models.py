@@ -531,6 +531,12 @@ class Project(models.Model):
     def get_efficiency_ids(self):
         return ProjectStartDescription.objects.filter(document__project=self).values_list('id', flat=True)
 
+    def get_efficiency_objs_in_period(self, date_from, date_to):
+        return ProjectStartDescription.objects.filter(document__project=self,
+                                                      report_date__isnull=False,
+                                                      report_date__gte=date_from,
+                                                      report_date__lte=date_to)
+
     def get_project(self):
         return self
 
