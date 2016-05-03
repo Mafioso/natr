@@ -635,9 +635,7 @@ class ReportViewSet(ProjectBasedViewSet):
             comment.save()
 
         report.send_status_changed_notification(prev_status, report.status, request.user, comment)
-        serializer = self.get_serializer(instance=report)
-        headers = self.get_success_headers(serializer.data)
-        return response.Response({"report": report.id}, headers=headers)
+        return response.Response({"report": report.id}, status=200)
 
     @detail_route(methods=['patch'], url_path='change_status')
     def change_status(self, request, *a, **kw):
