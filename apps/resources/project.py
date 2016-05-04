@@ -22,7 +22,7 @@ from mioadp.models import ArticleLink
 from mioadp.serializers import ArticleLinkSerializer
 from journals import serializers as journal_serializers
 from .filters import ProjectFilter, ReportFilter, MonitoringTodoFilter
-from projects.utils import ExcelReport
+from projects.utils import ExcelReport, create_use_of_budget_files_zip
 from documents.utils import DocumentPrint
 from natr import mailing
 from datetime import datetime, timedelta
@@ -601,6 +601,21 @@ class ReportViewSet(ProjectBasedViewSet):
         serializer = self.get_serializer(report.project)
         return response.Response(serializer.data)
 
+    @detail_route(methods=['get'], url_path='download_ubm_zip')
+    def download_ubm_zip(self, request, *a, **kw):
+        """
+            Get report gp_doc attachments zip
+        """
+        filename = create_use_of_budget_files_zip(self.get_object())
+
+        fs = filename.split('/')
+        f = open(filename, 'r')
+        os.remove(filename)
+        filename = fs[len(fs)-1]
+        r = HttpResponse(f, content_type='application/zip, application/octet-stream')
+        r['Content-Disposition'] = 'attachment; filename= %s' % filename.encode('utf-8')
+
+        return r
 
     @detail_route(methods=['post'], url_path='rework')
     @patch_serializer_class(CommentSerializer)

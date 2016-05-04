@@ -9,6 +9,7 @@ from django.db.models.query import QuerySet
 import decimal
 import os
 import dateutil.parser
+import zipfile
 
 def get_money_amount(field):
     if not field:
@@ -1001,3 +1002,24 @@ def resetSignature(report):
         report.signature.first().delete()
 
     return report
+
+def create_use_of_budget_files_zip(report):
+    file_dir = EXCEL_REPORTS_DIR
+    if not os.path.exists(EXCEL_REPORTS_DIR):
+        os.makedirs(EXCEL_REPORTS_DIR)
+
+    filename = EXCEL_REPORTS_DIR+'/'+u'Проект №%s файлы отчета использованных средств.zip'%report.project.aggreement.document.number
+
+    with zipfile.ZipFile(filename, 'w') as myzip:
+        for use_of_budget_item in report.use_of_budget_doc.items.all():
+            if hasattr(use_of_budget_item, "costs"):
+                if use_of_budget_item.costs.count() > 0:
+                    for cost in use_of_budget_item.costs.all():
+                        if hasattr(cost, "gp_docs"):
+                            if cost.gp_docs.count() > 0:
+                                for gp_doc in cost.gp_docs.all():
+                                    if hasattr(gp_doc.document, "attachments"):
+                                        for attachment in gp_doc.document.attachments.all():
+                                            myzip.write(attachment.file_path)
+
+    return filename
