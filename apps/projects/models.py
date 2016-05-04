@@ -1672,6 +1672,9 @@ class Corollary(ProjectBasedModel):
         if new_val == Corollary.APPROVE:
             milestone.set_status(Milestone.COROLLARY_APROVING)
         elif new_val == Corollary.APPROVED:
+            report = instance.report
+            report.status = Report.APPROVED
+            report.save()
             attachment = instance.build_printed()
             title = u'Итоговое заключение по КМ' if instance.report.type == Report.FINAL else u'Промежуточное заключение по КМ'
             corollary_type = 'corollary_final' if instance.report.type == Report.FINAL else 'corollary_cameral'
