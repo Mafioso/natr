@@ -1020,6 +1020,6 @@ def create_use_of_budget_files_zip(report):
                                 for gp_doc in cost.gp_docs.all():
                                     if hasattr(gp_doc.document, "attachments"):
                                         for attachment in gp_doc.document.attachments.all():
-                                            myzip.write(attachment.file_path)
+                                            myzip.write(attachment.file_path, os.path.basename(attachment.file_path), compress_type = zipfile.ZIP_DEFLATED)
 
     return filename
