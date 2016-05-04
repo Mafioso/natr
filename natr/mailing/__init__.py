@@ -306,3 +306,56 @@ def send_announcement_with_official_email(notification):
             mail.attach(attachment_data.name, f.read(), mimetypes.guess_type('f%s' % attachment_data.ext)[0])
 
     mail.send(fail_silently=True)
+
+def send_monitoring_todo_days_left(mtodo, days):
+    for grantee in mtodo.project.assigned_grantees.all():
+        send_mail(
+            u'Напоминанием о запланированном мероприятии, по проекту %s'%(mtodo.project.name),
+            u"""Здравствуйте, {name}!
+
+            По проекту {project_name},
+            с {date_start} по {date_end} (до завершения остается {days} дней)
+            запланировано мероприятие: {event_name}.
+            Форма завершения: {report_type}
+
+            Ссылка на План Мониторинга: {host_address}/#/project/{project_id}/monitoring_plan """.format(**{
+                'name': grantee.account.get_full_name(),
+                'project_name': mtodo.project.name,
+                'project_id': mtodo.project.id,
+                'date_start': mtodo.date_start and mtodo.date_start.strftime("%d.%m.%Y") or '?',
+                'date_end': mtodo.date_end and mtodo.date_end.strftime("%d.%m.%Y") or '?',
+                'event_name': mtodo.event_name,
+                'report_type': mtodo.report_type,
+                'days': days,
+                'host_address': settings.DOCKER_APP_ADDRESS
+            }),
+            settings.DEFAULT_FROM_EMAIL,
+            [grantee.account.email],
+            fail_silently=False
+        )   
+
+    for expert in mtodo.project.assigned_experts.all():
+        send_mail(
+            u'Напоминанием о запланированном мероприятии, по проекту %s'%(mtodo.project.name),
+            u"""Здравствуйте, {name}!
+
+            По проекту {project_name},
+            с {date_start} по {date_end} (до завершения остается {days} дней)
+            запланировано мероприятие: {event_name}.
+            Форма завершения: {report_type}
+
+            Ссылка на План Мониторинга: {host_address}/#/project/{project_id}/monitoring_plan """.format(**{
+                'name': grantee.account.get_full_name(),
+                'project_name': mtodo.project.name,
+                'project_id': mtodo.project.id,
+                'date_start': mtodo.date_start and mtodo.date_start.strftime("%d.%m.%Y") or '?',
+                'date_end': mtodo.date_end and mtodo.date_end.strftime("%d.%m.%Y") or '?',
+                'event_name': mtodo.event_name,
+                'report_type': mtodo.report_type,
+                'days': days,
+                'host_address': settings.DOCKER_APP_ADDRESS
+            }),
+            settings.DEFAULT_FROM_EMAIL,
+            [expert.account.email],
+            fail_silently=False
+        )

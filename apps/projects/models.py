@@ -2498,33 +2498,6 @@ class MonitoringTodo(ProjectBasedModel):
     def notification_subscribers(self):
         return [exp.account for exp in self.project.assigned_experts.all()]
 
-    def send_days_left(self, days):
-        for grantee in self.project.assigned_grantees.all():
-            send_mail(
-                u'Напоминанием о запланированном мероприятии, по проекту %s'%(self.project.name),
-                u"""Здравствуйте, {name}!
-
-                По проекту {project_name},
-                с {date_start} по {date_end} (до завершения остается {days} дней)
-                запланировано мероприятие: {event_name}.
-                Форма завершения: {report_type}
-
-                Ссылка на План Мониторинга: {host_address}/#/project/{project_id}/monitoring_plan """.format(**{
-                    'name': grantee.account.get_full_name(),
-                    'project_name': self.project.name,
-                    'project_id': self.project.id,
-                    'date_start': self.date_start and self.date_start.strftime("%d.%m.%Y") or '?',
-                    'date_end': self.date_end and self.date_end.strftime("%d.%m.%Y") or '?',
-                    'event_name': self.event_name,
-                    'report_type': self.report_type,
-                    'days': days,
-                    'host_address': settings.DOCKER_APP_ADDRESS
-                }),
-                settings.DEFAULT_FROM_EMAIL,
-                [grantee.account.email],
-                fail_silently=False
-            )
-
     @classmethod
     def post_save(cls, sender, instance, created=False, **kwargs):
         if not instance.has_changed('event_name'):
