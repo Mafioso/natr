@@ -5,7 +5,7 @@ from natr.override_rest_framework.policies import AdminPolicy, PermissionDefinit
 from auth2 import serializers, models
 from projects.models import Monitoring, MonitoringTodo
 from projects.serializers import MonitoringTodoSerializer
-from .filters import NatrUserFilter
+from .filters import NatrUserFilter, MonitoringTodoFilter
 
 class NatrUserViewSet(viewsets.ModelViewSet):
 
@@ -60,7 +60,8 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 			monitorings = Monitoring.objects.filter(
 				project__in=request.user.user.projects.all())
 		activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
-		ser = MonitoringTodoSerializer(activities, many=True)
+		filtered = MonitoringTodoFilter(request.query_params, activities)
+		ser = MonitoringTodoSerializer(filtered.qs, many=True)
 		return response.Response(ser.data)
 
 
