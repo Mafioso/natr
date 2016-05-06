@@ -268,3 +268,20 @@ class LogItemFilter(django_filters.FilterSet):
 		date_to = datetime.datetime.strptime(value, '%Y-%m-%d')
 		queryset = queryset.filter(date_created__lte=date_to)
 		return queryset
+
+class MonitoringTodoFilter(django_filters.FilterSet):
+	date_from = django_filters.MethodFilter()
+	date_to = django_filters.MethodFilter()
+
+	class Meta:
+		model = models.MonitoringTodo
+
+	def filter_date_from(self, queryset, value):
+		date_from = dateutil.parser.parse(value)
+		queryset = queryset.filter(date_start__gte=date_from)
+		return queryset
+
+	def filter_date_to(self, queryset, value):
+		date_to = dateutil.parser.parse(value)
+		queryset = queryset.filter(date_start__lte=date_to)
+		return queryset

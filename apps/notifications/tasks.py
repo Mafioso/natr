@@ -5,7 +5,7 @@ from projects.models import Monitoring, MonitoringTodo, Project
 import datetime
 from django.utils import timezone
 from natr.utils import get_date_query_range
-
+from natr import mailing
 
 logger = get_task_logger(__name__)
 
@@ -22,15 +22,14 @@ def send_email_before_5_10_30_days__monitoring_todo():
         monitoring__status=Monitoring.GRANTEE_APPROVED,
         date_end__range=(get_date_query_range(before5day)))
     for todo in before5dayTodos.all():
-        todo.send_days_left(5)
+        mailing.send_monitoring_todo_days_left(5)
     logger.info("Sent %i emails before %i days" % (before5dayTodos.count(), 5))
-
 
     before10dayTodos = MonitoringTodo.objects.filter(\
         monitoring__status=Monitoring.GRANTEE_APPROVED,
         date_end__range=(get_date_query_range(before10day)))
     for todo in before10dayTodos.all():
-        todo.send_days_left(10)
+        mailing.send_monitoring_todo_days_left(10)
     logger.info("Sent %i emails before %i days" % (before10dayTodos.count(), 10))
 
 
@@ -38,5 +37,5 @@ def send_email_before_5_10_30_days__monitoring_todo():
         monitoring__status=Monitoring.GRANTEE_APPROVED,
         date_end__range=(get_date_query_range(before30day)))
     for todo in before30dayTodos.all():
-        todo.send_days_left(30)
+        mailing.send_monitoring_todo_days_left(30)
     logger.info("Sent %i emails before %i days" % (before30dayTodos.count(), 30))
