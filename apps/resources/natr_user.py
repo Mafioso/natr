@@ -1,9 +1,12 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 from rest_framework.decorators import list_route, detail_route
 from rest_framework import viewsets, response, filters
 from natr.override_rest_framework.decorators import patch_serializer_class
 from natr.override_rest_framework.policies import AdminPolicy, PermissionDefinition
 from auth2 import serializers, models
-from projects.models import Monitoring, MonitoringTodo
+from projects.models import Monitoring, MonitoringTodo, Report, Corollary
 from projects.serializers import MonitoringTodoSerializer
 from .filters import NatrUserFilter, MonitoringTodoFilter
 
@@ -63,6 +66,111 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 		filtered = MonitoringTodoFilter(request.query_params, activities)
 		ser = MonitoringTodoSerializer(filtered.qs, many=True)
 		return response.Response(ser.data)
+
+	@list_route(methods=['GET'], url_path='todos')
+	def get_todos(self, request, *a, **kw):
+		data = []
+		user_type = request.user.get_user_type
+		user = getattr(request.user, 'user') if hasattr(request.user, 'user') else request.user.grantee
+
+		for project in user.projects.all():
+			for report in project.get_reports():
+				if report.status == Report.CHECK and user_type == models.NatrGroup.EXPERT:
+					data.append({
+							'link': '/report/%s'%report.id,
+							'title': u'Отчет на проверку ' + project.get_grantee_name,
+							'type': u'Отчет',
+							'project': {
+								'name': project.name,
+								'id': project.id
+							},
+						})
+				elif report.status == Report.REWORK and user_type == 'grantee':
+					data.append({
+							'link': '/report/%s'%report.id,
+							'title': u'Отчет на доработку',
+							'type': u'Отчет',
+							'project': {
+								'name': project.name,
+								'id': project.id
+							},
+						})
+			for corollary in project.get_corollaries():
+				if corollary.status == Corollary.REWORK and user_type == models.NatrGroup.EXPERT:
+					data.append({
+							'link': '/project/%s/milestone/%s'%(project.id, corollary.milestone.id),
+							'title': u'Заключение на доработку ' + project.get_grantee_name,
+							'type': u'Заключение',
+							'project': {
+								'name': project.name,
+								'id': project.id
+							},
+						})
+				if corollary.status == Corollary.APPROVE and user_type == models.NatrGroup.MANAGER:
+					data.append({
+							'link': '/project/%s/milestone/%s'%(project.id, corollary.milestone.id),
+							'title': u'Заключение на согласование ' + project.get_grantee_name,
+							'type': u'Заключение',
+							'project': {
+								'name': project.name,
+								'id': project.id
+							},
+						})
+				if corollary.status == Corollary.DIRECTOR_CHECK and user_type == models.NatrGroup.DIRECTOR:
+					data.append({
+							'link': '/project/%s/milestone/%s'%(project.id, corollary.milestone.id),
+							'title': u'Заключение на утверждение ' + project.get_grantee_name,
+							'type': u'Заключение',
+							'project': {
+								'name': project.name,
+								'id': project.id
+							},
+						})
+
+			for monitoring in project.get_monitoring():
+				if monitoring.status == Monitoring.ON_REWORK and user_type == models.NatrGroup.EXPERT:
+					data.append({
+							'link': '/projects/edit/%s/monitoring'%project.id,
+							'title': u'Мониторинг на доработку ' + project.get_grantee_name,
+							'type': u'Мониторинг',
+							'project': {
+								'name': project.name,
+								'id': project.id
+							},
+						})
+				if monitoring.status == Monitoring.ON_GRANTEE_APPROVE and user_type == 'grantee':
+					data.append({
+							'link': '/project/%s/monitoring_plan'%project.id,
+							'title': u'Мониторинг на согласование',
+							'type': u'Мониторинг',
+							'project': {
+								'name': project.name,
+								'id': project.id
+							},
+						})
+				if monitoring.status == Monitoring.APPROVE and user_type == models.NatrGroup.MANAGER:
+					data.append({
+							'link': '/projects/edit/%s/monitoring'%project.id,
+							'title': u'Мониторинг на утверждение ' + project.get_grantee_name,
+							'type': u'Мониторинг',
+							'project': {
+								'name': project.name,
+								'id': project.id
+							},
+						})
+				if monitoring.status == Monitoring.APPROVE and user_type == models.NatrGroup.DIRECTOR:
+					data.append({
+							'link': '/projects/edit/%s/monitoring'%project.id,
+							'title': u'Мониторинг на утверждение ' + project.get_grantee_name,
+							'type': u'Мониторинг',
+							'project': {
+								'name': project.name,
+								'id': project.id
+							},
+						})
+
+
+		return response.Response(data)
 
 
 class PermissionViewSet(viewsets.ModelViewSet):
