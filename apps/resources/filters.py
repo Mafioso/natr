@@ -272,6 +272,7 @@ class LogItemFilter(django_filters.FilterSet):
 class MonitoringTodoFilter(django_filters.FilterSet):
 	date_from = django_filters.MethodFilter()
 	date_to = django_filters.MethodFilter()
+	projects = django_filters.MethodFilter()
 
 	class Meta:
 		model = models.MonitoringTodo
@@ -285,3 +286,6 @@ class MonitoringTodoFilter(django_filters.FilterSet):
 		date_to = dateutil.parser.parse(value)
 		queryset = queryset.filter(date_start__lte=date_to)
 		return queryset
+
+	def filter_projects(self, queryset, value):
+		return queryset.filter(project_id__in=value.split(","))

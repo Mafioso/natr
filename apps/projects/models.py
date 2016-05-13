@@ -439,6 +439,12 @@ class Project(models.Model):
         except:
             return []
 
+    def get_grantee_name(self):
+        if not hasattr(self, 'organization_details'):
+            return ""
+
+        return self.organization_details.name
+
     @property
     def stakeholders(self):
         experts = list(self.assigned_experts.all())
@@ -463,6 +469,12 @@ class Project(models.Model):
     def get_reports(self):
         return Report.objects.by_project(self).all()
 
+    def get_corollaries(self):
+        return Corollary.objects.by_project(self).all()
+
+    def get_monitoring(self):
+        return Monitoring.objects.by_project(self).all()
+        
     def get_expert_reports(self):
         return Report.objects.by_project(self).all()
 
