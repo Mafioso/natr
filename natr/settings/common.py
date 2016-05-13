@@ -233,8 +233,7 @@ LOGGING = {
 }
 
 ADMINS = (('Sattar', 'sattar94@outlook.com'),
-          ('Nurlan', 'abyken.nurlan@gmail.com'),
-          ('Tolkyn', 'tolkyn.baimukhanova@natd.gov.kz'))
+          ('Nurlan', 'abyken.nurlan@gmail.com'))
 
 MANAGERS = ADMINS
 
