@@ -111,12 +111,12 @@ class ProjectViewSet(viewsets.ModelViewSet):
     @patch_serializer_class(ProjectBasicInfoSerializer)
     def counted_by_statuses(self, request, *a, **kw):
         projects = self.filter_queryset(self.get_queryset())
-        data = [{"name": u"На мониторинге", "count": 0}, 
-                {"name": u"Завершен", "count": 0}, 
+        data = [{"name": u"На мониторинге", "count": 0},
+                {"name": u"Завершен", "count": 0},
                 {"name": u"Расторгнут", "count": 0}]
         for project in projects:
             data[project.status]['count'] += 1
-        
+
         return response.Response(data, status=200)
 
     @detail_route(methods=['get'], url_path='reports')
@@ -448,15 +448,14 @@ class MonitoringViewSet(ProjectBasedViewSet):
             else:
                 projects = self.request.user.user.projects.all()
         else:
-            projects = self.request.user.grantee.projects.all()         
+            projects = self.request.user.grantee.projects.all()
         ms = self.get_queryset().filter(project__in=projects)
-        qs_not_started = prj_models.MonitoringTodo.objects.filter(
-            monitoring__in=ms, date_start__gte=datetime.now(),
-            date_start__lte=datetime.now()+timedelta(days=31))
-        qs_started = prj_models.MonitoringTodo.objects.filter(
-            monitoring__in=ms, date_start__lte=datetime.now(),
-            date_end__gte=datetime.now())
-        qs = list(chain(qs_not_started, qs_started))
+        qs = prj_models.MonitoringTodo.objects.filter(
+            Q(monitoring__in=ms) & Q(
+                Q(date_start__gte=datetime.now(),date_start__lte=datetime.now()+timedelta(days=31)) |
+                Q(date_start__lte=datetime.now(), date_end__gte=datetime.now())
+            )
+        ).order_by('-date_end')
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -537,11 +536,11 @@ class MonitoringViewSet(ProjectBasedViewSet):
             data = request.data
 
             if data.get('comment_text', None):
-                comment = prj_models.Comment(content=monitoring, 
+                comment = prj_models.Comment(content=monitoring,
                                              comment_text=data['comment_text'],
                                              account=request.user)
                 comment.save()
-                
+
             if data.get('date_created', None):
                 filter_data['date_created__gte'] = data.get('date_created')
 
@@ -582,7 +581,7 @@ class ReportViewSet(ProjectBasedViewSet):
 
         if status:
             status = status.split(',')
-            
+
             if hasattr(self.request.user, 'grantee') and 1 not in status:
                 status.append(1)
 
@@ -650,13 +649,13 @@ class ReportViewSet(ProjectBasedViewSet):
         report.status = prj_models.Report.REWORK
         if report.signature.all():
             report.signature.first().delete()
-            
+
         report.save()
         report.log_changes(request.user)
         comment = None
 
         if data.get('comment_text', None):
-            comment = prj_models.Comment(content=report, 
+            comment = prj_models.Comment(content=report,
                               comment_text=data['comment_text'],
                               account=request.user)
             comment.save()
@@ -774,7 +773,7 @@ class CorollaryViewSet(ProjectBasedViewSet):
 
         if 'comment_text' in request.data:
             if request.data.get('comment_text', None):
-                comment = prj_models.Comment(content=corollary, 
+                comment = prj_models.Comment(content=corollary,
                                              comment_text=request.data.get('comment_text', ""),
                                              account=request.user)
                 comment.save()
@@ -857,11 +856,11 @@ class CorollaryViewSet(ProjectBasedViewSet):
             data = request.data
 
             if data.get('comment_text', None):
-                comment = prj_models.Comment(content=corollary, 
+                comment = prj_models.Comment(content=corollary,
                                              comment_text=data['comment_text'],
                                              account=request.user)
                 comment.save()
-                
+
             if data.get('date_created', None):
                 filter_data['date_created__gte'] = data.get('date_created')
 

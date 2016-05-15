@@ -212,7 +212,7 @@ def delete_account(sender, instance, **kwargs):
 def set_new_perm_to_admin(sender, instance, created=False, **kwargs):
     if not created:
         return
-    admin_group = NatrGroup.objects.get(name=NatrGroup.ADMIN)
+    admin_group, created = NatrGroup.objects.get_or_create(name=NatrGroup.ADMIN)
     if admin_group:
         admin_group.permissions.add(instance)
     print 'added new perm to NatrGroup.ADMIN', instance
