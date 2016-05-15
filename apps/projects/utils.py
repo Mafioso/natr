@@ -19,7 +19,7 @@ def get_money_amount(field):
 
 def get_value(value):
     if not value:
-        return ""
+        return u""
 
     return value
 
