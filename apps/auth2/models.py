@@ -138,6 +138,8 @@ class Account(AbstractBaseUser, PermissionsMixin):
                 return NatrGroup.EXPERT
             elif self.user.is_risk_expert():
                 return NatrGroup.RISK_EXPERT
+            elif self.user.is_independent_expert():
+                return NatrGroup.INDEPENDENT_EXPERT
             else:
                 return NatrGroup.EXPERT
         elif hasattr(self, 'grantee'):
@@ -186,6 +188,10 @@ class NatrUser(models.Model):
         groups = self.get_groups()
         return groups.filter(name=NatrGroup.RISK_EXPERT).first()
 
+    def is_independent_expert(self):
+        groups = self.get_groups()
+        return groups.filter(name=NatrGroup.INDEPENDENT_EXPERT).first()
+
     def get_groups(self):
         return self.account.groups.all()
 
@@ -202,7 +208,7 @@ def assign_user_group(sender, instance, created=False, **kwargs):
     """If natr user does not belong to any group, assign expert by default."""
     if not created:
         return
-    if instance.is_expert() or instance.is_manager() or instance.is_risk_expert() or instance.is_director():
+    if instance.is_expert() or instance.is_manager() or instance.is_risk_expert() or instance.is_director() or instance.is_independent_expert():
         return
     instance.add_to_experts()
 
