@@ -295,3 +295,12 @@ class MonitoringTodoFilter(django_filters.FilterSet):
 
 	def filter_projects(self, queryset, value):
 		return queryset.filter(project_id__in=value.split(","))
+
+class ReferenceInformationFilter(django_filters.FilterSet):
+	role = django_filters.MethodFilter()
+
+	class Meta:
+		model = doc_models.ReferenceInformation
+
+	def filter_role(self, queryset, value):
+		return queryset.filter(role=value)

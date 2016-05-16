@@ -30,7 +30,8 @@ from .document import (
 	GPDocimentViewSet,
 	GPDocumentTypeViewSet,
 	TechStageViewSet,
-	OfficialEmailViewSet
+	OfficialEmailViewSet,
+	ReferenceInformationViewSet
 )
 from .journal import JournalActivityViewSet, JournalViewSet
 from .notification import NotificationViewSet, NotificationSubscriptionViewSet, NotificationCounterViewSet
@@ -91,6 +92,7 @@ router.register(r'article_links', ArticleLinkViewSet, 'article_link')
 router.register(r'documentolog', DocumentologViewSet, 'documentolog')
 router.register(r'logs', LogItemViewSet, 'logs')
 router.register(r'official_emails', OfficialEmailViewSet, 'official_email')
+router.register(r'references', ReferenceInformationViewSet, 'references')
 
 urlpatterns = [
 	url(r'', include(router.urls)),
