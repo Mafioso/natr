@@ -304,6 +304,7 @@ class Project(models.Model):
     assigned_experts = models.ManyToManyField('auth2.NatrUser', related_name='projects')
     assigned_grantees = models.ManyToManyField('grantee.Grantee', related_name='projects')
     directors_attachments = models.ManyToManyField('documents.Attachment', related_name='projects', null=True, blank=True)
+    iexpert_attachments = models.ManyToManyField('documents.Attachment', related_name='iprojects', null=True, blank=True)
     keywords = models.TextField(u'Ключевые слова', null=True, blank=True)
 
     objects = ProjectManager()
