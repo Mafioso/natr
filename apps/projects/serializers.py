@@ -233,9 +233,14 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
             'id', 'name', 'status', 'current_milestone',
             'status_cap', 'agreement', 'journal_id',
             'risk_degree', 'number_of_milestones', 'authorized_grantee',
-            'grantee_name' )
+            'grantee_name', 'iexpert_attachments' )
         fields = _f
         read_only_fields = _f
+
+    def __init__(self, *a, **kw):
+        if kw.pop('iexpert_attachments', False) is True:
+            self.fields['iexpert_attachments'] = AttachmentSerializer(many=True, read_only=True)
+        super(ProjectBasicInfoSerializer, self).__init__(*a, **kw)
 
 
     current_milestone = serializers.SerializerMethodField()

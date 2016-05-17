@@ -1741,6 +1741,27 @@ class OfficialEmail(models.Model):
         return [grantee.account for grantee in self.get_project().assigned_grantees.all()]
 
 
+class ReferenceInformation(models.Model):
+    ROLE_KEYS = (EXPERT,
+                    MANAGER,
+                    GRANTEE,
+                    REXPERT,
+                    IEXPERT,
+                    DIRECTOR) = ('expert', 'manager', 'grantee', 'risk_expert',
+                                        'independent_expert', 'director')
+    ROLE_VALUES = (
+        u'Эксперт',
+        u'Руководитель',
+        u'Грантополучатель',
+        u'СУР-Эксперт',
+        u'Независимый эксперт',
+        u'Директор',
+    )
+    ROLE_OPTIONS = zip(ROLE_KEYS, ROLE_VALUES)
+
+    role = models.CharField(max_length=25, unique=True, choices=ROLE_OPTIONS)
+    attachments = models.ManyToManyField(Attachment, related_name='references', null=True, blank=True)
+
 
 from django.db.models.signals import post_save
 

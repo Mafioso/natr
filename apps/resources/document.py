@@ -10,10 +10,11 @@ from natr.override_rest_framework import serializers as natr_serializers
 from natr.override_rest_framework.mixins import ProjectBasedViewSet
 from documents.serializers import *
 from documents.serializers.misc import TechStageSerializer
+from documents.serializers.common import ReferenceInformationSerializer
 from documents import models as doc_models
 from documents.utils import DocumentPrint, store_file, store_from_documentolog
 from projects import models as prj_models
-from .filters import AttachmentFilter, ProjectStartDescriptionFilter, OfficialEmailFilter
+from .filters import AttachmentFilter, ProjectStartDescriptionFilter, OfficialEmailFilter, ReferenceInformationFilter
 from django.conf import settings
 from projects import utils as prj_utils
 pj = os.path.join
@@ -29,7 +30,7 @@ ProjectStartDescription = doc_models.ProjectStartDescription
 CostType = doc_models.CostType
 GPDocumentType = doc_models.GPDocumentType
 OfficialEmail = doc_models.OfficialEmail
-
+ReferenceInformation = doc_models.ReferenceInformation
 
 class DocumentViewSet(ProjectBasedViewSet):
 
@@ -575,3 +576,33 @@ class OfficialEmailViewSet(viewsets.ModelViewSet):
 
         headers = self.get_success_headers(ser.data)
         return response.Response(ser.data, headers=headers)
+
+
+class ReferenceInformationViewSet(viewsets.ModelViewSet):
+    serializer_class = ReferenceInformationSerializer
+    queryset = ReferenceInformation.objects.all()
+
+    filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
+    filter_class = ReferenceInformationFilter
+
+    @list_route(methods=['post'], url_path='update')
+    @patch_serializer_class(ReferenceInformationSerializer)
+    def update_item(self, request, *a, **kw):
+        data = request.data
+        instance = ReferenceInformation.objects.get(role=data['role'])
+
+        for attachment in data['attachments']:
+                attachment = Attachment(**attachment)
+                attachment.save()
+                instance.attachments.add(attachment)
+
+        serializer = self.get_serializer(instance=instance)
+        return response.Response({'results': [serializer.data]})
+
+    @list_route(methods=['get'], url_path='get_for_user')
+    @patch_serializer_class(ReferenceInformationSerializer)
+    def get_for_user(self, request, *a, **kw):
+        instance = ReferenceInformation.objects.get(role=request.user.get_user_type)
+
+        serializer = self.get_serializer(instance=instance)
+        return response.Response({'results': [serializer.data]})

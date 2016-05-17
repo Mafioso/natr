@@ -100,11 +100,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
     def list_projects_basic_info(self, request, *a, **kw):
         projects = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(projects)
+
+        iexpert = False
+        if request.user.user.is_independent_expert():
+            iexpert = True
+
         if page is not None:
-            serializer = self.get_serializer(page, many=True)
+            serializer = self.get_serializer(page, iexpert_attachments=True, many=True)
             if int(request.query_params.get('paginate', '1')) > 0:
                 return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(projects, many=True)
+        serializer = self.get_serializer(projects, iexpert_attachments=True, many=True)
         return response.Response(serializer.data)
 
     @list_route(methods=['get'], url_path='counted_by_statuses')
@@ -339,6 +344,21 @@ class ProjectViewSet(viewsets.ModelViewSet):
         mailing.send_project_status_changed(project)
 
         serializer = self.get_serializer(project)
+        return response.Response(serializer.data)
+
+    @detail_route(methods=['GET', 'POST'], url_path='iexpert_docs')
+    @patch_serializer_class(AttachmentSerializer)
+    def list_article_links(self, request, *a, **kw):
+        project = self.get_object()
+
+        if request.method == 'POST':
+            attachments = request.data.pop('attachments')
+            for attachment in attachments:
+                attachment = doc_models.Attachment(**attachment)
+                attachment.save()
+                project.iexpert_attachments.add(attachment)
+                
+        serializer = self.get_serializer(project.iexpert_attachments, many=True)
         return response.Response(serializer.data)
 
 

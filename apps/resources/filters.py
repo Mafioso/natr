@@ -136,6 +136,7 @@ class AttachmentFilter(ListOfIdFilter):
 
 class NatrUserFilter(django_filters.FilterSet):
 	expert_only = django_filters.MethodFilter()
+	iexperts_only = django_filters.MethodFilter()
 	search = django_filters.MethodFilter()
 
 	class Meta:
@@ -144,6 +145,11 @@ class NatrUserFilter(django_filters.FilterSet):
 	def filter_expert_only(self, queryset, value):
 		if value == 'true':
 			queryset = queryset.filter(account__groups__name__in=[auth2_models.NatrGroup.EXPERT, auth2_models.NatrGroup.RISK_EXPERT])
+		return queryset
+
+	def filter_iexperts_only(self, queryset, value):
+		if value == 'true':
+			queryset = queryset.filter(account__groups__name=auth2_models.NatrGroup.INDEPENDENT_EXPERT)
 		return queryset
 
 	def filter_search(self, queryset, value):
@@ -284,3 +290,12 @@ class LogItemFilter(django_filters.FilterSet):
 		date_to = datetime.datetime.strptime(value, '%Y-%m-%d')
 		queryset = queryset.filter(date_created__lte=date_to)
 		return queryset
+
+class ReferenceInformationFilter(django_filters.FilterSet):
+	role = django_filters.MethodFilter()
+
+	class Meta:
+		model = doc_models.ReferenceInformation
+
+	def filter_role(self, queryset, value):
+		return queryset.filter(role=value)
