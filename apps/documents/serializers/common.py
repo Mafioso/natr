@@ -43,3 +43,10 @@ class DocumentCompositionSerializer(EmptyObjectDMLMixin, serializers.ModelSerial
                 raise serializers.ValidationError("Document should has tp field.")
             data['document']['type'] = self.Meta.model.tp
         return super(DocumentCompositionSerializer, self).to_internal_value(data)
+
+class ReferenceInformationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.ReferenceInformation
+
+    attachments = AttachmentSerializer(many=True, required=False)

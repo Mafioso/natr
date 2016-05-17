@@ -79,7 +79,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 				if report.status == Report.CHECK and user_type == models.NatrGroup.EXPERT:
 					data.append({
 							'link': '/report/%s'%report.id,
-							'title': u'Отчет на проверку ' + get_value(project.get_grantee_name()),
+							'title': u'Отчет на проверку ' + project.get_grantee_name(),
 							'type': u'Отчет',
 							'project': {
 								'name': project.name,
@@ -100,7 +100,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 				if corollary.status == Corollary.REWORK and user_type == models.NatrGroup.EXPERT:
 					data.append({
 							'link': '/project/%s/milestone/%s'%(project.id, corollary.milestone.id),
-							'title': u'Заключение на доработку ' + get_value(project.get_grantee_name()),
+							'title': u'Заключение на доработку ' + project.get_grantee_name(),
 							'type': u'Заключение',
 							'project': {
 								'name': project.name,
@@ -110,7 +110,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 				if corollary.status == Corollary.APPROVE and user_type == models.NatrGroup.MANAGER:
 					data.append({
 							'link': '/project/%s/milestone/%s'%(project.id, corollary.milestone.id),
-							'title': u'Заключение на согласование ' + get_value(project.get_grantee_name()),
+							'title': u'Заключение на согласование ' + project.get_grantee_name(),
 							'type': u'Заключение',
 							'project': {
 								'name': project.name,
@@ -120,7 +120,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 				if corollary.status == Corollary.DIRECTOR_CHECK and user_type == models.NatrGroup.DIRECTOR:
 					data.append({
 							'link': '/project/%s/milestone/%s'%(project.id, corollary.milestone.id),
-							'title': u'Заключение на утверждение ' + get_value(project.get_grantee_name()),
+							'title': u'Заключение на утверждение ' + project.get_grantee_name(),
 							'type': u'Заключение',
 							'project': {
 								'name': project.name,
@@ -132,7 +132,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 				if monitoring.status == Monitoring.ON_REWORK and user_type == models.NatrGroup.EXPERT:
 					data.append({
 							'link': '/projects/edit/%s/monitoring'%project.id,
-							'title': u'Мониторинг на доработку ' + get_value(project.get_grantee_name()),
+							'title': u'Мониторинг на доработку ' + project.get_grantee_name(),
 							'type': u'Мониторинг',
 							'project': {
 								'name': project.name,
@@ -152,7 +152,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 				if monitoring.status == Monitoring.APPROVE and user_type == models.NatrGroup.MANAGER:
 					data.append({
 							'link': '/projects/edit/%s/monitoring'%project.id,
-							'title': u'Мониторинг на утверждение ' + get_value(project.get_grantee_name()),
+							'title': u'Мониторинг на утверждение ' + project.get_grantee_name(),
 							'type': u'Мониторинг',
 							'project': {
 								'name': project.name,
@@ -162,7 +162,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 				if monitoring.status == Monitoring.APPROVE and user_type == models.NatrGroup.DIRECTOR:
 					data.append({
 							'link': '/projects/edit/%s/monitoring'%project.id,
-							'title': u'Мониторинг на утверждение ' + get_value(project.get_grantee_name()),
+							'title': u'Мониторинг на утверждение ' + project.get_grantee_name(),
 							'type': u'Мониторинг',
 							'project': {
 								'name': project.name,
