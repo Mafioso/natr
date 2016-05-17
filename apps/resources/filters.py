@@ -69,7 +69,7 @@ class ProjectFilter(ListOfIdFilter):
 
 
 class OfficialEmailFilter(django_filters.FilterSet):
-	
+
 	class Meta:
 		model = doc_models.OfficialEmail
 
@@ -182,12 +182,15 @@ class MonitoringTodoFilter(django_filters.FilterSet):
 
 	milestone_id = django_filters.MethodFilter()
 	event_type = django_filters.MethodFilter()
+	date_from = django_filters.MethodFilter()
+	date_to = django_filters.MethodFilter()
+	projects = django_filters.MethodFilter()
+
 
 	def filter_event_type(self, queryset, value):
 		return queryset.filter(event_type__name=value)
 
 	def filter_milestone_id(self, queryset, value):
-
 		try:
 			milestone = models.Milestone.objects.get(id=value)
 		except models.Milestone.DoesNotExist:
@@ -202,6 +205,19 @@ class MonitoringTodoFilter(django_filters.FilterSet):
 			return queryset.filter(date_start__gte=date_start, date_end__lte=date_end)
 
 		return queryset
+
+	def filter_date_from(self, queryset, value):
+		date_from = dateutil.parser.parse(value)
+		queryset = queryset.filter(date_start__gte=date_from)
+		return queryset
+
+	def filter_date_to(self, queryset, value):
+		date_to = dateutil.parser.parse(value)
+		queryset = queryset.filter(date_start__lte=date_to)
+		return queryset
+
+	def filter_projects(self, queryset, value):
+		return queryset.filter(project_id__in=value.split(","))
 
 
 class JournalActivityFilter(django_filters.FilterSet):
@@ -222,7 +238,7 @@ class ProjectStartDescriptionFilter(django_filters.FilterSet):
 		model = doc_models.ProjectStartDescription
 
 	id__in = django_filters.MethodFilter()
-	type = django_filters.MethodFilter() 
+	type = django_filters.MethodFilter()
 
 	def filter_id__in(self, queryset, value):
 		return queryset.filter(id__in=value)
@@ -268,24 +284,3 @@ class LogItemFilter(django_filters.FilterSet):
 		date_to = datetime.datetime.strptime(value, '%Y-%m-%d')
 		queryset = queryset.filter(date_created__lte=date_to)
 		return queryset
-
-class MonitoringTodoFilter(django_filters.FilterSet):
-	date_from = django_filters.MethodFilter()
-	date_to = django_filters.MethodFilter()
-	projects = django_filters.MethodFilter()
-
-	class Meta:
-		model = models.MonitoringTodo
-
-	def filter_date_from(self, queryset, value):
-		date_from = dateutil.parser.parse(value)
-		queryset = queryset.filter(date_start__gte=date_from)
-		return queryset
-
-	def filter_date_to(self, queryset, value):
-		date_to = dateutil.parser.parse(value)
-		queryset = queryset.filter(date_start__lte=date_to)
-		return queryset
-
-	def filter_projects(self, queryset, value):
-		return queryset.filter(project_id__in=value.split(","))

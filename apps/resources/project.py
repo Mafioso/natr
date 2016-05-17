@@ -416,6 +416,7 @@ class MonitoringTodoViewSet(ProjectBasedViewSet):
 
     def list(self, request, monitoring_pk=None):
         milestone_id = request.GET.get('milestone_id', None)
+
         qs = self.filter_queryset(
             self.get_queryset().filter(monitoring_id=monitoring_pk))
         if milestone_id:
