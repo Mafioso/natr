@@ -102,7 +102,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(projects)
 
         iexpert = False
-        if request.user.user.is_independent_expert():
+        if hasattr(request.user, 'user') and request.user.user.is_independent_expert():
             iexpert = True
 
         if page is not None:
