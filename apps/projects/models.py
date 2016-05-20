@@ -2287,16 +2287,17 @@ class MilestoneConclusionItem(models.Model):
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
 
-    STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED, ON_GRANTEE_APPROVE, GRANTEE_APPROVED, ON_REWORK = range(7)
+    STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED, ON_GRANTEE_APPROVE, GRANTEE_APPROVED, ON_REWORK, ON_DIRECTOR_APPROVE = range(8)
 
     STATUS_CAPS = (
         u'Формирование',
-        u'На утверждении у руководства',
-        u'Утвержден руководством',
+        u'На согласовании у руководства',
+        u'Утвержден',
         u'Не согласован',
         u'На согласовании ГП',
         u'Согласован ГП',
-        u'На доработке')
+        u'На доработке', 
+        u'На утверждении у директора')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
@@ -2315,6 +2316,7 @@ class Monitoring(ProjectBasedModel):
         verbose_name = u"План мониторинга"
         permissions = (
             ('approve_monitoring', u"Утверждение документа"),
+            ('conform_monitoring', u'Согласование документа')
         )
 
     def get_status_cap(self):
@@ -2390,7 +2392,7 @@ class Monitoring(ProjectBasedModel):
         # if new_val == Monitoring.ON_GRANTEE_APPROVE:
         #     mailing.send_grantee_approve_email(instance)
 
-        if not new_val == Monitoring.APPROVE or new_val == Monitoring.APPROVED:
+        if not new_val == Monitoring.APPROVED:
             return
         sed = instance.sed.last()
         if sed and sed.ext_doc_id:

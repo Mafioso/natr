@@ -7,6 +7,27 @@ from django.conf import settings
 from documents.utils import DocumentPrint
 import mimetypes
 
+def get_user_info(user):
+    if not user:
+        return None
+
+    if hasattr(user, 'user'):
+        if user.user.is_director():
+            return u"Директор "+user.get_full_name()
+        elif user.user.is_manager():
+            return u"Руководитель "+user.get_full_name()
+        elif user.user.is_expert():
+            return u"Эксперт "+user.get_full_name()
+        elif user.user.is_risk_expert():
+            return u"Риск эксперт "+user.get_full_name()
+        elif user.user.is_independent_expert():
+            return u"Независимый эксперт "+user.get_full_name()
+        else:
+            return NatrGroup.EXPERT
+    elif hasattr(user, 'grantee'):
+        return u"Грантополучатель "+user.get_full_name()
+
+    return user.get_full_name()
 
 def send_create_natrexpert(name, email, password):
     send_mail(
@@ -82,34 +103,18 @@ def send_milestone_status_finished(milestone):
         fail_silently=True
     )
 
-def send_monitoring_plan_agreed(monitoring):
+def send_monitoring_plan_gp_approve(monitoring, user=None):
     def get_monitoring_plan(monitoring):
-        table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
+        table = u'<br /><br /><table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
         reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
                 monitoring.todos.all(), u'')
         return table
 
-    mail = EmailMultiAlternatives(
-        u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
-        u"""Здравствуйте!\nВаш план мониторинга был согласован""",
-        settings.DEFAULT_FROM_EMAIL,
-        map(lambda x: x.account.email, monitoring.project.get_grantees()) + \
-        map(lambda x: x.account.email, monitoring.project.assigned_experts.all()),
-    )
-    mail.attach_alternative(u'Здравствуйте!\nВаш план мониторинга был согласован\n\n\n'+get_monitoring_plan(monitoring), "text/html")
-    mail.send(fail_silently=True)
-
-def send_monitoring_plan_gp_approve(monitoring):
-    def get_monitoring_plan(monitoring):
-        table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
-        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
-                monitoring.todos.all(), u'')
-        return table
-
-    mail_text = u"""Здравствуйте!\nПлан мониторинга был отправлен вам на согласование. \n"""
+    title = u'План мониторинга "%s"'%(monitoring.project.organization_details.name)
+    mail_text = u"Добрый день!\n" + (get_user_info(user) + u" отправил(а) план мониторинга на согласование." if user else u"План мониторинга был отправлен вам на согласование." )
 
     mail = EmailMultiAlternatives(
-        u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
+        title,
         mail_text,
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, monitoring.project.get_grantees()),
@@ -117,41 +122,85 @@ def send_monitoring_plan_gp_approve(monitoring):
     mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
     mail.send(fail_silently=True)
 
-def send_monitoring_plan_approved_by_gp(monitoring):
+#TODO
+def send_monitoring_plan_manager_approve(monitoring, user=None):
     def get_monitoring_plan(monitoring):
-        table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
+        table = u'<br /><br /><table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
         reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
                 monitoring.todos.all(), u'')
         return table
-    mail_text = u"""Здравствуйте!\nПлан мониторинга был согласован грантополучателем. \n"""
+
+    title = u'План мониторинга "%s"'%(monitoring.project.organization_details.name)
+    mail_text = u"Добрый день! \n" + (get_user_info(user) + u" отправил(а) план мониторинга на согласование." if user else u"План мониторинга был отправлен вам на согласование." )
+    managers = []
+    for a in auth_models.Account.objects.all():
+        if a.is_manager():
+            managers.append(a.email)
+
     mail = EmailMultiAlternatives(
-        u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
+        title,
         mail_text,
         settings.DEFAULT_FROM_EMAIL,
-        map(lambda x: x.account.email, monitoring.project.assigned_experts.all())
+        managers
     )
     mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
     mail.send(fail_silently=True)
 
-def send_monitoring_plan_was_send_to_rework(monitoring, user=None):
+#TODO
+def send_monitoring_plan_director_approve(monitoring, user=None):
     def get_monitoring_plan(monitoring):
-        table = u'<table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
+        table = u'<br /><br /><table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
         reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
                 monitoring.todos.all(), u'')
         return table
-    user_info = "План мониторинга был отправлен на доработку"
-    if user:
-        user_type = ""
-        if hasattr(user, 'user'):
-            user_type = u"Руководитель"
-        elif hasattr(user, 'grantee'):
-            user_type = u"Грантополучатель"
 
-        user_info = user_type + u" " +user.get_full_name()+u" отправил(а) план мониторинга на доработку."
+    title = u'План мониторинга "%s"'%(monitoring.project.organization_details.name)
+    mail_text = u"Добрый день! \n" + (get_user_info(user) + u" отправил(а) план мониторинга на утверждение." if user else u"План мониторинга был отправлен вам на утверждение." )
+    directors = []
+    for a in auth_models.Account.objects.all():
+        if a.is_director():
+            directors.append(a.email)
 
-    mail_text = u"""Здравствуйте!\n%s."""%(user_info)
     mail = EmailMultiAlternatives(
-        u'Согласование плана мониторинга по проекту \"%s\"' % monitoring.project.name,
+        title,
+        mail_text,
+        settings.DEFAULT_FROM_EMAIL,
+        directors
+    )
+    mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
+    mail.send(fail_silently=True)
+
+def send_monitoring_plan_approved(monitoring, user=None):
+    def get_monitoring_plan(monitoring):
+        table = u'<br /><br /><table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
+        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
+                monitoring.todos.all(), u'')
+        return table
+
+    title = u'План мониторинга "%s"'%(monitoring.project.organization_details.name)
+    mail_text = u"Добрый день! \n" + (get_user_info(user) + u" утвердил план мониторинга" if user else u"Директор утвердил план мониторинга." )
+
+    mail = EmailMultiAlternatives(
+        title,
+        mail_text,
+        settings.DEFAULT_FROM_EMAIL,
+        map(lambda x: x.account.email, monitoring.project.assigned_experts.all()) + map(lambda x: x.account.email, monitoring.project.get_grantees())
+    )
+    mail.attach_alternative(mail_text+get_monitoring_plan(monitoring), "text/html")
+    mail.send(fail_silently=True)
+
+def send_monitoring_plan_on_rework(monitoring, user=None):
+    def get_monitoring_plan(monitoring):
+        table = u'<br /><br /><table style=\'border: 1px solid;\'><thead><tr><th>Мероприятие мониторинга</th><th>Проект</th><th>Начало</th><th>Период</th><th>Завершение</th><th>Форма завершения</th></tr></thead><tbody>%s</tbody></table>' % \
+        reduce(lambda x, y: x+u'<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td></tr>' % (y.event_name, y.monitoring.project.name, y.date_start.strftime('%d %m %Y') if y.date_start else "", y.period, y.date_end.strftime('%d %m %Y') if y.date_end else "", y.report_type),
+                monitoring.todos.all(), u'')
+        return table
+
+    title = u'План мониторинга "%s"'%(monitoring.project.organization_details.name)
+    mail_text = u"Добрый день! \n" + (get_user_info(user) + u" отправил(а) план мониторинга на доработку." if user else u"План мониторинга был отправлен вам на доработку." )
+
+    mail = EmailMultiAlternatives(
+        title,
         mail_text,
         settings.DEFAULT_FROM_EMAIL,
         map(lambda x: x.account.email, monitoring.project.assigned_experts.all())
