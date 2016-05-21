@@ -291,8 +291,8 @@ EMAIL_HOST = 'smtp.yandex.com'
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'test.ko@almasales.com'
 EMAIL_HOST_PASSWORD = '123qweasd'
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
-SERVER_EMAIL = EMAIL_HOST_USER
+DEFAULT_FROM_EMAIL = u'Система электронного мониторинга договоров <test.ko@almasales.com>'
+SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # DEFAULT_TO_EMAIL = 'to email'
 
 DOCUMENTOLOG_URL = 'http://kik.doc24.kz'

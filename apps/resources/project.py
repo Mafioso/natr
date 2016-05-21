@@ -357,7 +357,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 attachment = doc_models.Attachment(**attachment)
                 attachment.save()
                 project.iexpert_attachments.add(attachment)
-                
+
         serializer = self.get_serializer(project.iexpert_attachments, many=True)
         return response.Response(serializer.data)
 
@@ -693,6 +693,7 @@ class ReportViewSet(ProjectBasedViewSet):
         report.save()
         report.send_status_changed_notification(prev_status, report.status, request.user)
         report.log_changes(request.user)
+        report.store_current_version()
         serializer = self.get_serializer(instance=report)
         headers = self.get_success_headers(serializer.data)
         return response.Response({"report": report.id}, headers=headers)

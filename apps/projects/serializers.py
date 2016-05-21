@@ -268,7 +268,7 @@ class ProjectStatisticsSerializer(ExcludeCurrencyFields, serializers.ModelSerial
     class Meta:
         model = Project
         fields = (
-            'id', 'name', 'grantee_name', 'aggreement_number', 'address_region', 'risk_degree', 'fundings', 'own_fundings', 
+            'id', 'name', 'grantee_name', 'aggreement_number', 'address_region', 'risk_degree', 'fundings', 'own_fundings',
             'funding_type_key', 'funding_type_name', 'total_month', 'status', 'status_cap')
         read_only_fields = fields
 
@@ -299,6 +299,8 @@ class ReportSerializer(serializers.ModelSerializer):
     attachments = AttachmentSerializer(many=True, required=False)
     cover_letter_atch = AttachmentSerializer(many=True, required=False)
     signature = serializers.SerializerMethodField()
+    date_edited = serializers.DateTimeField(read_only=True, format=None, input_formats=None)
+    file_versions = AttachmentSerializer(many=True, required=False)
 
     def create(self, validated_data):
         milestone = validated_data.pop('milestone', None)
@@ -414,7 +416,7 @@ class CorollarySerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     totals = serializers.SerializerMethodField()
     next_funding = serializers.SerializerMethodField()
     comments = CommentSerializer(many=True, read_only=True)
-    
+
     def get_totals(self, instance):
         return CorollaryTotalsSerializer(instance.get_totals()).data
 
