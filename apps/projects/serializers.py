@@ -455,41 +455,45 @@ class MonitoringSerializer(EmptyObjectDMLMixin, serializers.ModelSerializer):
         changed = instance.status != validated_data.get('status', instance.status)
         instance = super(MonitoringSerializer, self).update(instance, validated_data)
         if changed:
-            if instance.status == 2:
+            user = None
+            request = self.context.get("request")
+            if request and hasattr(request, "user"):
+                user = request.user
+
+            if instance.status == Monitoring.ON_GRANTEE_APPROVE:
                 try:
-                    mailing.send_monitoring_plan_agreed(instance)
+                    mailing.send_monitoring_plan_gp_approve(instance, user)
                 except Exception as e:
                     print str(e)
+            elif instance.status == Monitoring.APPROVE:
+                try:
+                    mailing.send_monitoring_plan_manager_approve(instance, user)
+                except Exception as e:
+                    print str(e)   
+            elif instance.status == Monitoring.ON_DIRECTOR_APPROVE:
+                try:
+                    mailing.send_monitoring_plan_director_approve(instance, user)
+                except Exception as e:
+                    print str(e)    
             elif instance.status == Monitoring.APPROVED:
+                try:
+                    mailing.send_monitoring_plan_approved(instance, user)
+                except Exception as e:
+                    print str(e)
                 try:
                     LogItem.objects.create(log_type=LogItem.MONITORING_PLAN_APPROVED, context=instance, account=user)
                 except Exception as e:
                     print str(e)
             elif instance.status == Monitoring.ON_REWORK:
                 try:
+                    mailing.send_monitoring_plan_on_rework(instance, user)
+                except Exception as e:
+                    print str(e)
+                try:
                     LogItem.objects.create(log_type=LogItem.MONITORING_PLAN_REWORK, context=instance, account=user)
                 except Exception as e:
                     print str(e)
-            elif instance.status == Monitoring.ON_GRANTEE_APPROVE:
-                try:
-                    mailing.send_monitoring_plan_gp_approve(instance)
-                except Exception as e:
-                    print str(e)
-            elif instance.status == Monitoring.GRANTEE_APPROVED:
-                try:
-                    mailing.send_monitoring_plan_approved_by_gp(instance)
-                except Exception as e:
-                    print str(e)
-            elif instance.status == Monitoring.ON_REWORK:
-                user = None
-                request = self.context.get("request")
-                if request and hasattr(request, "user"):
-                    user = request.user
-                try:
-                    mailing.send_monitoring_plan_was_send_to_rework(instance, user)
-                except Exception as e:
-                    print str(e)
-
+            
         return instance
 
     def validate_docx_context(self, instance):
