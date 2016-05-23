@@ -2313,7 +2313,7 @@ class Monitoring(ProjectBasedModel):
         u'Не согласован',
         u'На согласовании ГП',
         u'Согласован ГП',
-        u'На доработке', 
+        u'На доработке',
         u'На утверждении у директора')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
