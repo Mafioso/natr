@@ -35,7 +35,7 @@ def translate(text):
 def format_time(value):
     if not value:
         return ""
-        
+
     return value.strftime("%d.%m.%Y")
 
 def format_money(value):
@@ -92,7 +92,7 @@ class DocumentPrint:
         elif self.object.__class__.__name__ == "Act":
             return u"act.docx"
         elif self.object.__class__.__name__ == "Corollary":
-            return u"corollary.docx"            
+            return u"corollary.docx"
 
         return None
 
@@ -155,7 +155,7 @@ def store_file(data):
         'md5': data.get('file.md5'),
         'size': data.get('file.size'),
     }
-    return data.get('id', None), attachment_data
+    return attachment_id, attachment_data
 
 
 def store_from_temp(temp_file, fname):

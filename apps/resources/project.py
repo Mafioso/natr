@@ -207,6 +207,16 @@ class ProjectViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(project)
         return response.Response(serializer.data)
 
+    @detail_route(methods=['GET'], url_path='article_links/refresh')
+    @patch_serializer_class(ArticleLinkSerializer)
+    def refresh_article_links(self, request, *a, **kw):
+        project = self.get_object()
+
+        project.refresh_article_links()
+        article_links = project.articlelink_set.order_by('-date_created')
+        serializer = self.get_serializer(article_links, many=True)
+        return response.Response(serializer.data)
+
     @detail_route(methods=['GET', 'POST'], url_path='article_links')
     @patch_serializer_class(ArticleLinkSerializer)
     def list_article_links(self, request, *a, **kw):
@@ -225,16 +235,6 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
             serializer = self.get_serializer(article)
             return response.Response(serializer.data)
-
-    @detail_route(methods=['GET'], url_path='article_links/refresh')
-    @patch_serializer_class(ArticleLinkSerializer)
-    def refresh_article_links(self, request, *a, **kw):
-        project = self.get_object()
-
-        project.refresh_article_links()
-        article_links = project.articlelink_set.order_by('-date_created')
-        serializer = self.get_serializer(article_links, many=True)
-        return response.Response(serializer.data)
 
     @detail_route(methods=['get'], url_path='log')
     @patch_serializer_class(ProjectLogEntrySerializer)
@@ -348,7 +348,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['GET', 'POST'], url_path='iexpert_docs')
     @patch_serializer_class(AttachmentSerializer)
-    def list_article_links(self, request, *a, **kw):
+    def list_attachments(self, request, *a, **kw):
         project = self.get_object()
 
         if request.method == 'POST':
@@ -357,7 +357,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 attachment = doc_models.Attachment(**attachment)
                 attachment.save()
                 project.iexpert_attachments.add(attachment)
-                
+
         serializer = self.get_serializer(project.iexpert_attachments, many=True)
         return response.Response(serializer.data)
 
@@ -436,6 +436,7 @@ class MonitoringTodoViewSet(ProjectBasedViewSet):
 
     def list(self, request, monitoring_pk=None):
         milestone_id = request.GET.get('milestone_id', None)
+
         qs = self.filter_queryset(
             self.get_queryset().filter(monitoring_id=monitoring_pk))
         if milestone_id:
@@ -692,6 +693,7 @@ class ReportViewSet(ProjectBasedViewSet):
         report.save()
         report.send_status_changed_notification(prev_status, report.status, request.user)
         report.log_changes(request.user)
+        report.store_current_version()
         serializer = self.get_serializer(instance=report)
         headers = self.get_success_headers(serializer.data)
         return response.Response({"report": report.id}, headers=headers)

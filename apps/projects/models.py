@@ -475,7 +475,7 @@ class Project(models.Model):
 
     def get_monitoring(self):
         return Monitoring.objects.by_project(self).all()
-        
+
     def get_expert_reports(self):
         return Report.objects.by_project(self).all()
 
@@ -621,7 +621,7 @@ class Project(models.Model):
 
     def refresh_article_links(self):
         payload = {
-            'q': self.prepare_keywords(), 
+            'q': self.prepare_keywords(),
             'cx': settings.GOOGLE_CUSTOM_SEARCH_ENGINE_ID,
             'key': settings.GOOGLE_CUSTOM_SEARCH_ENGINE_API_KEY
         }
@@ -937,6 +937,8 @@ class Report(ProjectBasedModel):
     date_start = models.DateTimeField(u'Период отчетности', null=True)
     date_end = models.DateTimeField(u'Период отчетности', null=True)
 
+    date_edited = models.DateTimeField(auto_now=True, blank=True)
+
     status = models.IntegerField(null=True, choices=STATUS_OPTS, default=BUILD)
 
     # max 2 reports for one milestone
@@ -955,6 +957,8 @@ class Report(ProjectBasedModel):
     signature = GenericRelation('DigitalSignature', content_type_field='context_type')
 
     comments = GenericRelation('Comment', content_type_field='content_type')
+
+    file_versions = models.ManyToManyField(Attachment, related_name='reports_file_versions', null=True, blank=True)
 
     def get_status_cap(self):
         return Report.STATUS_CAPS[self.status]
@@ -1022,7 +1026,7 @@ class Report(ProjectBasedModel):
                     send_mail(
                         u'Отправлен отчет на %s, по проекту %s'%(status_cap, self.project.name),
                         u"""Здравствуйте, %(name)s!
-                        
+
                         Грантополучатель, %(grantee)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.
 
                         Ссылка на отчет: {host_address}/#/report/%(report_id)s""" % {
@@ -1071,7 +1075,7 @@ class Report(ProjectBasedModel):
             LogItem.objects.create(log_type=LogItem.REPORT_CHECK, context=self, account=account)
 
     def get_print_context(self, **kwargs):
-        context = self.__dict__
+        context = self.__dict__.copy()
         context['org_name'] = self.project.organization_details.name
         context['date_sign'] = self.project.aggreement.document.date_sign.strftime("%d.%m.%Y")
         context['number'] = self.project.aggreement.document.number
@@ -1181,6 +1185,19 @@ class Report(ProjectBasedModel):
         protection_document.update(**protection_document_data)
         self.protection_document = protection_document
         return self
+
+    def store_current_version(self):
+        temp_file, temp_fname = DocumentPrint(object=self).generate_docx()
+
+        d = temp_fname.split('.')
+        d.insert(-1, self.date_edited.strftime('%d-%m-%Y_%H:%M:%S'))
+        temp_fname_with_timestamp = '.'.join(d)
+
+        attachment_dict = store_from_temp(temp_file, temp_fname_with_timestamp)
+        attachment = Attachment.objects.create(**attachment_dict)
+        self.file_versions.add(attachment)
+        return attachment
+
 
     @classmethod
     def all_active(cls):
@@ -1727,7 +1744,7 @@ class CorollaryStatByCostType(models.Model):
             prev_milestone = m.get_prev_milestone()
             prev_corollary = prev_milestone.corollary
             prev_corollary_stat = CorollaryStatByCostType.objects.get(
-                cost_type = self.cost_type, 
+                cost_type = self.cost_type,
                 corollary = prev_corollary)
 
             return self.get_cost_row().grant_costs - prev_corollary_stat.savings
@@ -2003,7 +2020,7 @@ class MilestoneConclusion(models.Model):
 class MilestoneConclusionItem(models.Model):
 
     TYPES = (
-                EDITABLE, 
+                EDITABLE,
                 MILESTONE_FUNDS,
                 MILESTONE_NATR_FUNDS,
                 MIELSTONE_OWN_FUNDS,
@@ -2049,7 +2066,7 @@ class MilestoneConclusionItem(models.Model):
     def _cost(self):
         if self.type == MilestoneConclusionItem.EDITABLE:
             return self.cost.amount if self.cost else None
-        
+
         elif self.type == MilestoneConclusionItem.MILESTONE_DONE_JOBS:
             return None
 
@@ -2059,7 +2076,7 @@ class MilestoneConclusionItem(models.Model):
     def _cost(self, value):
         if not value:
             return
-            
+
         self.cost = Money(amount=value, currency=settings.KZT)
         self.save()
 
@@ -2088,7 +2105,7 @@ class MilestoneConclusionItem(models.Model):
         for milestone in milesone_set:
             total += milestone.corollary.get_total(key).amount
 
-        return total 
+        return total
 
     def get_cameral_cost(self):
         milestone = None
@@ -2171,22 +2188,22 @@ class MilestoneConclusionItem(models.Model):
                           type=MilestoneConclusionItem.EDITABLE, #0
                           number=1,
                           title=u'В результате камерального мониторинга по данному проекту замечаний не выявлено',
-                          milestone_id = conclusion.milestone.id) )   
+                          milestone_id = conclusion.milestone.id) )
         items.append( cls(conclusion=conclusion,
                           type=MilestoneConclusionItem.MILESTONE_FUNDS, #1
                           number=2,
                           title=u'В представленном промежуточном отчете указано освоение средств инновационного гранта по %s-му этапу на сумму:'%conclusion.milestone.number,
-                          milestone_id = conclusion.milestone.id) )   
+                          milestone_id = conclusion.milestone.id) )
         items.append( cls(conclusion=conclusion,
                           type=MilestoneConclusionItem.ECONOMY, #4
                           number=3,
                           title=u'Экономия средств инновационного гранта по %s-му этапу составила:'%conclusion.milestone.number,
-                          milestone_id = conclusion.milestone.id) )   
+                          milestone_id = conclusion.milestone.id) )
         items.append( cls(conclusion=conclusion,
                           type=MilestoneConclusionItem.COSTS, #5
                           number=4,
                           title=u'Смета расходов %s-го этапа составляет (Приложение №1 к Договору), из них:'%(next_milestone.number if next_milestone else conclusion.milestone.number),
-                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )   
+                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )
         items.append( cls(conclusion=conclusion,
                           type=MilestoneConclusionItem.COSTS_NATR, #6
                           number=5,
@@ -2196,18 +2213,18 @@ class MilestoneConclusionItem(models.Model):
                           type=MilestoneConclusionItem.COSTS_OWN, #7
                           number=6,
                           title=u'собственные средства',
-                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )   
+                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )
         items.append( cls(conclusion=conclusion,
                           type=MilestoneConclusionItem.RECOMMENTDED_NEXT_FUNDS, #12
                           number=7,
                           title=u'Рекомендуемая сумма финансирования %s-го этапа с учетом образовавшейся экономии по %s-му этапу составляет:'%(next_milestone.number if next_milestone else conclusion.milestone.number, conclusion.milestone.number),
-                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )   
+                          milestone_id = next_milestone.id if next_milestone else conclusion.milestone.id) )
         items.append( cls(conclusion=conclusion,
                           type=MilestoneConclusionItem.EDITABLE, #0
                           number=8,
                           title=u'По итогам камерального мониторинга, на основании представленных Грантополучателем документов, считаем целесообразным дальнейшее финансирование проекта.',
                           milestone_id = conclusion.milestone.id) )
-        
+
         for item in items:
             item.save()
 
@@ -2276,7 +2293,7 @@ class MilestoneConclusionItem(models.Model):
                           milestone_id=conclusion.milestone.id,
                           number=cnt+4,
                           title=u'По итогам камерального мониторинга на основании представленных Грантополучателем документов, поскольку средства инновационного гранта использованы по целевому назначению, работы по проекту, выполнены в соответствии с календарным планом, считаем возможным закрытие инновационного гранта.') )
-        
+
         for item in items:
             item.save()
 
@@ -2287,16 +2304,17 @@ class MilestoneConclusionItem(models.Model):
 class Monitoring(ProjectBasedModel):
     """План мониторинга проекта"""
 
-    STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED, ON_GRANTEE_APPROVE, GRANTEE_APPROVED, ON_REWORK = range(7)
+    STATUSES = BUILD, APPROVE, APPROVED, NOT_APPROVED, ON_GRANTEE_APPROVE, GRANTEE_APPROVED, ON_REWORK, ON_DIRECTOR_APPROVE = range(8)
 
     STATUS_CAPS = (
         u'Формирование',
-        u'На утверждении у руководства',
-        u'Утвержден руководством',
+        u'На согласовании у руководства',
+        u'Утвержден',
         u'Не согласован',
         u'На согласовании ГП',
         u'Согласован ГП',
-        u'На доработке')
+        u'На доработке',
+        u'На утверждении у директора')
 
     STATUS_OPTS = zip(STATUSES, STATUS_CAPS)
     status = models.IntegerField(default=BUILD, choices=STATUS_OPTS)
@@ -2306,7 +2324,7 @@ class Monitoring(ProjectBasedModel):
     attachment = models.ForeignKey('documents.Attachment', null=True, on_delete=models.CASCADE)
     signature = GenericRelation('DigitalSignature', content_type_field='context_type')
     comments = GenericRelation('Comment', content_type_field='content_type')
-    
+
     UPCOMING_RNG = (-1000, +3)
 
     class Meta:
@@ -2315,6 +2333,7 @@ class Monitoring(ProjectBasedModel):
         verbose_name = u"План мониторинга"
         permissions = (
             ('approve_monitoring', u"Утверждение документа"),
+            ('conform_monitoring', u'Согласование документа')
         )
 
     def get_status_cap(self):
@@ -2390,7 +2409,7 @@ class Monitoring(ProjectBasedModel):
         # if new_val == Monitoring.ON_GRANTEE_APPROVE:
         #     mailing.send_grantee_approve_email(instance)
 
-        if not new_val == Monitoring.APPROVE or new_val == Monitoring.APPROVED:
+        if not new_val == Monitoring.APPROVED:
             return
         sed = instance.sed.last()
         if sed and sed.ext_doc_id:
@@ -2723,5 +2742,3 @@ post_save.connect(Corollary.post_save, sender=Corollary)
 post_save.connect(Milestone.post_save, sender=Milestone)
 post_save.connect(Monitoring.post_save, sender=Monitoring)
 post_save.connect(MonitoringTodo.post_save, sender=MonitoringTodo)
-
-
