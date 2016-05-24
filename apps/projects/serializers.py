@@ -13,7 +13,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from documents import models as doc_models
 from grantee import models as grantee_models
 from journals.serializers import *
-from projects.models import FundingType, Project, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature, MilestoneConclusionItem, MilestoneConclusion
+from projects.models import FundingType, Project, ProjectProblemQuestions, Milestone, Report, Monitoring, MonitoringTodo, Comment, Corollary, CorollaryStatByCostType, RiskCategory, RiskDefinition, ProjectLogEntry, Act, MonitoringOfContractPerformance, DigitalSignature, MilestoneConclusionItem, MilestoneConclusion
 from auth2.models import NatrUser
 from auth2.serializers import NatrUserSerializer
 from notifications.models import send_notification, Notification
@@ -26,6 +26,7 @@ __all__ = (
     'ProjectSerializer',
     'ProjectBasicInfoSerializer',
     'ProjectStatisticsSerializer',
+    'ProjectProblemQuestionsSerializer',
     'ReportSerializer',
     'MonitoringSerializer',
     'MonitoringTodoSerializer',
@@ -169,6 +170,12 @@ class MilestoneBaseInfo(serializers.ModelSerializer):
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
 
+class ProjectProblemQuestionsSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = ProjectProblemQuestions
+
+
 class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
 
     class Meta:
@@ -201,6 +208,7 @@ class ProjectSerializer(ExcludeCurrencyFields, serializers.ModelSerializer):
     risks = RiskDefinitionSerializer(many=True, read_only=True)
     directors_attachments = AttachmentSerializer(many=True, required=False)
     assigned_experts = NatrUserSerializer(many=True, read_only=True)
+    problem_questions = serializers.PrimaryKeyRelatedField(queryset=ProjectProblemQuestions.objects.all(), many=True, required=False)
 
     def create(self, validated_data):
         return Project.objects.create_new(**validated_data)

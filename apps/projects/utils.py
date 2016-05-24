@@ -326,6 +326,19 @@ class ExcelReport:
                 
                 col_num += 1
 
+            if 'problem_questions' in self.registry_data['keys']:
+                if first:
+                    ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Проблемные вопросы')
+
+                problem_questions = ""
+
+                for question in project.problem_questions.all():
+                    problem_questions += question.name + "\n"
+
+                ws = self.insert_into_cell(ws, get_column_letter(col_num), row, problem_questions)
+                
+                col_num += 1
+
             if 'grant_type' in self.registry_data['keys']:
                 if first:
                     ws = self.build_header_cell(ws, get_column_letter(col_num), row-1, u'Вид гранта' )

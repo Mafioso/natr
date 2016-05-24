@@ -394,7 +394,7 @@ def send_monitoring_todo_days_left(mtodo, days):
             Форма завершения: {report_type}
 
             Ссылка на План Мониторинга: {host_address}/#/project/{project_id}/monitoring_plan """.format(**{
-                'name': grantee.account.get_full_name(),
+                'name': expert.account.get_full_name(),
                 'project_name': mtodo.project.name,
                 'project_id': mtodo.project.id,
                 'date_start': mtodo.date_start and mtodo.date_start.strftime("%d.%m.%Y") or '?',
