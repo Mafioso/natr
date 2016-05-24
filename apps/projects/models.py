@@ -71,6 +71,7 @@ class ProjectManager(models.Manager):
         statement_data = data.pop('statement', {})
         aggrement_data = data.pop('aggreement', {})
         other_agreements = data.pop('other_agreements', {})
+        problem_questions = data.pop('problem_questions', [])
 
         prj = Project.objects.create(**data)
         prj.save()
@@ -142,6 +143,10 @@ class ProjectManager(models.Manager):
 
         # 8. assign owner as assignee by default
         prj.assigned_experts.add(user.user)
+
+        for question in problem_questions:
+            prj.problem_questions.add(question)
+
         return prj
 
     def update_(self, instance, **data):
@@ -157,6 +162,7 @@ class ProjectManager(models.Manager):
         new_milestones = data['number_of_milestones']
         current_milestone_data = data.pop('current_milestone', None)
         directors_attachments = data.pop('directors_attachments', None)
+        problem_questions = data.pop('problem_questions', [])
 
         self.model.objects.filter(pk=instance.pk).update(**data)
 
@@ -222,6 +228,10 @@ class ProjectManager(models.Manager):
         if current_milestone_data:
             Milestone.objects.filter(pk=instance.current_milestone.pk
                 ).update(**current_milestone_data)
+
+        prj.problem_questions.clear()
+        for question in problem_questions:
+            prj.problem_questions.add(question)
 
         # 1. add empty or delete exist milestones from right
         if old_milestones == new_milestones:
@@ -306,6 +316,7 @@ class Project(models.Model):
     directors_attachments = models.ManyToManyField('documents.Attachment', related_name='projects', null=True, blank=True)
     iexpert_attachments = models.ManyToManyField('documents.Attachment', related_name='iprojects', null=True, blank=True)
     keywords = models.TextField(u'Ключевые слова', null=True, blank=True)
+    problem_questions = models.ManyToManyField('projects.ProjectProblemQuestions', related_name="projects")
 
     objects = ProjectManager()
 
@@ -685,6 +696,7 @@ class Project(models.Model):
                         "project_name",
                         "project_description",
                         "project_innovation",
+                        "problem_questions",
                         "grant_type",
                         "region",
                         "contact_details",
@@ -729,6 +741,7 @@ class Project(models.Model):
 
 
         return registry_data
+
 
 class ProjectRiskIndex(ProjectBasedModel):
     risks = models.ManyToManyField('RiskDefinition')
@@ -895,6 +908,22 @@ class FundingType(models.Model):
     @property
     def name_cap(self):
         return self.get_name_display()
+
+
+class ProjectProblemQuestions(models.Model):
+    DEFAULT_NAMES = (
+                        u"нарушение сроков предоставления отчетности по этапам (без предварительного письменного обращения)",
+                        u"невыполнение мероприятий Календарного плана, предусмотренного Договором",
+                        u"недостижение конечной цели проекта",
+                        u"нецелевое использование средств гранта",
+                        u"непредставление документов  либо некачественное предоставление документов",
+                        u"невозврат сумм экономии средств гранта либо неиспользованных средств гранта",
+                        u"невложение собственных средств грантополучателем",
+                        u"неуплата штрафа, в том числе неуплата штрафа в срок",
+                        u"нарушение иных условий Договора"
+                    )
+
+    name = models.CharField(max_length=512)
 
 
 @track_data('status')

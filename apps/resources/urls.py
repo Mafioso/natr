@@ -14,6 +14,7 @@ from .project import (
 	RiskDefinitionViewSet,
 	CommentViewSet,
 	ActViewSet,
+	ProjectProblemQuestionsViewSet
 )
 from .document import (
 	DocumentViewSet,
@@ -72,6 +73,7 @@ router.register(r'risks', RiskDefinitionViewSet, 'risk')
 router.register(r'acts', ActViewSet, 'acts')
 router.register(r'tech_stages', TechStageViewSet, 'tech_stages')
 router.register(r'monitoring_todos', MonitoringTodoViewSet, 'monitoring_todos')
+router.register(r'problem_questions', ProjectProblemQuestionsViewSet, 'problem_questions')
 
 monitoring_router = routers.NestedSimpleRouter(router, r'monitoring', lookup='monitoring')
 monitoring_router.register(r'todos', MonitoringTodoViewSet, base_name='monitoring-todos')
