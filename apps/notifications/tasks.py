@@ -17,19 +17,18 @@ def send_email_before_5_10_30_days__monitoring_todo():
     before5day = today + datetime.timedelta(days=5)
     before10day = today + datetime.timedelta(days=10)
     before30day = today + datetime.timedelta(days=30)
-
     before5dayTodos = MonitoringTodo.objects.filter(date_end__range=(get_date_query_range(before5day)))
     for todo in before5dayTodos.all():
-        mailing.send_monitoring_todo_days_left(5)
+        mailing.send_monitoring_todo_days_left(todo, 5)
     logger.info("Sent %i emails before %i days" % (before5dayTodos.count(), 5))
 
     before10dayTodos = MonitoringTodo.objects.filter(date_end__range=(get_date_query_range(before10day)))
     for todo in before10dayTodos.all():
-        mailing.send_monitoring_todo_days_left(10)
+        mailing.send_monitoring_todo_days_left(todo, 10)
     logger.info("Sent %i emails before %i days" % (before10dayTodos.count(), 10))
 
 
     before30dayTodos = MonitoringTodo.objects.filter(date_end__range=(get_date_query_range(before30day)))
     for todo in before30dayTodos.all():
-        mailing.send_monitoring_todo_days_left(30)
+        mailing.send_monitoring_todo_days_left(todo, 30)
     logger.info("Sent %i emails before %i days" % (before30dayTodos.count(), 30))
