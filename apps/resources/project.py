@@ -102,7 +102,7 @@ class ProjectViewSet(viewsets.ModelViewSet):
         page = self.paginate_queryset(projects)
 
         iexpert = False
-        if request.user.user.is_independent_expert():
+        if hasattr(request.user, 'user') and request.user.user.is_independent_expert():
             iexpert = True
 
         if page is not None:
@@ -476,7 +476,7 @@ class MonitoringViewSet(ProjectBasedViewSet):
                 Q(date_start__gte=datetime.now(),date_start__lte=datetime.now()+timedelta(days=31)) |
                 Q(date_start__lte=datetime.now(), date_end__gte=datetime.now())
             )
-        ).order_by('-date_end')
+        ).order_by('date_end')
         page = self.paginate_queryset(qs)
         if page is not None:
             serializer = self.get_serializer(page, many=True)
@@ -945,3 +945,8 @@ class ActViewSet(viewsets.ModelViewSet):
         response = HttpResponse(_file.getvalue(), content_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document")
         response['Content-Disposition'] = 'attachment; filename=%s'%filename.encode('utf-8')
         return response
+
+class ProjectProblemQuestionsViewSet(viewsets.ModelViewSet):
+    queryset = prj_models.ProjectProblemQuestions.objects.all()
+    serializer_class = ProjectProblemQuestionsSerializer
+    pagination_class = None
