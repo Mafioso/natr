@@ -1058,7 +1058,7 @@ class Report(ProjectBasedModel):
 
                         Грантополучатель, %(grantee)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.
 
-                        Ссылка на отчет: {host_address}/#/report/%(report_id)s""" % {
+                        Ссылка на отчет: %(host_address)s/#/report/%(report_id)s""" % {
                             'name': expert.account.get_full_name(),
                             'grantee': account.get_full_name(),
                             'project': self.project.name,
@@ -1081,7 +1081,7 @@ class Report(ProjectBasedModel):
                         Эксперт, %(expert)s, отправил отчет, по проекту %(project)s, на %(status_cap)s.
                         %(comment)s
 
-                        Ссылка на отчет: {host_address}/#/report/%(report_id)s """ % {
+                        Ссылка на отчет: %(host_address)s/#/report/%(report_id)s """ % {
                             'name': grantee.account.get_full_name(),
                             'expert': account.get_full_name(),
                             'project': self.project.name,
