@@ -9,6 +9,7 @@ from auth2 import serializers, models
 from projects.models import Monitoring, MonitoringTodo, Report, Corollary, Project
 from projects.serializers import MonitoringTodoSerializer
 from .filters import NatrUserFilter, MonitoringTodoFilter
+from datetime import datetime, timedelta
 
 class NatrUserViewSet(viewsets.ModelViewSet):
 
@@ -62,8 +63,16 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 		else:
 			monitorings = Monitoring.objects.filter(
 				project__in=request.user.user.projects.all())
-		activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
-		filtered = MonitoringTodoFilter(request.query_params, activities)
+		query_params = request.query_params
+		activities = []
+		if 'date_from' not in query_params and 'date_to' not in query_params:
+			activities = MonitoringTodo.objects.filter(monitoring__in=monitorings,
+													   date_start__gte=datetime.now(),
+													   date_start__lte=datetime.now()+timedelta(days=31))
+		else:
+			activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
+
+		filtered = MonitoringTodoFilter(query_params, activities)
 		ser = MonitoringTodoSerializer(filtered.qs, many=True)
 		return response.Response(ser.data)
 
