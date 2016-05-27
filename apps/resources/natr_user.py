@@ -161,7 +161,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 								'id': project.id
 							},
 						})
-				if monitoring.status == Monitoring.APPROVE and user_type == models.NatrGroup.DIRECTOR:
+				if monitoring.status == Monitoring.ON_DIRECTOR_APPROVE and user_type == models.NatrGroup.DIRECTOR:
 					data.append({
 							'link': '/projects/edit/%s/monitoring'%project.id,
 							'title': u'Мониторинг поступил на утверждение | ' + project.get_grantee_name(),
