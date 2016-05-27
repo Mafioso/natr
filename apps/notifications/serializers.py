@@ -122,7 +122,7 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 			notif.update_params(extra_params)
 			notif.spray()
 			
-			mailing.send_announcement_with_official_email(notif)
+			mailing.send_announcement_with_official_email(notif, project)
 
 			return notif
 		return map(create_notif, projects)

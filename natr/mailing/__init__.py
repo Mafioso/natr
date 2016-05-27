@@ -335,7 +335,7 @@ def send_milestone_status_payment(report):
     mail.send(fail_silently=True)
 
 
-def send_announcement_with_official_email(notification):
+def send_announcement_with_official_email(notification, project):
     notif_params = notification.prepare_msg()
     official_email = notification.context
 
@@ -347,7 +347,7 @@ def send_announcement_with_official_email(notification):
                     notif_params['project_name'], notif_params['text'], official_email.reg_number, 
                     official_email.reg_date),
                 settings.DEFAULT_FROM_EMAIL,
-                ['info@natd.gov.kz']
+                map(lambda x: x.account.email, project.get_grantees())
             )
 
     for attachment_data in official_email.attachments.all():
