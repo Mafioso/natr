@@ -11,7 +11,7 @@ logger = get_task_logger(__name__)
 
 #crontab(hour='9') - runs every day at 9am
 # @task(name="send_email_before_5_10_30_days__monitoring_todo")
-@periodic_task(run_every=(crontab(minute=0, hour=9)))
+@periodic_task(run_every=(crontab(minute=0, hour=3)))
 def send_email_before_5_10_30_days__monitoring_todo():
     today = timezone.now()
     before5day = today + datetime.timedelta(days=5)

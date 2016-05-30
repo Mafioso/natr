@@ -6,6 +6,8 @@ from openpyxl.styles import Alignment, Font, Border, Side, Color, colors, Patter
 from openpyxl.cell import get_column_letter
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import QuerySet
+from projects import models as prj_models
+from documents import models as doc_models
 import decimal
 import os
 import dateutil.parser
@@ -998,6 +1000,214 @@ class ExcelReport:
             filename = EXCEL_REPORTS_DIR+'/'+u'Архив сообщений и комментариев.xlsx'
             wb.save(filename)
             return filename
+
+        insert_header = True
+        date_from = self.registry_data['date_from']
+        date_to = self.registry_data['date_to']
+        dates = date_from.strftime("%d.%m.%y") + "-" + date_to.strftime("%d.%m.%y")
+        active_wb = True
+        chat_ws = None
+        pm_ws = None
+        report_ws = None
+        corollary_ws = None
+
+        greyFill = PatternFill(start_color='B3B3B3',
+                       end_color='B3B3B3',
+                       fill_type='solid')
+
+
+        def fill_chat_tab(project, row):
+            if insert_header:
+                chat_ws = wb.create_sheet() if  not active_wb else wb.active
+                chat_ws.title = u"Сообщения из чата по проектам"
+                chat_ws = self.insert_into_cell(chat_ws, 'A', '1', u'Сообщения из чата по проектам в период %s'%dates)
+                chat_ws.merge_cells('A1:C1')
+                chat_ws = self.insert_into_cell(chat_ws, 'A', row, u'Дата')
+                chat_ws = self.insert_into_cell(chat_ws, 'B', row, u'ФИО Отправителя')
+                chat_ws = self.insert_into_cell(chat_ws, 'C', row, u'Текст сообщения')
+                chat_ws["A%i"%row].fill = greyFill
+                chat_ws["B%i"%row].fill = greyFill
+                chat_ws["C%i"%row].fill = greyFill
+                row += 1
+
+            chat_ws = self.insert_into_cell(chat_ws, 'A', row, u'Проект: %s'%project.name)
+            chat_ws.merge_cells('A%i:C%i'%(row, row))
+            row += 1
+
+            messages = project.textline_set.filter(date_created__gte=date_from, date_created__lte=date_to)
+
+            if messages.count() == 0:
+                chat_ws = self.insert_into_cell(chat_ws, 'A', row, u'Сообщений не найдено')
+                chat_ws.merge_cells('A%i:C%i'%(row, row))
+                row += 1
+
+            for chat_message in messages:
+                chat_ws = self.insert_into_cell(chat_ws, 'A', row, chat_message.date_created.strftime("%d.%m.%y"))
+                chat_ws = self.insert_into_cell(chat_ws, 'B', row, chat_message.from_account.get_full_name())
+                chat_ws = self.insert_into_cell(chat_ws, 'C', row, chat_message.line)
+                row += 1
+
+
+            return row, chat_ws
+
+        def fill_pm_comments_tab(project, row):
+            if insert_header:
+                pm_ws = wb.create_sheet() if  not active_wb else wb.active
+                pm_ws.title = u"Комментарии к плану мониторинга"
+                pm_ws = self.insert_into_cell(pm_ws, 'A', '1', u'Комментарии к плану мониторинга в период %s'%dates)
+                pm_ws.merge_cells('A1:C1')
+                pm_ws = self.insert_into_cell(pm_ws, 'A', row, u'Дата')
+                pm_ws = self.insert_into_cell(pm_ws, 'B', row, u'ФИО Отправителя')
+                pm_ws = self.insert_into_cell(pm_ws, 'C', row, u'Текст комментария')
+                pm_ws["A%i"%row].fill = greyFill
+                pm_ws["B%i"%row].fill = greyFill
+                pm_ws["C%i"%row].fill = greyFill
+                row += 1
+
+            pm_ws = self.insert_into_cell(pm_ws, 'A', row, u'Проект: %s'%project.name)
+            pm_ws.merge_cells('A%i:C%i'%(row, row))
+            row += 1
+
+            for monitoring in project.monitoring_set.all():
+                comments = monitoring.comments.filter(date_created__gte=date_from, date_created__lte=date_to)
+
+                if comments.count() == 0:
+                    pm_ws = self.insert_into_cell(pm_ws, 'A', row, u'Комментариев не найдено')
+                    pm_ws.merge_cells('A%i:C%i'%(row, row))
+                    row += 1
+
+                for comment in comments:
+                    pm_ws = self.insert_into_cell(pm_ws, 'A', row, comment.date_created.strftime("%d.%m.%y")) 
+                    pm_ws = self.insert_into_cell(pm_ws, 'B', row, comment.account.get_full_name())
+                    pm_ws = self.insert_into_cell(pm_ws, 'C', row, comment.comment_text)
+                    row += 1
+
+            return row, pm_ws
+
+        def fill_report_comments_tab(project, row):
+            if insert_header:
+                report_ws = wb.create_sheet() if  not active_wb else wb.active
+                report_ws.title = u"Комментарии к отчету"
+                report_ws = self.insert_into_cell(report_ws, 'A', '1', u'Комментарии к отчету в период %s'%dates)
+                report_ws.merge_cells('A1:C1')
+                report_ws = self.insert_into_cell(report_ws, 'A', row, u'Дата')
+                report_ws = self.insert_into_cell(report_ws, 'B', row, u'ФИО Отправителя')
+                report_ws = self.insert_into_cell(report_ws, 'C', row, u'Текст комментария')
+                report_ws["A%i"%row].fill = greyFill
+                report_ws["B%i"%row].fill = greyFill
+                report_ws["C%i"%row].fill = greyFill
+                row += 1
+
+            report_ws = self.insert_into_cell(report_ws, 'A', row, u'Проект: %s'%project.name)
+            report_ws.merge_cells('A%i:C%i'%(row, row))
+            row += 1
+
+            for report in project.report_set.all().order_by("milestone__number"):
+                report_ws = self.insert_into_cell(report_ws, 'A', row, u'Комментарии к отчету этапа %i'%report.milestone.number)
+                report_ws.merge_cells('A%i:C%i'%(row, row))
+                row += 1
+
+                comments = report.comments.filter(date_created__gte=date_from, date_created__lte=date_to)
+
+                if comments.count() == 0:
+                    report_ws = self.insert_into_cell(report_ws, 'A', row, u'Комментариев не найдено')
+                    report_ws.merge_cells('A%i:C%i'%(row, row))
+                    row += 1
+                for comment in comments:
+                    report_ws = self.insert_into_cell(report_ws, 'A', row, comment.date_created.strftime("%d.%m.%y")) 
+                    report_ws = self.insert_into_cell(report_ws, 'B', row, comment.account.get_full_name())
+                    report_ws = self.insert_into_cell(report_ws, 'C', row, comment.comment_text)
+                    row += 1
+
+            return row, report_ws 
+
+        def fill_corollary_comments_tab(project, row):
+            if insert_header:
+                corollary_ws = wb.create_sheet() if  not active_wb else wb.active
+                corollary_ws.title = u"Комментарии к заключению"
+                corollary_ws = self.insert_into_cell(corollary_ws, 'A', '1', u'Комментарии к заключению в период %s'%dates)
+                corollary_ws.merge_cells('A1:C1')
+                corollary_ws = self.insert_into_cell(corollary_ws, 'A', row, u'Дата')
+                corollary_ws = self.insert_into_cell(corollary_ws, 'B', row, u'ФИО Отправителя')
+                corollary_ws = self.insert_into_cell(corollary_ws, 'C', row, u'Текст комментария')
+                corollary_ws["A%i"%row].fill = greyFill
+                corollary_ws["B%i"%row].fill = greyFill
+                corollary_ws["C%i"%row].fill = greyFill
+                row += 1
+
+            corollary_ws = self.insert_into_cell(corollary_ws, 'A', row, u'Проект: %s'%project.name)
+            corollary_ws.merge_cells('A%i:C%i'%(row, row))
+            row += 1
+
+            for corollary in project.corollary_set.all().order_by("milestone__number"):
+                corollary_ws = self.insert_into_cell(corollary_ws, 'A', row, u'Комментарии к заключению этапа %i'%corollary.milestone.number)
+                corollary_ws.merge_cells('A%i:C%i'%(row, row))
+                row += 1
+
+                comments = corollary.comments.filter(date_created__gte=date_from, date_created__lte=date_to)
+
+                if comments.count() == 0:
+                    corollary_ws = self.insert_into_cell(corollary_ws, 'A', row, u'Комментариев не найдено')
+                    corollary_ws.merge_cells('A%i:C%i'%(row, row))
+                    row += 1
+
+                for comment in comments:
+                    corollary_ws = self.insert_into_cell(corollary_ws, 'A', row, comment.date_created.strftime("%d.%m.%y")) 
+                    corollary_ws = self.insert_into_cell(corollary_ws, 'B', row, comment.account.get_full_name())
+                    corollary_ws = self.insert_into_cell(corollary_ws, 'C', row, comment.comment_text)
+                    row += 1
+
+            return row, corollary_ws
+
+        row_chat = 3
+        row_pm = 3
+        row_report = 3
+        row_corollary = 3
+
+        for project in projects:
+            if 'chat' in self.registry_data['keys']:
+                row_chat, chat_ws = fill_chat_tab(project, row_chat)
+                active_wb = False
+
+            if 'monitoring_plan' in self.registry_data['keys']:
+                row_pm, pm_ws = fill_pm_comments_tab(project, row_pm)
+                active_wb = False
+
+            if 'report' in self.registry_data['keys']:
+                row_report, report_ws = fill_report_comments_tab(project, row_report)
+                active_wb = False
+
+            if 'corollary' in self.registry_data['keys']:
+                row_corollary, corollary_ws = fill_corollary_comments_tab(project, row_corollary)
+                active_wb = False
+
+            insert_header = False
+
+        if 'chat' in self.registry_data['keys']:
+            self.set_border(chat_ws, {'col_start': 1,
+                                 'col_finish': 4, 
+                                 'row_start': 3,
+                                 'row_finish': row_chat})
+
+        if 'monitoring_plan' in self.registry_data['keys']:
+            self.set_border(pm_ws, {'col_start': 1,
+                                 'col_finish': 4, 
+                                 'row_start': 3,
+                                 'row_finish': row_pm})
+
+
+        if 'report' in self.registry_data['keys']:
+            self.set_border(report_ws, {'col_start': 1,
+                                 'col_finish': 4, 
+                                 'row_start': 3,
+                                 'row_finish': row_report})
+
+
+        if 'corollary' in self.registry_data['keys']:
+            self.set_border(corollary_ws, {'col_start': 1,
+                                 'col_finish': 4, 
+                                 'row_start': 3,
+                                 'row_finish': row_corollary})
 
 
         file_dir = EXCEL_REPORTS_DIR

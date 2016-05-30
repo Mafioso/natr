@@ -10,6 +10,7 @@ from projects.models import Monitoring, MonitoringTodo, Report, Corollary, Proje
 from projects.serializers import MonitoringTodoSerializer
 from projects.utils import get_value
 from .filters import NatrUserFilter, MonitoringTodoFilter
+from datetime import datetime, timedelta
 
 class NatrUserViewSet(viewsets.ModelViewSet):
 
@@ -63,8 +64,16 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 		else:
 			monitorings = Monitoring.objects.filter(
 				project__in=request.user.user.projects.all())
-		activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
-		filtered = MonitoringTodoFilter(request.query_params, activities)
+		query_params = request.query_params
+		activities = []
+		if 'date_from' not in query_params and 'date_to' not in query_params:
+			activities = MonitoringTodo.objects.filter(monitoring__in=monitorings,
+													   date_start__gte=datetime.now(),
+													   date_start__lte=datetime.now()+timedelta(days=31))
+		else:
+			activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
+
+		filtered = MonitoringTodoFilter(query_params, activities)
 		ser = MonitoringTodoSerializer(filtered.qs, many=True)
 		return response.Response(ser.data)
 
@@ -162,7 +171,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 								'id': project.id
 							},
 						})
-				if monitoring.status == Monitoring.APPROVE and user_type == models.NatrGroup.DIRECTOR:
+				if monitoring.status == Monitoring.ON_DIRECTOR_APPROVE and user_type == models.NatrGroup.DIRECTOR:
 					data.append({
 							'link': '/projects/edit/%s/monitoring'%project.id,
 							'title': u'Мониторинг поступил на утверждение | ' + project.get_grantee_name(),

@@ -287,11 +287,11 @@ CENTRIFUGE_EXTERNAL_ADDRESS = 'http://{}:{}'.format(DOCKER_HOST, CENTRIFUGO_PORT
 CENTRIFUGE_SECRET = 'secret'
 
 EMAIL_USE_TLS = True
-EMAIL_HOST = 'smtp.yandex.com'
+EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
-EMAIL_HOST_USER = 'test.ko@almasales.com'
-EMAIL_HOST_PASSWORD = '123qweasd'
-DEFAULT_FROM_EMAIL = u'Система электронного мониторинга договоров <test.ko@almasales.com>'
+EMAIL_HOST_USER = 'tolnatd@gmail.com'
+EMAIL_HOST_PASSWORD = 'FBsey547!'
+DEFAULT_FROM_EMAIL = u'Система электронного мониторинга договоров <tolnatd@gmail.com>'
 SERVER_EMAIL = DEFAULT_FROM_EMAIL
 # DEFAULT_TO_EMAIL = 'to email'
 
