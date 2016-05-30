@@ -1417,65 +1417,137 @@ class Corollary(ProjectBasedModel):
 
         def conc_table(obj, table, final=False):
             prj_fundings = obj.project.fundings.amount if obj.project.fundings else 0
-            rows = []
-            for ind in range(0, 3+obj.project.number_of_milestones if final else 4):
-                rows.append(table.add_row())
+            totals_stat = []
 
-            rows[0].cells[0].text = utils.get_stringed_value(1)
-            rows[0].cells[1].text = utils.get_stringed_value(u"Всего сумма гранта")
-            rows[0].cells[2].text = utils.get_stringed_value(obj.project.funding_date.strftime("%d.%m.%Y") if obj.project.funding_date else "")
-            rows[0].cells[3].text = utils.get_stringed_value(prj_fundings)
+            row = table.add_row()
+            row.cells[0].text = utils.get_stringed_value(1)
+            row.cells[1].text = utils.get_stringed_value(u"Всего сумма проекта")
+            row.cells[2].text = utils.get_stringed_value(obj.project.funding_date.strftime("%d.%m.%Y") if obj.project.funding_date else "")
+            row.cells[3].text = utils.get_stringed_value(obj.project.natr_fundings.amount if obj.project.natr_fundings else 0)
+
+            row = table.add_row()
+            row.cells[1].text = utils.get_stringed_value(u"средства гранта")
+            row.cells[3].text = utils.get_stringed_value(obj.project.fundings.amount if obj.project.fundings else 0)
+
+            row = table.add_row()
+            row.cells[1].text = utils.get_stringed_value(u"собственные средства")
+            row.cells[3].text = utils.get_stringed_value(obj.project.own_fundings.amount if obj.project.own_fundings else 0)
+
+            try:
+                    a = table.cell(2, 0)
+                    b = table.cell(4, 0)
+                    A = a.merge(b)
+                    a = table.cell(2, 2)
+                    b = table.cell(4, 2)
+                    A = a.merge(b)
+            except:
+                print "ERROR: OUT OF LIST"
 
             cnt = 1
             if final:
                 for milestone in obj.project.milestone_set.all():
-                    rows[cnt].cells[0].text = utils.get_stringed_value(cnt+1)
-                    rows[cnt].cells[1].text = utils.get_stringed_value(u"Перечисление средств %s транша"%(utils.write_roman(milestone.number)))
-                    rows[cnt].cells[2].text = utils.get_stringed_value(milestone.date_funded.strftime("%d.%m.%Y") if milestone.date_funded else "")
-                    rows[cnt].cells[3].text = utils.get_stringed_value(milestone.fundings.amount if milestone.fundings else "")
-                    rows[cnt].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=milestone.fundings.amount if milestone.fundings else 0,
+                    totals = get_totals(milestone.corollary)
+
+                    totals_stat.append(totals)
+                    
+                    row = table.add_row()
+                    row.cells[0].text = utils.get_stringed_value(cnt+1)
+                    row.cells[1].text = utils.get_stringed_value(u"%s этап, всего, из них:"%(milestone.number))
+                    row.cells[3].text = utils.get_stringed_value(totals["planned_costs"].amount if totals["planned_costs"] else 0)
+                    
+                    row = table.add_row()
+                    row.cells[1].text = utils.get_stringed_value(u"перечисление средств гранта за %s-этап"%(milestone.number))
+                    row.cells[2].text = utils.get_stringed_value(milestone.date_funded.strftime("%d.%m.%Y") if milestone.date_funded else "")
+                    row.cells[3].text = utils.get_stringed_value(totals["natr_fundings"].amount if totals["natr_fundings"] else 0)
+                    row.cells[4].text = utils.get_stringed_value(totals["savings"].amount if totals["savings"] else 0)
+                    row.cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=totals["natr_fundings"].amount if totals["natr_fundings"] else 0,
+                                                                                    denominator=totals["planned_costs"].amount if totals["planned_costs"] else 0))
+
+                    row.cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=totals["natr_fundings"].amount if totals["natr_fundings"] else 0,
                                                                                     denominator=prj_fundings))
 
-                    if hasattr(obj, 'stats'):
-                        savings = sum([stat.savings.amount if stat.savings else 0 for stat in obj.stats.all()])
-                        rows[cnt].cells[4].text = utils.get_stringed_value(savings if savings else 0)
-                        rows[cnt].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=savings if savings else 0, denominator=milestone.fundings.amount if milestone.fundings else 0))
+                    row = table.add_row()
+                    row.cells[1].text = utils.get_stringed_value(u"собственные средства")
+                    row.cells[3].text = utils.get_stringed_value(totals["own_fundings"].amount if totals["own_fundings"] else 0)
+                    row.cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=totals["own_fundings"].amount if totals["own_fundings"] else 0,
+                                                                                    denominator=totals["planned_costs"].amount if totals["planned_costs"] else 0))
+
+                    row.cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=totals["own_fundings"].amount if totals["own_fundings"] else 0,
+                                                                                    denominator=prj_fundings))
+
+                    try:
+                        a = table.cell(cnt*3+2, 0)
+                        b = table.cell(cnt*3+4, 0)
+                        A = a.merge(b)
+                        a = table.cell(cnt*3+2, 2)
+                        b = table.cell(cnt*3+4, 2)
+                        A = a.merge(b)
+                    except:
+                        print "ERROR: OUT OF LIST"
 
                     cnt += 1
             else:
-                rows[1].cells[0].text = utils.get_stringed_value(2)
-                rows[1].cells[1].text = utils.get_stringed_value(u"Перечисление средств %s транша"%(utils.write_roman(obj.milestone.number)))
-                rows[1].cells[2].text = utils.get_stringed_value(obj.milestone.date_funded.strftime("%d.%m.%Y") if obj.milestone.date_funded else "")
-                rows[1].cells[3].text = utils.get_stringed_value(obj.milestone.fundings.amount if obj.milestone.fundings else "")
-                rows[1].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=obj.milestone.fundings.amount if obj.milestone.fundings else 0,
+                totals = get_totals(milestone.corollary)
+
+                totals_stat.append(totals)
+
+                row = table.add_row()
+                row.cells[0].text = utils.get_stringed_value(cnt+1)
+                row.cells[1].text = utils.get_stringed_value(u"%s этап, всего, из них:"%(milestone.number))
+                row.cells[3].text = utils.get_stringed_value(totals["planned_costs"].amount if totals["planned_costs"] else 0)
+                
+                row = table.add_row()
+                row.cells[1].text = utils.get_stringed_value(u"перечисление средств гранта за %s-этап"%(milestone.number))
+                row.cells[2].text = utils.get_stringed_value(milestone.date_funded.strftime("%d.%m.%Y") if milestone.date_funded else "")
+                row.cells[3].text = utils.get_stringed_value(totals["natr_fundings"].amount if totals["natr_fundings"] else 0)
+                row.cells[4].text = utils.get_stringed_value(totals["savings"].amount if totals["savings"] else 0)
+                row.cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=totals["natr_fundings"].amount if totals["natr_fundings"] else 0,
+                                                                                denominator=totals["planned_costs"].amount if totals["planned_costs"] else 0))
+
+                row.cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=totals["natr_fundings"].amount if totals["natr_fundings"] else 0,
                                                                                 denominator=prj_fundings))
 
-                if hasattr(obj, 'stats'):
-                    savings = sum([stat.savings.amount if stat.savings else 0 for stat in obj.stats.all()])
-                    rows[1].cells[4].text = utils.get_stringed_value(savings if savings else 0)
-                    rows[1].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=savings if savings else 0, denominator=obj.milestone.fundings.amount if obj.milestone.fundings else 0))
+                row = table.add_row()
+                row.cells[1].text = utils.get_stringed_value(u"собственные средства")
+                row.cells[3].text = utils.get_stringed_value(totals["own_fundings"].amount if totals["own_fundings"] else 0)
+                row.cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=totals["own_fundings"].amount if totals["own_fundings"] else 0,
+                                                                                denominator=totals["planned_costs"].amount if totals["planned_costs"] else 0))
 
+                row.cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=totals["own_fundings"].amount if totals["own_fundings"] else 0,
+                                                                                denominator=prj_fundings))
+
+                try:
+                    a = table.cell(cnt*3+2, 0)
+                    b = table.cell(cnt*3+4, 0)
+                    A = a.merge(b)
+                    a = table.cell(cnt*3+2, 2)
+                    b = table.cell(cnt*3+4, 2)
+                    A = a.merge(b)
+                except:
+                    print "ERROR: OUT OF LIST"
+                    
                 cnt += 1
 
             total_fundings = 0
             total_savings = 0
-            for milestone in obj.project.milestone_set.filter(number__lte=obj.milestone.number):
-                total_fundings += milestone.fundings.amount if milestone.fundings else 0
-                if hasattr(milestone, 'corollary'):
-                    if hasattr(milestone.corollary, 'stats'):
-                       total_savings += sum([stat.savings.amount if stat.savings else 0 for stat in milestone.corollary.stats.all()])
 
-            rows[cnt].cells[0].text = utils.get_stringed_value(cnt+1)
-            rows[cnt].cells[1].text = utils.get_stringed_value(u"Итого перечислено")
-            rows[cnt].cells[3].text = utils.get_stringed_value(total_fundings)
-            rows[cnt].cells[4].text = utils.get_stringed_value(total_savings)
-            rows[cnt].cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=total_savings, denominator=total_fundings))
-            rows[cnt].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=total_fundings, denominator=prj_fundings))
+            for totals in totals_stat:
+                total_fundings += totals["natr_fundings"].amount if totals["natr_fundings"] else 0
+                total_savings += totals["savings"].amount if totals["savings"] else 0
 
-            rows[cnt+1].cells[0].text = utils.get_stringed_value(cnt+2)
-            rows[cnt+1].cells[1].text = utils.get_stringed_value(u"Остаток средств")
-            rows[cnt+1].cells[3].text = utils.get_stringed_value(prj_fundings - total_fundings)
-            rows[cnt+1].cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=prj_fundings - total_fundings, denominator=prj_fundings))
+            row = table.add_row()                       
+            row.cells[0].text = utils.get_stringed_value(cnt+1)
+            row.cells[1].text = utils.get_stringed_value(u"Итого перечислено")
+            row.cells[3].text = utils.get_stringed_value(total_fundings)
+            row.cells[4].text = utils.get_stringed_value(total_savings)
+            row.cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=total_savings, denominator=total_fundings))
+            row.cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=total_fundings, denominator=prj_fundings))
+
+            row = table.add_row()  
+            row.cells[0].text = utils.get_stringed_value(cnt+2)
+            row.cells[1].text = utils.get_stringed_value(u"Остаток средств")
+            row.cells[3].text = utils.get_stringed_value(total_savings)
+            row.cells[6].text = utils.get_stringed_value(utils.getRatio(numerator=prj_fundings - total_fundings, denominator=prj_fundings))
             return obj
 
         def get_row_data(use_of_budget_doc_items, stats):
@@ -1592,12 +1664,12 @@ class Corollary(ProjectBasedModel):
 
                     merge_cells.extend(
                             ({
-                                'row': current_row,
+                                'row': current_row + 1,
                                 'col': 0,
                                 'rowspan': rows_to_merge
                             },
                             {
-                                'row': current_row,
+                                'row': current_row + 1,
                                 'col': 1,
                                 'rowspan': rows_to_merge
                             },
@@ -1686,17 +1758,17 @@ class Corollary(ProjectBasedModel):
             conc_table(self, kwargs['doc'].tables[2], final=True)
 
         context['date'] = datetime.datetime.utcnow()
-        context['report_date'] = self.report_date
         context['project'] = self.project.name
         context['total_month'] = self.project.total_month
         context['fundings'] = self.project.fundings
         context['own_fundings'] = self.project.own_fundings
         context['number_of_milestones'] = self.project.number_of_milestones
 
+
         if self.project.organization_details:
             context['organization_name'] = self.project.organization_details.name
             context['organization_address'] = self.project.organization_details.address_2
-            context['region'] = self.project.organization_details.address_region
+            context['region'] = self.project.organization_details.get_address_region_display()
 
         if self.project.funding_type:
             context['funding_type'] = self.project.funding_type.get_name_display()
@@ -1707,6 +1779,8 @@ class Corollary(ProjectBasedModel):
         if self.milestone:
             context['conclusion'] = self.milestone.conclusion
             context['milestone_period'] = self.milestone.period
+            context['report_date'] = self.milestone.date_end.strftime("%d.%m.%Y") if self.milestone.date_end else ""
+            context['additional'] = self.milestone.additional
 
         fill_corollary_table(self, kwargs['doc'].tables[3])
         fill_conclusion_table(self.milestone, kwargs['doc'].tables[4])
