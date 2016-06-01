@@ -1487,18 +1487,18 @@ class Corollary(ProjectBasedModel):
 
                     cnt += 1
             else:
-                totals = get_totals(milestone.corollary)
+                totals = get_totals(self)
 
                 totals_stat.append(totals)
 
                 row = table.add_row()
                 row.cells[0].text = utils.get_stringed_value(cnt+1)
-                row.cells[1].text = utils.get_stringed_value(u"%s этап, всего, из них:"%(milestone.number))
+                row.cells[1].text = utils.get_stringed_value(u"%s этап, всего, из них:"%(self.milestone.number))
                 row.cells[3].text = utils.get_stringed_value(totals["planned_costs"].amount if totals["planned_costs"] else 0)
                 
                 row = table.add_row()
-                row.cells[1].text = utils.get_stringed_value(u"перечисление средств гранта за %s-этап"%(milestone.number))
-                row.cells[2].text = utils.get_stringed_value(milestone.date_funded.strftime("%d.%m.%Y") if milestone.date_funded else "")
+                row.cells[1].text = utils.get_stringed_value(u"перечисление средств гранта за %s-этап"%(self.milestone.number))
+                row.cells[2].text = utils.get_stringed_value(self.milestone.date_funded.strftime("%d.%m.%Y") if self.milestone.date_funded else "")
                 row.cells[3].text = utils.get_stringed_value(totals["natr_fundings"].amount if totals["natr_fundings"] else 0)
                 row.cells[4].text = utils.get_stringed_value(totals["savings"].amount if totals["savings"] else 0)
                 row.cells[5].text = utils.get_stringed_value(utils.getRatio(numerator=totals["natr_fundings"].amount if totals["natr_fundings"] else 0,
@@ -1564,7 +1564,7 @@ class Corollary(ProjectBasedModel):
             return row_data
 
         def fill_corollary_table(obj, table):
-            current_row = 3
+            current_row = 4
             row_data = get_row_data(obj.report.use_of_budget_doc.items.all(), obj.stats.all() if hasattr(obj, 'stats') else [])
             totals = get_totals(obj)
 
@@ -1572,14 +1572,17 @@ class Corollary(ProjectBasedModel):
             table_totals_row.cells[1].text = utils.get_stringed_value(u'Всего')
             table_totals_row.cells[2].text = utils.get_stringed_value(str(obj.milestone.number)+u" этап работ")
             table_totals_row.cells[6].text = utils.get_stringed_value(totals["planned_costs"].amount if totals["planned_costs"] else 0)
-            table_totals_row.cells[7].text = utils.get_stringed_value(totals["fact_costs"].amount if totals["fact_costs"] else 0)
-            table_totals_row.cells[8].text = utils.get_stringed_value(totals["costs_approved_by_docs"].amount if totals["costs_approved_by_docs"] else 0)
-            table_totals_row.cells[9].text = utils.get_stringed_value(totals["costs_received_by_natr"].amount if totals["costs_received_by_natr"] else 0)
-            table_totals_row.cells[10].text = utils.get_stringed_value(totals["savings"].amount if totals['savings'] else 0)
+            table_totals_row.cells[7].text = utils.get_stringed_value(totals["natr_fundings"].amount if totals["natr_fundings"] else 0)
+            table_totals_row.cells[8].text = utils.get_stringed_value(totals["own_fundings"].amount if totals["own_fundings"] else 0)
+            table_totals_row.cells[9].text = utils.get_stringed_value(totals["fact_costs"].amount if totals["fact_costs"] else 0)
+            table_totals_row.cells[10].text = utils.get_stringed_value(totals["costs_approved_by_docs"].amount if totals["costs_approved_by_docs"] else 0)
+            table_totals_row.cells[11].text = utils.get_stringed_value(totals["costs_received_by_natr"].amount if totals["costs_received_by_natr"] else 0)
+            table_totals_row.cells[12].text = utils.get_stringed_value(totals["savings"].amount if totals['savings'] else 0)
+            
 
             try:
-                    a = table.cell(2, 2)
-                    b = table.cell(2, 5)
+                    a = table.cell(3, 2)
+                    b = table.cell(3, 5)
                     A = a.merge(b)
             except:
                 print "ERROR: OUT OF LIST"
@@ -1590,10 +1593,12 @@ class Corollary(ProjectBasedModel):
                 totals_row.cells[1].text = utils.get_stringed_value(item['use_of_budget'].cost_type.name)
                 totals_row.cells[2].text = utils.get_stringed_value(u'Всего')
                 totals_row.cells[6].text = utils.get_stringed_value(item['stats'].planned_costs.amount if item['stats'].planned_costs else 0)
-                totals_row.cells[7].text = utils.get_stringed_value(item['stats'].fact_costs.amount if item['stats'].fact_costs else 0)
-                totals_row.cells[8].text = utils.get_stringed_value(item['stats'].costs_approved_by_docs.amount if item['stats'].costs_approved_by_docs else 0)
-                totals_row.cells[9].text = utils.get_stringed_value(item['stats'].costs_received_by_natr.amount if item['stats'].costs_received_by_natr else 0)
-                totals_row.cells[10].text = utils.get_stringed_value(item['stats'].savings.amount if item['stats'].savings else 0)
+                totals_row.cells[7].text = utils.get_stringed_value(item['stats'].natr_fundings.amount if item['stats'].natr_fundings else 0)
+                totals_row.cells[8].text = utils.get_stringed_value(item['stats'].own_fundings.amount if item['stats'].own_fundings else 0)
+                totals_row.cells[9].text = utils.get_stringed_value(item['stats'].fact_costs.amount if item['stats'].fact_costs else 0)
+                totals_row.cells[10].text = utils.get_stringed_value(item['stats'].costs_approved_by_docs.amount if item['stats'].costs_approved_by_docs else 0)
+                totals_row.cells[11].text = utils.get_stringed_value(item['stats'].costs_received_by_natr.amount if item['stats'].costs_received_by_natr else 0)
+                totals_row.cells[12].text = utils.get_stringed_value(item['stats'].savings.amount if item['stats'].savings else 0)
                 row = table.add_row()
 
                 rows_to_merge = 1
@@ -1606,19 +1611,23 @@ class Corollary(ProjectBasedModel):
                         if first_cost:
                             row.cells[2].text = utils.get_stringed_value(cost.name)
                             row.cells[6].text = utils.get_stringed_value(item['stats'].planned_costs.amount if item['stats'].planned_costs else 0)
-                            row.cells[7].text = utils.get_stringed_value(item['stats'].fact_costs.amount if item['stats'].fact_costs else 0)
-                            row.cells[8].text = utils.get_stringed_value(item['stats'].costs_approved_by_docs.amount if item['stats'].costs_approved_by_docs else 0)
-                            row.cells[9].text = utils.get_stringed_value(item['stats'].costs_received_by_natr.amount if item['stats'].costs_received_by_natr else 0)
-                            row.cells[10].text = utils.get_stringed_value(item['stats'].savings.amount if item['stats'].savings else 0)
-                            row.cells[11].text = utils.get_stringed_value(item['use_of_budget'].cost_type.price_details)
+                            row.cells[7].text = utils.get_stringed_value(item['stats'].natr_fundings.amount if item['stats'].natr_fundings else 0)
+                            row.cells[8].text = utils.get_stringed_value(item['stats'].own_fundings.amount if item['stats'].own_fundings else 0)
+                            row.cells[9].text = utils.get_stringed_value(item['stats'].fact_costs.amount if item['stats'].fact_costs else 0)
+                            row.cells[10].text = utils.get_stringed_value(item['stats'].costs_approved_by_docs.amount if item['stats'].costs_approved_by_docs else 0)
+                            row.cells[11].text = utils.get_stringed_value(item['stats'].costs_received_by_natr.amount if item['stats'].costs_received_by_natr else 0)
+                            row.cells[12].text = utils.get_stringed_value(item['stats'].savings.amount if item['stats'].savings else 0)
+                            row.cells[13].text = utils.get_stringed_value(item['use_of_budget'].cost_type.price_details)
                         else:
                             sub_row = table.add_row()
                             sub_row.cells[2].text = utils.get_stringed_value(cost.name)
                             sub_row.cells[6].text = utils.get_stringed_value(item['stats'].planned_costs.amount if item['stats'].planned_costs else 0)
-                            sub_row.cells[7].text = utils.get_stringed_value(item['stats'].fact_costs.amount if item['stats'].fact_costs else 0)
-                            sub_row.cells[8].text = utils.get_stringed_value(item['stats'].costs_approved_by_docs.amount if item['stats'].costs_approved_by_docs else 0)
-                            sub_row.cells[9].text = utils.get_stringed_value(item['stats'].costs_received_by_natr.amount if item['stats'].costs_received_by_natr else 0)
-                            sub_row.cells[10].text = utils.get_stringed_value(item['stats'].savings.amount if item['stats'].savings else 0)
+                            sub_row.cells[7].text = utils.get_stringed_value(item['stats'].natr_fundings.amount if item['stats'].natr_fundings else 0)
+                            sub_row.cells[8].text = utils.get_stringed_value(item['stats'].own_fundings.amount if item['stats'].own_fundings else 0)
+                            sub_row.cells[9].text = utils.get_stringed_value(item['stats'].fact_costs.amount if item['stats'].fact_costs else 0)
+                            sub_row.cells[10].text = utils.get_stringed_value(item['stats'].costs_approved_by_docs.amount if item['stats'].costs_approved_by_docs else 0)
+                            sub_row.cells[11].text = utils.get_stringed_value(item['stats'].costs_received_by_natr.amount if item['stats'].costs_received_by_natr else 0)
+                            sub_row.cells[12].text = utils.get_stringed_value(item['stats'].savings.amount if item['stats'].savings else 0)
                         if cost.gp_docs.count() > 0:
                             first_gp_doc = True
                             for gp_doc in cost.gp_docs.all():
@@ -1664,42 +1673,42 @@ class Corollary(ProjectBasedModel):
 
                     merge_cells.extend(
                             ({
-                                'row': current_row + 1,
+                                'row': current_row,
                                 'col': 0,
                                 'rowspan': rows_to_merge
                             },
                             {
-                                'row': current_row + 1,
+                                'row': current_row,
                                 'col': 1,
                                 'rowspan': rows_to_merge
                             },
                             {
-                                'row': current_row+1,
+                                'row': current_row,
                                 'col': 6,
                                 'rowspan': rows_to_merge-1
                             },
                             {
-                                'row': current_row+1,
+                                'row': current_row,
                                 'col': 7,
                                 'rowspan': rows_to_merge-1
                             },
                             {
-                                'row': current_row+1,
+                                'row': current_row,
                                 'col': 8,
                                 'rowspan': rows_to_merge-1
                             },
                             {
-                                'row': current_row+1,
+                                'row': current_row,
                                 'col': 9,
                                 'rowspan': rows_to_merge-1
                             },
                             {
-                                'row': current_row+1,
+                                'row': current_row,
                                 'col': 10,
                                 'rowspan': rows_to_merge-1
                             },
                             {
-                                'row': current_row+1,
+                                'row': current_row,
                                 'col': 11,
                                 'rowspan': rows_to_merge-1
                             })
@@ -1729,11 +1738,11 @@ class Corollary(ProjectBasedModel):
             row.cells[11].text = utils.get_stringed_value(obj.work_description_note)
 
             try:
-                    a = table.cell(current_row+1, 1)
-                    b = table.cell(current_row+1, 5)
+                    a = table.cell(current_row, 0)
+                    b = table.cell(current_row, 5)
                     A = a.merge(b)
-                    a = table.cell(current_row+1, 6)
-                    b = table.cell(current_row+1, 10)
+                    a = table.cell(current_row, 6)
+                    b = table.cell(current_row, 12)
                     A = a.merge(b)
             except:
                 print "ERROR: OUT OF LIST"
@@ -1868,7 +1877,9 @@ class CorollaryStatByCostType(models.Model):
         m = self.get_milestone()
         ct = self.cost_type
         cd = self.get_project().cost_document
-        return MilestoneCostRow.objects.get(cost_document=cd, milestone=m, cost_type=ct)
+        mcr = MilestoneCostRow.objects.get(cost_document=cd, milestone=m, cost_type=ct)
+
+        return mcr
 
     def get_project(self):
         return self.get_milestone().project
@@ -2484,9 +2495,9 @@ class Monitoring(ProjectBasedModel):
             row.cells[0].text = utils.get_stringed_value(cnt)
             row.cells[1].text = utils.get_stringed_value(item.event_name)
             row.cells[2].text = utils.get_stringed_value(self.project.name)
-            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y") or "")
+            row.cells[3].text = utils.get_stringed_value(item.date_start.strftime("%d.%m.%Y") if item.date_start else "")
             row.cells[4].text = utils.get_stringed_value(item.period)
-            row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") or "")
+            row.cells[5].text = utils.get_stringed_value(item.date_end.strftime("%d.%m.%Y") if item.date_end else "")
             row.cells[6].text = utils.get_stringed_value(item.remaining_days)
             row.cells[7].text = utils.get_stringed_value(item.report_type)
         return dict(**self.__dict__)
