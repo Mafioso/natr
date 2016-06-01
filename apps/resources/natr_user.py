@@ -68,8 +68,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 		activities = []
 		if 'date_from' not in query_params and 'date_to' not in query_params:
 			activities = MonitoringTodo.objects.filter(monitoring__in=monitorings,
-													   date_start__gte=datetime.now(),
-													   date_start__lte=datetime.now()+timedelta(days=31))
+													   date_end__gte=datetime.now()+timedelta(days=31))
 		else:
 			activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
 
