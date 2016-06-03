@@ -1070,7 +1070,7 @@ class Report(ProjectBasedModel):
                         [expert.account.email],
                         fail_silently=False
                     )
-
+                mailing.send_report_check_to_info(self)
             elif status == Report.REWORK or status == Report.APPROVE:
                 status_cap = u"доработку" if status == Report.REWORK else u"согласование"
                 for grantee in self.project.assigned_grantees.all():
@@ -1241,7 +1241,7 @@ class Report(ProjectBasedModel):
         milestone = instance.milestone
         if new_val == Report.REWORK:
             milestone.set_status(Milestone.REPORT_REWORK)
-            mailing.send_milestone_status_payment(instance)
+            mailing.send_milestone_status_payment(milestone)
         elif new_val == Report.CHECK:
             milestone.set_status(Milestone.REPORT_CHECK)
         # elif new_val == Report.BUILD:
