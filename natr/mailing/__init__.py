@@ -314,7 +314,7 @@ def send_corollary_dir_check(corollary, user):
         fail_silently=True
     )
 
-def send_milestone_status_payment(report):
+def send_report_check_to_info(report):
     mail = EmailMessage(
                 u'Отправлен отчет на проверку по проекту \"%s\"' % report.project.name,
                 u"""Здравствуйте! Отправлен отчет, по проекту \"%s\", на проверку """ %(report.project.name),
