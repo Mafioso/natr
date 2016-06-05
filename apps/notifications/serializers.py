@@ -105,7 +105,7 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 
 		def create_notif(project):
 			project_instance = Project.objects.get(id=project['id'])
-			
+
 			official_email_instance.context = project_instance
 			official_email_instance.save()
 
@@ -121,7 +121,7 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 
 			notif.update_params(extra_params)
 			notif.spray()
-			
+
 			mailing.send_announcement_with_official_email(notif, project_instance)
 
 			return notif
@@ -183,7 +183,7 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 			raise "%s is incorrect notif_type" % (notif_type)
 
 
-class NotificationSubscribtionSerializer(serializers.ModelSerializer):
+class MyNotificationSubscribtionSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = models.NotificationSubscribtion
@@ -192,6 +192,15 @@ class NotificationSubscribtionSerializer(serializers.ModelSerializer):
 
 	notification = NotificationSerializer(required=True)
 
+class NotificationSubscribtionSerializer(serializers.ModelSerializer):
+
+	class Meta:
+		model = models.NotificationSubscribtion
+		_f = ('notification', 'account', 'date_created', 'date_read')
+		fields = _f
+		read_only_fields = _f
+
+	notification = NotificationSerializer(required=True)
 
 class NotificationCounterSerializer(serializers.ModelSerializer):
 

@@ -5,6 +5,8 @@ from natr.override_rest_framework.decorators import patch_serializer_class
 from notifications import models, serializers
 from datetime import timedelta
 from django.utils import timezone
+from .filters import NotificationSubscribtionFilter
+
 
 class NotificationViewSet(viewsets.ModelViewSet):
 
@@ -65,18 +67,18 @@ class NotificationViewSet(viewsets.ModelViewSet):
 		return response.Response(serializer.data)
 
 
-class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
+class MyNotificationSubscriptionViewSet(viewsets.ModelViewSet):
 
 	queryset = models.NotificationSubscribtion.objects.all()
-	serializer_class = serializers.NotificationSubscribtionSerializer
+	serializer_class = serializers.MyNotificationSubscribtionSerializer
 
 	def get_queryset(self):
-		qs = super(NotificationSubscriptionViewSet, self).get_queryset()
+		qs = super(MyNotificationSubscriptionViewSet, self).get_queryset()
 		last_month = timezone.now() - timedelta(days=30)
 		return qs.filter(account=self.request.user, date_created__gte=last_month).order_by('-date_created')
 
 	def list(self, request, *a, **kw):
-		response = super(NotificationSubscriptionViewSet, self).list(request, *a, **kw)
+		response = super(MyNotificationSubscriptionViewSet, self).list(request, *a, **kw)
 		data = []
 		for item in response.data['results']:
 			data.append(self.build_item(item))
@@ -85,7 +87,7 @@ class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
 		return response
 
 	def update(self, request, *a, **kw):
-		response = super(NotificationSubscriptionViewSet, self).update(request, *a, **kw)
+		response = super(MyNotificationSubscriptionViewSet, self).update(request, *a, **kw)
 		response.data = self.build_item(response.data)
 		return response
 
@@ -103,6 +105,14 @@ class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
 		new_item.update(item['notification'])
 		new_item.update(notif_params)
 		return new_item
+
+
+class NotificationSubscriptionViewSet(viewsets.ModelViewSet):
+
+	queryset = models.NotificationSubscribtion.objects.all()
+	serializer_class = serializers.NotificationSubscribtionSerializer
+	filter_backends = (filters.DjangoFilterBackend, filters.OrderingFilter)
+	filter_class = NotificationSubscribtionFilter
 
 
 class NotificationCounterViewSet(viewsets.ModelViewSet):
