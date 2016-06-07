@@ -3,12 +3,12 @@ import json
 from rest_framework import serializers
 from django.contrib.contenttypes.models import ContentType
 from notifications import models
-from projects.models import Milestone, Project
+from projects.models import Milestone, Project, Monitoring, Corollary
 from auth2.models import Account, NatrGroup
-from documents.models import OfficialEmail
+from documents.models import OfficialEmail, Attachment
 from projects.serializers import MilestoneSerializer
 from documents.serializers import OfficialEmailSerializer
-from natr.override_rest_framework.serializers import ProjectNameSerializer
+from natr.override_rest_framework.serializers import ProjectNameSerializer, AccountNameSerializer
 from datetime import datetime
 from natr import mailing
 
@@ -95,8 +95,15 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 				notif_type=self.notif_type,
 				context_id=project['id'],
 				context_type=project_context_type)
-			notif.update_params(self.extra_params)
+
+			extra_params = self.extra_params.copy()
+			extra_params.update({
+				'project': project_instance.id,
+				'project_name': project_instance.name,
+			})
+			notif.update_params(extra_params)
 			notif.spray()
+
 			return notif
 		return map(create_notif, projects)
 
@@ -118,7 +125,6 @@ class AnnouncementNotificationSerializer(serializers.ModelSerializer):
 				'project': project_instance.id,
 				'project_name': project_instance.name,
 			})
-
 			notif.update_params(extra_params)
 			notif.spray()
 
@@ -192,15 +198,40 @@ class MyNotificationSubscribtionSerializer(serializers.ModelSerializer):
 
 	notification = NotificationSerializer(required=True)
 
+
 class NotificationSubscribtionSerializer(serializers.ModelSerializer):
 
 	class Meta:
 		model = models.NotificationSubscribtion
-		_f = ('notification', 'account', 'date_created', 'date_read')
+		_f = ('notification', 'account', 'project', 'date_created', 'date_read')
 		fields = _f
 		read_only_fields = _f
 
 	notification = NotificationSerializer(required=True)
+	account = AccountNameSerializer()
+	project = serializers.SerializerMethodField()
+
+	def get_project(self, instance):
+		notif = instance.notification
+		project_ct = ContentType.objects.get_for_model(Project)
+		milestone_ct = ContentType.objects.get_for_model(Milestone)
+		monitoring_ct = ContentType.objects.get_for_model(Monitoring)
+		corollary_ct = ContentType.objects.get_for_model(Corollary)
+		official_email_ct = ContentType.objects.get_for_model(OfficialEmail)
+
+		if notif.context and notif.context_type == project_ct:
+			return ProjectNameSerializer(notif.context).data
+		if notif.context and notif.context_type in (milestone_ct, monitoring_ct, corollary_ct, official_email_ct):
+			return ProjectNameSerializer(notif.context.get_project()).data
+		if notif.params and notif.notif_type == models.Notification.ANNOUNCEMENT_PROJECTS:
+			params_data = json.loads(instance.params)
+			try:
+				project = Project.objects.get(id=params_data.project)
+				return ProjectNameSerializer(project).data
+			except Exception as e:
+				return None
+		return None
+
 
 class NotificationCounterSerializer(serializers.ModelSerializer):
 
