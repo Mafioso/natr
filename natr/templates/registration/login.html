@@ -39,6 +39,16 @@
           </div>
         </div>
 
+
+        <div class="input_block_full">
+          <div class="input_text">
+              {% for err in form.non_field_errors %}
+                  <div class="label"> {{ err }} </div>
+              {% endfor %}
+          </div>
+        </div>
+
+
         <div class="project_block_part">
           <div class="part_left">
               <div class="filter_side">

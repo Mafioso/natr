@@ -8,8 +8,10 @@ from auth2 import models as auth2_models
 from grantee import models as grantee_models
 from journals import models as journals_models
 from logger import models as logger_models
+from notifications import models as notif_models
 import datetime
 import dateutil.parser
+
 
 class ListOfIdFilter(django_filters.FilterSet):
 	ids = IntegerListFilter(name='id',lookup_type='in')
@@ -299,3 +301,29 @@ class ReferenceInformationFilter(django_filters.FilterSet):
 
 	def filter_role(self, queryset, value):
 		return queryset.filter(role=value)
+
+
+class NotificationSubscribtionFilter(django_filters.FilterSet):
+
+	class Meta:
+		model = notif_models.NotificationSubscribtion
+
+	project = django_filters.MethodFilter()
+	date_from = django_filters.MethodFilter()
+	date_to = django_filters.MethodFilter()
+
+	def filter_project(self, queryset, project_id):
+		project_ct = ContentType.objects.get_for_model(models.Project)
+		return queryset.filter(
+			Q(notification__context_type=project_ct, notification__context_id=project_id)
+		)
+
+	def filter_date_from(self, queryset, value):
+		date_from = datetime.datetime.strptime(value, '%Y-%m-%d')
+		queryset = queryset.filter(date_created__gte=date_from)
+		return queryset
+
+	def filter_date_to(self, queryset, value):
+		date_to = datetime.datetime.strptime(value, '%Y-%m-%d')
+		queryset = queryset.filter(date_created__lte=date_to)
+		return queryset
