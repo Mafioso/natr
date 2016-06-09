@@ -36,7 +36,7 @@ def send_create_natrexpert(name, email, password):
         Ваши данные для входа в ИСЭМ:\n
         email: %(email)s,\n
         пароль: %(password)s\n\n.
-        Ссылка для входа в кабинет: http://178.88.64.87:8000""" % {
+        Ссылка для входа в кабинет: http://89.219.34.251:8000""" % {
             'name': name,
             'email': email,
             'password': password
@@ -53,7 +53,7 @@ def send_create_grantee(name, email, password):
         Ваши данные для входа в Грантополучателя:\n
         email: %(email)s,\n
         пароль: %(password)s\n\n.
-        Ссылка для входа в кабинет: http://178.88.64.87:8000""" % {
+        Ссылка для входа в кабинет: http://89.219.34.251:8000""" % {
             'name': name,
             'email': email,
             'password': password
@@ -293,7 +293,7 @@ def send_chat_activity(text_line, from_account):
 
     title = u"Новое сообщение в ИСЭМ"
     message_text = u"""Уважаемый %s! \n%s %s отправил вам сообщение: \n%s \n
-                    Ссылка для входа в кабинет: http://178.88.64.87:8000"""%(to_type,
+                    Ссылка для входа в кабинет: http://89.219.34.251:8000"""%(to_type,
                                                                              from_type, 
                                                                              from_account.get_full_name(), 
                                                                              text_line.line)
