@@ -36,10 +36,14 @@ class IndexView(TemplateView):
         else:
             return HttpResponseRedirect(reverse('login'))
 
+class HelpView(TemplateView):
+
+    template_name = "help.html"
+
 
 urlpatterns = [
     url(r'^$', IndexView.as_view(template_name='index.html'), name='home'),
-
+    url(r'^help/', HelpView.as_view(), name='help'),
     url(r'^admin/', include(admin.site.urls)),
     url(r'^docs/', include('rest_framework_swagger.urls')),
     url(r'^auth/', include('django.contrib.auth.urls'))

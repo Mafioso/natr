@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static from staticfiles %}
+{% block head_title %} Вход {% endblock %}
+{% block css %}
+<link rel="shortcut icon" href="{% static 'images/favicon.png' %}" type="image/png">
+<link rel="stylesheet" type="text/css" href="{% static 'css/icons.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}">
+<link rel="stylesheet" type="text/css" href="{% static 'css/handsontable.full.min.css' %}">
+{% endblock %}
+
+{% block content %}
+  <div class="body">
+    <div class="user_help">
+      <div class="block_head">
+        <div class="title">Помощь</div>
+      </div>
+      <div class="block_border_bottom_no">
+        <div class="project_block_part">
+          <div class="width50_left">
+            <div class="text mb2">
+                Посмотреть видео уроки
+            </div>
+            <br />
+            <div class="login_footer">
+              <a href="#" onclick="openModal('https://www.youtube.com/embed/8YfmPWkQ2-g?list=PLTlQxM8SV92SnY126_6Ru0oY_Hu_Dth3Z')">
+                <span class="login_icons">
+                  <img src="{% static 'images/icons/login_video_icon.svg' %}" class="login_icon" />
+                </span>
+                Авторизация и изменение пароля в системе
+              </a>
+            </div>
+            <div class="login_footer">
+              <a href="#" onclick="openModal('https://www.youtube.com/embed/TUZ6c-laoYg?list=PLTlQxM8SV92SnY126_6Ru0oY_Hu_Dth3Z')">
+                <span class="login_icons">
+                  <img src="{% static 'images/icons/login_video_icon.svg' %}" class="login_icon" />
+                </span>
+                Кабинет грантополучателя
+              </a>
+            </div>
+            <div class="login_footer">
+              <a href="#" onclick="openModal('https://www.youtube.com/embed/qeUWM-smWe4?list=PLTlQxM8SV92SnY126_6Ru0oY_Hu_Dth3Z')">
+                <span class="login_icons">
+                  <img src="{% static 'images/icons/login_video_icon.svg' %}" class="login_icon" />
+                </span>
+                Формирование отчета ГП
+              </a>
+            </div>
+            <div class="login_footer">
+              <a href="#" onclick="openModal('https://www.youtube.com/embed/FFNk78bEWuA?list=PLTlQxM8SV92SnY126_6Ru0oY_Hu_Dth3Z')">
+                <span class="login_icons">
+                  <img src="{% static 'images/icons/login_video_icon.svg' %}" class="login_icon"/>
+                </span>
+                Журнал, Акты, МИОАДП
+              </a>
+            </div>
+          </div>
+          <div class="width50_right">
+            <div class="text mb2">
+                Скачать обучающие материалы
+            </div>
+            <br />
+            <div class="login_footer">
+              <a href="{% static 'help_docs/ИНСТРУКЦИЯ ПОЛЬЗОВАТЕЛЯ РУКОВОДИТЕЛЯ.docx' %}" download>
+                <span class="login_icons">
+                  <img src="{% static 'images/icons/login_file_icon.svg' %}" class="login_icon" />
+                </span>
+                Инструкция пользователя Руководителя
+              </a>
+            </div>
+            <div class="login_footer">
+              <a href="{% static 'help_docs/ИНСТРУКЦИЯ ПОЛЬЗОВАТЕЛЯ ЭКСПЕРТА.docx' %}">
+                <span class="login_icons">
+                  <img src="{% static 'images/icons/login_file_icon.svg' %}" class="login_icon" />
+                </span>
+                Инструкция пользователя Эксперта
+              </a>
+            </div>
+            <div class="login_footer">
+              <a href="{% static 'help_docs/ИНСТРУКЦИЯ ПОЛЬЗОВАТЕЛЯ СУР-ЭКСПЕРТА.docx' %}">
+                <span class="login_icons">
+                  <img src="{% static 'images/icons/login_file_icon.svg' %}" class="login_icon" />
+                </span>
+                Инструкция пользователя СУР-Эксперта
+              </a>
+            </div>
+            <div class="login_footer">
+              <a href="{% static 'help_docs/ИНСТРУКЦИЯ ПОЛЬЗОВАТЕЛЯ ГРАНТАПОЛУЧАТЕЛЯ.docx' %}">
+                <span class="login_icons">
+                  <img src="{% static 'images/icons/login_file_icon.svg' %}" class="login_icon" />
+                </span>
+                Инструкция пользователя Грантаполучателя
+              </a>
+            </div>
+            <div class="login_footer">
+              <a href="{% static 'help_docs/ИНСТРУКЦИЯ ПОЛЬЗОВАТЕЛЯ АДМИНИСТРАТОРА.docx' %}">
+                <span class="login_icons">
+                  <img src="{% static 'images/icons/login_file_icon.svg' %}" class="login_icon" />
+                </span>
+                Инструкция пользователя Администратора
+              </a>
+            </div>
+          </div>
+        </div>
+        <div class="button mb2" title="Вернуться на страницу входа">
+          <div class="bordered wrap type_save a_icon_and_title radius_5">
+                <a href="/auth/login/">
+                  <svg viewBox="0 0 20 20" style="background-color:#ffffff00" x="0px" y="0px" width="20px" height="17px">
+                      <path fill="green" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" />
+                  </svg>
+                  <div class="text">
+                      Вернуться к входу
+                  </div>
+                </a>
+            </div>
+          </div>
+        </div>
+        <br />
+      </div>
+  </div>
+
+<!-- The Modal -->
+<div id="myModal" class="modal">
+
+  <!-- Modal content -->
+  <div class="modal-content">
+    <span class="close">x</span>
+    <iframe id="frame" width="100%" height="95%" frameborder="0" allowfullscreen></iframe>
+  </div>
+
+</div>
+
+<script type="text/javascript">
+
+// Get the modal
+var modal = document.getElementById('myModal');
+
+// Get the button that opens the modal
+var span = document.getElementsByClassName("close")[0];
+var frame = document.getElementById('frame');
+
+// When the user clicks on <span> (x), close the modal
+span.onclick = function() {
+  frame.src = '#'
+    modal.style.display = "none";
+}
+
+function openModal(url) {
+  frame.src = url;
+  modal.style.display = "block";
+}
+
+// When the user clicks anywhere outside of the modal, close it
+window.onclick = function(event) {
+    if (event.target == modal) {
+      frame.src = '#'
+        modal.style.display = "none";
+    }
+}
+</script>
+{% endblock %}
