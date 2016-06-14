@@ -22,7 +22,7 @@ class Command(BaseCommand):
         TEMPLATES = (
             ('nginx/nginx.upload.conf', {
                 'server_name': settings.DOCKER_HOST,
-                'allow_client': 'http://{}:8000'.format(settings.HOST) }),
+                'allow_client': 'http://{}'.format(settings.DOCKER_HOST) }),
         )
 
         for tmpl_file, context in TEMPLATES:
