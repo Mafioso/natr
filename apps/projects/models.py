@@ -2103,7 +2103,7 @@ class Milestone(ProjectBasedModel):
             return
         old_val = instance.old_value('status')
         new_val = instance.status
-        if new_val == Milestone.TRANCHE_PAY:
+        if new_val == Milestone.TRANCHE_PAY or new_val == Milestone.IMPLEMENTING:
             instance.report.set_building()
 
 

@@ -339,6 +339,10 @@ class ReportSerializer(serializers.ModelSerializer):
                 instance.cover_letter_atch.add(attachment)
             instance.save()
 
+        if instance.status == Report.NOT_ACTIVE:
+            instance.status = Report.BUILD
+            instance.save()
+
         report = super(ReportSerializer, self).update(instance, validated_data)
         prj_utils.resetSignature(report)
         return report
