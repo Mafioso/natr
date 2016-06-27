@@ -1120,15 +1120,26 @@ class ProjectStartDescription(models.Model):
         return context
 
     def set_previous(self, previous):
-        self.workplaces_fact = previous.workplaces_fact
-        self.types_fact = previous.types_fact
-        self.prod_fact = previous.prod_fact
-        self.rlzn_fact = previous.rlzn_fact
-        self.rlzn_exp_fact = previous.rlzn_exp_fact
-        self.tax_fact = previous.tax_fact
-        self.tax_local_fact = previous.tax_local_fact
-        self.innovs_fact = previous.innovs_fact
-        self.kaz_part_fact = previous.kaz_part_fact
+        if previous.type == ProjectStartDescription.START:
+            self.workplaces_fact = previous.workplaces_fact
+            self.types_fact = previous.types_fact
+            self.prod_fact = previous.prod_fact
+            self.rlzn_fact = previous.rlzn_fact
+            self.rlzn_exp_fact = previous.rlzn_exp_fact
+            self.tax_fact = previous.tax_fact
+            self.tax_local_fact = previous.tax_local_fact
+            self.innovs_fact = previous.innovs_fact
+            self.kaz_part_fact = previous.kaz_part_fact
+        else:
+            self.workplaces_fact = previous.workplaces_plan
+            self.types_fact = previous.types_plan
+            self.prod_fact = previous.prod_plan
+            self.rlzn_fact = previous.rlzn_plan
+            self.rlzn_exp_fact = previous.rlzn_exp_plan
+            self.tax_fact = previous.tax_plan
+            self.tax_local_fact = previous.tax_local_plan
+            self.innovs_fact = previous.innovs_plan
+            self.kaz_part_fact = previous.kaz_part_plan
         self.save()
 
     @classmethod

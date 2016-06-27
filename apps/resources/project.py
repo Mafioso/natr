@@ -339,9 +339,17 @@ class ProjectViewSet(viewsets.ModelViewSet):
                 attachment = doc_models.Attachment(**attachment)
                 attachment.save()
                 project.directors_attachments.add(attachment)
-        project.save()
 
+        project.save()
         mailing.send_project_status_changed(project)
+
+        if 'milestone_statuses' in request.data:
+            for k, v in request.data['milestone_statuses'].iteritems():
+                milestone = project.milestone_set.get(id=k)
+                milestone.status = v
+                milestone.save()
+
+            return response.Response({'message': 'success'})
 
         serializer = self.get_serializer(project)
         return response.Response(serializer.data)

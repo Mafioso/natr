@@ -73,7 +73,7 @@ class NatrUserViewSet(viewsets.ModelViewSet):
 			activities = MonitoringTodo.objects.filter(monitoring__in=monitorings)
 
 		filtered = MonitoringTodoFilter(query_params, activities)
-		ser = MonitoringTodoSerializer(filtered.qs, many=True)
+		ser = MonitoringTodoSerializer(filtered.qs.order_by('date_start'), many=True)
 		return response.Response(ser.data)
 
 	@list_route(methods=['GET'], url_path='todos')

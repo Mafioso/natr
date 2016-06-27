@@ -165,7 +165,7 @@ class MilestoneBaseInfo(serializers.ModelSerializer):
 
     class Meta:
         model = Milestone
-        fields = ('id', 'number', 'status_cap', 'date_funded')
+        fields = ('id', 'number', 'status_cap', 'date_funded', 'status')
 
     status_cap = serializers.CharField(source='get_status_cap', read_only=True)
 
@@ -241,7 +241,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
             'id', 'name', 'status', 'current_milestone',
             'status_cap', 'agreement', 'journal_id',
             'risk_degree', 'number_of_milestones', 'authorized_grantee',
-            'grantee_name', 'iexpert_attachments' )
+            'grantee_name', 'iexpert_attachments', 'milestone_set' )
         fields = _f
         read_only_fields = _f
 
@@ -257,6 +257,7 @@ class ProjectBasicInfoSerializer(serializers.ModelSerializer):
     agreement = serializers.SerializerMethodField()
     risk_degree = serializers.IntegerField()
     grantee_name =  serializers.CharField(source='organization_details.name')
+    milestone_set = MilestoneBaseInfo(many=True, required=False, read_only=True)
 
 
     def get_current_milestone(self, instance):
