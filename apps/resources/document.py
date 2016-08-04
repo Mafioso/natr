@@ -286,6 +286,10 @@ class CostDocumentViewSet(ProjectBasedViewSet):
         for cost_row in cost_rows:
             # if not cost_row:
             #     continue
+            if len(cost_row) == 0:
+                del cost_row
+                continue
+                
             assert len(cost_row) > 0, 'have to be at least one element'
             cost_cell = cost_row[0]
             cost_type_data = natr_serializers.CostTypeSerializer(instance=cost_cell.cost_type).data

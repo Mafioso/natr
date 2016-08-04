@@ -232,8 +232,7 @@ LOGGING = {
     }
 }
 
-ADMINS = (('Sattar', 'sattar94@outlook.com'),
-          ('Nurlan', 'abyken.nurlan@gmail.com'))
+ADMINS = ()
 
 MANAGERS = ADMINS
 
